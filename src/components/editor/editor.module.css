@@ -734,3 +734,143 @@
     animation: none !important;
   }
 }
+
+/* ---------- on-canvas text editor ---------- */
+
+.textEditor {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform-origin: 0 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  outline: 1px dashed #4c8dff;
+  background: transparent;
+  resize: none;
+  overflow: hidden;
+  white-space: pre;
+  user-select: text;
+  caret-color: currentColor;
+  z-index: 5;
+}
+
+/* ---------- tool options ---------- */
+
+.optionGroup {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.optionGroup .input,
+.optionGroup .select {
+  width: auto;
+}
+
+.numberInput {
+  width: 64px !important;
+}
+
+.swatches {
+  position: relative;
+  width: 32px;
+  height: 32px;
+  margin-top: 8px;
+}
+
+.swatch {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 1px solid #fff;
+  box-shadow: 0 0 0 1px #000;
+  cursor: pointer;
+}
+
+.swatch input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.swatchForeground {
+  left: 0;
+  top: 0;
+  z-index: 1;
+}
+
+.swatchBackground {
+  right: 0;
+  bottom: 0;
+}
+
+.toolSeparator {
+  width: 24px;
+  height: 1px;
+  margin: 4px 0;
+  background: var(--ed-border);
+}
+
+.textArea {
+  width: 100%;
+  min-height: 60px;
+  resize: vertical;
+  padding: 4px 6px;
+  background: var(--ed-bg);
+  border: 1px solid var(--ed-border);
+  border-radius: 4px;
+  user-select: text;
+}
+
+.fieldPair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.smallLabel {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--ed-text-dim);
+}
+
+.smallLabel .input {
+  min-width: 0;
+}
+
+.segmented {
+  display: inline-flex;
+  border: 1px solid var(--ed-border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.segmented button {
+  padding: 2px 8px;
+  background: var(--ed-chrome-2);
+  border: 0;
+  border-right: 1px solid var(--ed-border);
+  cursor: pointer;
+}
+
+.segmented button:last-child {
+  border-right: 0;
+}
+
+.segmented button[aria-pressed="true"] {
+  background: var(--ed-accent);
+  color: #fff;
+}
+
+.radioRow {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}

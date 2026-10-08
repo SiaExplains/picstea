@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import {
   panBy,
   screenToDocument,
@@ -9,10 +9,12 @@ import {
   type Point,
 } from "@/editor/core/viewport/viewport";
 import { Canvas2DRenderer } from "@/editor/rendering/canvas/canvas2d-renderer";
-import { useController, useEditorState } from "./editor-context";
+import type { ToolPointer } from "@/editor/tools/tool";
+import { useController, useIsMac } from "./editor-context";
 import styles from "./editor.module.css";
+import { TextEditorOverlay } from "./TextEditorOverlay";
 
-function isTypingTarget(target: EventTarget | null): boolean {
+export function isTypingTarget(target: EventTarget | null): boolean {
   return (
     target instanceof HTMLElement &&
     (target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName))
@@ -21,20 +23,18 @@ function isTypingTarget(target: EventTarget | null): boolean {
 
 type Gesture =
   | { kind: "pan"; pointerId: number; last: Point }
-  | { kind: "pinch"; startDistance: number; startZoom: number; lastMid: Point };
+  | { kind: "pinch"; startDistance: number; startZoom: number; lastMid: Point }
+  | { kind: "tool"; pointerId: number };
 
 /**
- * The document viewport: owns the <canvas>, drives the renderer from store changes and turns
- * pointer/wheel input into viewport changes. Holds no document state of its own.
+ * The document viewport: owns the <canvas>, drives the renderer from store/tool changes and turns
+ * pointer/wheel input into viewport changes or tool input. Holds no document state of its own.
  */
 export function CanvasViewport() {
   const controller = useController();
-  const activeTool = useEditorState((s) => s.activeTool);
+  const isMac = useIsMac();
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [spaceHeld, setSpaceHeld] = useState(false);
-  const [panning, setPanning] = useState(false);
-  const [altHeld, setAltHeld] = useState(false);
 
   // Measure the viewport.
   useEffect(() => {
@@ -48,7 +48,7 @@ export function CanvasViewport() {
     return () => observer.disconnect();
   }, [controller]);
 
-  // Render on any change to the active document, its viewport, decoded assets or size.
+  // Render on any change to the active document, viewport, decoded assets, size or tool feedback.
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -59,6 +59,13 @@ export function CanvasViewport() {
       const session = controller.store.getSession();
       const screen = controller.viewportSize.get();
       if (!session || screen.width === 0 || screen.height === 0) return;
+      const textEdit = controller.textEdit.get();
+      const toolPreview = controller.tools.preview();
+      const editingLayer =
+        textEdit && textEdit.documentId === session.document.id ? textEdit.layerId : null;
+      const preview = editingLayer
+        ? { ...toolPreview, hiddenLayerIds: new Set([editingLayer]) }
+        : toolPreview;
       renderer.render({
         document: session.document,
         viewport: session.viewport,
@@ -66,6 +73,9 @@ export function CanvasViewport() {
         devicePixelRatio: window.devicePixelRatio || 1,
         assets: controller.assets,
         assetVersion: controller.assets.getVersion(),
+        sizer: controller.sizer,
+        preview,
+        overlays: textEdit ? [] : controller.tools.overlays(),
       });
     };
     const schedule = () => {
@@ -75,6 +85,8 @@ export function CanvasViewport() {
       controller.store.subscribe(schedule),
       controller.assets.subscribe(schedule),
       controller.viewportSize.subscribe(schedule),
+      controller.tools.revision.subscribe(schedule),
+      controller.textEdit.subscribe(schedule),
     ];
     const dprQuery = window.matchMedia(`(resolution: ${window.devicePixelRatio || 1}dppx)`);
     dprQuery.addEventListener("change", schedule);
@@ -87,34 +99,15 @@ export function CanvasViewport() {
     };
   }, [controller]);
 
-  // Space-to-pan and Alt (zoom out) modifiers, like professional editors.
-  useEffect(() => {
-    const onKey = (event: KeyboardEvent) => {
-      setAltHeld(event.altKey);
-      if (event.code !== "Space" || isTypingTarget(event.target)) return;
-      if (event.type === "keydown") event.preventDefault();
-      setSpaceHeld(event.type === "keydown");
-    };
-    const onBlur = () => {
-      setSpaceHeld(false);
-      setAltHeld(false);
-    };
-    window.addEventListener("keydown", onKey);
-    window.addEventListener("keyup", onKey);
-    window.addEventListener("blur", onBlur);
-    return () => {
-      window.removeEventListener("keydown", onKey);
-      window.removeEventListener("keyup", onKey);
-      window.removeEventListener("blur", onBlur);
-    };
-  }, []);
-
-  // Pointer, pinch and wheel navigation. Wheel needs a non-passive listener to prevent page zoom.
+  // Pointer, pinch, wheel and modifier keys. Wheel needs a non-passive listener to prevent page zoom.
   useEffect(() => {
     const element = containerRef.current;
     if (!element) return;
     const pointers = new Map<number, Point>();
     let gesture: Gesture | null = null;
+    let spaceHeld = false;
+    let altHeld = false;
+    let lastPointer: ToolPointer | null = null;
 
     const local = (event: { clientX: number; clientY: number }): Point => {
       const rect = element.getBoundingClientRect();
@@ -125,6 +118,36 @@ export function CanvasViewport() {
       const session = controller.store.getSession();
       if (session) controller.store.setViewport(session.document.id, viewport);
     };
+    const toolPointer = (event: MouseEvent): ToolPointer | null => {
+      const viewport = activeViewport();
+      if (!viewport) return null;
+      const screen = local(event);
+      const coalesced =
+        "getCoalescedEvents" in event && typeof event.getCoalescedEvents === "function"
+          ? (event as PointerEvent)
+              .getCoalescedEvents()
+              .slice(0, -1)
+              .map((e) => screenToDocument(viewport, local(e)))
+          : undefined;
+      return {
+        doc: screenToDocument(viewport, screen),
+        screen,
+        button: event.button,
+        shiftKey: event.shiftKey,
+        altKey: event.altKey,
+        modKey: isMac ? event.metaKey : event.ctrlKey,
+        coalesced,
+      };
+    };
+    const updateCursor = () => {
+      const tool = controller.store.getState().activeTool;
+      let cursor: string;
+      if (gesture?.kind === "pan") cursor = "grabbing";
+      else if (spaceHeld || tool === "hand") cursor = "grab";
+      else if (tool === "zoom") cursor = altHeld ? "zoom-out" : "zoom-in";
+      else cursor = controller.tools.cursor(lastPointer);
+      element.style.cursor = cursor;
+    };
     const pinchMetrics = () => {
       const [a, b] = [...pointers.values()];
       return {
@@ -134,6 +157,8 @@ export function CanvasViewport() {
     };
 
     const onPointerDown = (event: PointerEvent) => {
+      // Input inside the on-canvas text editor belongs to the textarea, not to the tools.
+      if (isTypingTarget(event.target)) return;
       // Panning calls preventDefault, which would otherwise keep focus in a panel field and
       // swallow keyboard shortcuts.
       if (isTypingTarget(document.activeElement)) (document.activeElement as HTMLElement).blur();
@@ -144,6 +169,8 @@ export function CanvasViewport() {
       if (!viewport) return;
 
       if (pointers.size === 2) {
+        // A second finger turns any gesture into pinch-zoom; abandon tool input.
+        if (gesture?.kind === "tool") controller.tools.cancel();
         const { distance, mid } = pinchMetrics();
         gesture = {
           kind: "pinch",
@@ -154,14 +181,18 @@ export function CanvasViewport() {
         return;
       }
       const tool = controller.store.getState().activeTool;
-      const wantsPan = tool === "hand" || event.button === 1 || element.dataset.space === "1";
+      const wantsPan = tool === "hand" || event.button === 1 || spaceHeld;
       if (wantsPan) {
         event.preventDefault();
         gesture = { kind: "pan", pointerId: event.pointerId, last: point };
-        setPanning(true);
-      } else if (tool === "zoom" && event.button === 0) {
-        controller.zoomStep(event.altKey ? -1 : 1, point);
+      } else if (tool === "zoom") {
+        if (event.button === 0) controller.zoomStep(event.altKey ? -1 : 1, point);
+      } else if (controller.tools.handlesPointer && event.button === 0) {
+        event.preventDefault();
+        gesture = { kind: "tool", pointerId: event.pointerId };
+        controller.tools.pointerDown(toolPointer(event)!);
       }
+      updateCursor();
     };
 
     const onPointerMove = (event: PointerEvent) => {
@@ -171,14 +202,19 @@ export function CanvasViewport() {
         const doc = screenToDocument(viewport, point);
         controller.cursor.set({ x: Math.floor(doc.x), y: Math.floor(doc.y) });
       }
-      if (!pointers.has(event.pointerId)) return;
-      pointers.set(event.pointerId, point);
-      if (!viewport || !gesture) return;
+      const pointer = toolPointer(event);
+      lastPointer = pointer;
+      if (pointers.has(event.pointerId)) pointers.set(event.pointerId, point);
 
-      if (gesture.kind === "pan" && gesture.pointerId === event.pointerId) {
+      if (!gesture) {
+        // Hover: tools may show feedback (brush outline) or a context cursor.
+        if (pointer && controller.tools.handlesPointer) controller.tools.pointerMove(pointer);
+      } else if (gesture.kind === "tool" && gesture.pointerId === event.pointerId && pointer) {
+        controller.tools.pointerMove(pointer);
+      } else if (viewport && gesture.kind === "pan" && gesture.pointerId === event.pointerId) {
         setViewport(panBy(viewport, point.x - gesture.last.x, point.y - gesture.last.y));
         gesture.last = point;
-      } else if (gesture.kind === "pinch" && pointers.size === 2) {
+      } else if (viewport && gesture.kind === "pinch" && pointers.size === 2) {
         const { distance, mid } = pinchMetrics();
         const zoomed = zoomAt(
           viewport,
@@ -188,21 +224,41 @@ export function CanvasViewport() {
         setViewport(panBy(zoomed, mid.x - gesture.lastMid.x, mid.y - gesture.lastMid.y));
         gesture.lastMid = mid;
       }
+      updateCursor();
     };
 
     const onPointerUp = (event: PointerEvent) => {
       pointers.delete(event.pointerId);
       if (element.hasPointerCapture(event.pointerId))
         element.releasePointerCapture(event.pointerId);
-      if (pointers.size === 0) {
+      if (gesture?.kind === "tool" && gesture.pointerId === event.pointerId) {
+        const pointer = toolPointer(event);
+        if (pointer) controller.tools.pointerUp(pointer);
         gesture = null;
-        setPanning(false);
-      } else if (gesture?.kind === "pinch") {
+      } else if (pointers.size === 0 || gesture?.kind === "pinch") {
         gesture = null;
       }
+      updateCursor();
     };
 
-    const onPointerLeave = () => controller.cursor.set(null);
+    const onPointerCancel = (event: PointerEvent) => {
+      pointers.delete(event.pointerId);
+      if (gesture?.kind === "tool") controller.tools.cancel();
+      gesture = null;
+      updateCursor();
+    };
+
+    const onPointerLeave = () => {
+      controller.cursor.set(null);
+      lastPointer = null;
+      if (!gesture) controller.tools.leave();
+    };
+
+    const onDoubleClick = (event: MouseEvent) => {
+      if (isTypingTarget(event.target)) return;
+      const pointer = toolPointer(event);
+      if (pointer && controller.tools.handlesPointer) controller.tools.doubleClick(pointer);
+    };
 
     const onWheel = (event: WheelEvent) => {
       const viewport = activeViewport();
@@ -221,36 +277,51 @@ export function CanvasViewport() {
       }
     };
 
+    const onKey = (event: KeyboardEvent) => {
+      altHeld = event.altKey;
+      if (event.code === "Space" && !isTypingTarget(event.target)) {
+        if (event.type === "keydown") event.preventDefault();
+        spaceHeld = event.type === "keydown";
+      }
+      updateCursor();
+    };
+    const onBlur = () => {
+      spaceHeld = false;
+      altHeld = false;
+      updateCursor();
+    };
+    const unsubscribeTool = controller.store.subscribe(updateCursor);
+
     element.addEventListener("pointerdown", onPointerDown);
     element.addEventListener("pointermove", onPointerMove);
     element.addEventListener("pointerup", onPointerUp);
-    element.addEventListener("pointercancel", onPointerUp);
+    element.addEventListener("pointercancel", onPointerCancel);
     element.addEventListener("pointerleave", onPointerLeave);
     element.addEventListener("wheel", onWheel, { passive: false });
+    element.addEventListener("dblclick", onDoubleClick);
+    window.addEventListener("keydown", onKey);
+    window.addEventListener("keyup", onKey);
+    window.addEventListener("blur", onBlur);
+    updateCursor();
     return () => {
+      unsubscribeTool();
       element.removeEventListener("pointerdown", onPointerDown);
       element.removeEventListener("pointermove", onPointerMove);
       element.removeEventListener("pointerup", onPointerUp);
-      element.removeEventListener("pointercancel", onPointerUp);
+      element.removeEventListener("pointercancel", onPointerCancel);
       element.removeEventListener("pointerleave", onPointerLeave);
       element.removeEventListener("wheel", onWheel);
+      element.removeEventListener("dblclick", onDoubleClick);
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("keyup", onKey);
+      window.removeEventListener("blur", onBlur);
     };
-  }, [controller]);
-
-  let cursor = "default";
-  if (panning) cursor = "grabbing";
-  else if (spaceHeld || activeTool === "hand") cursor = "grab";
-  else if (activeTool === "zoom") cursor = altHeld ? "zoom-out" : "zoom-in";
+  }, [controller, isMac]);
 
   return (
-    <div
-      ref={containerRef}
-      className={styles.viewport}
-      style={{ cursor }}
-      data-space={spaceHeld ? "1" : "0"}
-      data-testid="canvas-viewport"
-    >
+    <div ref={containerRef} className={styles.viewport} data-testid="canvas-viewport">
       <canvas ref={canvasRef} className={styles.canvas} role="img" aria-label="Document canvas" />
+      <TextEditorOverlay />
     </div>
   );
 }

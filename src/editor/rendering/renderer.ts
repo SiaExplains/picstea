@@ -1,6 +1,8 @@
 import type { EditorDocument } from "../core/document/types";
 import type { Size, Viewport } from "../core/viewport/viewport";
-import type { AssetResolver } from "./compositing/compositor";
+import type { ContentSizer } from "../core/geometry/layer-geometry";
+import type { AssetResolver, CompositePreview } from "./compositing/compositor";
+import type { Overlay } from "./overlay";
 
 /**
  * Rendering abstraction (ADR-0002). The editor talks to a Renderer; Canvas 2D is the only
@@ -15,6 +17,10 @@ export interface RenderScene {
   readonly assets: AssetResolver;
   /** Changes when assets finish decoding, so cached composites can be invalidated. */
   readonly assetVersion: number;
+  readonly sizer: ContentSizer;
+  /** Uncommitted tool output (stroke in progress, shape draft). Forces a re-composite. */
+  readonly preview?: CompositePreview;
+  readonly overlays?: readonly Overlay[];
 }
 
 export interface Renderer {

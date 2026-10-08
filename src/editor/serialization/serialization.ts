@@ -7,7 +7,7 @@ import { ValidationError, validateDocument } from "./validate";
  * To change the stored shape: bump CURRENT_SCHEMA_VERSION, add a migration from the previous
  * version, and update the validator. Never edit a released migration.
  */
-export const CURRENT_SCHEMA_VERSION = 1;
+export const CURRENT_SCHEMA_VERSION = 2;
 
 export interface SerializedProject {
   readonly schemaVersion: number;
@@ -16,7 +16,14 @@ export interface SerializedProject {
 
 /** migrations[n] upgrades a version-n document to version n+1. */
 export type Migration = (document: unknown) => unknown;
-export const MIGRATIONS: Readonly<Record<number, Migration>> = {};
+export const MIGRATIONS: Readonly<Record<number, Migration>> = {
+  /*
+   * v2 (0.2.0) added shape and text layers and allowed raster layers without content
+   * (assetId: null). Every v1 document is already a valid v2 document, so this step is the
+   * identity — it exists so older builds refuse v2 projects instead of misreading them.
+   */
+  1: (document) => document,
+};
 
 export function serializeDocument(doc: EditorDocument): SerializedProject {
   // JSON round trip guarantees a plain, structured-clone-safe value with no shared references.

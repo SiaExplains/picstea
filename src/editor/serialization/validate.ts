@@ -2,6 +2,9 @@ import { isHexColor } from "../core/document/factory";
 import { checkDimensions } from "../core/document/limits";
 import {
   BLEND_MODES,
+  FONT_FAMILIES,
+  type FontFamily,
+  type StrokeStyle,
   type BlendMode,
   type EditorDocument,
   type Guide,
@@ -101,19 +104,71 @@ function layer(value: unknown, path: string): Layer {
       return {
         ...base,
         kind: "raster",
-        assetId: str(o.assetId, `${path}.assetId`, 128),
+        assetId: o.assetId === null ? null : str(o.assetId, `${path}.assetId`, 128),
         width,
         height,
       };
     }
     case "fill": {
-      const color = str(o.color, `${path}.color`, 7);
-      if (!isHexColor(color)) fail(`${path}.color`, "#rrggbb");
-      return { ...base, kind: "fill", color: color.toLowerCase() };
+      return { ...base, kind: "fill", color: hexColor(o.color, `${path}.color`) };
+    }
+    case "shape": {
+      if (o.shape !== "rect" && o.shape !== "ellipse" && o.shape !== "line") {
+        fail(`${path}.shape`, "rect|ellipse|line");
+      }
+      return {
+        ...base,
+        kind: "shape",
+        shape: o.shape,
+        width: num(o.width, `${path}.width`, 0, 1e6),
+        height: num(o.height, `${path}.height`, 0, 1e6),
+        fill: o.fill === null || o.shape === "line" ? null : hexColor(o.fill, `${path}.fill`),
+        stroke: o.stroke === null ? null : stroke(o.stroke, `${path}.stroke`),
+        cornerRadius: num(o.cornerRadius, `${path}.cornerRadius`, 0, 1e6),
+      };
+    }
+    case "text": {
+      if (
+        typeof o.fontFamily !== "string" ||
+        !(FONT_FAMILIES as readonly string[]).includes(o.fontFamily)
+      ) {
+        fail(`${path}.fontFamily`, "known font");
+      }
+      if (o.fontWeight !== 400 && o.fontWeight !== 700) fail(`${path}.fontWeight`, "400|700");
+      if (o.align !== "left" && o.align !== "center" && o.align !== "right") {
+        fail(`${path}.align`, "left|center|right");
+      }
+      return {
+        ...base,
+        kind: "text",
+        text: str(o.text, `${path}.text`, 10_000),
+        fontFamily: o.fontFamily as FontFamily,
+        fontSize: num(o.fontSize, `${path}.fontSize`, 1, 2000),
+        fontWeight: o.fontWeight,
+        italic: bool(o.italic, `${path}.italic`),
+        color: hexColor(o.color, `${path}.color`),
+        align: o.align,
+        lineHeight: num(o.lineHeight, `${path}.lineHeight`, 0.5, 5),
+        letterSpacing: num(o.letterSpacing, `${path}.letterSpacing`, -100, 500),
+      };
     }
     default:
       fail(`${path}.kind`, "known layer kind");
   }
+}
+
+function hexColor(value: unknown, path: string): string {
+  const color = str(value, path, 7);
+  if (!isHexColor(color)) fail(path, "#rrggbb");
+  return color.toLowerCase();
+}
+
+function stroke(value: unknown, path: string): StrokeStyle {
+  const o = obj(value, path);
+  return {
+    color: hexColor(o.color, `${path}.color`),
+    width: num(o.width, `${path}.width`, 0.01, 1000),
+  };
 }
 
 function guide(value: unknown, path: string): Guide {

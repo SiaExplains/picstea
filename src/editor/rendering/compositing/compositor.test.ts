@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createDocument, createFillLayer, createRasterLayer } from "../../core/document/factory";
 import type { EditorDocument } from "../../core/document/types";
+import { estimateTextSizer } from "../text/text-layout";
 import { compositeDocument, compositeOperation, type CompositeContext } from "./compositor";
 
 /** Records draw calls along with the state they were made under. */
@@ -67,7 +68,12 @@ describe("compositeDocument", () => {
   it("draws visible layers bottom to top with opacity and blend mode", () => {
     const { ctx, calls } = recorder();
     const bitmap = {} as CanvasImageSource;
-    const result = compositeDocument(ctx, doc(), { getBitmap: () => bitmap });
+    const result = compositeDocument(
+      ctx,
+      doc(),
+      { getBitmap: () => bitmap },
+      { sizer: estimateTextSizer },
+    );
 
     expect(result.pendingAssetIds).toEqual([]);
     const draws = calls.filter((c) => c.op === "fillRect" || c.op === "drawImage");
@@ -92,7 +98,12 @@ describe("compositeDocument", () => {
 
   it("reports raster layers whose bitmaps are not decoded yet", () => {
     const { ctx, calls } = recorder();
-    const result = compositeDocument(ctx, doc(), { getBitmap: () => undefined });
+    const result = compositeDocument(
+      ctx,
+      doc(),
+      { getBitmap: () => undefined },
+      { sizer: estimateTextSizer },
+    );
     expect(result.pendingAssetIds).toEqual(["img"]);
     expect(calls.some((c) => c.op === "drawImage")).toBe(false);
   });
@@ -101,7 +112,12 @@ describe("compositeDocument", () => {
     const { ctx, calls } = recorder();
     const d = doc();
     const transparent = { ...d, layers: d.layers.map((l) => ({ ...l, opacity: 0 })) };
-    compositeDocument(ctx, transparent, { getBitmap: () => undefined });
+    compositeDocument(
+      ctx,
+      transparent,
+      { getBitmap: () => undefined },
+      { sizer: estimateTextSizer },
+    );
     expect(calls.map((c) => c.op)).toEqual(["clearRect"]);
   });
 

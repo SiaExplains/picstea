@@ -26,6 +26,18 @@ const FEATURES = [
     body: "Stack images and colour fills, reorder them, change opacity and choose from 16 blend modes.",
   },
   {
+    title: "Paint, draw and add text",
+    body: "Brush and eraser with adjustable size and hardness, rectangles, ellipses and lines that stay editable, and text you type right on the canvas.",
+  },
+  {
+    title: "Move, transform and crop",
+    body: "Move, scale, rotate and flip any layer with handles or exact numbers, and crop the canvas without losing pixels outside it.",
+  },
+  {
+    title: "Export PNG, JPEG and WebP",
+    body: "Save your work as an image file. The file is created on your device and goes straight to your downloads.",
+  },
+  {
     title: "Undo history",
     body: "Every change can be undone and redone, including layer edits and renames.",
   },
@@ -57,8 +69,8 @@ const FAQ = [
     a: "In your browser's local storage (IndexedDB). Browsers can clear this storage, so keep important work exported as files.",
   },
   {
-    q: "Which file types can I open?",
-    a: "PNG, JPEG and WebP today. Export, PSD and more formats are on the roadmap.",
+    q: "Which file types are supported?",
+    a: "You can open and export PNG, JPEG and WebP images. PSD, SVG and PDF are on the roadmap.",
   },
 ];
 

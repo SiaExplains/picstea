@@ -16,6 +16,8 @@ export interface Command {
    * undo step — e.g. every tick of an opacity slider drag.
    */
   readonly mergeKey?: string;
+  /** Keep merging same-key changes until history is sealed, however slow the gesture is. */
+  readonly mergeUntilSealed?: boolean;
   apply(doc: EditorDocument): EditorDocument;
 }
 

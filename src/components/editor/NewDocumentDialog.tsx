@@ -69,8 +69,11 @@ export function NewDocumentDialog({ open, onClose }: { open: boolean; onClose: (
       ref={dialogRef}
       className={styles.dialog}
       aria-labelledby="new-doc-title"
-      onClose={onClose}
-      onCancel={onClose}
+      // The native close event is queued asynchronously; ignore a stale one that arrives after
+      // the dialog has already been reopened.
+      onClose={(event) => {
+        if (!event.currentTarget.open) onClose();
+      }}
     >
       <form className={styles.dialogForm} onSubmit={submit} noValidate>
         <h2 id="new-doc-title" className={styles.dialogTitle}>

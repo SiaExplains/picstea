@@ -33,10 +33,11 @@ src/app/          Next.js routes: landing page, /editor, robots, sitemap, error 
 src/components/   React UI (editor chrome, panels, dialogs; marketing)
 src/editor/       Framework-independent engine — no React/Next imports (lint-enforced)
   core/           document model, commands, history, store, viewport, shortcuts
-  controller/     use cases: open, import, save, restore, autosave
+  controller/     use cases: open, import, save, restore, autosave, export; tool routing
+  tools/          move/transform, crop, brush/eraser, shape, text (framework-free)
   rendering/      Renderer interface, Canvas 2D renderer, compositor
   assets/         immutable binary assets
-  formats/        untrusted-input parsing (raster headers)
+  formats/        untrusted-input parsing (raster headers), raster export
   persistence/    ProjectStorage: IndexedDB + memory
   serialization/  versioned format, migrations, validation
 src/lib/          logging, SEO helpers

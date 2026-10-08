@@ -10,9 +10,17 @@ import {
   undo as undoHistory,
   type HistoryState,
 } from "./history/history";
+import {
+  DEFAULT_COLORS,
+  DEFAULT_TOOL_SETTINGS,
+  type Colors,
+  type ToolId,
+  type ToolSettings,
+} from "./tool-settings";
 import { DEFAULT_VIEWPORT, type Viewport } from "./viewport/viewport";
+import { dropOldest } from "./history/history";
 
-export type ToolId = "hand" | "zoom";
+export type { ToolId } from "./tool-settings";
 
 /** One open document tab. */
 export interface DocumentSession {
@@ -32,6 +40,8 @@ export interface EditorState {
   readonly sessions: readonly DocumentSession[];
   readonly activeDocumentId: string | null;
   readonly activeTool: ToolId;
+  readonly toolSettings: ToolSettings;
+  readonly colors: Colors;
 }
 
 export type DispatchResult = { ok: true; changed: boolean } | { ok: false; error: string };
@@ -47,7 +57,13 @@ export const isDirty = (session: DocumentSession) => session.revision !== sessio
  * State is replaced, never mutated, so snapshots are safe to compare by reference.
  */
 export class EditorStore {
-  private state: EditorState = { sessions: [], activeDocumentId: null, activeTool: "hand" };
+  private state: EditorState = {
+    sessions: [],
+    activeDocumentId: null,
+    activeTool: "move",
+    toolSettings: DEFAULT_TOOL_SETTINGS,
+    colors: DEFAULT_COLORS,
+  };
   private readonly listeners = new Set<Listener>();
 
   constructor(private readonly clock: () => number = Date.now) {}
@@ -103,6 +119,33 @@ export class EditorStore {
     if (this.state.activeTool !== tool) this.setState({ ...this.state, activeTool: tool });
   }
 
+  updateToolSettings<K extends keyof ToolSettings>(tool: K, patch: Partial<ToolSettings[K]>): void {
+    const current = this.state.toolSettings[tool];
+    const next = { ...current, ...patch };
+    if ((Object.keys(patch) as (keyof ToolSettings[K])[]).every((k) => current[k] === next[k])) {
+      return;
+    }
+    this.setState({ ...this.state, toolSettings: { ...this.state.toolSettings, [tool]: next } });
+  }
+
+  setColors(colors: Partial<Colors>): void {
+    const next = { ...this.state.colors, ...colors };
+    if (
+      next.foreground === this.state.colors.foreground &&
+      next.background === this.state.colors.background
+    ) {
+      return;
+    }
+    this.setState({ ...this.state, colors: next });
+  }
+
+  /** Forget the oldest undo steps of a document (memory budget). */
+  trimHistory(documentId: string, count: number): void {
+    const session = this.getSession(documentId);
+    if (!session || count <= 0) return;
+    this.updateSession(documentId, { history: dropOldest(session.history, count) });
+  }
+
   /** Apply an undoable command to a document (the active one by default). */
   dispatch(command: Command, documentId = this.state.activeDocumentId): DispatchResult {
     const session = this.getSession(documentId);
@@ -131,6 +174,7 @@ export class EditorStore {
           before: session.document,
           after: stamped,
           mergeKey: command.mergeKey,
+          mergeUntilSealed: command.mergeUntilSealed,
         },
         now,
       ),

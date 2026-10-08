@@ -37,7 +37,7 @@ test("Gate 2: create, edit, undo/redo, save locally and restore after reload", a
   await createDocument(page, "Gate two");
   expect(await layerNames(page)).toEqual(["Background"]);
 
-  await page.getByRole("button", { name: "New Fill Layer" }).click();
+  await page.getByRole("button", { name: "New Layer", exact: true }).click();
   expect(await layerNames(page)).toEqual(["Layer 1", "Background"]);
 
   // Rename via double-click.
@@ -113,7 +113,7 @@ test("local-first: opening and editing an image sends no data anywhere", async (
     .setInputFiles({ name: "photo.png", mimeType: "image/png", buffer: png });
   await expect(page.getByRole("tab", { name: /photo/ })).toBeVisible();
   expect(await layerNames(page)).toEqual(["photo"]);
-  await page.getByRole("button", { name: "New Fill Layer" }).click();
+  await page.getByRole("button", { name: "New Layer", exact: true }).click();
   await page.getByLabel("Opacity percent").fill("40");
   await page.getByTestId("canvas-viewport").click();
   await page.keyboard.press(process.platform === "darwin" ? "Meta+s" : "Control+s");

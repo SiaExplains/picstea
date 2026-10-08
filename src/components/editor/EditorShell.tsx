@@ -9,6 +9,7 @@ import { DocumentTabs, OptionsBar, StatusBar, Toolbar } from "./Chrome";
 import { useActiveSession, useController, useIsMac } from "./editor-context";
 import styles from "./editor.module.css";
 import { LayersPanel } from "./LayersPanel";
+import { ExportDialog } from "./ExportDialog";
 import { MenuBar } from "./MenuBar";
 import { NewDocumentDialog } from "./NewDocumentDialog";
 import { Notices } from "./Notices";
@@ -34,6 +35,7 @@ export function EditorShell() {
   const session = useActiveSession();
   const isMac = useIsMac();
   const [newDialogOpen, setNewDialogOpen] = useState(false);
+  const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const [dragging, setDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const pickModeRef = useRef<"open" | "place">("open");
@@ -41,6 +43,7 @@ export function EditorShell() {
   const hosts = useMemo<ActionHosts>(
     () => ({
       openNewDocumentDialog: () => setNewDialogOpen(true),
+      openExportDialog: () => setExportDialogOpen(true),
       pickImage: (mode) => {
         pickModeRef.current = mode;
         fileInputRef.current?.click();
@@ -63,8 +66,22 @@ export function EditorShell() {
   // Keyboard shortcuts.
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (newDialogOpen || event.defaultPrevented) return;
+      // Check the DOM rather than React state, which can lag a frame behind a closing dialog.
+      if (event.defaultPrevented || document.querySelector("dialog[open]")) return;
       if (isTypingTarget(event.target)) return;
+      // The active tool gets first refusal on plain keys (arrows, Enter, Esc, [ ]).
+      const modKey = isMac ? event.metaKey : event.ctrlKey;
+      if (
+        controller.tools.keyDown({
+          key: event.key,
+          shiftKey: event.shiftKey,
+          altKey: event.altKey,
+          modKey,
+        })
+      ) {
+        event.preventDefault();
+        return;
+      }
       const action = matchShortcut(event, isMac);
       if (!action) return;
       event.preventDefault();
@@ -72,7 +89,7 @@ export function EditorShell() {
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [actions, isMac, newDialogOpen]);
+  }, [actions, controller, isMac]);
 
   // Paste an image: into the open document as a layer, otherwise as a new document.
   useEffect(() => {
@@ -124,7 +141,7 @@ export function EditorShell() {
     >
       <MenuBar actions={actions} />
       <OptionsBar actions={actions} />
-      <Toolbar />
+      <Toolbar actions={actions} />
       <main className={styles.main} aria-label="Workspace">
         <DocumentTabs />
         {session ? <CanvasViewport /> : <StartScreen actions={actions} />}
@@ -136,6 +153,7 @@ export function EditorShell() {
       </aside>
       <StatusBar />
       <NewDocumentDialog open={newDialogOpen} onClose={() => setNewDialogOpen(false)} />
+      <ExportDialog open={exportDialogOpen} onClose={() => setExportDialogOpen(false)} />
       <Notices />
       <input
         ref={fileInputRef}

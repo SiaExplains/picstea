@@ -14,20 +14,36 @@ import {
   ImageIcon,
   LockIcon,
   PlusIcon,
+  ShapeIcon,
+  TextIcon,
   TrashIcon,
   UnlockIcon,
 } from "./icons";
 import type { UiAction, UiActionId } from "./use-editor-actions";
 
 function LayerThumb({ layer }: { layer: Layer }) {
-  if (layer.kind === "fill") {
-    return <span className={styles.layerThumb} style={{ background: layer.color }} aria-hidden />;
+  switch (layer.kind) {
+    case "fill":
+      return <span className={styles.layerThumb} style={{ background: layer.color }} aria-hidden />;
+    case "text":
+      return (
+        <span className={styles.layerThumb} aria-hidden>
+          <TextIcon size={12} />
+        </span>
+      );
+    case "shape":
+      return (
+        <span className={styles.layerThumb} aria-hidden>
+          <ShapeIcon size={12} />
+        </span>
+      );
+    case "raster":
+      return (
+        <span className={styles.layerThumb} aria-hidden>
+          {layer.assetId && <ImageIcon size={12} />}
+        </span>
+      );
   }
-  return (
-    <span className={styles.layerThumb} aria-hidden>
-      <ImageIcon size={12} />
-    </span>
-  );
 }
 
 function LayerRow({ layer, active }: { layer: Layer; active: boolean }) {
