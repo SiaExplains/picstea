@@ -62,8 +62,14 @@ describe("serialization", () => {
     expect(result.ok && result.migratedFrom).toBe(1);
   });
 
+  it("upgrades real v1 projects (0.1.0) to the current version", () => {
+    const doc = sampleDocument();
+    const v1 = { schemaVersion: 1, document: JSON.parse(JSON.stringify(doc)) };
+    expect(deserializeProject(v1)).toEqual({ ok: true, document: doc, migratedFrom: 1 });
+  });
+
   it("fails cleanly when a migration is missing or throws", () => {
-    const v1 = serializeDocument(sampleDocument());
+    const v1 = { ...serializeDocument(sampleDocument()), schemaVersion: 1 };
     expect(deserializeProject(v1, {}, 2)).toEqual({
       ok: false,
       error: expect.stringContaining("No upgrade path"),

@@ -1,0 +1,74 @@
+import type { AssetStore } from "../assets/asset-store";
+import type { EditorStore } from "../core/editor-store";
+import type { ContentSizer } from "../core/geometry/layer-geometry";
+import type { Point, Viewport } from "../core/viewport/viewport";
+import type { SurfaceFactory } from "../rendering/canvas/canvas2d-renderer";
+import type { CompositePreview } from "../rendering/compositing/compositor";
+import type { Overlay } from "../rendering/overlay";
+
+/**
+ * Editing tools (ADR-0007). Tools are plain objects driven by the viewport: they receive pointer
+ * input in document space, change the document only through commands, and describe transient
+ * feedback (previews, overlays) for the renderer. No React, no DOM events.
+ */
+
+export interface ToolPointer {
+  /** Document coordinates. */
+  readonly doc: Point;
+  /** Viewport-local CSS pixels. */
+  readonly screen: Point;
+  readonly button: number;
+  readonly shiftKey: boolean;
+  readonly altKey: boolean;
+  /** Cmd on macOS, Ctrl elsewhere. */
+  readonly modKey: boolean;
+  /** Intermediate positions since the last event (high-frequency pen/mouse input), in document space. */
+  readonly coalesced?: readonly Point[];
+}
+
+export interface ToolKey {
+  readonly key: string;
+  readonly shiftKey: boolean;
+  readonly altKey: boolean;
+  readonly modKey: boolean;
+}
+
+export interface ToolContext {
+  readonly store: EditorStore;
+  readonly assets: AssetStore;
+  readonly sizer: ContentSizer;
+  readonly createSurface: SurfaceFactory;
+  viewport(): Viewport;
+  notify(kind: "info" | "error", message: string): void;
+  /** Ask for a redraw because previews/overlays changed. */
+  invalidate(): void;
+  /** Called after new pixel assets were committed, so memory can be rebalanced. */
+  pixelsCommitted(): void;
+  /** Open the on-canvas text editor. */
+  beginTextEdit(request: TextEditRequest): void;
+}
+
+export type TextEditRequest =
+  | { readonly mode: "edit"; readonly layerId: string }
+  | { readonly mode: "new"; readonly at: Point };
+
+export interface Tool {
+  readonly id: string;
+  /** CSS cursor for the current pointer position (null when the pointer is outside). */
+  cursor(ctx: ToolContext, pointer: ToolPointer | null): string;
+  pointerDown(ctx: ToolContext, pointer: ToolPointer): void;
+  pointerMove(ctx: ToolContext, pointer: ToolPointer): void;
+  pointerUp(ctx: ToolContext, pointer: ToolPointer): void;
+  /** Return true if the key was handled. */
+  keyDown?(ctx: ToolContext, key: ToolKey): boolean;
+  doubleClick?(ctx: ToolContext, pointer: ToolPointer): void;
+  /** The pointer left the canvas. */
+  leave?(ctx: ToolContext): void;
+  /** Abort any gesture in progress without committing. */
+  cancel(ctx: ToolContext): void;
+  overlays(ctx: ToolContext): readonly Overlay[];
+  preview(ctx: ToolContext): CompositePreview | undefined;
+}
+
+/** Screen-space hit radius for handles, in CSS pixels. */
+export const HANDLE_HIT_PX = 7;

@@ -10,6 +10,8 @@ export interface HistoryEntry {
   readonly before: EditorDocument;
   readonly after: EditorDocument;
   readonly mergeKey?: string;
+  /** Merge with later same-key changes regardless of time until sealed (pointer gestures). */
+  readonly mergeUntilSealed?: boolean;
   /** ms since epoch of the last change merged into this entry */
   readonly timestamp: number;
 }
@@ -41,7 +43,7 @@ export function recordChange(
     last !== undefined &&
     last.mergeKey === change.mergeKey &&
     last.after === change.before &&
-    now - last.timestamp <= MERGE_WINDOW_MS;
+    (change.mergeUntilSealed === true || now - last.timestamp <= MERGE_WINDOW_MS);
 
   if (canMerge) {
     const merged: HistoryEntry = { ...last, after: change.after, timestamp: now };
@@ -96,3 +98,9 @@ export const canUndo = (state: HistoryState) => state.past.length > 0;
 export const canRedo = (state: HistoryState) => state.future.length > 0;
 export const undoLabel = (state: HistoryState) => state.past.at(-1)?.label ?? null;
 export const redoLabel = (state: HistoryState) => state.future[0]?.label ?? null;
+
+/** Remove the `count` oldest undo entries (used to stay within the pixel-memory budget). */
+export function dropOldest(state: HistoryState, count: number): HistoryState {
+  if (count <= 0 || state.past.length === 0) return state;
+  return { ...state, past: state.past.slice(Math.min(count, state.past.length)) };
+}

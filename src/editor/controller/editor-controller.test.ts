@@ -60,7 +60,7 @@ describe("EditorController", () => {
     const fresh = setup(storage).controller;
     await fresh.openProject(doc.id);
     const layer = fresh.store.getSession()!.document.layers[0];
-    expect(layer.kind === "raster" && fresh.assets.has(layer.assetId)).toBe(true);
+    expect(layer.kind === "raster" && fresh.assets.has(layer.assetId!)).toBe(true);
   });
 
   it("places an image as a centred layer in the active document", async () => {
@@ -118,7 +118,7 @@ describe("EditorController", () => {
     await controller.placeImageFile(png(), "a.png");
     const doc = controller.store.getSession()!.document;
     const layer = doc.layers.at(-1)!;
-    const assetId = layer.kind === "raster" ? layer.assetId : "";
+    const assetId = (layer.kind === "raster" && layer.assetId) || "";
     controller.undo(); // layer gone from the current document, but redo still needs the asset
     await controller.closeDocument(doc.id);
     expect(controller.assets.has(assetId)).toBe(false);

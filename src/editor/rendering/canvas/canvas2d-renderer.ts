@@ -1,5 +1,8 @@
 import type { EditorDocument } from "../../core/document/types";
 import { compositeDocument } from "../compositing/compositor";
+import { documentToScreen, type Viewport } from "../../core/viewport/viewport";
+import { rectHandles } from "../../core/geometry/rect";
+import { HANDLE_SIZE_PX, type Overlay } from "../overlay";
 import type { Renderer, RenderScene } from "../renderer";
 
 export interface Canvas2DTheme {
@@ -7,6 +10,9 @@ export interface Canvas2DTheme {
   checkerLight: string;
   checkerDark: string;
   border: string;
+  overlay: string;
+  overlayShadow: string;
+  cropShade: string;
 }
 
 export const DEFAULT_THEME: Canvas2DTheme = {
@@ -14,6 +20,9 @@ export const DEFAULT_THEME: Canvas2DTheme = {
   checkerLight: "#ffffff",
   checkerDark: "#cccccc",
   border: "rgba(0, 0, 0, 0.6)",
+  overlay: "#4c8dff",
+  overlayShadow: "rgba(0, 0, 0, 0.55)",
+  cropShade: "rgba(0, 0, 0, 0.55)",
 };
 
 /** Creates an offscreen surface. Injected so the renderer is testable and OffscreenCanvas-aware. */
@@ -39,6 +48,7 @@ export class Canvas2DRenderer implements Renderer {
   private compositeOf: EditorDocument | null = null;
   private compositeAssetVersion = -1;
   private compositeComplete = false;
+  private compositeHadPreview = false;
   private checker: CanvasPattern | null = null;
 
   constructor(
@@ -84,6 +94,97 @@ export class Canvas2DRenderer implements Renderer {
     ctx.strokeStyle = this.theme.border;
     ctx.lineWidth = 1;
     ctx.strokeRect(Math.round(x) - 0.5, Math.round(y) - 0.5, Math.round(w) + 1, Math.round(h) + 1);
+
+    for (const overlay of scene.overlays ?? []) this.drawOverlay(ctx, overlay, viewport, screen);
+  }
+
+  private drawOverlay(
+    ctx: CanvasRenderingContext2D,
+    overlay: Overlay,
+    viewport: Viewport,
+    screen: { width: number; height: number },
+  ): void {
+    const toScreen = (p: { x: number; y: number }) => documentToScreen(viewport, p);
+    ctx.save();
+    ctx.lineWidth = 1;
+    switch (overlay.kind) {
+      case "transform": {
+        const pts = overlay.corners.map(toScreen);
+        this.strokeOutline(ctx, () => {
+          ctx.beginPath();
+          pts.forEach((p, i) => (i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)));
+          ctx.closePath();
+        });
+        if (overlay.handles) {
+          const mids = pts.map((p, i) => {
+            const q = pts[(i + 1) % 4];
+            return { x: (p.x + q.x) / 2, y: (p.y + q.y) / 2 };
+          });
+          for (const p of [...pts, ...mids]) this.drawHandle(ctx, p);
+        }
+        break;
+      }
+      case "crop": {
+        const tl = toScreen(overlay.rect);
+        const br = toScreen({
+          x: overlay.rect.x + overlay.rect.width,
+          y: overlay.rect.y + overlay.rect.height,
+        });
+        ctx.fillStyle = this.theme.cropShade;
+        ctx.beginPath();
+        ctx.rect(0, 0, screen.width, screen.height);
+        ctx.rect(tl.x, tl.y, br.x - tl.x, br.y - tl.y);
+        ctx.fill("evenodd");
+        this.strokeOutline(ctx, () => {
+          ctx.beginPath();
+          ctx.rect(tl.x, tl.y, br.x - tl.x, br.y - tl.y);
+          // Rule-of-thirds guides.
+          for (const f of [1 / 3, 2 / 3]) {
+            ctx.moveTo(tl.x + (br.x - tl.x) * f, tl.y);
+            ctx.lineTo(tl.x + (br.x - tl.x) * f, br.y);
+            ctx.moveTo(tl.x, tl.y + (br.y - tl.y) * f);
+            ctx.lineTo(br.x, tl.y + (br.y - tl.y) * f);
+          }
+        });
+        for (const p of Object.values(rectHandles(overlay.rect))) this.drawHandle(ctx, toScreen(p));
+        break;
+      }
+      case "brush": {
+        const c = toScreen(overlay.center);
+        const r = Math.max(1, overlay.radius * viewport.zoom);
+        this.strokeOutline(ctx, () => {
+          ctx.beginPath();
+          ctx.arc(c.x, c.y, r, 0, Math.PI * 2);
+        });
+        break;
+      }
+    }
+    ctx.restore();
+  }
+
+  /** A light line over a dark one, visible on any image. */
+  private strokeOutline(ctx: CanvasRenderingContext2D, path: () => void): void {
+    path();
+    ctx.strokeStyle = this.theme.overlayShadow;
+    ctx.lineWidth = 3;
+    ctx.stroke();
+    ctx.strokeStyle = this.theme.overlay;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+
+  private drawHandle(ctx: CanvasRenderingContext2D, p: { x: number; y: number }): void {
+    const half = HANDLE_SIZE_PX / 2;
+    ctx.fillStyle = "#ffffff";
+    ctx.strokeStyle = this.theme.overlay;
+    ctx.lineWidth = 1;
+    ctx.fillRect(Math.round(p.x - half), Math.round(p.y - half), HANDLE_SIZE_PX, HANDLE_SIZE_PX);
+    ctx.strokeRect(
+      Math.round(p.x - half) + 0.5,
+      Math.round(p.y - half) + 0.5,
+      HANDLE_SIZE_PX - 1,
+      HANDLE_SIZE_PX - 1,
+    );
   }
 
   dispose(): void {
@@ -99,6 +200,8 @@ export class Canvas2DRenderer implements Renderer {
   private ensureComposite(scene: RenderScene): void {
     const doc = scene.document;
     const upToDate =
+      !scene.preview &&
+      !this.compositeHadPreview &&
       this.compositeOf === doc &&
       (this.compositeComplete || this.compositeAssetVersion === scene.assetVersion);
     if (upToDate && this.composite) return;
@@ -118,7 +221,11 @@ export class Canvas2DRenderer implements Renderer {
     const ctx = this.composite.getContext("2d") as CanvasRenderingContext2D | null;
     if (!ctx) return;
 
-    const result = compositeDocument(ctx, doc, scene.assets);
+    const result = compositeDocument(ctx, doc, scene.assets, {
+      preview: scene.preview,
+      sizer: scene.sizer,
+    });
+    this.compositeHadPreview = !!scene.preview;
     this.compositeOf = doc;
     this.compositeAssetVersion = scene.assetVersion;
     this.compositeComplete = result.pendingAssetIds.length === 0;

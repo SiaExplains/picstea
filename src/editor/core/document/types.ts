@@ -52,7 +52,8 @@ export interface BaseLayer {
 /** Bitmap content stored as an immutable asset. */
 export interface RasterLayer extends BaseLayer {
   readonly kind: "raster";
-  readonly assetId: string;
+  /** null = fully transparent (a new, unpainted layer). */
+  readonly assetId: string | null;
   readonly width: number;
   readonly height: number;
 }
@@ -64,12 +65,69 @@ export interface FillLayer extends BaseLayer {
   readonly color: string;
 }
 
-/*
- * Extension point: GroupLayer, TextLayer, ShapeLayer, AdjustmentLayer and SmartObjectLayer join
- * this union in their gates (3–4, 9). Adding a kind requires a renderer case, a validator case
- * and — if it changes stored data — a schema migration.
+export type ShapeKind = "rect" | "ellipse" | "line";
+
+export interface StrokeStyle {
+  /** `#rrggbb` */
+  readonly color: string;
+  readonly width: number;
+}
+
+/**
+ * Vector shape in layer-local coordinates: the box (0,0)–(width,height). A line runs from the
+ * top-left to the bottom-right corner of its box (negative sizes are normalised by flipping the
+ * transform's scale, so width/height are always ≥ 0).
  */
-export type Layer = RasterLayer | FillLayer;
+export interface ShapeLayer extends BaseLayer {
+  readonly kind: "shape";
+  readonly shape: ShapeKind;
+  readonly width: number;
+  readonly height: number;
+  /** `#rrggbb` or null for no fill. Lines ignore fill. */
+  readonly fill: string | null;
+  readonly stroke: StrokeStyle | null;
+  readonly cornerRadius: number;
+}
+
+export const FONT_FAMILIES = [
+  "system-ui",
+  "Arial",
+  "Helvetica",
+  "Verdana",
+  "Trebuchet MS",
+  "Georgia",
+  "Times New Roman",
+  "Courier New",
+  "Impact",
+] as const;
+export type FontFamily = (typeof FONT_FAMILIES)[number];
+
+export type TextAlign = "left" | "center" | "right";
+
+/** Point text: lines split on "\n", no automatic wrapping. Origin is the top-left of the block. */
+export interface TextLayer extends BaseLayer {
+  readonly kind: "text";
+  readonly text: string;
+  readonly fontFamily: FontFamily;
+  /** px */
+  readonly fontSize: number;
+  readonly fontWeight: 400 | 700;
+  readonly italic: boolean;
+  /** `#rrggbb` */
+  readonly color: string;
+  readonly align: TextAlign;
+  /** Multiple of fontSize. */
+  readonly lineHeight: number;
+  /** px */
+  readonly letterSpacing: number;
+}
+
+/*
+ * Extension point: GroupLayer, AdjustmentLayer and SmartObjectLayer join this union in their
+ * gates (4, 9). Adding a kind requires a renderer case, a validator case, geometry sizing and —
+ * if it changes stored data — a schema migration.
+ */
+export type Layer = RasterLayer | FillLayer | ShapeLayer | TextLayer;
 export type LayerKind = Layer["kind"];
 
 export interface Guide {

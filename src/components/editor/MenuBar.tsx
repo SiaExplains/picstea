@@ -10,11 +10,35 @@ import type { UiAction, UiActionId } from "./use-editor-actions";
 type MenuEntry = UiActionId | "-";
 
 const MENUS: { label: string; items: MenuEntry[] }[] = [
-  { label: "File", items: ["file.new", "file.open", "file.place", "-", "file.save", "file.close"] },
-  { label: "Edit", items: ["edit.undo", "edit.redo"] },
+  {
+    label: "File",
+    items: [
+      "file.new",
+      "file.open",
+      "file.place",
+      "-",
+      "file.save",
+      "file.export",
+      "-",
+      "file.close",
+    ],
+  },
+  { label: "Edit", items: ["edit.undo", "edit.redo", "-", "tool.transform"] },
+  { label: "Image", items: ["image.crop"] },
   {
     label: "Layer",
-    items: ["layer.new", "layer.duplicate", "layer.delete", "-", "layer.moveUp", "layer.moveDown"],
+    items: [
+      "layer.new",
+      "layer.newFill",
+      "layer.duplicate",
+      "layer.delete",
+      "-",
+      "layer.moveUp",
+      "layer.moveDown",
+      "-",
+      "layer.flipH",
+      "layer.flipV",
+    ],
   },
   { label: "View", items: ["view.zoomIn", "view.zoomOut", "-", "view.fit", "view.actualPixels"] },
 ];

@@ -16,7 +16,7 @@ export function activeLayer(doc: EditorDocument): Layer | undefined {
 export function referencedAssetIds(doc: EditorDocument): string[] {
   const ids = new Set<string>();
   for (const layer of doc.layers) {
-    if (layer.kind === "raster") ids.add(layer.assetId);
+    if (layer.kind === "raster" && layer.assetId) ids.add(layer.assetId);
   }
   return [...ids];
 }

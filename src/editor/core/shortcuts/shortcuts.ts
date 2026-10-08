@@ -9,6 +9,7 @@ export type ActionId =
   | "file.new"
   | "file.open"
   | "file.save"
+  | "file.export"
   | "edit.undo"
   | "edit.redo"
   | "layer.new"
@@ -18,8 +19,17 @@ export type ActionId =
   | "view.zoomOut"
   | "view.fit"
   | "view.actualPixels"
+  | "tool.move"
+  | "tool.transform"
+  | "tool.crop"
+  | "tool.brush"
+  | "tool.eraser"
+  | "tool.shape"
+  | "tool.text"
   | "tool.hand"
-  | "tool.zoom";
+  | "tool.zoom"
+  | "colors.swap"
+  | "colors.reset";
 
 export interface KeyEventLike {
   readonly key: string;
@@ -35,6 +45,7 @@ export const DEFAULT_KEYMAP: Readonly<Record<ActionId, readonly string[]>> = {
   "file.new": ["Mod+Alt+N"],
   "file.open": ["Mod+O"],
   "file.save": ["Mod+S"],
+  "file.export": ["Mod+Shift+E"],
   "edit.undo": ["Mod+Z"],
   "edit.redo": ["Mod+Shift+Z", "Mod+Y"],
   "layer.new": ["Mod+Shift+N"],
@@ -44,8 +55,17 @@ export const DEFAULT_KEYMAP: Readonly<Record<ActionId, readonly string[]>> = {
   "view.zoomOut": ["Mod+-"],
   "view.fit": ["Mod+0"],
   "view.actualPixels": ["Mod+1"],
+  "tool.move": ["V"],
+  "tool.transform": ["Mod+T"],
+  "tool.crop": ["C"],
+  "tool.brush": ["B"],
+  "tool.eraser": ["E"],
+  "tool.shape": ["U"],
+  "tool.text": ["T"],
   "tool.hand": ["H"],
   "tool.zoom": ["Z"],
+  "colors.swap": ["X"],
+  "colors.reset": ["D"],
 };
 
 function normalizeKey(key: string): string {

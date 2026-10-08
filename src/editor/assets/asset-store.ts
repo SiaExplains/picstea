@@ -15,13 +15,19 @@ export interface AssetRecord {
   readonly mime: RasterMime;
   readonly width: number;
   readonly height: number;
-  readonly blob: Blob;
+  /** Encoded bytes; null for pixels created in the editor until they are first saved. */
+  readonly blob: Blob | null;
 }
 
-/** Turns encoded bytes into something drawable. Injected so the store works outside a browser. */
-export type BitmapDecoder = (blob: Blob) => Promise<CanvasImageSource & { close?: () => void }>;
+export type Drawable = CanvasImageSource & { close?: () => void };
 
-type Drawable = CanvasImageSource & { close?: () => void };
+/** Turns encoded bytes into something drawable. Injected so the store works outside a browser. */
+export type BitmapDecoder = (blob: Blob) => Promise<Drawable>;
+/** Turns a drawable into PNG bytes (used when painted pixels are saved). */
+export type BitmapEncoder = (bitmap: Drawable, width: number, height: number) => Promise<Blob>;
+
+const unsupportedEncoder: BitmapEncoder = () =>
+  Promise.reject(new Error("No image encoder is available."));
 
 export class AssetStore {
   private readonly records = new Map<string, AssetRecord>();
@@ -31,7 +37,10 @@ export class AssetStore {
   private readonly listeners = new Set<() => void>();
   private version = 0;
 
-  constructor(private readonly decode: BitmapDecoder) {}
+  constructor(
+    private readonly decode: BitmapDecoder,
+    private readonly encode: BitmapEncoder = unsupportedEncoder,
+  ) {}
 
   /** Bumped whenever a bitmap becomes available; renderers use it to invalidate caches. */
   getVersion = () => this.version;
@@ -57,6 +66,34 @@ export class AssetStore {
     return record;
   }
 
+  /** Store pixels produced in the editor (e.g. a finished brush stroke). Encoded lazily. */
+  addBitmap(bitmap: Drawable, width: number, height: number): AssetRecord {
+    return this.add({ mime: "image/png", width, height, blob: null }, bitmap);
+  }
+
+  /** Encoded bytes for persistence, encoding (once) if the asset was created in the editor. */
+  async getBlob(id: string): Promise<Blob> {
+    const record = this.records.get(id);
+    if (!record) throw new Error("Unknown asset.");
+    if (record.blob) return record.blob;
+    const bitmap = this.bitmaps.get(id);
+    if (!bitmap) throw new Error("Asset has neither bytes nor pixels.");
+    const blob = await this.encode(bitmap, record.width, record.height);
+    const current = this.records.get(id);
+    if (current) this.records.set(id, { ...current, blob });
+    return blob;
+  }
+
+  /** Rough decoded size of the given assets in bytes (RGBA), for memory budgeting. */
+  estimateBytes(ids: Iterable<string>): number {
+    let total = 0;
+    for (const id of new Set(ids)) {
+      const record = this.records.get(id);
+      if (record) total += record.width * record.height * 4;
+    }
+    return total;
+  }
+
   get(id: string): AssetRecord | undefined {
     return this.records.get(id);
   }
@@ -73,10 +110,11 @@ export class AssetStore {
     const bitmap = this.bitmaps.get(id);
     if (bitmap) return bitmap;
     const record = this.records.get(id);
-    if (record && !this.pending.has(id) && !this.failed.has(id)) {
+    if (record?.blob && !this.pending.has(id) && !this.failed.has(id)) {
+      const blob = record.blob;
       this.pending.set(
         id,
-        this.decode(record.blob)
+        this.decode(blob)
           .then((decoded) => {
             if (this.records.has(id)) {
               this.bitmaps.set(id, decoded);

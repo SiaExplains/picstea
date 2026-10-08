@@ -1,6 +1,6 @@
 # Feature status
 
-Last updated: 2026-10-08 · version 0.1.0 · current gate: **2 (Document Engine) — awaiting review**
+Last updated: 2026-10-08 · version 0.2.0 · current gate: **3 (Core Editing) — awaiting review**
 
 Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ deferred
 
@@ -24,7 +24,7 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 |---|---|---|
 | `/editor` route (noindex) | ✅ | |
 | Menu bar (File / Edit / Layer / View) | ✅ | WAI-ARIA menubar, keyboard navigable |
-| Toolbar | ✅ | Hand, Zoom — only real tools are shown |
+| Toolbar | ✅ | Move, Crop, Brush, Eraser, Shape, Text, Hand, Zoom + colour swatches |
 | Tool options bar | ✅ | |
 | Canvas viewport | ✅ | Canvas 2D, checkerboard, crisp pixels above 200% |
 | Zoom (steps, wheel, pinch, fit, 100%) / pan (hand, Space, middle button, wheel) | ✅ | |
@@ -39,7 +39,7 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 
 | Feature | Status | Notes |
 |---|---|---|
-| Document & layer model | ✅ | Raster + fill layers. Group/text/shape/adjustment kinds are extension points |
+| Document & layer model | ✅ | Raster, fill, shape and text layers (schema v2). Group/adjustment kinds are extension points |
 | Command system | ✅ | ADR-0003 |
 | Undo/redo history with merging | ✅ | |
 | Versioned serialization + migrations + validation | ✅ | ADR-0005 |
@@ -50,20 +50,35 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 | Layer ops: add fill, delete, rename, duplicate, reorder, visibility, lock, opacity, blend, fill colour | ✅ | Drag-and-drop reordering 📋 |
 | Canvas size command | ✅ | Engine only, no UI yet |
 
+## Gate 3 — Core editing
+
+| Feature | Status | Notes |
+|---|---|---|
+| Move tool (drag, auto-select, nudge) | ✅ | |
+| Free transform (scale, rotate, flip, numeric X/Y/W/H/angle) | ✅ | Skew/perspective 📋 |
+| Crop (non-destructive) | ✅ | Aspect-ratio presets 📋 |
+| Brush (size, hardness, opacity) | ✅ | Pen pressure 📋 |
+| Eraser | ✅ | |
+| Shapes: rectangle (rounded), ellipse, line | ✅ | Polygon 📋 |
+| Text: on-canvas editing, font, size, bold/italic, colour, align, line height, spacing | ✅ | Wrapping/rich text 📋 |
+| Export PNG / JPEG / WebP | ✅ | File System Access save dialog where supported |
+| Foreground/background colours | ✅ | Eyedropper, swatches 📋 |
+
 ## Later gates (summary)
 
 | Area | Status |
 |---|---|
-| Gate 3: move, crop, transform, brush, eraser, shapes, text, export | 📋 |
 | Gate 4: groups, masks, adjustment layers, effects | 📋 |
 | Gate 5: selections | 📋 |
-| Gate 6: formats (export PNG/JPEG/WebP, SVG, PDF, PSD) | 📋 |
-| Gate 7: workers, tiling, large documents | 📋 |
+| Gate 6: formats (SVG, PDF, PSD; open/save project files) | 📋 |
+| Gate 7: workers, tiling, tile-based undo, large documents | 📋 |
 | Gate 8: marketing pages, blog, consent, ads, sponsorships | 📋 |
 | Gate 10: cloud | ⏸ requires explicit product-owner approval |
 
 ## Known limitations
 
-- "New Layer" creates a solid-colour fill layer. Empty pixel layers arrive with the brush tool (Gate 3).
-- No export yet: work lives in browser storage until Gate 3 adds PNG/JPEG/WebP export.
+- Pixel layers have a fixed size. Painting outside a layer's box is clipped.
+- Each brush stroke keeps a full-layer copy for undo. Above ~768 MB the oldest undo steps are dropped (ADR-0007).
+- Scaling a shape also scales its stroke width.
+- Text is point text (manual line breaks, no wrapping). Fonts are limited to common system fonts.
 - Documents are capped at 12,000 px per side and 36 MP until tiled rendering (Gate 7).

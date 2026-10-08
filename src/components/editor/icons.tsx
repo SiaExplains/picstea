@@ -105,3 +105,48 @@ export const CloseIcon = (p: IconProps) => (
     <path d="m4 4 8 8M12 4l-8 8" />
   </Svg>
 );
+
+export const MoveIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M8 1.5v13M1.5 8h13M8 1.5 6 3.5M8 1.5l2 2M8 14.5l-2-2M8 14.5l2-2M1.5 8l2-2M1.5 8l2 2M14.5 8l-2-2M14.5 8l-2 2" />
+  </Svg>
+);
+
+export const CropIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M4 1.5V12h10.5M1.5 4H12v10.5" />
+  </Svg>
+);
+
+export const BrushIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M13.5 2.5 7 9" />
+    <path d="M6.2 9.3c-1.6-.2-2.9 1-3 2.6-.1 1.1-.7 1.8-1.7 2.1 2.6.9 5.3.2 5.9-2 .3-1.2-.1-2.2-1.2-2.7Z" />
+  </Svg>
+);
+
+export const EraserIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M6 13.5h8M2.8 9.7l6-6a1.4 1.4 0 0 1 2 0l2.5 2.5a1.4 1.4 0 0 1 0 2L8 13.5H5.2L2.8 11.1a1 1 0 0 1 0-1.4Z" />
+    <path d="m5.5 7 4.5 4.5" />
+  </Svg>
+);
+
+export const ShapeIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <rect x="1.5" y="1.5" width="8" height="8" rx="0.5" />
+    <circle cx="10.5" cy="10.5" r="4" />
+  </Svg>
+);
+
+export const TextIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M3 3.5V2.5h10v1M8 2.5v11M6 13.5h4" />
+  </Svg>
+);
+
+export const SwapIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M4 6V4.5a1.5 1.5 0 0 1 1.5-1.5H11m0 0L9.5 1.5M11 3 9.5 4.5" />
+  </Svg>
+);

@@ -5,6 +5,7 @@ import { activeLayer } from "@/editor/core/document/queries";
 import { BLEND_MODES, type BlendMode } from "@/editor/core/document/types";
 import { useActiveSession, useController } from "./editor-context";
 import styles from "./editor.module.css";
+import { ShapeSection, TextSection, TransformSection } from "./LayerSections";
 
 const BLEND_LABELS: Record<BlendMode, string> = {
   normal: "Normal",
@@ -121,9 +122,14 @@ export function PropertiesPanel() {
             )}
             {layer.kind === "raster" && (
               <p className={styles.muted}>
-                Image · {layer.width} × {layer.height} px at {layer.transform.x},{" "}
-                {layer.transform.y}
+                {layer.assetId ? "Pixel layer" : "Empty pixel layer"} · {layer.width} ×{" "}
+                {layer.height} px
               </p>
+            )}
+            {layer.kind === "text" && <TextSection key={`text-${layer.id}`} layer={layer} />}
+            {layer.kind === "shape" && <ShapeSection key={`shape-${layer.id}`} layer={layer} />}
+            {layer.kind !== "fill" && doc && (
+              <TransformSection key={`transform-${layer.id}`} layer={layer} doc={doc} />
             )}
           </fieldset>
         )}

@@ -1,15 +1,32 @@
 import { describeError, silentLogger, type Logger } from "@/lib/logging/logger";
-import { AssetStore, type BitmapDecoder } from "../assets/asset-store";
-import { addLayer, type Command } from "../core/commands";
+import { AssetStore, type BitmapDecoder, type BitmapEncoder } from "../assets/asset-store";
+import {
+  addLayer,
+  deleteLayer,
+  setLayerTransform,
+  updateTextLayer,
+  type Command,
+} from "../core/commands";
 import { EditorStore, isDirty, type DocumentSession } from "../core/editor-store";
 import {
   createDocument,
   createFillLayer,
+  createEmptyRasterLayer,
   createRasterLayer,
+  createTextLayer,
   DocumentError,
   nextLayerName,
   type NewDocumentOptions,
+  type TextStyle,
 } from "../core/document/factory";
+import type { Transform } from "../core/document/types";
+import { activeLayer } from "../core/document/queries";
+import {
+  isTransformable,
+  layerLocalSize,
+  type ContentSizer,
+} from "../core/geometry/layer-geometry";
+import { flipAboutCenter } from "../core/geometry/transform-handles";
 import { referencedAssetIds } from "../core/document/queries";
 import { createId } from "../core/ids";
 import { Observable } from "../core/observable";
@@ -21,7 +38,17 @@ import {
   type Point,
   type Size,
 } from "../core/viewport/viewport";
+import {
+  exportDocument,
+  exportFilename,
+  ExportError,
+  type ExportOptions,
+} from "../formats/export/raster-export";
 import { baseName, importRasterFile } from "../formats/raster/raster-import";
+import type { SurfaceFactory } from "../rendering/canvas/canvas2d-renderer";
+import { estimateTextSizer } from "../rendering/text/text-layout";
+import type { TextEditRequest } from "../tools/tool";
+import { ToolManager } from "./tool-manager";
 import { MemoryProjectStorage } from "../persistence/memory/memory-project-storage";
 import {
   StorageError,
@@ -47,9 +74,27 @@ export interface AppStatus {
 
 export type Result = { ok: true } | { ok: false; error: string };
 
+/** The on-canvas text editor's state while the user is typing. */
+export interface TextEditSession {
+  readonly documentId: string;
+  /** null while creating a new text layer. */
+  readonly layerId: string | null;
+  readonly text: string;
+  readonly style: TextStyle;
+  readonly transform: Transform;
+}
+
 export interface EditorControllerOptions {
   storage: ProjectStorage;
   decode: BitmapDecoder;
+  /** PNG-encodes pixels painted in the editor when they are saved. */
+  encode?: BitmapEncoder;
+  /** Offscreen surfaces for painting and export (browser only). */
+  createSurface?: SurfaceFactory;
+  /** Measures text; defaults to a rough estimate outside the browser. */
+  sizer?: ContentSizer;
+  /** Estimated decoded-pixel budget for open documents and their undo history, in bytes. */
+  pixelBudgetBytes?: number;
   logger?: Logger;
   /** Idle time after the last edit before autosaving. 0 disables autosave. */
   autosaveDelayMs?: number;
@@ -57,6 +102,11 @@ export interface EditorControllerOptions {
 }
 
 export const DEFAULT_AUTOSAVE_DELAY_MS = 1500;
+export const DEFAULT_PIXEL_BUDGET_BYTES = 768 * 1024 * 1024;
+
+const noSurfaces: SurfaceFactory = () => {
+  throw new Error("Offscreen canvas is not available.");
+};
 const MAX_NOTICES = 4;
 
 /**
@@ -71,18 +121,26 @@ export class EditorController {
   readonly viewportSize = new Observable<Size>({ width: 0, height: 0 });
   /** Pointer position in document pixels while over the canvas (for the status bar). */
   readonly cursor = new Observable<Point | null>(null);
+  readonly tools: ToolManager;
+  readonly textEdit = new Observable<TextEditSession | null>(null);
+  readonly sizer: ContentSizer;
+  readonly createSurface: SurfaceFactory;
 
   private storage: ProjectStorage;
   private readonly decode: BitmapDecoder;
   private readonly logger: Logger;
   private readonly autosaveDelayMs: number;
+  private readonly pixelBudgetBytes: number;
   private autosaveTimer: ReturnType<typeof setTimeout> | null = null;
   private readonly saveQueues = new Map<string, Promise<void>>();
   private readonly unsubscribe: () => void;
 
   constructor(options: EditorControllerOptions) {
     this.store = new EditorStore(options.clock);
-    this.assets = new AssetStore(options.decode);
+    this.assets = new AssetStore(options.decode, options.encode);
+    this.sizer = options.sizer ?? estimateTextSizer;
+    this.createSurface = options.createSurface ?? noSurfaces;
+    this.pixelBudgetBytes = options.pixelBudgetBytes ?? DEFAULT_PIXEL_BUDGET_BYTES;
     this.storage = options.storage;
     this.decode = options.decode;
     this.logger = options.logger ?? silentLogger;
@@ -92,7 +150,25 @@ export class EditorController {
       storagePersistent: options.storage.persistent,
       notices: [],
     });
+    this.tools = new ToolManager({
+      store: this.store,
+      assets: this.assets,
+      sizer: this.sizer,
+      createSurface: this.createSurface,
+      notify: (kind, message) => this.notify(kind, message),
+      pixelsCommitted: () => this.enforcePixelBudget(),
+      beginTextEdit: (request) => this.beginTextEdit(request),
+    });
+    let lastTool = this.store.getState().activeTool;
+    let lastDocument = this.store.getState().activeDocumentId;
     this.unsubscribe = this.store.subscribe(() => {
+      const { activeTool, activeDocumentId } = this.store.getState();
+      // Leaving the text tool or the document finishes the text being typed.
+      if (activeTool !== lastTool || activeDocumentId !== lastDocument) {
+        lastTool = activeTool;
+        lastDocument = activeDocumentId;
+        if (this.textEdit.get()) this.commitTextEdit();
+      }
       this.initializeViewport();
       this.scheduleAutosave();
     });
@@ -100,6 +176,7 @@ export class EditorController {
 
   dispose(): void {
     this.unsubscribe();
+    this.tools.dispose();
     if (this.autosaveTimer) clearTimeout(this.autosaveTimer);
     this.autosaveTimer = null;
   }
@@ -143,6 +220,31 @@ export class EditorController {
       if (error instanceof DocumentError) return { ok: false, error: error.message };
       throw error;
     }
+  }
+
+  /** Add an empty, transparent pixel layer the size of the canvas. */
+  addPixelLayer(): void {
+    const session = this.store.getSession();
+    if (!session) return;
+    const layer = createEmptyRasterLayer(session.document, nextLayerName(session.document));
+    this.execute(addLayer(layer, "New Layer"));
+  }
+
+  /** Mirror the active layer about its centre. */
+  flipActiveLayer(axis: "horizontal" | "vertical"): void {
+    const session = this.store.getSession();
+    const layer = session ? activeLayer(session.document) : undefined;
+    if (!session || !layer) return;
+    if (!isTransformable(layer)) {
+      this.notify("error", "Fill layers cannot be flipped.");
+      return;
+    }
+    const size = layerLocalSize(layer, session.document, this.sizer);
+    this.execute(
+      setLayerTransform(layer.id, flipAboutCenter(layer.transform, size, axis), {
+        label: axis === "horizontal" ? "Flip Horizontal" : "Flip Vertical",
+      }),
+    );
   }
 
   addFillLayer(color = "#ffffff"): void {
@@ -299,12 +401,14 @@ export class EditorController {
     if (!isDirty(session) && session.savedRevision !== null) return { ok: true };
 
     const { document, revision } = session;
-    const assets: StoredAsset[] = [];
-    for (const assetId of referencedAssetIds(document)) {
-      const record = this.assets.get(assetId);
-      if (record) assets.push(record);
-    }
     try {
+      const assets: StoredAsset[] = [];
+      for (const assetId of referencedAssetIds(document)) {
+        const record = this.assets.get(assetId);
+        if (!record) continue;
+        // Pixels painted in the editor are PNG-encoded on their first save.
+        assets.push({ ...record, blob: await this.assets.getBlob(assetId) });
+      }
       await this.storage.save({ document, assets });
       this.store.markSaved(documentId, revision);
       void this.refreshRecentProjects();
@@ -383,6 +487,138 @@ export class EditorController {
     return this.storage.kind;
   }
 
+  // ---------------------------------------------------------------- text editing
+
+  /** Open the on-canvas text editor for a new or existing text layer. */
+  beginTextEdit(request: TextEditRequest): void {
+    if (this.textEdit.get()) this.commitTextEdit();
+    const session = this.store.getSession();
+    if (!session) return;
+    const { colors, toolSettings } = this.store.getState();
+    if (request.mode === "edit") {
+      const layer = session.document.layers.find((l) => l.id === request.layerId);
+      if (layer?.kind !== "text") return;
+      this.textEdit.set({
+        documentId: session.document.id,
+        layerId: layer.id,
+        text: layer.text,
+        style: {
+          fontFamily: layer.fontFamily,
+          fontSize: layer.fontSize,
+          fontWeight: layer.fontWeight,
+          italic: layer.italic,
+          color: layer.color,
+          align: layer.align,
+          lineHeight: layer.lineHeight,
+          letterSpacing: layer.letterSpacing,
+        },
+        transform: layer.transform,
+      });
+    } else {
+      this.textEdit.set({
+        documentId: session.document.id,
+        layerId: null,
+        text: "",
+        style: { ...toolSettings.text, color: colors.foreground },
+        transform: { x: request.at.x, y: request.at.y, scaleX: 1, scaleY: 1, rotation: 0 },
+      });
+    }
+    this.tools.revision.update((n) => n + 1);
+  }
+
+  updateTextDraft(patch: { text?: string; style?: Partial<TextStyle> }): void {
+    const edit = this.textEdit.get();
+    if (!edit) return;
+    this.textEdit.set({
+      ...edit,
+      text: patch.text ?? edit.text,
+      style: patch.style ? { ...edit.style, ...patch.style } : edit.style,
+    });
+  }
+
+  /** Apply the typed text: create, update or (if emptied) delete the text layer. */
+  commitTextEdit(): void {
+    const edit = this.textEdit.get();
+    if (!edit) return;
+    this.textEdit.set(null);
+    this.tools.revision.update((n) => n + 1);
+    const text = edit.text.replace(/\s+$/, "");
+    let result;
+    if (edit.layerId === null) {
+      if (!text) return;
+      const layer = createTextLayer({
+        text,
+        x: edit.transform.x,
+        y: edit.transform.y,
+        style: edit.style,
+      });
+      result = this.store.dispatch(addLayer(layer, "New Text"), edit.documentId);
+    } else if (!text) {
+      result = this.store.dispatch(deleteLayer(edit.layerId), edit.documentId);
+    } else {
+      result = this.store.dispatch(
+        updateTextLayer(edit.layerId, { text, ...edit.style }, "Edit Text"),
+        edit.documentId,
+      );
+      this.store.sealHistory(edit.documentId);
+    }
+    if (!result.ok) this.notify("error", result.error);
+  }
+
+  cancelTextEdit(): void {
+    if (!this.textEdit.get()) return;
+    this.textEdit.set(null);
+    this.tools.revision.update((n) => n + 1);
+  }
+
+  // ---------------------------------------------------------------- export
+
+  /** Flatten the active document into an image file. Nothing leaves the browser. */
+  async exportActive(
+    options: ExportOptions,
+  ): Promise<{ ok: true; blob: Blob; filename: string } | { ok: false; error: string }> {
+    if (this.textEdit.get()) this.commitTextEdit();
+    const session = this.store.getSession();
+    if (!session) return this.fail("No document is open.");
+    try {
+      const blob = await exportDocument(
+        session.document,
+        this.assets,
+        this.sizer,
+        options,
+        this.createSurface,
+      );
+      return { ok: true, blob, filename: exportFilename(session.document.name, options.format) };
+    } catch (error) {
+      this.logger.warn("export failed", describeError(error));
+      return this.fail(error instanceof ExportError ? error.message : "Export failed.");
+    }
+  }
+
+  // ---------------------------------------------------------------- memory
+
+  /**
+   * Keep decoded pixels for open documents and their undo history under the budget by dropping
+   * the oldest undo steps (ADR-0007). The current state of every document is always kept.
+   */
+  enforcePixelBudget(): void {
+    const sessions = () => this.store.getState().sessions;
+    const total = () => this.assets.estimateBytes(sessions().flatMap(sessionAssetIds));
+    let trimmed = 0;
+    while (total() > this.pixelBudgetBytes) {
+      const candidate = [...sessions()].sort(
+        (a, b) => b.history.past.length - a.history.past.length,
+      )[0];
+      if (!candidate || candidate.history.past.length === 0) break;
+      this.store.trimHistory(candidate.document.id, 1);
+      trimmed++;
+    }
+    this.collectUnusedAssets();
+    if (trimmed > 0) {
+      this.logger.info("trimmed undo history for memory", { steps: trimmed });
+    }
+  }
+
   // ---------------------------------------------------------------- internals
 
   private scheduleAutosave(): void {
@@ -416,7 +652,7 @@ export class EditorController {
     );
   }
 
-  private fail(error: string): Result {
+  private fail(error: string): { ok: false; error: string } {
     this.notify("error", error);
     return { ok: false, error };
   }
