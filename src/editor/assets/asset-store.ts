@@ -8,7 +8,7 @@ import { createId } from "../core/ids";
  * copies the bytes into IndexedDB. Nothing here touches the network.
  */
 
-export type RasterMime = "image/png" | "image/jpeg" | "image/webp";
+export type RasterMime = "image/png" | "image/jpeg" | "image/webp" | "image/gif";
 
 export interface AssetRecord {
   readonly id: string;

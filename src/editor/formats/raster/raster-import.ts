@@ -6,9 +6,10 @@ export const SUPPORTED_IMPORT_MIMES: readonly RasterMime[] = [
   "image/png",
   "image/jpeg",
   "image/webp",
+  "image/gif",
 ];
 /** For `<input accept>`. Validation never relies on it. */
-export const IMPORT_ACCEPT = ".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp";
+export const IMPORT_ACCEPT = ".png,.jpg,.jpeg,.webp,.gif,image/png,image/jpeg,image/webp,image/gif";
 
 export interface ImportedRaster {
   readonly blob: Blob;
@@ -43,7 +44,10 @@ export async function importRasterFile(file: Blob, decode: BitmapDecoder): Promi
   const bytes = new Uint8Array(await file.arrayBuffer());
   const header = readImageHeader(bytes);
   if (!header) {
-    return { ok: false, error: "This file is not a PNG, JPEG or WebP image, or it is damaged." };
+    return {
+      ok: false,
+      error: "This file is not a PNG, JPEG, WebP or GIF image, or it is damaged.",
+    };
   }
   const check = checkDimensions(header.width, header.height);
   if (!check.ok) return { ok: false, error: check.reason };

@@ -16,8 +16,8 @@ export function StartScreen({ actions }: { actions: Record<UiActionId, UiAction>
     <div className={styles.start}>
       <h2 className={styles.startTitle}>Start editing</h2>
       <p className={styles.startLead}>
-        Create a new document or open an image. Everything stays in this browser — your images are
-        never uploaded. You can also drop an image anywhere on this page, or paste one.
+        Create a new document, or open an image, a PSD or a .mylper project. Everything stays in
+        this browser — nothing is uploaded. You can also drop a file anywhere on this page.
       </p>
       {!persistent && (
         <p className={styles.warning} role="alert">

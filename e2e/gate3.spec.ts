@@ -125,7 +125,7 @@ test("exports PNG and JPEG files locally and restores everything after reload", 
 
   // PNG
   await page.keyboard.press(`${MOD}+Shift+e`);
-  const dialog = page.getByRole("dialog", { name: "Export image" });
+  const dialog = page.getByRole("dialog", { name: "Export" });
   let download = page.waitForEvent("download");
   await dialog.getByRole("button", { name: "Export" }).click();
   let file = await download;

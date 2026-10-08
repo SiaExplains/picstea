@@ -3,6 +3,28 @@
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.5.0] — 2026-10-09
+
+### Added
+
+- **Photoshop (PSD) files**: open layered PSDs with their layers, groups, names, opacity,
+  visibility, blend modes and layer masks, and export your work as a layered PSD. Text and smart
+  objects from Photoshop open as pixels, and anything MYLPER can't keep is listed when you open
+  the file. 8-bit RGB and greyscale files are supported.
+- **Project files**: File → Save Project As… (Cmd/Ctrl+Shift+S) saves a `.mylper` file with
+  everything in it, to keep a backup or move a project to another computer or browser. Open it
+  with File → Open.
+- **SVG**: export keeps shapes and text as vectors (other layers are embedded as images); SVG
+  files open as images.
+- **PDF export**: a one-page PDF at the document's resolution.
+- **GIF** images open (first frame).
+- The export dialog says what each format keeps.
+
+### Changed
+
+- File → Open, drag and drop and Place Image accept all these formats. Files are recognised by
+  their contents, not their names. TIFF and PDF files explain that they can't be opened yet.
+
 ## [0.4.0] — 2026-10-09
 
 ### Added

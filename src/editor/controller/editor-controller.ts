@@ -56,12 +56,20 @@ import {
   type Point,
   type Size,
 } from "../core/viewport/viewport";
+import { FormatError } from "../formats/binary/bytes";
+import { exportAs, type ExportRequest } from "../formats/export/document-export";
+import { exportFilename, ExportError, safeFilename } from "../formats/export/raster-export";
+import { rgbaToSurface } from "../formats/layer-render";
+import { detectFileKind } from "../formats/open-file";
 import {
-  exportDocument,
-  exportFilename,
-  ExportError,
-  type ExportOptions,
-} from "../formats/export/raster-export";
+  PROJECT_EXTENSION,
+  readProjectFile,
+  writeProjectFile,
+} from "../formats/project/project-file";
+import { psdToDocument } from "../formats/psd/psd-convert";
+import { readPsd } from "../formats/psd/psd-read";
+import { svgPixelSize } from "../formats/svg/svg-import";
+import { MAX_IMPORT_FILE_BYTES } from "../core/document/limits";
 import { baseName, importRasterFile } from "../formats/raster/raster-import";
 import type { SurfaceFactory } from "../rendering/canvas/canvas2d-renderer";
 import { estimateTextSizer } from "../rendering/text/text-layout";
@@ -125,6 +133,11 @@ export interface EditorControllerOptions {
   createSurface?: SurfaceFactory;
   /** Measures text; defaults to a rough estimate outside the browser. */
   sizer?: ContentSizer;
+  /**
+   * Render SVG bytes to pixels at the given size through the browser's image decoder (never the
+   * DOM). Without it SVG files cannot be opened.
+   */
+  rasterizeSvg?: (svg: Blob, width: number, height: number) => Promise<CanvasImageSource>;
   /** Estimated decoded-pixel budget for open documents and their undo history, in bytes. */
   pixelBudgetBytes?: number;
   logger?: Logger;
@@ -160,6 +173,7 @@ export class EditorController {
 
   private storage: ProjectStorage;
   private readonly decode: BitmapDecoder;
+  private readonly rasterizeSvg: EditorControllerOptions["rasterizeSvg"];
   private readonly logger: Logger;
   private readonly autosaveDelayMs: number;
   private readonly pixelBudgetBytes: number;
@@ -175,6 +189,7 @@ export class EditorController {
     this.pixelBudgetBytes = options.pixelBudgetBytes ?? DEFAULT_PIXEL_BUDGET_BYTES;
     this.storage = options.storage;
     this.decode = options.decode;
+    this.rasterizeSvg = options.rasterizeSvg;
     this.logger = options.logger ?? silentLogger;
     this.autosaveDelayMs = options.autosaveDelayMs ?? DEFAULT_AUTOSAVE_DELAY_MS;
     this.status = new Observable<AppStatus>({
@@ -597,6 +612,171 @@ export class EditorController {
     this.execute(addLayer(layer, "New Fill Layer"));
   }
 
+  // ---------------------------------------------------------------- files (ADR-0011)
+
+  /** Open any supported file — image, SVG, PSD or MYLPER project — detected from its bytes. */
+  async openFile(file: Blob, filename: string): Promise<Result> {
+    if (file.size > MAX_IMPORT_FILE_BYTES) {
+      return this.fail(
+        `The file is larger than ${Math.round(MAX_IMPORT_FILE_BYTES / 2 ** 20)} MB.`,
+      );
+    }
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    const kind = detectFileKind(bytes);
+    try {
+      switch (kind.kind) {
+        case "raster":
+          return await this.openImageFile(file, filename);
+        case "svg": {
+          const layer = await this.svgLayer(bytes, baseName(filename));
+          const doc = createDocument({
+            name: baseName(filename),
+            width: layer.width,
+            height: layer.height,
+            background: { kind: "transparent" },
+          });
+          this.store.openDocument({ ...doc, layers: [layer], activeLayerId: layer.id });
+          return { ok: true };
+        }
+        case "psd": {
+          const { file: psd, warnings } = await readPsd(bytes);
+          const imported = psdToDocument(this, psd, baseName(filename), warnings);
+          this.store.openDocument(imported.document);
+          this.reportWarnings("Opened with changes", imported.warnings);
+          this.enforcePixelBudget();
+          return { ok: true };
+        }
+        case "project": {
+          const project = await readProjectFile(bytes, (k) =>
+            createId(k === "document" ? "doc" : "asset"),
+          );
+          for (const asset of project.assets) this.assets.add(asset);
+          this.store.openDocument(project.document);
+          return { ok: true };
+        }
+        case "unsupported":
+          return this.fail(kind.message);
+      }
+    } catch (error) {
+      this.logger.warn("opening file failed", describeError(error));
+      return this.fail(
+        error instanceof FormatError ? error.message : "The file could not be opened.",
+      );
+    }
+  }
+
+  /** Add a file to the active document as a new layer (images, SVG, flattened PSD). */
+  async placeFile(file: Blob, filename: string): Promise<Result> {
+    const session = this.store.getSession();
+    if (!session) return this.openFile(file, filename);
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    const kind = detectFileKind(bytes);
+    if (kind.kind === "raster") return this.placeImageFile(file, filename);
+    if (kind.kind === "unsupported") return this.fail(kind.message);
+    if (kind.kind === "project") {
+      return this.fail("Project files open as their own document. Use File → Open.");
+    }
+    const documentId = session.document.id;
+    try {
+      let layer: RasterLayer;
+      if (kind.kind === "svg") {
+        layer = await this.svgLayer(bytes, baseName(filename));
+      } else {
+        const { file: psd } = await readPsd(bytes);
+        const flat = psd.composite;
+        if (!flat) return this.fail("This PSD has no flattened image to place.");
+        const asset = this.assets.addBitmap(
+          rgbaToSurface(this, flat, psd.width, psd.height),
+          psd.width,
+          psd.height,
+        );
+        layer = createRasterLayer({
+          assetId: asset.id,
+          width: psd.width,
+          height: psd.height,
+          name: baseName(filename),
+        });
+      }
+      const current = this.store.getSession(documentId);
+      if (!current) return this.fail("The document was closed before the file finished loading.");
+      const centred = {
+        ...layer,
+        transform: {
+          ...layer.transform,
+          x: Math.round((current.document.width - layer.width) / 2),
+          y: Math.round((current.document.height - layer.height) / 2),
+        },
+      };
+      const dispatched = this.store.dispatch(addLayer(centred, "Place"), documentId);
+      this.enforcePixelBudget();
+      return dispatched.ok ? { ok: true } : this.fail(dispatched.error);
+    } catch (error) {
+      this.logger.warn("placing file failed", describeError(error));
+      return this.fail(
+        error instanceof FormatError ? error.message : "The file could not be placed.",
+      );
+    }
+  }
+
+  /** Rasterise SVG bytes into a new pixel layer (never inserted into the page). */
+  private async svgLayer(bytes: Uint8Array, name: string): Promise<RasterLayer> {
+    if (!this.rasterizeSvg) throw new FormatError("SVG files cannot be opened here.");
+    const size = svgPixelSize(new TextDecoder().decode(bytes));
+    if (!size) throw new FormatError("This SVG file is damaged and cannot be opened.");
+    let image: CanvasImageSource;
+    try {
+      image = await this.rasterizeSvg(
+        new Blob([bytes as BlobPart], { type: "image/svg+xml" }),
+        size.width,
+        size.height,
+      );
+    } catch {
+      throw new FormatError("This SVG file could not be drawn. It may be damaged.");
+    }
+    const surface = this.createSurface(size.width, size.height);
+    const ctx = context2d(surface);
+    ctx.drawImage(image, 0, 0, size.width, size.height);
+    try {
+      // Some browsers refuse to read back certain SVGs; then the pixels could never be saved.
+      ctx.getImageData(0, 0, 1, 1);
+    } catch {
+      releaseSurface(surface);
+      throw new FormatError("This SVG uses features the browser will not convert to pixels.");
+    }
+    const asset = this.assets.addBitmap(surface, size.width, size.height);
+    return createRasterLayer({ assetId: asset.id, width: size.width, height: size.height, name });
+  }
+
+  private reportWarnings(title: string, warnings: readonly string[]): void {
+    if (warnings.length > 0) this.notify("info", `${title}: ${warnings.join(" ")}`);
+  }
+
+  /** The active document as a portable `.mylper` project file. */
+  async saveProjectFile(): Promise<
+    { ok: true; blob: Blob; filename: string } | { ok: false; error: string }
+  > {
+    if (this.textEdit.get()) this.commitTextEdit();
+    const session = this.store.getSession();
+    if (!session) return this.fail("No document is open.");
+    try {
+      const { document } = session;
+      const assets: StoredAsset[] = [];
+      for (const assetId of referencedAssetIds(document)) {
+        const record = this.assets.get(assetId);
+        if (!record) throw new FormatError("Some layers are still loading. Try again in a moment.");
+        assets.push({ ...record, blob: await this.assets.getBlob(assetId) });
+      }
+      const blob = await writeProjectFile(document, assets);
+      const filename = safeFilename(document.name, PROJECT_EXTENSION);
+      return { ok: true, blob, filename };
+    } catch (error) {
+      this.logger.warn("saving project file failed", describeError(error));
+      return this.fail(
+        error instanceof FormatError ? error.message : "The project file could not be created.",
+      );
+    }
+  }
+
   /** Open a local image file as a new document. */
   async openImageFile(file: Blob, filename: string): Promise<Result> {
     const result = await importRasterFile(file, this.decode);
@@ -918,23 +1098,22 @@ export class EditorController {
 
   /** Flatten the active document into an image file. Nothing leaves the browser. */
   async exportActive(
-    options: ExportOptions,
-  ): Promise<{ ok: true; blob: Blob; filename: string } | { ok: false; error: string }> {
+    request: ExportRequest,
+  ): Promise<
+    | { ok: true; blob: Blob; filename: string; warnings: readonly string[] }
+    | { ok: false; error: string }
+  > {
     if (this.textEdit.get()) this.commitTextEdit();
     const session = this.store.getSession();
     if (!session) return this.fail("No document is open.");
     try {
-      const blob = await exportDocument(
-        session.document,
-        this.assets,
-        this.sizer,
-        options,
-        this.createSurface,
-      );
-      return { ok: true, blob, filename: exportFilename(session.document.name, options.format) };
+      const { blob, warnings } = await exportAs(this, session.document, request);
+      const filename = exportFilename(session.document.name, request.format);
+      return { ok: true, blob, filename, warnings };
     } catch (error) {
       this.logger.warn("export failed", describeError(error));
-      return this.fail(error instanceof ExportError ? error.message : "Export failed.");
+      const known = error instanceof ExportError || error instanceof FormatError;
+      return this.fail(known ? error.message : "Export failed.");
     }
   }
 

@@ -83,12 +83,25 @@ test("viewport zoom controls update the zoom level", async ({ page }) => {
 
 test("rejects non-image files with a clear message", async ({ page }) => {
   await openEditor(page);
+  let dialogs = 0;
+  page.on("dialog", (d) => {
+    dialogs++;
+    void d.dismiss();
+  });
+  // The name and type are ignored: content says broken SVG, which is refused without running.
   await page.getByTestId("file-input").setInputFiles({
     name: "evil.png",
     mimeType: "image/png",
     buffer: Buffer.from("<svg onload=alert(1)>"),
   });
-  await expect(page.getByText(/not a PNG, JPEG or WebP image/)).toBeVisible();
+  await expect(page.getByText(/This SVG file is damaged/)).toBeVisible();
+  await page.getByTestId("file-input").setInputFiles({
+    name: "notes.png",
+    mimeType: "image/png",
+    buffer: Buffer.from("just some text"),
+  });
+  await expect(page.getByText(/This file type is not supported/)).toBeVisible();
+  expect(dialogs).toBe(0);
 });
 
 test("local-first: opening and editing an image sends no data anywhere", async ({

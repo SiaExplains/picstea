@@ -46,7 +46,12 @@ export function ExportDialog({ open, onClose }: { open: boolean; onClose: () => 
       setError("The file could not be saved.");
       return;
     }
-    controller.notify("info", `Exported ${result.filename}`);
+    controller.notify(
+      "info",
+      result.warnings.length > 0
+        ? `Exported ${result.filename}. ${result.warnings.join(" ")}`
+        : `Exported ${result.filename}`,
+    );
     onClose();
   };
 
@@ -63,7 +68,7 @@ export function ExportDialog({ open, onClose }: { open: boolean; onClose: () => 
     >
       <form className={styles.dialogForm} onSubmit={submit}>
         <h2 id="export-title" className={styles.dialogTitle}>
-          Export image
+          Export
         </h2>
         <fieldset style={{ border: 0, margin: 0, padding: 0 }}>
           <legend className={styles.fieldLabel} style={{ marginBottom: 6 }}>
@@ -102,11 +107,13 @@ export function ExportDialog({ open, onClose }: { open: boolean; onClose: () => 
             </div>
           </div>
         )}
-        <p className={styles.muted} style={{ margin: "12px 0 0" }}>
+        <p className={styles.muted} style={{ margin: "12px 0 0" }} data-testid="export-note">
+          {info.note}
+        </p>
+        <p className={styles.muted} style={{ margin: "6px 0 0" }}>
           {doc && (
             <>
               {exportFilename(doc.name, format)} · {doc.width} × {doc.height} px
-              {!info.alpha && " · transparent areas become white"}
             </>
           )}
         </p>

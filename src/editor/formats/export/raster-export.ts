@@ -12,19 +12,75 @@ import {
  * Nothing is uploaded: the bytes go straight to a local download / save dialog.
  */
 
-export type ExportFormat = "png" | "jpeg" | "webp";
+export type RasterExportFormat = "png" | "jpeg" | "webp";
+export type ExportFormat = RasterExportFormat | "svg" | "pdf" | "psd";
 
-export const EXPORT_FORMATS: Record<
-  ExportFormat,
-  { label: string; mime: string; extension: string; lossy: boolean; alpha: boolean }
-> = {
-  png: { label: "PNG", mime: "image/png", extension: "png", lossy: false, alpha: true },
-  jpeg: { label: "JPEG", mime: "image/jpeg", extension: "jpg", lossy: true, alpha: false },
-  webp: { label: "WebP", mime: "image/webp", extension: "webp", lossy: true, alpha: true },
+export interface ExportFormatInfo {
+  readonly label: string;
+  readonly mime: string;
+  readonly extension: string;
+  readonly lossy: boolean;
+  readonly alpha: boolean;
+  /** What the format keeps, shown in the export dialog. */
+  readonly note: string;
+}
+
+export const EXPORT_FORMATS: Record<ExportFormat, ExportFormatInfo> = {
+  png: {
+    label: "PNG",
+    mime: "image/png",
+    extension: "png",
+    lossy: false,
+    alpha: true,
+    note: "Lossless image with transparency.",
+  },
+  jpeg: {
+    label: "JPEG",
+    mime: "image/jpeg",
+    extension: "jpg",
+    lossy: true,
+    alpha: false,
+    note: "Small photo file. Transparent areas become white.",
+  },
+  webp: {
+    label: "WebP",
+    mime: "image/webp",
+    extension: "webp",
+    lossy: true,
+    alpha: true,
+    note: "Small file with transparency, for the web.",
+  },
+  svg: {
+    label: "SVG",
+    mime: "image/svg+xml",
+    extension: "svg",
+    lossy: false,
+    alpha: true,
+    note: "Shapes and text stay vectors; other layers are embedded as images.",
+  },
+  pdf: {
+    label: "PDF",
+    mime: "application/pdf",
+    extension: "pdf",
+    lossy: false,
+    alpha: true,
+    note: "One page at the document's resolution, lossless.",
+  },
+  psd: {
+    label: "PSD",
+    mime: "image/vnd.adobe.photoshop",
+    extension: "psd",
+    lossy: false,
+    alpha: true,
+    note: "Layers, groups, masks, opacity and blend modes. Shapes and text become pixels.",
+  },
 };
 
+export const isRasterFormat = (format: ExportFormat): format is RasterExportFormat =>
+  format === "png" || format === "jpeg" || format === "webp";
+
 export interface ExportOptions {
-  readonly format: ExportFormat;
+  readonly format: RasterExportFormat;
   /** 0..1, lossy formats only. */
   readonly quality: number;
   /** Colour behind transparent pixels for formats without alpha. */
@@ -109,6 +165,10 @@ export async function exportDocument(
 
 /** A safe download filename: strips path separators and characters invalid on common systems. */
 export function exportFilename(name: string, format: ExportFormat): string {
+  return safeFilename(name, EXPORT_FORMATS[format].extension);
+}
+
+export function safeFilename(name: string, extension: string): string {
   const base =
     name
       .replace(/[\\/:*?"<>|\u0000-\u001f]/g, "")
@@ -116,5 +176,5 @@ export function exportFilename(name: string, format: ExportFormat): string {
       .trim()
       .replace(/^\.+/, "")
       .slice(0, 120) || "image";
-  return `${base}.${EXPORT_FORMATS[format].extension}`;
+  return `${base}.${extension}`;
 }

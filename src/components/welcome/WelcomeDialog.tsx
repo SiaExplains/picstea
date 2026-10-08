@@ -13,14 +13,17 @@ const HIGHLIGHTS = [
     "Select, paint and type",
     "Marquee, lasso and magic wand, brushes, gradients, shapes and text on the canvas.",
   ],
-  ["Open and export", "Open PNG, JPEG or WebP and export to any of them. Work saves itself."],
+  [
+    "Open and export",
+    "PNG, JPEG, WebP, GIF, SVG and layered PSD in; PSD, SVG, PDF and images out.",
+  ],
 ] as const;
 
 const FAQ = [
   ["Is MYLPER free?", "Yes. It runs in your browser with no account required."],
   [
     "Where is my work saved?",
-    "In this browser's storage on your device. Browsers can clear it, so export important work.",
+    "In this browser's storage on your device. Use File → Save Project As to keep a copy.",
   ],
 ] as const;
 

@@ -9,6 +9,7 @@ export type ActionId =
   | "file.new"
   | "file.open"
   | "file.save"
+  | "file.saveProject"
   | "file.export"
   | "edit.undo"
   | "edit.redo"
@@ -64,6 +65,7 @@ export const DEFAULT_KEYMAP: Readonly<Record<ActionId, readonly string[]>> = {
   "file.new": ["Mod+Alt+N"],
   "file.open": ["Mod+O"],
   "file.save": ["Mod+S"],
+  "file.saveProject": ["Mod+Shift+S"],
   "file.export": ["Mod+Shift+E"],
   "edit.undo": ["Mod+Z"],
   "edit.redo": ["Mod+Shift+Z", "Mod+Y"],

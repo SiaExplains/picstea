@@ -14,14 +14,19 @@ type SaveFilePicker = (options: {
 
 export type SaveOutcome = "saved" | "cancelled" | "failed";
 
-export async function saveFile(blob: Blob, filename: string, mime: string): Promise<SaveOutcome> {
+export async function saveFile(
+  blob: Blob,
+  filename: string,
+  mime: string,
+  description = "Image",
+): Promise<SaveOutcome> {
   const picker = (window as Window & { showSaveFilePicker?: SaveFilePicker }).showSaveFilePicker;
   if (typeof picker === "function") {
     try {
       const extension = filename.slice(filename.lastIndexOf("."));
       const handle = await picker.call(window, {
         suggestedName: filename,
-        types: [{ description: "Image", accept: { [mime]: [extension] } }],
+        types: [{ description, accept: { [mime]: [extension] } }],
       });
       const writable = await handle.createWritable();
       await writable.write(blob);
