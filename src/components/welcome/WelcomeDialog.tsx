@@ -9,7 +9,10 @@ import { OPEN_WELCOME_EVENT, WELCOME_SEEN_KEY } from "./welcome";
 const HIGHLIGHTS = [
   ["Private by design", "Editing happens in your browser. Your images are never uploaded."],
   ["Layers that stay editable", "Groups, masks, 16 blend modes, adjustment layers and effects."],
-  ["Paint, shapes and text", "Brush and eraser, editable shapes, and text typed on the canvas."],
+  [
+    "Select, paint and type",
+    "Marquee, lasso and magic wand, brushes, gradients, shapes and text on the canvas.",
+  ],
   ["Open and export", "Open PNG, JPEG or WebP and export to any of them. Work saves itself."],
 ] as const;
 

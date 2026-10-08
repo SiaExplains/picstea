@@ -1,3 +1,4 @@
+import { withoutSelection } from "./selection-commands";
 import { isHexColor } from "../document/factory";
 import { checkDimensions } from "../document/limits";
 import {
@@ -239,7 +240,7 @@ export function cropDocument(rect: {
         ...g,
         position: g.position - (g.orientation === "vertical" ? x : y),
       }));
-      return { ...doc, width, height, layers, guides };
+      return { ...withoutSelection(doc), width, height, layers, guides };
     },
   };
 }

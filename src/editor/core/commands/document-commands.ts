@@ -1,3 +1,4 @@
+import { withoutSelection } from "./selection-commands";
 import { checkDimensions } from "../document/limits";
 import { CommandError, type Command } from "./command";
 import { translateAllLayers } from "./group-commands";
@@ -39,7 +40,7 @@ export function resizeCanvas(width: number, height: number, anchor: CanvasAnchor
       const dx = anchor === "center" ? Math.round((width - doc.width) / 2) : 0;
       const dy = anchor === "center" ? Math.round((height - doc.height) / 2) : 0;
       const layers = translateAllLayers(doc, dx, dy);
-      return { ...doc, width, height, layers };
+      return { ...withoutSelection(doc), width, height, layers };
     },
   };
 }

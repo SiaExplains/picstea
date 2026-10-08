@@ -12,6 +12,14 @@ export type ActionId =
   | "file.export"
   | "edit.undo"
   | "edit.redo"
+  | "edit.cut"
+  | "edit.copy"
+  | "edit.fill"
+  | "select.all"
+  | "select.deselect"
+  | "select.reselect"
+  | "select.inverse"
+  | "select.feather"
   | "layer.new"
   | "layer.duplicate"
   | "layer.delete"
@@ -25,9 +33,16 @@ export type ActionId =
   | "view.actualPixels"
   | "tool.move"
   | "tool.transform"
+  | "tool.marquee"
+  | "tool.lasso"
+  | "tool.wand"
   | "tool.crop"
+  | "tool.eyedropper"
   | "tool.brush"
+  | "tool.pencil"
   | "tool.eraser"
+  | "tool.bucket"
+  | "tool.gradient"
   | "tool.shape"
   | "tool.text"
   | "tool.hand"
@@ -52,6 +67,15 @@ export const DEFAULT_KEYMAP: Readonly<Record<ActionId, readonly string[]>> = {
   "file.export": ["Mod+Shift+E"],
   "edit.undo": ["Mod+Z"],
   "edit.redo": ["Mod+Shift+Z", "Mod+Y"],
+  // Paste is the browser's own paste event (so images from other apps arrive too).
+  "edit.cut": ["Mod+X"],
+  "edit.copy": ["Mod+C"],
+  "edit.fill": ["Shift+F5"],
+  "select.all": ["Mod+A"],
+  "select.deselect": ["Mod+D"],
+  "select.reselect": ["Mod+Shift+D"],
+  "select.inverse": ["Mod+Shift+I"],
+  "select.feather": ["Shift+F6"],
   "layer.new": ["Mod+Shift+N"],
   "layer.duplicate": ["Mod+J"],
   "layer.delete": ["Delete", "Backspace"],
@@ -65,9 +89,16 @@ export const DEFAULT_KEYMAP: Readonly<Record<ActionId, readonly string[]>> = {
   "view.actualPixels": ["Mod+1"],
   "tool.move": ["V"],
   "tool.transform": ["Mod+T"],
+  "tool.marquee": ["M"],
+  "tool.lasso": ["L"],
+  "tool.wand": ["W"],
   "tool.crop": ["C"],
+  "tool.eyedropper": ["I"],
   "tool.brush": ["B"],
+  "tool.pencil": ["N"],
   "tool.eraser": ["E"],
+  "tool.bucket": ["Shift+G"],
+  "tool.gradient": ["G"],
   "tool.shape": ["U"],
   "tool.text": ["T"],
   "tool.hand": ["H"],

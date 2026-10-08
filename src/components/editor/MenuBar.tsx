@@ -24,8 +24,23 @@ const MENUS: { label: string; items: MenuEntry[] }[] = [
       "file.close",
     ],
   },
-  { label: "Edit", items: ["edit.undo", "edit.redo", "-", "tool.transform"] },
-  { label: "Image", items: ["image.crop"] },
+  {
+    label: "Edit",
+    items: [
+      "edit.undo",
+      "edit.redo",
+      "-",
+      "edit.cut",
+      "edit.copy",
+      "edit.paste",
+      "edit.clear",
+      "-",
+      "edit.fill",
+      "-",
+      "tool.transform",
+    ],
+  },
+  { label: "Image", items: ["image.crop", "image.cropToSelection"] },
   {
     label: "Layer",
     items: [
@@ -51,6 +66,23 @@ const MENUS: { label: string; items: MenuEntry[] }[] = [
   },
   // Each item adds a non-destructive adjustment layer.
   { label: "Adjustments", items: ADJUSTMENTS.map((a) => `adjust.${a.type}` as const) },
+  {
+    label: "Select",
+    items: [
+      "select.all",
+      "select.deselect",
+      "select.reselect",
+      "select.inverse",
+      "-",
+      "select.colorRange",
+      "-",
+      "select.feather",
+      "select.expand",
+      "select.contract",
+      "-",
+      "select.transform",
+    ],
+  },
   { label: "View", items: ["view.zoomIn", "view.zoomOut", "-", "view.fit", "view.actualPixels"] },
   { label: "Help", items: ["help.welcome"] },
 ];
@@ -147,8 +179,8 @@ export function MenuBar({ actions }: { actions: Record<UiActionId, UiAction> }) 
         <Image
           src="/brand/mylper-logo-on-dark.png"
           alt="MYLPER"
-          width={67}
-          height={18}
+          width={74}
+          height={20}
           priority
           unoptimized
         />

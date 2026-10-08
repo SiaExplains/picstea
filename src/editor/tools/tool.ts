@@ -5,6 +5,7 @@ import type { Point, Viewport } from "../core/viewport/viewport";
 import type { SurfaceFactory } from "../rendering/canvas/canvas2d-renderer";
 import type { CompositePreview } from "../rendering/compositing/compositor";
 import type { Overlay } from "../rendering/overlay";
+import type { SelectionMask } from "../selection/mask";
 
 /**
  * Editing tools (ADR-0007). Tools are plain objects driven by the viewport: they receive pointer
@@ -68,6 +69,11 @@ export interface Tool {
   cancel(ctx: ToolContext): void;
   overlays(ctx: ToolContext): readonly Overlay[];
   preview(ctx: ToolContext): CompositePreview | undefined;
+  /**
+   * The selection to show instead of the document's while a gesture changes it (moving or
+   * transforming the outline). `undefined` = no override, `null` = hide the outline.
+   */
+  selectionPreview?(ctx: ToolContext): SelectionMask | null | undefined;
 }
 
 /** Screen-space hit radius for handles, in CSS pixels. */

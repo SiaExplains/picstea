@@ -13,7 +13,13 @@ test("home page is the editor and welcomes first-time visitors once", async ({ p
   await page.reload();
   await expect(page.getByRole("button", { name: "New document" })).toBeVisible();
   await expect(welcome).toBeHidden();
-  await page.getByRole("button", { name: "MYLPER" }).click();
+  // The logo sits on the dark menu bar with no native button background behind it.
+  const logo = page.getByRole("button", { name: "MYLPER" });
+  expect(await logo.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe(
+    "rgba(0, 0, 0, 0)",
+  );
+  expect(await logo.evaluate((el) => getComputedStyle(el).appearance)).toBe("none");
+  await logo.click();
   await expect(welcome).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(welcome).toBeHidden();

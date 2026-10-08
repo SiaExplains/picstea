@@ -2,6 +2,7 @@ import type { EditorDocument } from "../core/document/types";
 import type { Size, Viewport } from "../core/viewport/viewport";
 import type { ContentSizer } from "../core/geometry/layer-geometry";
 import type { AssetResolver, CompositePreview } from "./compositing/compositor";
+import type { SelectionMask } from "../selection/mask";
 import type { Overlay } from "./overlay";
 
 /**
@@ -21,6 +22,10 @@ export interface RenderScene {
   /** Uncommitted tool output (stroke in progress, shape draft). Forces a re-composite. */
   readonly preview?: CompositePreview;
   readonly overlays?: readonly Overlay[];
+  /** Selection outline to draw as marching ants (ADR-0010). */
+  readonly selection?: SelectionMask;
+  /** Dash offset in CSS pixels; advancing it animates the ants. */
+  readonly antsPhase?: number;
 }
 
 export interface Renderer {

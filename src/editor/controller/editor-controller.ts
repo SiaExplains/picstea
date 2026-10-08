@@ -3,7 +3,15 @@ import { AssetStore, type BitmapDecoder, type BitmapEncoder } from "../assets/as
 import {
   addLayer,
   addLayerMask,
+  cropDocument,
   createGroup,
+  deselect,
+  invertSelectionCommand,
+  modifySelection,
+  selectAllCommand,
+  setRasterContent,
+  setSelection,
+  type SelectionModification,
   deleteLayer,
   deleteLayerMask,
   groupLayer,
@@ -15,7 +23,7 @@ import {
   type Command,
 } from "../core/commands";
 import { adjustmentDefinition } from "../adjustments/registry";
-import type { AdjustmentType } from "../core/document/types";
+import type { AdjustmentType, EditorDocument } from "../core/document/types";
 import { EditorStore, isDirty, type DocumentSession } from "../core/editor-store";
 import {
   createDocument,
@@ -58,6 +66,20 @@ import { baseName, importRasterFile } from "../formats/raster/raster-import";
 import type { SurfaceFactory } from "../rendering/canvas/canvas2d-renderer";
 import { estimateTextSizer } from "../rendering/text/text-layout";
 import type { TextEditRequest } from "../tools/tool";
+import { hexToRgb } from "../core/color";
+import type { RasterLayer } from "../core/document/types";
+import {
+  context2d,
+  copySelectedPixels,
+  paintRasterLayer,
+  readPixels,
+  releaseSurface,
+  selectionFill,
+  selectionSurface,
+  type Surface,
+} from "../pixels/layer-pixels";
+import { colorRange } from "../selection/flood";
+import { selectionBytes, type SelectionMask } from "../selection/mask";
 import { ToolManager } from "./tool-manager";
 import { MemoryProjectStorage } from "../persistence/memory/memory-project-storage";
 import {
@@ -264,11 +286,23 @@ export class EditorController {
     if (layer) this.execute(ungroup(layer.id));
   }
 
+  /** Add a mask to the active layer; with a selection, the mask reveals only the selection. */
   addMaskToActiveLayer(): void {
     const session = this.store.getSession();
     const layer = session ? activeLayer(session.document) : undefined;
-    if (!layer) return;
-    if (this.execute(addLayerMask(layer.id))) this.store.setEditTarget("mask");
+    if (!session || !layer) return;
+    const selection = session.document.selection;
+    let command = addLayerMask(layer.id);
+    if (selection && !layer.mask) {
+      const surface = this.createSurface(selection.width, selection.height);
+      context2d(surface).drawImage(selectionSurface(this, selection), 0, 0);
+      const asset = this.assets.addBitmap(surface, selection.width, selection.height);
+      command = addLayerMask(layer.id, asset.id, "Mask from Selection");
+    }
+    if (this.execute(command)) {
+      this.store.setEditTarget("mask");
+      this.enforcePixelBudget();
+    }
   }
 
   deleteActiveMask(): void {
@@ -292,6 +326,251 @@ export class EditorController {
     const def = adjustmentDefinition(type);
     const layer = createAdjustmentLayer(session.document, def.defaults, def.label);
     this.execute(addLayer(layer, `New ${def.label}`));
+  }
+
+  // ---------------------------------------------------------------- selection (ADR-0010)
+
+  /** Selection last removed by Deselect, per document, for Select → Reselect. */
+  private readonly lastSelection = new Map<string, SelectionMask>();
+
+  selectAll(): void {
+    this.execute(selectAllCommand());
+  }
+
+  deselect(): void {
+    const session = this.store.getSession();
+    const selection = session?.document.selection;
+    if (!session || !selection) return;
+    this.lastSelection.set(session.document.id, selection);
+    this.execute(deselect());
+  }
+
+  reselect(): void {
+    const session = this.store.getSession();
+    const last = session && this.lastSelection.get(session.document.id);
+    if (!session || !last) return;
+    const { width, height } = session.document;
+    if (last.width !== width || last.height !== height) return;
+    this.execute(setSelection(last, "Reselect"));
+  }
+
+  canReselect(): boolean {
+    const session = this.store.getSession();
+    return !!session && this.lastSelection.has(session.document.id);
+  }
+
+  invertSelection(): void {
+    this.execute(invertSelectionCommand());
+  }
+
+  modifySelection(kind: SelectionModification, radius: number): Result {
+    const result = this.store.dispatch(modifySelection(kind, radius));
+    if (!result.ok) return { ok: false, error: result.error };
+    if (result.changed && !this.store.getSession()?.document.selection) {
+      this.notify("info", "Nothing is left selected.");
+    }
+    this.enforcePixelBudget();
+    return { ok: true };
+  }
+
+  /**
+   * The selection Select → Color Range would make (pixels near `color`), for the dialog preview.
+   * Null while the image is still loading.
+   */
+  colorRangePreview(color: string, fuzziness: number, sampleAll: boolean): SelectionMask | null {
+    const doc = this.store.getSession()?.document;
+    if (!doc) return null;
+    const pixels = readPixels(this, doc, sampleAll ? undefined : activeLayer(doc));
+    if (!pixels) return null;
+    const [r, g, b] = hexToRgb(color);
+    return colorRange(pixels, [r, g, b, 255], fuzziness);
+  }
+
+  applySelection(mask: SelectionMask | null, label: string): void {
+    this.execute(setSelection(mask, label));
+    this.enforcePixelBudget();
+  }
+
+  transformSelection(): void {
+    this.tools.beginSelectionTransform();
+  }
+
+  cropToSelection(): void {
+    const bounds = this.store.getSession()?.document.selection?.bounds;
+    if (!bounds) return;
+    this.execute(cropDocument(bounds));
+  }
+
+  /** The active pixel layer, or a notice explaining why the edit is not possible. */
+  private selectedPixelLayer(action: string): RasterLayer | null {
+    const doc = this.store.getSession()?.document;
+    const layer = doc ? activeLayer(doc) : undefined;
+    if (!doc?.selection) {
+      this.notify("error", "Make a selection first.");
+      return null;
+    }
+    if (!layer || layer.kind !== "raster") {
+      this.notify("error", `${action} works on pixel layers. Select a pixel layer and try again.`);
+      return null;
+    }
+    if (layer.assetId && !this.assets.getBitmap(layer.assetId)) {
+      this.notify("info", "This layer is still loading. Try again in a moment.");
+      return null;
+    }
+    return layer;
+  }
+
+  private paintSelection(
+    layer: RasterLayer,
+    paint: Surface,
+    operation: "source-over" | "destination-out",
+    label: string,
+  ): boolean {
+    try {
+      const assetId = paintRasterLayer(this, layer, paint, operation);
+      if (!assetId) return false;
+      const changed = this.execute(setRasterContent(layer.id, assetId, label));
+      this.enforcePixelBudget();
+      return changed;
+    } finally {
+      releaseSurface(paint);
+    }
+  }
+
+  /** Delete the selected pixels of the active pixel layer. */
+  clearSelection(label = "Clear"): boolean {
+    const doc = this.store.getSession()?.document;
+    const layer = this.selectedPixelLayer("Clear");
+    if (!doc?.selection || !layer) return false;
+    const paint = this.createSurface(doc.width, doc.height);
+    context2d(paint).drawImage(selectionSurface(this, doc.selection), 0, 0);
+    return this.paintSelection(layer, paint, "destination-out", label);
+  }
+
+  /** Fill the selection on the active pixel layer (Edit → Fill). */
+  fillSelection(color = this.store.getState().colors.foreground): void {
+    const doc = this.store.getSession()?.document;
+    const layer = this.selectedPixelLayer("Fill");
+    if (!doc || !layer) return;
+    this.paintSelection(layer, selectionFill(this, doc, color), "source-over", "Fill");
+  }
+
+  /** Pixels last copied in MYLPER (the system clipboard may hold something else). */
+  private clipboard: { asset: string; x: number; y: number; width: number; height: number } | null =
+    null;
+
+  hasClipboard(): boolean {
+    return this.clipboard !== null;
+  }
+
+  /**
+   * Whether a pasted image is most likely our own copy coming back from the system clipboard
+   * (browsers re-encode it, so compare dimensions). Then the in-app copy is pasted instead, at
+   * its original position.
+   */
+  async isOwnClipboardImage(file: Blob): Promise<boolean> {
+    const clip = this.clipboard;
+    if (!clip) return false;
+    try {
+      const bitmap = await this.decode(file);
+      const [width, height] =
+        "displayWidth" in bitmap
+          ? [bitmap.displayWidth, bitmap.displayHeight]
+          : [bitmap.width, bitmap.height];
+      const same = width === clip.width && height === clip.height;
+      if ("close" in bitmap && typeof bitmap.close === "function") bitmap.close();
+      return same;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Copy the selected pixels of the active layer. Kept in memory for pasting here, and offered
+   * to the system clipboard as PNG (best effort; it never leaves the device).
+   */
+  copySelection(): boolean {
+    const doc = this.store.getSession()?.document;
+    const layer = doc ? activeLayer(doc) : undefined;
+    if (!doc?.selection || !layer) {
+      this.notify("error", "Make a selection first.");
+      return false;
+    }
+    const clip = copySelectedPixels(this, doc, layer, doc.selection);
+    if (!clip) {
+      this.notify("info", "This layer is still loading. Try again in a moment.");
+      return false;
+    }
+    const asset = this.assets.addBitmap(clip.surface, clip.width, clip.height);
+    this.clipboard = {
+      asset: asset.id,
+      x: clip.x,
+      y: clip.y,
+      width: clip.width,
+      height: clip.height,
+    };
+    void this.writeSystemClipboard(asset.id);
+    return true;
+  }
+
+  cutSelection(): void {
+    if (this.selectedPixelLayer("Cut") && this.copySelection()) this.clearSelection("Cut");
+  }
+
+  /** Paste copied pixels as a new layer at the position they were copied from. */
+  pasteClipboard(): boolean {
+    const session = this.store.getSession();
+    const clip = this.clipboard;
+    if (!session) return false;
+    if (!clip || !this.assets.has(clip.asset)) {
+      this.notify("info", "Nothing to paste. Make a selection and copy it first.");
+      return false;
+    }
+    const layer = createRasterLayer({
+      assetId: clip.asset,
+      width: clip.width,
+      height: clip.height,
+      name: nextLayerName(session.document),
+      x: clip.x,
+      y: clip.y,
+    });
+    return this.execute(addLayer(layer, "Paste"));
+  }
+
+  /** Layer via Copy (Mod+J with a selection): the selected pixels on a new layer. */
+  layerViaCopy(): void {
+    const session = this.store.getSession();
+    const source = session ? activeLayer(session.document) : undefined;
+    const selection = session?.document.selection;
+    if (!session || !source || !selection) return;
+    const clip = copySelectedPixels(this, session.document, source, selection);
+    if (!clip) {
+      this.notify("info", "This layer is still loading. Try again in a moment.");
+      return;
+    }
+    const asset = this.assets.addBitmap(clip.surface, clip.width, clip.height);
+    const layer = createRasterLayer({
+      assetId: asset.id,
+      width: clip.width,
+      height: clip.height,
+      name: `${source.name} copy`,
+      x: clip.x,
+      y: clip.y,
+    });
+    this.execute(addLayer(layer, "Layer via Copy"));
+    this.enforcePixelBudget();
+  }
+
+  private async writeSystemClipboard(assetId: string): Promise<void> {
+    try {
+      if (typeof navigator === "undefined" || !navigator.clipboard?.write) return;
+      if (typeof ClipboardItem === "undefined") return;
+      const blob = await this.assets.getBlob(assetId);
+      await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
+    } catch (error) {
+      // Denied permission or no image support: copying inside MYLPER still works.
+      this.logger.info("system clipboard unavailable", describeError(error));
+    }
   }
 
   /** Mirror the active layer about its centre. */
@@ -667,7 +946,9 @@ export class EditorController {
    */
   enforcePixelBudget(): void {
     const sessions = () => this.store.getState().sessions;
-    const total = () => this.assets.estimateBytes(sessions().flatMap(sessionAssetIds));
+    const total = () =>
+      this.assets.estimateBytes(sessions().flatMap(sessionAssetIds)) +
+      sessions().reduce((sum, session) => sum + sessionSelectionBytes(session), 0);
     let trimmed = 0;
     while (total() > this.pixelBudgetBytes) {
       const candidate = [...sessions()].sort(
@@ -703,6 +984,7 @@ export class EditorController {
     for (const session of this.store.getState().sessions) {
       addAll(sessionAssetIds(session));
     }
+    if (this.clipboard) keep.add(this.clipboard.asset);
     this.assets.retainOnly(keep);
   }
 
@@ -720,6 +1002,20 @@ export class EditorController {
     this.notify("error", error);
     return { ok: false, error };
   }
+}
+
+/** Distinct selection masks held by a document and its undo history (ADR-0010). */
+export function sessionSelectionBytes(session: DocumentSession): number {
+  const masks = new Set<SelectionMask>();
+  const add = (doc: EditorDocument) => doc.selection && masks.add(doc.selection);
+  add(session.document);
+  for (const entry of [...session.history.past, ...session.history.future]) {
+    add(entry.before);
+    add(entry.after);
+  }
+  let bytes = 0;
+  for (const mask of masks) bytes += selectionBytes(mask);
+  return bytes;
 }
 
 function sessionAssetIds(session: DocumentSession): string[] {

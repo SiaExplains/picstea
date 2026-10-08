@@ -3,6 +3,28 @@
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.4.0] — 2026-10-09
+
+### Added
+
+- **Selections**: Marquee (rectangle or ellipse, M), Lasso (freehand or polygonal, L) and Magic
+  Wand (W). Hold Shift to add, Alt to subtract, or both to keep only the overlap. Drag inside a
+  selection or use the arrow keys to move it.
+- **Select menu**: All, Deselect, Reselect, Inverse, Color Range…, Feather…, Expand…, Contract…
+  and Transform Selection (scale and rotate the selection with handles).
+- **Working with a selection**: painting, fills and gradients stay inside it. Delete clears the
+  selected pixels, Edit → Fill (Shift+F5) fills them, Cut, Copy and Paste work with them, and
+  Cmd/Ctrl+J puts them on a new layer. Add Layer Mask with a selection makes a mask from it, and
+  Image → Crop to Selection crops to it.
+- **New tools**: Pencil (hard-edged pixels, N), Paint Bucket (Shift+G), Gradient (linear or
+  radial, G) and Eyedropper (I). Alt-click with the brush or pencil also picks a colour.
+- Selections can be undone like any other change. They are not saved with the project.
+
+### Fixed
+
+- The MYLPER logo in the menu bar could appear on a light box and be hard to read in some
+  browsers.
+
 ## [0.3.0] — 2026-10-08
 
 ### Added
