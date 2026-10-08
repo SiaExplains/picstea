@@ -715,6 +715,11 @@ export function StatusBar() {
     () => controller.status.get().storagePersistent,
     () => true,
   );
+  const refining = useSyncExternalStore(
+    controller.refining.subscribe,
+    controller.refining.get,
+    () => false,
+  );
   const doc = session?.document;
   const saveState = !session
     ? ""
@@ -745,6 +750,11 @@ export function StatusBar() {
             </span>
           )}
           <span className={styles.statusSpacer} />
+          {refining && (
+            <span className={styles.muted} data-testid="refining">
+              Rendering…
+            </span>
+          )}
           <span aria-live="polite" data-testid="save-state">
             {saveState}
           </span>

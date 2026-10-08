@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 import { useAppStatus, useController } from "./editor-context";
 import styles from "./editor.module.css";
 import { CloseIcon } from "./icons";
@@ -36,6 +36,19 @@ export function Notices() {
           </button>
         </div>
       ))}
+    </div>
+  );
+}
+
+/** Covers the editor while a long operation runs, so nothing is clicked twice (ADR-0012). */
+export function BusyOverlay() {
+  const controller = useController();
+  const busy = useSyncExternalStore(controller.busy.subscribe, controller.busy.get, () => null);
+  if (!busy) return null;
+  return (
+    <div className={styles.busy} role="status" aria-live="polite" data-testid="busy">
+      <span className={styles.spinner} aria-hidden="true" />
+      {busy}
     </div>
   );
 }

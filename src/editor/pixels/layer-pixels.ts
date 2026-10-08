@@ -60,6 +60,37 @@ export function readPixels(env: PixelEnv, doc: EditorDocument, layer?: Layer): R
   }
 }
 
+/**
+ * The colour of one document pixel as it appears (or of one layer), rendering just that pixel
+ * rather than the whole document. Null while a bitmap is still decoding or outside the canvas.
+ */
+export function samplePixel(
+  env: PixelEnv,
+  doc: EditorDocument,
+  x: number,
+  y: number,
+  layer?: Layer,
+): readonly [number, number, number, number] | null {
+  const px = Math.floor(x);
+  const py = Math.floor(y);
+  if (px < 0 || py < 0 || px >= doc.width || py >= doc.height) return null;
+  const surface = env.createSurface(1, 1);
+  try {
+    const ctx = context2d(surface, true);
+    const source = layer ? { ...doc, layers: [{ ...layer, visible: true }] } : doc;
+    const result = compositeDocument(ctx as CompositeContext, source, env.assets, {
+      sizer: env.sizer,
+      createSurface: env.createSurface,
+      space: { x: px, y: py, width: 1, height: 1, scale: 1 },
+    });
+    if (result.pendingAssetIds.length > 0) return null;
+    const d = ctx.getImageData(0, 0, 1, 1).data;
+    return [d[0], d[1], d[2], d[3]];
+  } finally {
+    releaseSurface(surface);
+  }
+}
+
 const maskSurfaces = new WeakMap<SelectionMask, Surface>();
 
 /** The selection as white pixels whose alpha is the coverage, cached per mask. */

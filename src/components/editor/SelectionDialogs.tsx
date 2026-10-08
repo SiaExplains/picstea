@@ -122,6 +122,7 @@ export function ColorRangeDialog({ open, onClose }: { open: boolean; onClose: ()
 
   const close = () => {
     controller.tools.previewSelection(undefined);
+    controller.endColorRange();
     onClose();
   };
 

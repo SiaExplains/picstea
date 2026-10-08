@@ -102,11 +102,24 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 | PDF export (one page, lossless with alpha) | ✅ | |
 | PDF import, TIFF, PSB, 16/32-bit and CMYK PSD | 📋 | Clear error messages today |
 
+## Gate 7 — Performance
+
+| Feature | Status | Notes |
+|---|---|---|
+| Viewport rendering: visible region at screen resolution (mip levels), reused while inside | ✅ | ADR-0012 |
+| Prefix cache for gestures; adjustment cache per render space | ✅ | |
+| Progressive rendering (lower resolution while interacting, sharp when idle) | ✅ | |
+| Brush/pencil/eraser dirty-rectangle previews | ✅ | |
+| Web Worker jobs: PSD read/encode, PDF encode, flood fill (wand, bucket) | ✅ | Main-thread fallback |
+| Device-aware memory budget, large-document note, busy overlay | ✅ | |
+| Profiling harness (`pnpm profile`) | ✅ | `scripts/profile-large.mjs` |
+| Full-resolution adjustments in export/wand composites still on the main thread | 📋 | One-off actions |
+| Tiled rendering beyond 36 MP, tile-based undo | 📋 | Limits unchanged |
+
 ## Later gates (summary)
 
 | Area | Status |
 |---|---|
-| Gate 7: workers, tiling, tile-based undo, large documents | 📋 |
 | Gate 8: marketing pages, blog, consent, ads, sponsorships | 📋 |
 | Gate 10: cloud | ⏸ requires explicit product-owner approval |
 
@@ -116,8 +129,7 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 - Each brush stroke keeps a full-layer copy for undo. Above ~768 MB the oldest undo steps are dropped (ADR-0007).
 - Scaling a shape also scales its stroke width.
 - Text is point text (manual line breaks, no wrapping). Fonts are limited to common system fonts.
-- Adjustments run on the main thread over the whole document. Edits above an adjustment are cached; very large documents can feel slow until Gate 7.
 - Masks follow moves but not scale/rotate of their layer.
-- Selection tools, the paint bucket and Color Range read pixels on the main thread; very large documents can pause briefly until Gate 7.
+- Exporting, the magic wand and Color Range still draw the full-resolution image on the main thread, so very large documents with adjustment layers can pause for under a second.
 - Fill, gradient and the paint bucket edit inside a pixel layer's own box; they do not grow the layer.
-- Documents are capped at 12,000 px per side and 36 MP until tiled rendering (Gate 7).
+- Documents are capped at 12,000 px per side and 36 MP (full-resolution export and pixel tools still need one canvas of the whole image).

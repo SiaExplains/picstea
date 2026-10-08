@@ -23,7 +23,7 @@ import {
   type Command,
 } from "../core/commands";
 import { adjustmentDefinition } from "../adjustments/registry";
-import type { AdjustmentType, EditorDocument } from "../core/document/types";
+import type { AdjustmentType, EditorDocument, Layer } from "../core/document/types";
 import { EditorStore, isDirty, type DocumentSession } from "../core/editor-store";
 import {
   createDocument,
@@ -67,7 +67,6 @@ import {
   writeProjectFile,
 } from "../formats/project/project-file";
 import { psdToDocument } from "../formats/psd/psd-convert";
-import { readPsd } from "../formats/psd/psd-read";
 import { svgPixelSize } from "../formats/svg/svg-import";
 import { MAX_IMPORT_FILE_BYTES } from "../core/document/limits";
 import { baseName, importRasterFile } from "../formats/raster/raster-import";
@@ -86,8 +85,9 @@ import {
   selectionSurface,
   type Surface,
 } from "../pixels/layer-pixels";
-import { colorRange } from "../selection/flood";
+import { colorRange, type RgbaPixels } from "../selection/flood";
 import { selectionBytes, type SelectionMask } from "../selection/mask";
+import { mainThreadRunner, type JobRunner } from "../workers/job-runner";
 import { ToolManager } from "./tool-manager";
 import { MemoryProjectStorage } from "../persistence/memory/memory-project-storage";
 import {
@@ -138,6 +138,8 @@ export interface EditorControllerOptions {
    * DOM). Without it SVG files cannot be opened.
    */
   rasterizeSvg?: (svg: Blob, width: number, height: number) => Promise<CanvasImageSource>;
+  /** Runs CPU-heavy jobs (PSD, flood fill) off the UI thread; inline by default. */
+  jobs?: JobRunner;
   /** Estimated decoded-pixel budget for open documents and their undo history, in bytes. */
   pixelBudgetBytes?: number;
   logger?: Logger;
@@ -148,6 +150,22 @@ export interface EditorControllerOptions {
 
 export const DEFAULT_AUTOSAVE_DELAY_MS = 1500;
 export const DEFAULT_PIXEL_BUDGET_BYTES = 768 * 1024 * 1024;
+const MB = 1024 * 1024;
+
+/**
+ * Decoded-pixel budget for open documents and their undo history, from the device's memory
+ * (`navigator.deviceMemory`, in GB, when the browser reports it): a quarter of it, between
+ * 256 MB and 1.5 GB. Unknown devices get the default (ADR-0012).
+ */
+export function pixelBudgetFor(deviceMemoryGb: number | undefined): number {
+  if (!deviceMemoryGb || !Number.isFinite(deviceMemoryGb) || deviceMemoryGb <= 0) {
+    return DEFAULT_PIXEL_BUDGET_BYTES;
+  }
+  return Math.round(Math.min(1536 * MB, Math.max(256 * MB, (deviceMemoryGb * 1024 * MB) / 4)));
+}
+
+/** Documents above this many pixels get a short "large image" note when opened. */
+export const LARGE_DOCUMENT_PIXELS = 16_000_000;
 
 const noSurfaces: SurfaceFactory = () => {
   throw new Error("Offscreen canvas is not available.");
@@ -168,12 +186,17 @@ export class EditorController {
   readonly cursor = new Observable<Point | null>(null);
   readonly tools: ToolManager;
   readonly textEdit = new Observable<TextEditSession | null>(null);
+  /** A long-running operation in progress ("Opening…"), for the progress overlay. */
+  readonly busy = new Observable<string | null>(null);
+  /** True while the canvas shows a quick, lower-resolution render that will be sharpened. */
+  readonly refining = new Observable(false);
   readonly sizer: ContentSizer;
   readonly createSurface: SurfaceFactory;
 
   private storage: ProjectStorage;
   private readonly decode: BitmapDecoder;
   private readonly rasterizeSvg: EditorControllerOptions["rasterizeSvg"];
+  readonly jobs: JobRunner;
   private readonly logger: Logger;
   private readonly autosaveDelayMs: number;
   private readonly pixelBudgetBytes: number;
@@ -190,6 +213,7 @@ export class EditorController {
     this.storage = options.storage;
     this.decode = options.decode;
     this.rasterizeSvg = options.rasterizeSvg;
+    this.jobs = options.jobs ?? mainThreadRunner;
     this.logger = options.logger ?? silentLogger;
     this.autosaveDelayMs = options.autosaveDelayMs ?? DEFAULT_AUTOSAVE_DELAY_MS;
     this.status = new Observable<AppStatus>({
@@ -202,6 +226,7 @@ export class EditorController {
       assets: this.assets,
       sizer: this.sizer,
       createSurface: this.createSurface,
+      jobs: this.jobs,
       notify: (kind, message) => this.notify(kind, message),
       pixelsCommitted: () => this.enforcePixelBudget(),
       beginTextEdit: (request) => this.beginTextEdit(request),
@@ -223,6 +248,7 @@ export class EditorController {
 
   dispose(): void {
     this.unsubscribe();
+    this.jobs.dispose();
     this.tools.dispose();
     if (this.autosaveTimer) clearTimeout(this.autosaveTimer);
     this.autosaveTimer = null;
@@ -240,6 +266,29 @@ export class EditorController {
   }
 
   // ---------------------------------------------------------------- editing
+
+  /** Open a document in a new tab, with a note when it is very large. */
+  private openSession(doc: EditorDocument, options: { saved?: boolean } = {}): void {
+    this.store.openDocument(doc, options);
+    const megapixels = (doc.width * doc.height) / 1_000_000;
+    if (doc.width * doc.height > LARGE_DOCUMENT_PIXELS) {
+      this.notify(
+        "info",
+        `Large image (${megapixels.toFixed(0)} MP): editing stays responsive, but exports and some tools take a moment, and fewer undo steps are kept.`,
+      );
+    }
+  }
+
+  /** Show the progress overlay while `run` works (only if it takes more than a moment). */
+  private async withBusy<T>(label: string, run: () => Promise<T>): Promise<T> {
+    const timer = setTimeout(() => this.busy.set(label), 150);
+    try {
+      return await run();
+    } finally {
+      clearTimeout(timer);
+      this.busy.set(null);
+    }
+  }
 
   /** Run a command on the active document, surfacing failures as notices. */
   execute(command: Command): boolean {
@@ -261,7 +310,7 @@ export class EditorController {
 
   newDocument(options: NewDocumentOptions): Result {
     try {
-      this.store.openDocument(createDocument(options));
+      this.openSession(createDocument(options));
       return { ok: true };
     } catch (error) {
       if (error instanceof DocumentError) return { ok: false, error: error.message };
@@ -395,13 +444,32 @@ export class EditorController {
   colorRangePreview(color: string, fuzziness: number, sampleAll: boolean): SelectionMask | null {
     const doc = this.store.getSession()?.document;
     if (!doc) return null;
-    const pixels = readPixels(this, doc, sampleAll ? undefined : activeLayer(doc));
-    if (!pixels) return null;
+    // The dialog re-runs this for every slider step: read the pixels once per document state.
+    const layer = sampleAll ? undefined : activeLayer(doc);
+    const key = this.colorRangePixels;
+    let pixels = key && key.doc === doc && key.layer === layer ? key.pixels : null;
+    if (!pixels) {
+      pixels = readPixels(this, doc, layer);
+      if (!pixels) return null;
+      this.colorRangePixels = { doc, layer, pixels };
+    }
     const [r, g, b] = hexToRgb(color);
     return colorRange(pixels, [r, g, b, 255], fuzziness);
   }
 
+  private colorRangePixels: {
+    doc: EditorDocument;
+    layer: Layer | undefined;
+    pixels: RgbaPixels;
+  } | null = null;
+
+  /** Free the pixels Color Range kept while its dialog was open. */
+  endColorRange(): void {
+    this.colorRangePixels = null;
+  }
+
   applySelection(mask: SelectionMask | null, label: string): void {
+    this.colorRangePixels = null;
     this.execute(setSelection(mask, label));
     this.enforcePixelBudget();
   }
@@ -615,7 +683,11 @@ export class EditorController {
   // ---------------------------------------------------------------- files (ADR-0011)
 
   /** Open any supported file — image, SVG, PSD or MYLPER project — detected from its bytes. */
-  async openFile(file: Blob, filename: string): Promise<Result> {
+  openFile(file: Blob, filename: string): Promise<Result> {
+    return this.withBusy("Opening…", () => this.openFileNow(file, filename));
+  }
+
+  private async openFileNow(file: Blob, filename: string): Promise<Result> {
     if (file.size > MAX_IMPORT_FILE_BYTES) {
       return this.fail(
         `The file is larger than ${Math.round(MAX_IMPORT_FILE_BYTES / 2 ** 20)} MB.`,
@@ -635,13 +707,13 @@ export class EditorController {
             height: layer.height,
             background: { kind: "transparent" },
           });
-          this.store.openDocument({ ...doc, layers: [layer], activeLayerId: layer.id });
+          this.openSession({ ...doc, layers: [layer], activeLayerId: layer.id });
           return { ok: true };
         }
         case "psd": {
-          const { file: psd, warnings } = await readPsd(bytes);
+          const { file: psd, warnings } = await this.jobs.run("psdRead", bytes, [bytes.buffer]);
           const imported = psdToDocument(this, psd, baseName(filename), warnings);
-          this.store.openDocument(imported.document);
+          this.openSession(imported.document);
           this.reportWarnings("Opened with changes", imported.warnings);
           this.enforcePixelBudget();
           return { ok: true };
@@ -651,7 +723,7 @@ export class EditorController {
             createId(k === "document" ? "doc" : "asset"),
           );
           for (const asset of project.assets) this.assets.add(asset);
-          this.store.openDocument(project.document);
+          this.openSession(project.document);
           return { ok: true };
         }
         case "unsupported":
@@ -666,7 +738,11 @@ export class EditorController {
   }
 
   /** Add a file to the active document as a new layer (images, SVG, flattened PSD). */
-  async placeFile(file: Blob, filename: string): Promise<Result> {
+  placeFile(file: Blob, filename: string): Promise<Result> {
+    return this.withBusy("Placing…", () => this.placeFileNow(file, filename));
+  }
+
+  private async placeFileNow(file: Blob, filename: string): Promise<Result> {
     const session = this.store.getSession();
     if (!session) return this.openFile(file, filename);
     const bytes = new Uint8Array(await file.arrayBuffer());
@@ -682,7 +758,7 @@ export class EditorController {
       if (kind.kind === "svg") {
         layer = await this.svgLayer(bytes, baseName(filename));
       } else {
-        const { file: psd } = await readPsd(bytes);
+        const { file: psd } = await this.jobs.run("psdRead", bytes, [bytes.buffer]);
         const flat = psd.composite;
         if (!flat) return this.fail("This PSD has no flattened image to place.");
         const asset = this.assets.addBitmap(
@@ -752,7 +828,11 @@ export class EditorController {
   }
 
   /** The active document as a portable `.mylper` project file. */
-  async saveProjectFile(): Promise<
+  saveProjectFile(): ReturnType<EditorController["saveProjectFileNow"]> {
+    return this.withBusy("Saving project…", () => this.saveProjectFileNow());
+  }
+
+  private async saveProjectFileNow(): Promise<
     { ok: true; blob: Blob; filename: string } | { ok: false; error: string }
   > {
     if (this.textEdit.get()) this.commitTextEdit();
@@ -799,7 +879,7 @@ export class EditorController {
       height: image.height,
       name,
     });
-    this.store.openDocument({ ...doc, layers: [layer], activeLayerId: layer.id });
+    this.openSession({ ...doc, layers: [layer], activeLayerId: layer.id });
     return { ok: true };
   }
 
@@ -959,7 +1039,7 @@ export class EditorController {
       for (const asset of project.assets) {
         if (!this.assets.has(asset.id)) this.assets.add(asset);
       }
-      this.store.openDocument(project.document, { saved: true });
+      this.openSession(project.document, { saved: true });
       if (project.missingAssetIds.length > 0) {
         this.notify(
           "error",
@@ -1097,7 +1177,11 @@ export class EditorController {
   // ---------------------------------------------------------------- export
 
   /** Flatten the active document into an image file. Nothing leaves the browser. */
-  async exportActive(
+  exportActive(request: ExportRequest): ReturnType<EditorController["exportNow"]> {
+    return this.withBusy("Exporting…", () => this.exportNow(request));
+  }
+
+  private async exportNow(
     request: ExportRequest,
   ): Promise<
     | { ok: true; blob: Blob; filename: string; warnings: readonly string[] }
@@ -1107,7 +1191,7 @@ export class EditorController {
     const session = this.store.getSession();
     if (!session) return this.fail("No document is open.");
     try {
-      const { blob, warnings } = await exportAs(this, session.document, request);
+      const { blob, warnings } = await exportAs(this, session.document, request, this.jobs);
       const filename = exportFilename(session.document.name, request.format);
       return { ok: true, blob, filename, warnings };
     } catch (error) {

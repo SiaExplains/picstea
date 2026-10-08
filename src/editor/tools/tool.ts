@@ -6,6 +6,7 @@ import type { SurfaceFactory } from "../rendering/canvas/canvas2d-renderer";
 import type { CompositePreview } from "../rendering/compositing/compositor";
 import type { Overlay } from "../rendering/overlay";
 import type { SelectionMask } from "../selection/mask";
+import type { JobRunner } from "../workers/job-runner";
 
 /**
  * Editing tools (ADR-0007). Tools are plain objects driven by the viewport: they receive pointer
@@ -39,6 +40,8 @@ export interface ToolContext {
   readonly assets: AssetStore;
   readonly sizer: ContentSizer;
   readonly createSurface: SurfaceFactory;
+  /** CPU-heavy work off the UI thread (ADR-0012). */
+  readonly jobs: JobRunner;
   viewport(): Viewport;
   notify(kind: "info" | "error", message: string): void;
   /** Ask for a redraw because previews/overlays changed. */

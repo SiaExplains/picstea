@@ -3,6 +3,26 @@
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.6.0] — 2026-10-09
+
+### Changed
+
+- **Much faster with large images.** On a 6000 × 4000 image with an adjustment layer, a brush
+  stroke went from 36 seconds to under a second and dragging a layer from 28 seconds to about
+  one. The canvas now draws only what you see, at screen resolution, and reuses the layers you
+  aren't changing.
+- While you paint or drag on a very large image, the view may briefly show a softer preview;
+  it sharpens as soon as you pause ("Rendering…" in the status bar).
+- Opening PSDs, exporting PSD and PDF, the magic wand and the paint bucket do their heavy work
+  in the background, so the page stays responsive.
+- Very large images show a short note when opened, and the memory set aside for undo follows
+  how much memory your device has.
+- Long operations show a "Working" overlay.
+
+### Fixed
+
+- The welcome dialog could reappear after a quick reload.
+
 ## [0.5.0] — 2026-10-09
 
 ### Added

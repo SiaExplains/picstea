@@ -66,9 +66,12 @@ export function WelcomeDialog() {
       ref={dialogRef}
       className={styles.dialog}
       aria-labelledby="welcome-title"
+      // The close event is queued asynchronously; remember right away on submit or Esc so a
+      // reload straight after dismissing does not show the dialog again.
+      onCancel={rememberWelcomeSeen}
       onClose={rememberWelcomeSeen}
     >
-      <form method="dialog" className={styles.body}>
+      <form method="dialog" className={styles.body} onSubmit={rememberWelcomeSeen}>
         <Image
           src="/brand/mylper-logo-on-dark.png"
           alt="MYLPER"

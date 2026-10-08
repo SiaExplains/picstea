@@ -95,6 +95,8 @@ interface Stroke {
   readonly scratch: Surface | null;
   /** Pencil dabs snap to whole pixels. */
   readonly aliased: boolean;
+  /** Area (layer pixels) touched by dabs since the last refresh; only it is recomposed. */
+  dirty: { x0: number; y0: number; x1: number; y1: number } | null;
 }
 
 type PaintTarget =
@@ -236,6 +238,7 @@ export class BrushTool implements Tool {
       clip,
       scratch: clip ? ctx.createSurface(width, height) : null,
       aliased,
+      dirty: { x0: 0, y0: 0, x1: width, y1: height },
       target: target.kind,
       // Like professional editors: the brush paints the foreground grey on a mask, the eraser
       // paints the background grey.
@@ -287,6 +290,15 @@ export class BrushTool implements Tool {
     const stroke = this.stroke;
     if (!stroke || points.length === 0) return;
     const ctx = context(stroke.buffer);
+    const pad = stroke.half + 2;
+    const d = stroke.dirty ?? { x0: Infinity, y0: Infinity, x1: -Infinity, y1: -Infinity };
+    for (const p of points) {
+      d.x0 = Math.min(d.x0, p.x - pad);
+      d.y0 = Math.min(d.y0, p.y - pad);
+      d.x1 = Math.max(d.x1, p.x + pad);
+      d.y1 = Math.max(d.y1, p.y + pad);
+    }
+    stroke.dirty = d;
     for (const p of points) {
       if (stroke.aliased) {
         ctx.drawImage(stroke.tip, Math.round(p.x - stroke.half), Math.round(p.y - stroke.half));
@@ -298,8 +310,22 @@ export class BrushTool implements Tool {
 
   private refresh(ctx: ToolContext): void {
     const stroke = this.stroke;
-    if (!stroke) return;
+    if (!stroke?.dirty) return;
+    // Recompose only the area new dabs touched (ADR-0012): the rest of the preview is unchanged.
+    const x0 = Math.max(0, Math.floor(stroke.dirty.x0));
+    const y0 = Math.max(0, Math.floor(stroke.dirty.y0));
+    const x1 = Math.min(stroke.width, Math.ceil(stroke.dirty.x1));
+    const y1 = Math.min(stroke.height, Math.ceil(stroke.dirty.y1));
+    stroke.dirty = null;
+    if (x1 <= x0 || y1 <= y0) return;
+    const clipTo = (c: Ctx2D) => {
+      c.save();
+      c.beginPath();
+      c.rect(x0, y0, x1 - x0, y1 - y0);
+      c.clip();
+    };
     const p = context(stroke.preview);
+    clipTo(p);
     p.globalCompositeOperation = "copy";
     p.globalAlpha = 1;
     p.drawImage(stroke.base, 0, 0);
@@ -308,11 +334,12 @@ export class BrushTool implements Tool {
     let paint: Surface = stroke.buffer;
     if (stroke.clip && stroke.scratch) {
       const s = context(stroke.scratch);
+      clipTo(s);
       s.globalCompositeOperation = "copy";
       s.drawImage(stroke.buffer, 0, 0);
       s.globalCompositeOperation = "destination-in";
       s.drawImage(stroke.clip, 0, 0);
-      s.globalCompositeOperation = "source-over";
+      s.restore();
       paint = stroke.scratch;
     }
     if (stroke.target === "mask") {
@@ -328,8 +355,7 @@ export class BrushTool implements Tool {
       p.globalCompositeOperation = this.erase ? "destination-out" : "source-over";
       p.drawImage(paint, 0, 0);
     }
-    p.globalAlpha = 1;
-    p.globalCompositeOperation = "source-over";
+    p.restore();
     ctx.invalidate();
   }
 

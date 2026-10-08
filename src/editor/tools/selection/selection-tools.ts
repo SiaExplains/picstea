@@ -2,9 +2,8 @@ import { moveSelection, setSelection } from "../../core/commands/selection-comma
 import { activeLayer } from "../../core/document/queries";
 import type { EditorDocument } from "../../core/document/types";
 import type { Point } from "../../core/viewport/viewport";
-import { readPixels } from "../../pixels/layer-pixels";
+import { renderBitmap } from "../../formats/layer-render";
 import type { Overlay } from "../../rendering/overlay";
-import { floodRegion } from "../../selection/flood";
 import { coverageAt, type SelectionMask } from "../../selection/mask";
 import {
   combineSelections,
@@ -40,6 +39,9 @@ const NUDGE_KEYS: Record<string, Point> = {
 };
 
 let nudgeGesture = 0;
+
+const errorMessage = (error: unknown) =>
+  error instanceof Error && error.name === "FormatError" ? error.message : "That did not work.";
 
 interface MoveGesture {
   readonly start: Point;
@@ -371,23 +373,34 @@ export class MagicWandTool extends SelectionToolBase {
     const settings = ctx.store.getState().toolSettings.wand;
     const mode = modeFromModifiers(settings.mode, pointer.shiftKey, pointer.altKey);
     const layer = settings.sampleAll ? undefined : activeLayer(doc);
-    const pixels = readPixels(ctx, doc, layer);
-    if (!pixels) {
-      ctx.notify("info", "The image is still loading. Try again in a moment.");
-      return;
-    }
-    const region = floodRegion(
-      pixels,
-      pointer.doc.x,
-      pointer.doc.y,
-      settings.tolerance,
-      settings.contiguous,
-    );
-    if (!region.bounds) {
-      if (mode === "replace") this.deselect(ctx);
-      return;
-    }
-    this.commit(ctx, region, mode, "Magic Wand");
+    const documentId = doc.id;
+    const sampled = layer ? [{ ...layer, visible: true }] : doc.layers;
+    // Draw here (GPU); read the pixels back and flood fill in the worker (ADR-0012).
+    void renderBitmap(ctx, doc, sampled)
+      .then((bitmap) =>
+        ctx.jobs.run(
+          "floodBitmap",
+          {
+            bitmap,
+            x: pointer.doc.x,
+            y: pointer.doc.y,
+            tolerance: settings.tolerance,
+            contiguous: settings.contiguous,
+          },
+          [bitmap],
+        ),
+      )
+      .then((region) => {
+        // Ignore the result if another document is active by now.
+        if (this.document(ctx)?.id !== documentId) return;
+        if (!region.bounds) {
+          if (mode === "replace") this.deselect(ctx);
+          return;
+        }
+        this.commit(ctx, region, mode, "Magic Wand");
+        ctx.invalidate();
+      })
+      .catch((error: unknown) => ctx.notify("error", errorMessage(error)));
   }
 
   pointerMove(): void {}

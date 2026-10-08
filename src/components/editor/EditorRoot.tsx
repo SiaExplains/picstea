@@ -2,7 +2,7 @@
 
 import { Component, useEffect, useSyncExternalStore, type ReactNode } from "react";
 import { createLogger, describeError } from "@/lib/logging/logger";
-import { EditorController } from "@/editor/controller/editor-controller";
+import { EditorController, pixelBudgetFor } from "@/editor/controller/editor-controller";
 import {
   IndexedDbProjectStorage,
   isIndexedDbAvailable,
@@ -11,6 +11,7 @@ import { MemoryProjectStorage } from "@/editor/persistence/memory/memory-project
 import type { BitmapEncoder } from "@/editor/assets/asset-store";
 import { defaultSurfaceFactory } from "@/editor/rendering/canvas/canvas2d-renderer";
 import { createCanvasTextSizer } from "@/editor/rendering/text/text-layout";
+import { workerRunner } from "@/editor/workers/job-runner";
 import { EditorContext } from "./editor-context";
 import styles from "./editor.module.css";
 import { EditorShell } from "./EditorShell";
@@ -67,6 +68,18 @@ function getBrowserController(): EditorController {
     encode: encodePng,
     createSurface: defaultSurfaceFactory,
     rasterizeSvg,
+    // Memory for pixels and undo history follows the device when the browser reports it.
+    pixelBudgetBytes: pixelBudgetFor(
+      (navigator as Navigator & { deviceMemory?: number }).deviceMemory,
+    ),
+    // CPU-heavy jobs (PSD, flood fill) run in a worker; it falls back to inline if unavailable.
+    jobs: workerRunner(
+      () =>
+        new Worker(new URL("../../workers/editor.worker.ts", import.meta.url), {
+          type: "module",
+          name: "mylper-editor",
+        }),
+    ),
     sizer: createCanvasTextSizer(
       () => defaultSurfaceFactory(1, 1).getContext("2d") as CanvasRenderingContext2D | null,
     ),

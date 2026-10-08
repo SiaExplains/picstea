@@ -8,7 +8,7 @@ import {
   zoomFactorFromWheel,
   type Point,
 } from "@/editor/core/viewport/viewport";
-import { Canvas2DRenderer } from "@/editor/rendering/canvas/canvas2d-renderer";
+import { Canvas2DRenderer, REFINE_DELAY_MS } from "@/editor/rendering/canvas/canvas2d-renderer";
 import type { ToolPointer } from "@/editor/tools/tool";
 import { useController, useIsMac } from "./editor-context";
 import styles from "./editor.module.css";
@@ -49,6 +49,7 @@ export function CanvasViewport() {
     const renderer = new Canvas2DRenderer(canvas);
     let frame = 0;
     let antsPhase = 0;
+    let refine: ReturnType<typeof setTimeout> | null = null;
     const draw = () => {
       frame = 0;
       const session = controller.store.getSession();
@@ -74,6 +75,15 @@ export function CanvasViewport() {
         selection: controller.tools.selection(),
         antsPhase,
       });
+      // A fast, lower-resolution frame was shown during interaction: sharpen it once idle.
+      controller.refining.set(renderer.needsRefine);
+      if (renderer.needsRefine) {
+        if (refine) clearTimeout(refine);
+        refine = setTimeout(() => {
+          refine = null;
+          schedule();
+        }, REFINE_DELAY_MS + 10);
+      }
     };
     const schedule = () => {
       if (!frame) frame = requestAnimationFrame(draw);
@@ -98,6 +108,7 @@ export function CanvasViewport() {
     return () => {
       unsubscribers.forEach((u) => u());
       window.clearInterval(ants);
+      if (refine) clearTimeout(refine);
       dprQuery.removeEventListener("change", schedule);
       if (frame) cancelAnimationFrame(frame);
       renderer.dispose();

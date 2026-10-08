@@ -1,5 +1,6 @@
 import type { EditorDocument } from "../../core/document/types";
-import { CompositeCache, compositeDocument } from "../compositing/compositor";
+import { CompositeCache, compositeDocument, PrefixCache } from "../compositing/compositor";
+import { covers, renderScale, spaceFor, viewRegion, type RenderSpace } from "../render-space";
 import { documentToScreen, type Viewport } from "../../core/viewport/viewport";
 import { rectHandles } from "../../core/geometry/rect";
 import type { SelectionMask } from "../../selection/mask";
@@ -40,19 +41,41 @@ export const defaultSurfaceFactory: SurfaceFactory = (width, height) => {
 
 const CHECKER_SIZE = 8;
 
+/** Interactive frames slower than this switch to a lower resolution (ADR-0012). */
+const FRAME_BUDGET_MS = 24;
+/** After this long without changes, a sharp render replaces a low-resolution one. */
+export const REFINE_DELAY_MS = 150;
+const MAX_DEGRADE = 3;
+const now = () => (typeof performance !== "undefined" ? performance.now() : Date.now());
+
 /**
- * Canvas 2D renderer: composites the document once into a cached document-sized surface, then
- * presents it under the viewport transform. Panning and zooming only re-present; the composite is
- * rebuilt only when the document or its decoded assets change.
+ * Canvas 2D renderer (ADR-0012): composites only the visible part of the document (plus a
+ * margin) at screen resolution — a power-of-two mip level of the zoom — and presents it under
+ * the viewport transform. The composite is reused while the view stays inside it; during
+ * gestures the bottom layers come from a prefix cache, and frames that are too slow drop to a
+ * lower resolution until the input settles, then a sharp render follows.
  */
 export class Canvas2DRenderer implements Renderer {
   private composite: HTMLCanvasElement | OffscreenCanvas | null = null;
   private compositeOf: EditorDocument | null = null;
+  private compositeSpace: RenderSpace | null = null;
   private compositeAssetVersion = -1;
   private compositeComplete = false;
   private compositeHadPreview = false;
   private checker: CanvasPattern | null = null;
   private readonly cache = new CompositeCache();
+  private readonly prefix = new PrefixCache();
+  private lastInputs: { doc: EditorDocument; zoom: number; panX: number; panY: number } | null =
+    null;
+  private lastChange = -Infinity;
+  private degrade = 0;
+  /** True while the shown composite is lower resolution than the view needs. */
+  private refinePending = false;
+
+  /** The view needs another render once input has been idle for `REFINE_DELAY_MS`. */
+  get needsRefine(): boolean {
+    return this.refinePending;
+  }
 
   constructor(
     private readonly canvas: HTMLCanvasElement,
@@ -87,11 +110,19 @@ export class Canvas2DRenderer implements Renderer {
     ctx.fillStyle = this.checkerPattern(ctx) ?? this.theme.checkerLight;
     ctx.fillRect(x, y, w, h);
 
-    if (this.composite) {
+    const space = this.compositeSpace;
+    if (this.composite && space) {
       // Show crisp pixels when magnified, smooth resampling when reduced.
       ctx.imageSmoothingEnabled = viewport.zoom < 2;
       ctx.imageSmoothingQuality = "high";
-      ctx.drawImage(this.composite, x, y, w, h);
+      const k = viewport.zoom / space.scale;
+      ctx.drawImage(
+        this.composite,
+        viewport.panX + space.x * viewport.zoom,
+        viewport.panY + space.y * viewport.zoom,
+        space.width * k,
+        space.height * k,
+      );
     }
 
     ctx.strokeStyle = this.theme.border;
@@ -243,45 +274,86 @@ export class Canvas2DRenderer implements Renderer {
     }
     this.composite = null;
     this.compositeOf = null;
+    this.compositeSpace = null;
     this.checker = null;
     this.cache.clear();
+    this.prefix.clear();
   }
 
   private ensureComposite(scene: RenderScene): void {
-    const doc = scene.document;
+    const { document: doc, viewport, screen } = scene;
+    const t = now();
+    const inputs = { doc, zoom: viewport.zoom, panX: viewport.panX, panY: viewport.panY };
+    const last = this.lastInputs;
+    const changed =
+      !last ||
+      last.doc !== doc ||
+      last.zoom !== inputs.zoom ||
+      last.panX !== inputs.panX ||
+      last.panY !== inputs.panY ||
+      !!scene.preview;
+    if (changed) this.lastChange = t;
+    this.lastInputs = inputs;
+    const interactive = t - this.lastChange < REFINE_DELAY_MS;
+    if (!interactive) this.degrade = 0;
+
+    const region = viewRegion(doc, viewport, screen);
+    if (!region) {
+      this.refinePending = false;
+      return;
+    }
+    const fullScale = renderScale(viewport.zoom, scene.devicePixelRatio);
+    const scale = Math.max(1 / 64, fullScale / 2 ** (interactive ? this.degrade : 0));
+    const current = this.compositeSpace;
     const upToDate =
+      !!this.composite &&
+      !!current &&
       !scene.preview &&
       !this.compositeHadPreview &&
       this.compositeOf === doc &&
-      (this.compositeComplete || this.compositeAssetVersion === scene.assetVersion);
-    if (upToDate && this.composite) return;
+      (this.compositeComplete || this.compositeAssetVersion === scene.assetVersion) &&
+      current.scale === scale &&
+      covers(current, doc, viewport, screen);
+    if (upToDate) {
+      this.refinePending = current.scale < fullScale;
+      return;
+    }
 
+    const space = spaceFor(region, scale);
     if (
       !this.composite ||
-      this.composite.width !== doc.width ||
-      this.composite.height !== doc.height
+      this.composite.width !== space.width ||
+      this.composite.height !== space.height
     ) {
       if (this.composite) {
         // Release the old backing store before allocating a new one.
         this.composite.width = 0;
         this.composite.height = 0;
       }
-      this.composite = this.createSurface(doc.width, doc.height);
+      this.composite = this.createSurface(space.width, space.height);
     }
     const ctx = this.composite.getContext("2d") as CanvasRenderingContext2D | null;
     if (!ctx) return;
 
+    const started = now();
     const result = compositeDocument(ctx, doc, scene.assets, {
       preview: scene.preview,
       sizer: scene.sizer,
       createSurface: this.createSurface,
       cache: this.cache,
       assetVersion: scene.assetVersion,
+      space,
+      prefix: this.prefix,
+      target: this.composite,
     });
+    const elapsed = now() - started;
+    if (interactive && elapsed > FRAME_BUDGET_MS && this.degrade < MAX_DEGRADE) this.degrade++;
+    this.compositeSpace = space;
     this.compositeHadPreview = !!scene.preview;
     this.compositeOf = doc;
     this.compositeAssetVersion = scene.assetVersion;
     this.compositeComplete = result.pendingAssetIds.length === 0;
+    this.refinePending = scale < fullScale;
   }
 
   private checkerPattern(ctx: CanvasRenderingContext2D): CanvasPattern | null {
