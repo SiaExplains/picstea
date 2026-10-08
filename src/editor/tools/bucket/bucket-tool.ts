@@ -1,12 +1,9 @@
 import { setRasterContent } from "../../core/commands";
 import { combineSelections } from "../../selection/ops";
-import { floodRegion } from "../../selection/flood";
-import {
-  paintRasterLayer,
-  readPixels,
-  releaseSurface,
-  selectionFill,
-} from "../../pixels/layer-pixels";
+import { findLayer } from "../../core/document/queries";
+import type { SelectionMask } from "../../selection/mask";
+import { renderBitmap } from "../../formats/layer-render";
+import { paintRasterLayer, releaseSurface, selectionFill } from "../../pixels/layer-pixels";
 import { editablePixelLayer } from "../pixel-target";
 import type { Tool, ToolContext, ToolPointer } from "../tool";
 
@@ -29,31 +26,50 @@ export class BucketTool implements Tool {
     if (!layer) return;
     const { toolSettings, colors } = ctx.store.getState();
     const settings = toolSettings.bucket;
-    const pixels = readPixels(ctx, doc, settings.sampleAll ? undefined : layer);
-    if (!pixels) {
-      ctx.notify("info", "The image is still loading. Try again in a moment.");
-      return;
-    }
-    let region = floodRegion(
-      pixels,
-      pointer.doc.x,
-      pointer.doc.y,
-      settings.tolerance,
-      settings.contiguous,
-    );
-    if (doc.selection) {
-      const inside = combineSelections(doc.selection, region, "intersect");
-      if (!inside) return;
-      region = inside;
-    }
-    if (!region.bounds) return;
-    const paint = selectionFill(ctx, doc, colors.foreground, region);
+    const documentId = doc.id;
+    const fill = colors.foreground;
+    const sampled = settings.sampleAll ? doc.layers : [{ ...layer, visible: true }];
+    void renderBitmap(ctx, doc, sampled)
+      .then((bitmap) =>
+        ctx.jobs.run(
+          "floodBitmap",
+          {
+            bitmap,
+            x: pointer.doc.x,
+            y: pointer.doc.y,
+            tolerance: settings.tolerance,
+            contiguous: settings.contiguous,
+          },
+          [bitmap],
+        ),
+      )
+      .then((flooded) => this.fill(ctx, documentId, layer.id, flooded, fill))
+      .catch(() => ctx.notify("error", "The fill did not work. Try again."));
+  }
+
+  /** Paint the flooded region (limited to the selection) once the job is done. */
+  private fill(
+    ctx: ToolContext,
+    documentId: string,
+    layerId: string,
+    flooded: SelectionMask,
+    color: string,
+  ): void {
+    const doc = ctx.store.getSession()?.document;
+    if (!doc || doc.id !== documentId) return;
+    const layer = findLayer(doc, layerId);
+    if (!layer || layer.kind !== "raster") return;
+    let region: SelectionMask | null = flooded;
+    if (doc.selection) region = combineSelections(doc.selection, flooded, "intersect");
+    if (!region?.bounds) return;
+    const paint = selectionFill(ctx, doc, color, region);
     try {
       const assetId = paintRasterLayer(ctx, layer, paint);
       if (!assetId) return;
       const result = ctx.store.dispatch(setRasterContent(layer.id, assetId, "Paint Bucket"));
       if (!result.ok) ctx.notify("error", result.error);
       ctx.pixelsCommitted();
+      ctx.invalidate();
     } finally {
       releaseSurface(paint);
     }

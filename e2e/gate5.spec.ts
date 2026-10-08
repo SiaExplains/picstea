@@ -116,7 +116,8 @@ test("paint bucket fills the contiguous area and leaves other colours alone", as
   await page.keyboard.press("Shift+g");
   await page.getByRole("checkbox", { name: "Sample all layers" }).check();
   await click(page, 300, 300);
-  expect(isDark(await pixel(page, 300, 300))).toBe(true);
+  // The flood fill runs in a worker, so the result arrives a moment later.
+  await expect.poll(async () => isDark(await pixel(page, 300, 300))).toBe(true);
   expect(isDark(await pixel(page, 5, 5))).toBe(true);
   expect(isBlue(await pixel(page, 100, 100))).toBe(true);
   expect(errors).toEqual([]);

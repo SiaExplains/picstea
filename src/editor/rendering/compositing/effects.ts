@@ -68,13 +68,15 @@ function drawShadowOnly(
 }
 
 /**
- * Render `content` (a layer already rendered and masked on a document-sized surface) with its
+ * Render `content` (a layer already rendered and masked on a render-space surface) with its
  * effects into a new surface: shadow → glow → content (+ colour overlay) → outside stroke.
+ * `scale` is surface pixels per document pixel, so effect sizes match at every zoom.
  */
 export function renderWithEffects(
   content: Surface,
   effects: LayerEffects,
   createSurface: (w: number, h: number) => Surface,
+  scale = 1,
 ): Surface {
   const { width, height } = content;
   const out = createSurface(width, height);
@@ -82,13 +84,13 @@ export function renderWithEffects(
 
   const shadow = effects.dropShadow;
   if (shadow?.enabled) {
-    const { dx, dy } = shadowOffset(shadow.angle, shadow.distance);
-    drawShadowOnly(ctx, content, rgba(shadow.color, shadow.opacity), shadow.blur, dx, dy);
+    const { dx, dy } = shadowOffset(shadow.angle, shadow.distance * scale);
+    drawShadowOnly(ctx, content, rgba(shadow.color, shadow.opacity), shadow.blur * scale, dx, dy);
   }
 
   const glow = effects.outerGlow;
   if (glow?.enabled && glow.size > 0) {
-    drawShadowOnly(ctx, content, rgba(glow.color, glow.opacity), glow.size, 0, 0);
+    drawShadowOnly(ctx, content, rgba(glow.color, glow.opacity), glow.size * scale, 0, 0);
   }
 
   const overlay = effects.colorOverlay;
@@ -111,7 +113,7 @@ export function renderWithEffects(
   if (stroke?.enabled && stroke.size > 0) {
     const ring = createSurface(width, height);
     const r = context(ring);
-    for (const p of strokeOffsets(stroke.size)) r.drawImage(content, p.x, p.y);
+    for (const p of strokeOffsets(stroke.size * scale)) r.drawImage(content, p.x, p.y);
     r.globalCompositeOperation = "source-in";
     r.fillStyle = stroke.color;
     r.fillRect(0, 0, width, height);

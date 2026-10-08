@@ -14,7 +14,7 @@ import { LayersPanel } from "./LayersPanel";
 import { ExportDialog } from "./ExportDialog";
 import { MenuBar } from "./MenuBar";
 import { NewDocumentDialog } from "./NewDocumentDialog";
-import { Notices } from "./Notices";
+import { BusyOverlay, Notices } from "./Notices";
 import { PropertiesPanel } from "./PropertiesPanel";
 import { ColorRangeDialog, ModifySelectionDialog } from "./SelectionDialogs";
 import { StartScreen } from "./StartScreen";
@@ -172,6 +172,7 @@ export function EditorShell() {
       <ModifySelectionDialog kind={modifyKind} onClose={() => setModifyKind(null)} />
       {colorRangeOpen && <ColorRangeDialog open onClose={() => setColorRangeOpen(false)} />}
       <Notices />
+      <BusyOverlay />
       <input
         ref={fileInputRef}
         type="file"

@@ -13,10 +13,19 @@ import { insertLayerAt, locateLayer } from "../../core/document/tree";
 import { hasActiveEffects, renderWithEffects } from "./effects";
 import type { ContentSizer } from "../../core/geometry/layer-geometry";
 import { applyTextStyle, lineAdvance, textLines } from "../text/text-layout";
+import {
+  identitySpace,
+  isIdentitySpace,
+  sameSpace,
+  spaceTransform,
+  type RenderSpace,
+} from "../render-space";
 
 /**
- * Composite a document's layer stack into a 2D context at document resolution
- * (docs/04_RENDERING_ENGINE.md, "Rendering pipeline"): visibility → transform → blend → composite.
+ * Composite a document's layer stack into a 2D context (docs/04_RENDERING_ENGINE.md, "Rendering
+ * pipeline"): visibility → transform → blend → composite. By default at document resolution; with
+ * a render space (ADR-0012), only a region at a given scale — the canvas renders just what is
+ * visible, at screen resolution.
  *
  * Compositing happens on a transparent, document-sized surface — not straight onto the screen —
  * so blend modes act on the layers beneath and never on the checkerboard or workspace.
@@ -61,6 +70,7 @@ export type CompositeContext = Pick<
   letterSpacing?: string;
   getImageData?: CanvasRenderingContext2D["getImageData"];
   putImageData?: CanvasRenderingContext2D["putImageData"];
+  setTransform?: CanvasRenderingContext2D["setTransform"];
 };
 
 type Surface = HTMLCanvasElement | OffscreenCanvas;
@@ -93,8 +103,7 @@ export class CompositeCache {
       layer: AdjustmentLayer;
       below: readonly Layer[];
       assetVersion: number;
-      width: number;
-      height: number;
+      space: RenderSpace;
       pixels: ImageData;
     }
   >();
@@ -103,16 +112,14 @@ export class CompositeCache {
     layer: AdjustmentLayer,
     below: readonly Layer[],
     assetVersion: number,
-    width: number,
-    height: number,
+    space: RenderSpace,
   ): ImageData | undefined {
     const e = this.entries.get(layer.id);
     if (
       !e ||
       e.layer !== layer ||
       e.assetVersion !== assetVersion ||
-      e.width !== width ||
-      e.height !== height ||
+      !sameSpace(e.space, space) ||
       e.below.length !== below.length ||
       e.below.some((l, i) => l !== below[i])
     ) {
@@ -125,11 +132,10 @@ export class CompositeCache {
     layer: AdjustmentLayer,
     below: readonly Layer[],
     assetVersion: number,
-    width: number,
-    height: number,
+    space: RenderSpace,
     pixels: ImageData,
   ): void {
-    this.entries.set(layer.id, { layer, below: [...below], assetVersion, width, height, pixels });
+    this.entries.set(layer.id, { layer, below: [...below], assetVersion, space, pixels });
   }
 
   clear(): void {
@@ -148,6 +154,14 @@ export interface CompositeOptions {
   readonly cache?: CompositeCache;
   /** Asset version for cache invalidation. */
   readonly assetVersion?: number;
+  /** Render only part of the document, at a scale (default: whole document at 1:1). */
+  readonly space?: RenderSpace;
+  /**
+   * Reuse the composite of unchanged bottom layers between renders (ADR-0012). Requires
+   * `target`, the surface `ctx` draws into.
+   */
+  readonly prefix?: PrefixCache;
+  readonly target?: Surface;
 }
 
 const COMPOSITE_OPERATION: Record<BlendMode, GlobalCompositeOperation> = {
@@ -289,6 +303,28 @@ interface Env {
   readonly assets: AssetResolver;
   readonly options: CompositeOptions;
   readonly pending: string[];
+  readonly space: RenderSpace;
+  readonly identity: boolean;
+}
+
+/** A render-space surface with the document → surface transform applied. */
+function spaceSurface(env: Env, willRead = false): { surface: Surface; ctx: CompositeContext } {
+  const surface = env.options.createSurface!(env.space.width, env.space.height);
+  const ctx = context2d(surface, willRead);
+  if (!env.identity) ctx.setTransform!(...spaceTransform(env.space));
+  return { surface, ctx };
+}
+
+/** Run `draw` in surface pixels (identity transform), e.g. to draw another render-space surface. */
+function inSurfacePixels(ctx: CompositeContext, env: Env, draw: () => void): void {
+  if (env.identity || !ctx.setTransform) {
+    draw();
+    return;
+  }
+  ctx.save();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  draw();
+  ctx.restore();
 }
 
 function context2d(surface: Surface, willRead = false): CompositeContext {
@@ -313,7 +349,7 @@ function maskIsActive(mask: LayerMask | undefined, layerId: string, env: Env): m
   );
 }
 
-/** Clip `ctx` (a document-sized surface) to the mask: outside the mask rectangle stays revealed. */
+/** Clip `ctx` (a render-space surface) to the mask: outside the mask rectangle stays revealed. */
 function applyMask(ctx: CompositeContext, layerId: string, mask: LayerMask, env: Env): void {
   const source =
     env.options.preview?.maskOverrides?.get(layerId) ??
@@ -322,27 +358,31 @@ function applyMask(ctx: CompositeContext, layerId: string, mask: LayerMask, env:
     if (mask.assetId) env.pending.push(mask.assetId);
     return;
   }
-  const { width, height } = env.doc;
-  const m = env.options.createSurface!(width, height);
-  const mctx = context2d(m);
-  mctx.fillStyle = "#ffffff";
-  mctx.fillRect(0, 0, width, height);
+  const { surface: m, ctx: mctx } = spaceSurface(env);
+  inSurfacePixels(mctx, env, () => {
+    mctx.fillStyle = "#ffffff";
+    mctx.fillRect(0, 0, env.space.width, env.space.height);
+  });
   mctx.clearRect(mask.x, mask.y, mask.width, mask.height);
   mctx.drawImage(source, mask.x, mask.y, mask.width, mask.height);
-  ctx.save();
-  ctx.globalCompositeOperation = "destination-in";
-  ctx.drawImage(m, 0, 0);
-  ctx.restore();
+  inSurfacePixels(ctx, env, () => {
+    ctx.save();
+    ctx.globalCompositeOperation = "destination-in";
+    ctx.drawImage(m, 0, 0);
+    ctx.restore();
+  });
   release(m);
 }
 
 /** Draw an isolated surface onto the target with the layer's opacity and blend mode. */
-function drawIsolated(target: CompositeContext, surface: Surface, layer: Layer): void {
-  target.save();
-  target.globalAlpha = layer.opacity;
-  target.globalCompositeOperation = compositeOperation(layer.blendMode);
-  target.drawImage(surface, 0, 0);
-  target.restore();
+function drawIsolated(target: CompositeContext, surface: Surface, layer: Layer, env: Env): void {
+  inSurfacePixels(target, env, () => {
+    target.save();
+    target.globalAlpha = layer.opacity;
+    target.globalCompositeOperation = compositeOperation(layer.blendMode);
+    target.drawImage(surface, 0, 0);
+    target.restore();
+  });
 }
 
 /** Finish an isolated layer surface: mask, then effects, then draw onto the target. */
@@ -350,11 +390,16 @@ function finishIsolated(target: CompositeContext, surface: Surface, layer: Layer
   if (maskIsActive(layer.mask, layer.id, env))
     applyMask(context2d(surface), layer.id, layer.mask, env);
   if (hasActiveEffects(layer.effects)) {
-    const withEffects = renderWithEffects(surface, layer.effects!, env.options.createSurface!);
-    drawIsolated(target, withEffects, layer);
+    const withEffects = renderWithEffects(
+      surface,
+      layer.effects!,
+      env.options.createSurface!,
+      env.space.scale,
+    );
+    drawIsolated(target, withEffects, layer, env);
     release(withEffects);
   } else {
-    drawIsolated(target, surface, layer);
+    drawIsolated(target, surface, layer, env);
   }
 }
 
@@ -364,12 +409,12 @@ function compositeAdjustment(
   env: Env,
   below: readonly Layer[],
 ): void {
-  const { width, height } = env.doc;
+  const { width, height } = env.space;
   const { createSurface, cache, preview } = env.options;
   if (!createSurface || !target.getImageData || !target.putImageData) return;
   const cacheable = !!cache && !preview;
   const version = env.options.assetVersion ?? 0;
-  const cached = cacheable ? cache!.get(layer, below, version, width, height) : undefined;
+  const cached = cacheable ? cache!.get(layer, below, version, env.space) : undefined;
   if (cached) {
     target.putImageData(cached, 0, 0);
     return;
@@ -382,10 +427,11 @@ function compositeAdjustment(
   // Per-pixel amount: layer opacity × mask (if any).
   let maskAlpha: Uint8ClampedArray | null = null;
   if (maskIsActive(layer.mask, layer.id, env)) {
-    const m = createSurface(width, height);
-    const mctx = context2d(m, true);
-    mctx.fillStyle = "#000000";
-    mctx.fillRect(0, 0, width, height);
+    const { surface: m, ctx: mctx } = spaceSurface(env, true);
+    inSurfacePixels(mctx, env, () => {
+      mctx.fillStyle = "#000000";
+      mctx.fillRect(0, 0, width, height);
+    });
     applyMask(mctx, layer.id, layer.mask, env);
     maskAlpha = mctx.getImageData!(0, 0, width, height).data;
     release(m);
@@ -410,15 +456,17 @@ function compositeAdjustment(
       for (let i = 0; i < src.length; i += 4) src[i + 3] = (src[i + 3] * maskAlpha[i + 3]) / 255;
     const s = createSurface(width, height);
     context2d(s).putImageData!(adjusted, 0, 0);
-    target.save();
-    target.globalAlpha = opacity;
-    target.globalCompositeOperation = compositeOperation(layer.blendMode);
-    target.drawImage(s, 0, 0);
-    target.restore();
+    inSurfacePixels(target, env, () => {
+      target.save();
+      target.globalAlpha = opacity;
+      target.globalCompositeOperation = compositeOperation(layer.blendMode);
+      target.drawImage(s, 0, 0);
+      target.restore();
+    });
     release(s);
   }
   if (cacheable && env.pending.length === 0) {
-    cache!.set(layer, below, version, width, height, target.getImageData(0, 0, width, height));
+    cache!.set(layer, below, version, env.space, target.getImageData(0, 0, width, height));
   }
 }
 
@@ -430,7 +478,6 @@ function compositeList(
   drawn: Layer[],
 ): void {
   const { preview, createSurface } = env.options;
-  const { width, height } = env.doc;
   for (const layer of layers) {
     if (!layer.visible || layer.opacity <= 0) continue;
     if (preview?.hiddenLayerIds?.has(layer.id)) continue;
@@ -444,8 +491,8 @@ function compositeList(
       if (passThrough || !createSurface) {
         compositeList(target, layer.children, env, drawn);
       } else {
-        const surface = createSurface(width, height);
-        compositeList(context2d(surface, true), layer.children, env, []);
+        const { surface, ctx } = spaceSurface(env, true);
+        compositeList(ctx, layer.children, env, []);
         finishIsolated(target, surface, layer, env);
         release(surface);
       }
@@ -462,8 +509,7 @@ function compositeList(
     const isolated =
       createSurface && (maskIsActive(layer.mask, layer.id, env) || hasActiveEffects(layer.effects));
     if (isolated) {
-      const surface = createSurface(width, height);
-      const sctx = context2d(surface);
+      const { surface, ctx: sctx } = spaceSurface(env);
       sctx.save();
       drawLayer(sctx, env.doc, layer, env.assets, env.options, env.pending);
       sctx.restore();
@@ -480,14 +526,124 @@ function compositeList(
   }
 }
 
+/**
+ * The composite of the bottom root layers from the previous render (ADR-0012). While one layer
+ * changes every frame (a brush stroke, a drag), everything beneath it is drawn from this image
+ * instead of being composited again.
+ */
+export class PrefixCache {
+  private image: Surface | null = null;
+  private layers: readonly Layer[] = [];
+  private space: RenderSpace | null = null;
+  private version = -1;
+  /** Root layers of the previous render, to find the first one that changed. */
+  private previousRoots: readonly Layer[] = [];
+
+  /** How many bottom layers can be drawn from the cache for this render. */
+  lookup(roots: readonly Layer[], space: RenderSpace, version: number): number {
+    if (!this.image || !sameSpace(this.space, space) || this.version !== version) return 0;
+    const n = this.layers.length;
+    if (n > roots.length) return 0;
+    for (let i = 0; i < n; i++) if (roots[i] !== this.layers[i]) return 0;
+    return n;
+  }
+
+  get surface(): Surface | null {
+    return this.image;
+  }
+
+  /** Index of the first root layer that differs from the previous render. */
+  firstChange(roots: readonly Layer[]): number {
+    const prev = this.previousRoots;
+    let i = 0;
+    while (i < roots.length && i < prev.length && roots[i] === prev[i]) i++;
+    return i;
+  }
+
+  remember(roots: readonly Layer[]): void {
+    this.previousRoots = roots;
+  }
+
+  store(
+    layers: readonly Layer[],
+    space: RenderSpace,
+    version: number,
+    from: Surface,
+    createSurface: (w: number, h: number) => Surface,
+  ): void {
+    if (!this.image || this.image.width !== space.width || this.image.height !== space.height) {
+      if (this.image) release(this.image);
+      this.image = createSurface(space.width, space.height);
+    }
+    const ctx = context2d(this.image);
+    ctx.globalCompositeOperation = "copy";
+    ctx.drawImage(from, 0, 0);
+    ctx.globalCompositeOperation = "source-over";
+    this.layers = [...layers];
+    this.space = space;
+    this.version = version;
+  }
+
+  clear(): void {
+    if (this.image) release(this.image);
+    this.image = null;
+    this.layers = [];
+    this.previousRoots = [];
+    this.space = null;
+  }
+}
+
+/** Root layers that preview content (strokes, drafts, hidden text) touches this frame. */
+function previewTouches(root: Layer, preview: CompositePreview | undefined): boolean {
+  if (!preview) return false;
+  const ids = new Set<string>([
+    ...(preview.overrides?.keys() ?? []),
+    ...(preview.maskOverrides?.keys() ?? []),
+    ...(preview.hiddenLayerIds ?? []),
+    ...(preview.extraLayers ?? []).map((e) => e.layer.id),
+  ]);
+  if (ids.size === 0) return false;
+  const visit = (layer: Layer): boolean =>
+    ids.has(layer.id) || (layer.kind === "group" && layer.children.some(visit));
+  return visit(root);
+}
+
 export function compositeDocument(
   ctx: CompositeContext,
   doc: EditorDocument,
   assets: AssetResolver,
   options: CompositeOptions,
 ): CompositeResult {
-  const env: Env = { doc, assets, options, pending: [] };
-  ctx.clearRect(0, 0, doc.width, doc.height);
-  compositeList(ctx, withExtras(doc, options.preview), env, []);
+  const space = options.space ?? identitySpace(doc);
+  const identity = isIdentitySpace(space, doc);
+  const env: Env = { doc, assets, options, pending: [], space, identity };
+  inSurfacePixels(ctx, env, () => ctx.clearRect(0, 0, space.width, space.height));
+  if (!identity) {
+    ctx.save();
+    ctx.setTransform!(...spaceTransform(space));
+  }
+  const roots = withExtras(doc, options.preview);
+  const { prefix, target, createSurface } = options;
+  const version = options.assetVersion ?? 0;
+  if (prefix && target && createSurface) {
+    // Layers below the first one that changed (or that a preview touches) can come from cache.
+    let stable = prefix.firstChange(roots);
+    const touched = roots.findIndex((l) => previewTouches(l, options.preview));
+    if (touched !== -1) stable = Math.min(stable, touched);
+    let start = prefix.lookup(roots, space, version);
+    if (start > stable) start = 0;
+    const drawn: Layer[] = [...roots.slice(0, start)];
+    if (start > 0) inSurfacePixels(ctx, env, () => ctx.drawImage(prefix.surface!, 0, 0));
+    if (stable > start) {
+      compositeList(ctx, roots.slice(start, stable), env, drawn);
+      if (env.pending.length === 0)
+        prefix.store(roots.slice(0, stable), space, version, target, createSurface);
+    }
+    compositeList(ctx, roots.slice(Math.max(start, stable)), env, drawn);
+    prefix.remember(roots);
+  } else {
+    compositeList(ctx, roots, env, []);
+  }
+  if (!identity) ctx.restore();
   return { pendingAssetIds: env.pending };
 }

@@ -2,19 +2,14 @@ import { createGroup } from "../../core/commands/group-commands";
 import { createDocument, createRasterLayer } from "../../core/document/factory";
 import type { EditorDocument, GroupBlendMode, Layer, LayerMask } from "../../core/document/types";
 import { context2d, releaseSurface, type PixelEnv } from "../../pixels/layer-pixels";
-import { cropToContent, renderRgba, rgbaToSurface } from "../layer-render";
+import { boundsOf, layerCorners } from "../../core/geometry/layer-geometry";
+import { renderBitmap, rgbaToSurface } from "../layer-render";
+import type { DraftMask, DraftNode, PsdDraft } from "./psd-draft";
 import { blendKey, blendModeFromKey } from "./blend-keys";
-import {
-  rectHeight,
-  rectWidth,
-  type PsdFile,
-  type PsdMask,
-  type PsdNode,
-  type PsdPixelLayer,
-} from "./psd-model";
+import { rectHeight, rectWidth, type PsdFile, type PsdMask, type PsdNode } from "./psd-model";
 
 /**
- * Bridges between editor documents and the PSD model (ADR-0011). Export turns every leaf layer
+ * Bridges between editor documents and the PSD model (ADR-0011/0012). Export turns every leaf layer
  * into pixels (shapes and text are rasterised, effects merged in); import turns PSD layers into
  * pixel layers, groups and masks.
  */
@@ -22,63 +17,87 @@ import {
 const hasEffects = (layer: Layer) =>
   !!layer.effects && Object.values(layer.effects).some((e) => e?.enabled);
 
-/** A layer mask as a document-sized grey plane (255 reveals), drawn like the compositor does. */
-function maskToPsd(env: PixelEnv, doc: EditorDocument, mask: LayerMask): PsdMask {
+/** A layer mask as a document-sized bitmap whose alpha is the mask (drawn like the compositor). */
+async function maskDraft(env: PixelEnv, doc: EditorDocument, mask: LayerMask): Promise<DraftMask> {
   const surface = env.createSurface(doc.width, doc.height);
-  try {
-    const ctx = context2d(surface, true);
-    ctx.fillStyle = "#ffffff";
-    ctx.fillRect(0, 0, doc.width, doc.height);
-    if (mask.assetId) {
-      const bitmap = env.assets.getBitmap(mask.assetId);
-      if (bitmap) {
-        ctx.clearRect(mask.x, mask.y, mask.width, mask.height);
-        ctx.drawImage(bitmap, mask.x, mask.y, mask.width, mask.height);
-      }
+  const ctx = context2d(surface);
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, doc.width, doc.height);
+  if (mask.assetId) {
+    const bitmap = env.assets.getBitmap(mask.assetId);
+    if (bitmap) {
+      ctx.clearRect(mask.x, mask.y, mask.width, mask.height);
+      ctx.drawImage(bitmap, mask.x, mask.y, mask.width, mask.height);
     }
-    const rgba = ctx.getImageData(0, 0, doc.width, doc.height).data;
-    const data = new Uint8Array(doc.width * doc.height);
-    for (let i = 0; i < data.length; i++) data[i] = rgba[i * 4 + 3];
-    return {
-      rect: { top: 0, left: 0, bottom: doc.height, right: doc.width },
-      data,
-      defaultColor: 255,
-      disabled: !mask.enabled,
-    };
-  } finally {
-    releaseSurface(surface);
   }
+  const bitmap =
+    "transferToImageBitmap" in surface
+      ? surface.transferToImageBitmap()
+      : await createImageBitmap(surface);
+  releaseSurface(surface);
+  return { bitmap, disabled: !mask.enabled };
 }
 
-export interface PsdExport {
-  readonly file: PsdFile;
+/** How far a layer's effects reach beyond its content, in document pixels. */
+function effectReach(layer: Layer): number {
+  const e = layer.effects;
+  if (!e) return 0;
+  let reach = 0;
+  if (e.dropShadow?.enabled) reach = Math.max(reach, e.dropShadow.distance + e.dropShadow.blur * 2);
+  if (e.outerGlow?.enabled) reach = Math.max(reach, e.outerGlow.size * 2);
+  if (e.stroke?.enabled) reach = Math.max(reach, e.stroke.size);
+  return Math.ceil(reach) + 2;
+}
+
+/** The document region a leaf layer can draw into (its box, plus effects, within the canvas). */
+function leafRegion(env: PixelEnv, doc: EditorDocument, layer: Layer) {
+  const box = boundsOf(layerCorners(layer, doc, env.sizer));
+  const reach = effectReach(layer);
+  const x = Math.max(0, Math.floor(box.x - reach));
+  const y = Math.max(0, Math.floor(box.y - reach));
+  const right = Math.min(doc.width, Math.ceil(box.x + box.width + reach));
+  const bottom = Math.min(doc.height, Math.ceil(box.y + box.height + reach));
+  return right > x && bottom > y ? { x, y, width: right - x, height: bottom - y } : null;
+}
+
+export interface PsdDraftExport {
+  readonly draft: PsdDraft;
   readonly warnings: readonly string[];
 }
 
-export function documentToPsd(env: PixelEnv, doc: EditorDocument): PsdExport {
+/**
+ * Render a document for PSD export (ADR-0011/0012): every leaf layer becomes a bitmap of just its
+ * own region (shapes and text rasterised, effects merged in). Reading the pixels back and encoding
+ * the file happen in the worker.
+ */
+export async function documentToPsdDraft(
+  env: PixelEnv,
+  doc: EditorDocument,
+): Promise<PsdDraftExport> {
   const warnings = new Set<string>();
-  const convert = (layers: readonly Layer[]): PsdNode[] => {
-    const out: PsdNode[] = [];
+  const convert = async (layers: readonly Layer[]): Promise<DraftNode[]> => {
+    const out: DraftNode[] = [];
     for (const layer of layers) {
+      if (layer.kind === "adjustment") {
+        warnings.add("Adjustment layers are included in the flattened image only.");
+        continue;
+      }
       const base = {
         name: layer.name,
         opacity: Math.round(layer.opacity * 255),
         visible: layer.visible,
         blendKey: blendKey(layer.blendMode),
-        mask: layer.mask ? maskToPsd(env, doc, layer.mask) : undefined,
+        mask: layer.mask ? await maskDraft(env, doc, layer.mask) : undefined,
       };
-      if (layer.kind === "adjustment") {
-        warnings.add("Adjustment layers are included in the flattened image only.");
-        continue;
-      }
       if (layer.kind === "group") {
-        if (hasEffects(layer))
+        if (hasEffects(layer)) {
           warnings.add("Effects on groups are included in the flattened image only.");
+        }
         out.push({
           ...base,
           kind: "group",
           open: layer.expanded,
-          children: convert(layer.children),
+          children: await convert(layer.children),
         });
         continue;
       }
@@ -94,31 +113,24 @@ export function documentToPsd(env: PixelEnv, doc: EditorDocument): PsdExport {
         visible: true,
         mask: undefined,
       } as Layer;
-      const cropped = cropToContent(renderRgba(env, doc, [plain]), doc.width, doc.height);
+      const region = leafRegion(env, doc, layer);
       out.push({
         ...base,
         kind: "pixels",
-        rect: cropped
-          ? {
-              top: cropped.y,
-              left: cropped.x,
-              bottom: cropped.y + cropped.height,
-              right: cropped.x + cropped.width,
-            }
-          : { top: 0, left: 0, bottom: 0, right: 0 },
-        rgba: cropped?.rgba ?? null,
-      } satisfies PsdPixelLayer);
+        region: region ? { x: region.x, y: region.y } : null,
+        bitmap: region ? await renderBitmap(env, doc, [plain], region) : null,
+      });
     }
     return out;
   };
-  const layers = convert(doc.layers);
+  const layers = await convert(doc.layers);
   return {
-    file: {
+    draft: {
       width: doc.width,
       height: doc.height,
       resolution: doc.resolution,
       layers,
-      composite: renderRgba(env, doc),
+      composite: await renderBitmap(env, doc),
     },
     warnings: [...warnings],
   };

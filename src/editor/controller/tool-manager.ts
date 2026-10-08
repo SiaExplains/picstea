@@ -8,6 +8,7 @@ import type { SurfaceFactory } from "../rendering/canvas/canvas2d-renderer";
 import type { CompositePreview } from "../rendering/compositing/compositor";
 import type { Overlay } from "../rendering/overlay";
 import type { SelectionMask } from "../selection/mask";
+import type { JobRunner } from "../workers/job-runner";
 import { BrushTool } from "../tools/brush/brush-tool";
 import { BucketTool } from "../tools/bucket/bucket-tool";
 import { EyedropperTool } from "../tools/eyedropper/eyedropper-tool";
@@ -25,6 +26,7 @@ export interface ToolManagerHost {
   assets: AssetStore;
   sizer: ContentSizer;
   createSurface: SurfaceFactory;
+  jobs: JobRunner;
   notify(kind: "info" | "error", message: string): void;
   pixelsCommitted(): void;
   beginTextEdit(request: TextEditRequest): void;
@@ -67,6 +69,7 @@ export class ToolManager {
       assets: host.assets,
       sizer: host.sizer,
       createSurface: host.createSurface,
+      jobs: host.jobs,
       viewport: () => host.store.getSession()?.viewport ?? DEFAULT_VIEWPORT,
       notify: (kind, message) => host.notify(kind, message),
       invalidate: () => this.revision.update((n) => n + 1),

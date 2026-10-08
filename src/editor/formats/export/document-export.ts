@@ -1,9 +1,9 @@
 import type { EditorDocument } from "../../core/document/types";
 import type { PixelEnv } from "../../pixels/layer-pixels";
-import { rasterizeToDataUrl, renderRgba } from "../layer-render";
-import { writePdf } from "../pdf/pdf-write";
-import { documentToPsd } from "../psd/psd-convert";
-import { writePsd } from "../psd/psd-write";
+import { rasterizeToDataUrl, renderBitmap } from "../layer-render";
+import { documentToPsdDraft } from "../psd/psd-convert";
+import { draftBitmaps } from "../psd/psd-draft";
+import { mainThreadRunner, type JobRunner } from "../../workers/job-runner";
 import { buildSvg } from "../svg/svg-export";
 import { EXPORT_FORMATS, exportDocument, isRasterFormat, type ExportFormat } from "./raster-export";
 
@@ -30,6 +30,7 @@ export async function exportAs(
   env: PixelEnv,
   doc: EditorDocument,
   request: ExportRequest,
+  jobs: JobRunner = mainThreadRunner,
 ): Promise<ExportedFile> {
   const { format } = request;
   const mime = EXPORT_FORMATS[format].mime;
@@ -54,30 +55,17 @@ export async function exportAs(
       return { blob: new Blob([result.svg], { type: mime }), warnings };
     }
     case "pdf": {
-      const rgba = renderRgba(env, doc);
-      const count = doc.width * doc.height;
-      const rgb = new Uint8Array(count * 3);
-      const alpha = new Uint8Array(count);
-      let opaque = true;
-      for (let i = 0; i < count; i++) {
-        rgb[i * 3] = rgba[i * 4];
-        rgb[i * 3 + 1] = rgba[i * 4 + 1];
-        rgb[i * 3 + 2] = rgba[i * 4 + 2];
-        alpha[i] = rgba[i * 4 + 3];
-        if (alpha[i] !== 255) opaque = false;
-      }
-      const bytes = await writePdf({
-        width: doc.width,
-        height: doc.height,
-        ppi: doc.resolution,
-        image: { kind: "lossless", rgb, alpha: opaque ? undefined : alpha },
-        title: doc.name,
-      });
+      const bitmap = await renderBitmap(env, doc);
+      const bytes = await jobs.run("pdfEncode", { bitmap, ppi: doc.resolution, title: doc.name }, [
+        bitmap,
+      ]);
       return { blob: bytesBlob(bytes, mime), warnings: [] };
     }
     case "psd": {
-      const { file, warnings } = documentToPsd(env, doc);
-      return { blob: bytesBlob(writePsd(file), mime), warnings };
+      // Layers are drawn here (GPU); reading pixels back and encoding run in the worker.
+      const { draft, warnings } = await documentToPsdDraft(env, doc);
+      const bytes = await jobs.run("psdEncode", draft, draftBitmaps(draft));
+      return { blob: bytesBlob(bytes, mime), warnings };
     }
   }
 }

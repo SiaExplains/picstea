@@ -1,21 +1,16 @@
 import type { EditorDocument, Layer } from "../core/document/types";
 import { context2d, releaseSurface, type PixelEnv, type Surface } from "../pixels/layer-pixels";
 import { compositeDocument, type CompositeContext } from "../rendering/compositing/compositor";
+import { spaceFor, type DocRect } from "../rendering/render-space";
 import { FormatError } from "./binary/bytes";
+import { cropToContent } from "./crop";
+
+export { cropToContent };
 
 /**
  * Rendering helpers shared by the exporters (SVG, PDF, PSD): flatten the document or a few layers
  * to RGBA in document space, crop to the visible pixels and encode PNG data URLs.
  */
-
-export interface RenderedPixels {
-  readonly x: number;
-  readonly y: number;
-  readonly width: number;
-  readonly height: number;
-  /** RGBA for the cropped box. */
-  readonly rgba: Uint8ClampedArray;
-}
 
 const PENDING = "Some layers are still loading. Try exporting again in a moment.";
 
@@ -37,36 +32,6 @@ export function renderRgba(
   } finally {
     releaseSurface(surface);
   }
-}
-
-/** Crop full-canvas RGBA to its non-transparent pixels; null when nothing is visible. */
-export function cropToContent(
-  rgba: Uint8ClampedArray,
-  width: number,
-  height: number,
-): RenderedPixels | null {
-  let minX = width;
-  let minY = height;
-  let maxX = -1;
-  let maxY = -1;
-  for (let y = 0; y < height; y++) {
-    for (let x = 0; x < width; x++) {
-      if (rgba[(y * width + x) * 4 + 3] === 0) continue;
-      if (x < minX) minX = x;
-      if (x > maxX) maxX = x;
-      if (y < minY) minY = y;
-      if (y > maxY) maxY = y;
-    }
-  }
-  if (maxX < 0) return null;
-  const w = maxX - minX + 1;
-  const h = maxY - minY + 1;
-  const out = new Uint8ClampedArray(w * h * 4);
-  for (let y = 0; y < h; y++) {
-    const from = ((minY + y) * width + minX) * 4;
-    out.set(rgba.subarray(from, from + w * 4), y * w * 4);
-  }
-  return { x: minX, y: minY, width: w, height: h, rgba: out };
 }
 
 export function rgbaToSurface(
@@ -102,6 +67,36 @@ export async function blobToDataUrl(blob: Blob): Promise<string> {
     binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
   }
   return `data:${blob.type};base64,${btoa(binary)}`;
+}
+
+/**
+ * Render the document (or some layers in its place) for `region` at 1:1 into an ImageBitmap —
+ * GPU work only, so the expensive pixel readback can happen in a worker (ADR-0012).
+ */
+export async function renderBitmap(
+  env: PixelEnv,
+  doc: EditorDocument,
+  layers: readonly Layer[] = doc.layers,
+  region: DocRect = { x: 0, y: 0, width: doc.width, height: doc.height },
+): Promise<ImageBitmap> {
+  const space = spaceFor(region, 1);
+  const surface = env.createSurface(space.width, space.height);
+  const ctx = context2d(surface);
+  const result = compositeDocument(ctx as CompositeContext, { ...doc, layers }, env.assets, {
+    sizer: env.sizer,
+    createSurface: env.createSurface,
+    space,
+  });
+  if (result.pendingAssetIds.length > 0) {
+    releaseSurface(surface);
+    throw new FormatError(PENDING);
+  }
+  if ("transferToImageBitmap" in surface) return surface.transferToImageBitmap();
+  try {
+    return await createImageBitmap(surface);
+  } finally {
+    releaseSurface(surface);
+  }
 }
 
 /** Render layers and return a cropped PNG data URL (for SVG export). */

@@ -1,7 +1,6 @@
 import { activeLayer } from "../../core/document/queries";
 import type { Point } from "../../core/viewport/viewport";
-import { readPixels } from "../../pixels/layer-pixels";
-import { pixelAt } from "../../selection/flood";
+import { samplePixel } from "../../pixels/layer-pixels";
 import type { Tool, ToolContext, ToolPointer } from "../tool";
 
 const hex = (n: number) => n.toString(16).padStart(2, "0");
@@ -19,13 +18,13 @@ export function pickColor(
   const doc = ctx.store.getSession()?.document;
   if (!doc) return null;
   const layer = sampleAll ? undefined : activeLayer(doc);
-  const pixels = readPixels(ctx, doc, layer);
-  if (!pixels) {
+  if (at.x < 0 || at.y < 0 || at.x >= doc.width || at.y >= doc.height) return null;
+  const rgba = samplePixel(ctx, doc, at.x, at.y, layer);
+  if (!rgba) {
     ctx.notify("info", "The image is still loading. Try again in a moment.");
     return null;
   }
-  const rgba = pixelAt(pixels, at.x, at.y);
-  if (!rgba || rgba[3] === 0) return null;
+  if (rgba[3] === 0) return null;
   const color = `#${hex(rgba[0])}${hex(rgba[1])}${hex(rgba[2])}`;
   ctx.store.setColors({ [which]: color });
   return color;
