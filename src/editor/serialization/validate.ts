@@ -1,5 +1,8 @@
 import { isHexColor } from "../core/document/factory";
-import { checkDimensions } from "../core/document/limits";
+import { checkDimensions, MAX_DIMENSION } from "../core/document/limits";
+import { walkLayers } from "../core/document/tree";
+import { checkEffect } from "../core/commands/effect-commands";
+import { parseAdjustment } from "../adjustments/registry";
 import {
   BLEND_MODES,
   FONT_FAMILIES,
@@ -9,6 +12,8 @@ import {
   type EditorDocument,
   type Guide,
   type Layer,
+  type LayerEffects,
+  type LayerMask,
   type Transform,
 } from "../core/document/types";
 
@@ -85,18 +90,84 @@ function transform(value: unknown, path: string): Transform {
   };
 }
 
-function layer(value: unknown, path: string): Layer {
+export const MAX_GROUP_DEPTH = 32;
+
+interface Budget {
+  count: number;
+}
+
+function mask(value: unknown, path: string): LayerMask {
   const o = obj(value, path);
+  return {
+    assetId: o.assetId === null ? null : str(o.assetId, `${path}.assetId`, 128),
+    enabled: bool(o.enabled, `${path}.enabled`),
+    x: num(o.x, `${path}.x`),
+    y: num(o.y, `${path}.y`),
+    width: int(o.width, `${path}.width`, 1, MAX_DIMENSION),
+    height: int(o.height, `${path}.height`, 1, MAX_DIMENSION),
+    linked: bool(o.linked, `${path}.linked`),
+  };
+}
+
+function effects(value: unknown, path: string): LayerEffects {
+  const o = obj(value, path);
+  const out: Record<string, unknown> = {};
+  for (const kind of ["dropShadow", "outerGlow", "stroke", "colorOverlay"] as const) {
+    if (o[kind] === undefined) continue;
+    const e = obj(o[kind], `${path}.${kind}`);
+    const error = checkEffect(kind, e);
+    if (error) fail(`${path}.${kind}`, error);
+    // Rebuild with known fields only.
+    const common = {
+      enabled: e.enabled,
+      color: (e.color as string).toLowerCase(),
+      opacity: e.opacity,
+    };
+    out[kind] =
+      kind === "dropShadow"
+        ? { ...common, angle: e.angle, distance: e.distance, blur: e.blur }
+        : kind === "colorOverlay"
+          ? common
+          : { ...common, size: e.size };
+  }
+  return out as LayerEffects;
+}
+
+function layer(value: unknown, path: string, depth: number, budget: Budget): Layer {
+  if (depth > MAX_GROUP_DEPTH) fail(path, `groups nested at most ${MAX_GROUP_DEPTH} deep`);
+  if (++budget.count > MAX_LAYERS) fail(path, `at most ${MAX_LAYERS} layers`);
+  const o = obj(value, path);
+  const isGroupLayer = o.kind === "group";
   const base = {
     id: str(o.id, `${path}.id`, 128),
     name: str(o.name, `${path}.name`, 255),
     visible: bool(o.visible, `${path}.visible`),
     locked: bool(o.locked, `${path}.locked`),
     opacity: num(o.opacity, `${path}.opacity`, 0, 1),
-    blendMode: blendMode(o.blendMode, `${path}.blendMode`),
+    // Groups also accept "pass-through"; they set their own blend mode below.
+    blendMode: isGroupLayer ? ("normal" as BlendMode) : blendMode(o.blendMode, `${path}.blendMode`),
     transform: transform(o.transform, `${path}.transform`),
+    ...(o.mask !== undefined ? { mask: mask(o.mask, `${path}.mask`) } : {}),
+    ...(o.effects !== undefined ? { effects: effects(o.effects, `${path}.effects`) } : {}),
   };
+  if (isGroupLayer) {
+    if (!Array.isArray(o.children)) fail(`${path}.children`, "array");
+    const groupBlend =
+      o.blendMode === "pass-through" ? "pass-through" : blendMode(o.blendMode, `${path}.blendMode`);
+    return {
+      ...base,
+      kind: "group",
+      blendMode: groupBlend,
+      expanded: bool(o.expanded, `${path}.expanded`),
+      children: o.children.map((c, i) => layer(c, `${path}.children[${i}]`, depth + 1, budget)),
+    };
+  }
   switch (o.kind) {
+    case "adjustment": {
+      const adjustment = parseAdjustment(o.adjustment);
+      if (!adjustment) fail(`${path}.adjustment`, "known adjustment within range");
+      return { ...base, kind: "adjustment", adjustment };
+    }
     case "raster": {
       const width = int(o.width, `${path}.width`, 1, 1e6);
       const height = int(o.height, `${path}.height`, 1, 1e6);
@@ -191,9 +262,13 @@ export function validateDocument(value: unknown): EditorDocument {
   if (!dims.ok) throw new ValidationError(`document: ${dims.reason}`);
 
   if (!Array.isArray(o.layers) || o.layers.length > MAX_LAYERS) fail("document.layers", "array");
-  const layers = o.layers.map((l, i) => layer(l, `document.layers[${i}]`));
-  const ids = new Set(layers.map((l) => l.id));
-  if (ids.size !== layers.length) throw new ValidationError("document.layers: duplicate layer ids");
+  const budget: Budget = { count: 0 };
+  const layers = o.layers.map((l, i) => layer(l, `document.layers[${i}]`, 0, budget));
+  const ids = new Set<string>();
+  walkLayers(layers, (l) => {
+    if (ids.has(l.id)) throw new ValidationError("document.layers: duplicate layer ids");
+    ids.add(l.id);
+  });
 
   let activeLayerId: string | null = null;
   if (o.activeLayerId !== null && o.activeLayerId !== undefined) {

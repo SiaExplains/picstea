@@ -27,6 +27,9 @@ export const BLEND_MODES = [
 
 export type BlendMode = (typeof BLEND_MODES)[number];
 
+/** Groups can also pass blending straight through to the layers below (the default for groups). */
+export type GroupBlendMode = BlendMode | "pass-through";
+
 export type ColorSpace = "srgb";
 
 /** Placement of a layer's content in document pixels. Rotation is in degrees, about the layer origin. */
@@ -38,6 +41,62 @@ export interface Transform {
   readonly rotation: number;
 }
 
+/**
+ * Raster layer mask in document space. Alpha is the reveal amount (opaque = visible). The mask
+ * covers its own rectangle; outside it everything is revealed. `assetId: null` reveals all.
+ */
+export interface LayerMask {
+  readonly assetId: string | null;
+  readonly enabled: boolean;
+  readonly x: number;
+  readonly y: number;
+  readonly width: number;
+  readonly height: number;
+  /** Moves with the layer when the layer is moved. */
+  readonly linked: boolean;
+}
+
+export interface DropShadowEffect {
+  readonly enabled: boolean;
+  readonly color: string;
+  /** 0..1 */
+  readonly opacity: number;
+  /** Degrees; the light comes from this direction, the shadow falls opposite. */
+  readonly angle: number;
+  readonly distance: number;
+  readonly blur: number;
+}
+
+export interface OuterGlowEffect {
+  readonly enabled: boolean;
+  readonly color: string;
+  readonly opacity: number;
+  readonly size: number;
+}
+
+export interface StrokeEffect {
+  readonly enabled: boolean;
+  readonly color: string;
+  readonly opacity: number;
+  /** Outside stroke width in px. */
+  readonly size: number;
+}
+
+export interface ColorOverlayEffect {
+  readonly enabled: boolean;
+  readonly color: string;
+  readonly opacity: number;
+}
+
+export interface LayerEffects {
+  readonly dropShadow?: DropShadowEffect;
+  readonly outerGlow?: OuterGlowEffect;
+  readonly stroke?: StrokeEffect;
+  readonly colorOverlay?: ColorOverlayEffect;
+}
+
+export type EffectKind = keyof LayerEffects;
+
 export interface BaseLayer {
   readonly id: string;
   readonly name: string;
@@ -47,6 +106,8 @@ export interface BaseLayer {
   readonly opacity: number;
   readonly blendMode: BlendMode;
   readonly transform: Transform;
+  readonly mask?: LayerMask;
+  readonly effects?: LayerEffects;
 }
 
 /** Bitmap content stored as an immutable asset. */
@@ -122,12 +183,44 @@ export interface TextLayer extends BaseLayer {
   readonly letterSpacing: number;
 }
 
+/** A folder of layers. Children are ordered bottom-most first, like `EditorDocument.layers`. */
+export interface GroupLayer extends Omit<BaseLayer, "blendMode"> {
+  readonly kind: "group";
+  readonly blendMode: GroupBlendMode;
+  readonly children: readonly Layer[];
+  /** Panel state: whether the group is open in the layers panel. */
+  readonly expanded: boolean;
+}
+
+export type Adjustment =
+  | { readonly type: "brightness-contrast"; readonly brightness: number; readonly contrast: number }
+  | {
+      readonly type: "hue-saturation";
+      readonly hue: number;
+      readonly saturation: number;
+      readonly lightness: number;
+    }
+  | { readonly type: "exposure"; readonly exposure: number; readonly gamma: number }
+  | { readonly type: "temperature-tint"; readonly temperature: number; readonly tint: number }
+  | { readonly type: "black-white" }
+  | { readonly type: "invert" }
+  | { readonly type: "posterize"; readonly levels: number }
+  | { readonly type: "threshold"; readonly level: number };
+
+export type AdjustmentType = Adjustment["type"];
+
+/** Non-destructively adjusts the composite of everything below it (within its group). */
+export interface AdjustmentLayer extends BaseLayer {
+  readonly kind: "adjustment";
+  readonly adjustment: Adjustment;
+}
+
 /*
- * Extension point: GroupLayer, AdjustmentLayer and SmartObjectLayer join this union in their
- * gates (4, 9). Adding a kind requires a renderer case, a validator case, geometry sizing and —
- * if it changes stored data — a schema migration.
+ * Extension point: SmartObjectLayer joins this union in Gate 9. Adding a kind requires a
+ * renderer case, a validator case, geometry sizing and — if it changes stored data — a schema
+ * migration.
  */
-export type Layer = RasterLayer | FillLayer | ShapeLayer | TextLayer;
+export type Layer = RasterLayer | FillLayer | ShapeLayer | TextLayer | GroupLayer | AdjustmentLayer;
 export type LayerKind = Layer["kind"];
 
 export interface Guide {

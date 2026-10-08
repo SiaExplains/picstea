@@ -1,115 +1,18 @@
-import { expect, test, type Page } from "@playwright/test";
-
-const MOD = process.platform === "darwin" ? "Meta" : "Control";
-const DOC = { width: 600, height: 400 };
-
-/** Collect console errors so every test can assert a clean console. */
-function trackErrors(page: Page): string[] {
-  const errors: string[] = [];
-  page.on("console", (msg) => msg.type() === "error" && errors.push(msg.text()));
-  page.on("pageerror", (err) => errors.push(err.message));
-  return errors;
-}
-
-async function newDocument(page: Page, name = "Gate three") {
-  // Force the download-link fallback; the native save dialog cannot be driven headlessly.
-  await page.addInitScript(() => {
-    delete (window as { showSaveFilePicker?: unknown }).showSaveFilePicker;
-  });
-  await page.goto("/editor");
-  await page.getByRole("button", { name: "New document" }).click();
-  const dialog = page.getByRole("dialog", { name: "New document" });
-  await dialog.getByLabel("Name").fill(name);
-  await dialog.getByLabel("Width (px)").fill(String(DOC.width));
-  await dialog.getByLabel("Height (px)").fill(String(DOC.height));
-  await dialog.getByRole("button", { name: "Create" }).click();
-  await page.getByRole("button", { name: "100%" }).click();
-  await expect(page.getByTestId("zoom-level")).toHaveText("100%");
-}
-
-/** Screen position of a document point at 100% zoom (the document is centred). */
-async function at(page: Page, x: number, y: number) {
-  const box = (await page.getByTestId("canvas-viewport").boundingBox())!;
-  return {
-    x: box.x + Math.round((box.width - DOC.width) / 2) + x,
-    y: box.y + Math.round((box.height - DOC.height) / 2) + y,
-  };
-}
-
-async function drag(page: Page, from: [number, number], to: [number, number]) {
-  const a = await at(page, ...from);
-  const b = await at(page, ...to);
-  await page.mouse.move(a.x, a.y);
-  await page.mouse.down();
-  await page.mouse.move((a.x + b.x) / 2, (a.y + b.y) / 2, { steps: 5 });
-  await page.mouse.move(b.x, b.y, { steps: 5 });
-  await page.mouse.up();
-  // Leave the canvas so hover feedback (brush outline, handles) doesn't affect pixel checks.
-  await page.mouse.move(1, 1);
-}
-
-/** Darkest luminance in a document-space rectangle of the on-screen canvas. */
-async function darkest(page: Page, x: number, y: number, w: number, h: number): Promise<number> {
-  const p = await at(page, x, y);
-  await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => r(null))));
-  return page.evaluate(
-    ([sx, sy, sw, sh]) => {
-      const canvas = document.querySelector(
-        '[data-testid="canvas-viewport"] canvas',
-      ) as HTMLCanvasElement;
-      const rect = canvas.getBoundingClientRect();
-      const dpr = canvas.width / rect.width;
-      const data = canvas
-        .getContext("2d")!
-        .getImageData(
-          Math.round((sx - rect.left) * dpr),
-          Math.round((sy - rect.top) * dpr),
-          Math.round(sw * dpr),
-          Math.round(sh * dpr),
-        ).data;
-      let min = 255;
-      for (let i = 0; i < data.length; i += 4)
-        min = Math.min(min, (data[i] + data[i + 1] + data[i + 2]) / 3);
-      return min;
-    },
-    [p.x, p.y, w, h] as const,
-  );
-}
-
-/** RGBA of the on-screen canvas at a document point. */
-async function pixel(page: Page, x: number, y: number): Promise<number[]> {
-  const p = await at(page, x, y);
-  // Rendering is batched to the next animation frame.
-  await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => r(null))));
-  return page.evaluate(
-    ([sx, sy]) => {
-      const canvas = document.querySelector(
-        '[data-testid="canvas-viewport"] canvas',
-      ) as HTMLCanvasElement;
-      const rect = canvas.getBoundingClientRect();
-      const dpr = canvas.width / rect.width;
-      const ctx = canvas.getContext("2d")!;
-      return [
-        ...ctx.getImageData(
-          Math.round((sx - rect.left) * dpr),
-          Math.round((sy - rect.top) * dpr),
-          1,
-          1,
-        ).data,
-      ];
-    },
-    [p.x, p.y] as const,
-  );
-}
-
-const isWhite = (rgba: number[]) => rgba[0] > 240 && rgba[1] > 240 && rgba[2] > 240;
-const isDark = (rgba: number[]) => rgba[0] < 60 && rgba[1] < 60 && rgba[2] < 60;
-const isBlue = (rgba: number[]) => rgba[2] > 200 && rgba[0] < 120;
-
-const layerNames = (page: Page) =>
-  page
-    .getByTestId("layer-row")
-    .evaluateAll((rows) => rows.map((r) => r.getAttribute("data-layer-name")));
+import { expect, test } from "@playwright/test";
+import {
+  at,
+  darkest,
+  DOC,
+  drag,
+  isBlue,
+  isDark,
+  isWhite,
+  layerNames,
+  MOD,
+  newDocument,
+  pixel,
+  trackErrors,
+} from "./helpers";
 
 test("brush paints on a new pixel layer and undo restores it", async ({ page }) => {
   const errors = trackErrors(page);

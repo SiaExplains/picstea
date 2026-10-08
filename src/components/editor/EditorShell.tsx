@@ -8,6 +8,7 @@ import { CanvasViewport } from "./CanvasViewport";
 import { DocumentTabs, OptionsBar, StatusBar, Toolbar } from "./Chrome";
 import { useActiveSession, useController, useIsMac } from "./editor-context";
 import styles from "./editor.module.css";
+import { isTypingTarget } from "./typing-target";
 import { LayersPanel } from "./LayersPanel";
 import { ExportDialog } from "./ExportDialog";
 import { MenuBar } from "./MenuBar";
@@ -18,13 +19,6 @@ import { StartScreen } from "./StartScreen";
 import { useEditorActions, type ActionHosts } from "./use-editor-actions";
 
 const matchShortcut = createShortcutMatcher();
-
-function isTypingTarget(target: EventTarget | null): boolean {
-  return (
-    target instanceof HTMLElement &&
-    (target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName))
-  );
-}
 
 function imageFiles(list: FileList | null | undefined): File[] {
   return [...(list ?? [])].filter((file) => file.type.startsWith("image/") || file.type === "");

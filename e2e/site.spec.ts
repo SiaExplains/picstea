@@ -1,29 +1,64 @@
 import { expect, test } from "@playwright/test";
 
-test("landing page is indexable and links to the editor", async ({ page }) => {
+test("home page is the editor and welcomes first-time visitors once", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+  const welcome = page.getByRole("dialog", { name: /free image editor/i });
+  await expect(welcome).toBeVisible();
+  await expect(welcome.getByRole("heading", { level: 1 })).toBeVisible();
+  await welcome.getByRole("button", { name: "Start editing" }).click();
+  await expect(welcome).toBeHidden();
+  await expect(page.getByRole("button", { name: "New document" })).toBeVisible();
+
+  // Dismissed for good; the logo brings it back.
+  await page.reload();
+  await expect(page.getByRole("button", { name: "New document" })).toBeVisible();
+  await expect(welcome).toBeHidden();
+  await page.getByRole("button", { name: "MYLPER" }).click();
+  await expect(welcome).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(welcome).toBeHidden();
+});
+
+test("home page is indexable with metadata, icons and structured data", async ({
+  page,
+  request,
+}) => {
+  const response = await request.get("/");
+  const html = await response.text();
+  // The welcome text is server-rendered, so crawlers see it without running the editor.
+  expect(html).toContain("A free image editor that keeps your images on your device");
+
+  await page.goto("/");
   await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
     "href",
     /^https?:\/\/[^/]+\/?$/,
   );
+  await expect(page.locator('meta[name="robots"]')).toHaveCount(0);
+  await expect(page.locator('link[rel="apple-touch-icon"]')).toHaveAttribute(
+    "href",
+    "/apple-touch-icon.png",
+  );
+  await expect(page.locator('link[rel="manifest"]')).toHaveCount(1);
   const jsonLd = await page.locator('script[type="application/ld+json"]').textContent();
   expect(JSON.parse(jsonLd!)["@graph"].map((n: { "@type": string }) => n["@type"])).toEqual([
     "WebSite",
     "Organization",
     "SoftwareApplication",
   ]);
-  await page.getByRole("link", { name: /Start editing/ }).click();
-  await expect(page).toHaveURL(/\/editor$/);
-});
 
-test("editor is noindex and excluded by robots.txt", async ({ page, request }) => {
-  await page.goto("/editor");
-  await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", /noindex/);
   const robots = await (await request.get("/robots.txt")).text();
-  expect(robots).toContain("Disallow: /editor");
+  expect(robots).not.toContain("Disallow");
   const sitemap = await (await request.get("/sitemap.xml")).text();
   expect(sitemap).not.toContain("/editor");
+  const manifest = await (await request.get("/manifest.webmanifest")).json();
+  expect(manifest.short_name).toBe("MYLPER");
+  expect((await request.get("/favicon.ico")).status()).toBe(200);
+});
+
+test("the old /editor address redirects permanently to the home page", async ({ request }) => {
+  const response = await request.get("/editor", { maxRedirects: 0 });
+  expect(response.status()).toBe(308);
+  expect(response.headers()["location"]).toBe("/");
 });
 
 test("security headers are sent", async ({ request }) => {

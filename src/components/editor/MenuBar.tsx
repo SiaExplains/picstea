@@ -1,7 +1,8 @@
 "use client";
 
-import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
+import { ADJUSTMENTS } from "@/editor/adjustments/registry";
 import { DEFAULT_KEYMAP, formatBinding } from "@/editor/core/shortcuts/shortcuts";
 import { useIsMac } from "./editor-context";
 import styles from "./editor.module.css";
@@ -30,8 +31,16 @@ const MENUS: { label: string; items: MenuEntry[] }[] = [
     items: [
       "layer.new",
       "layer.newFill",
+      "layer.newGroup",
       "layer.duplicate",
       "layer.delete",
+      "-",
+      "layer.group",
+      "layer.ungroup",
+      "-",
+      "layer.addMask",
+      "layer.toggleMask",
+      "layer.deleteMask",
       "-",
       "layer.moveUp",
       "layer.moveDown",
@@ -40,7 +49,10 @@ const MENUS: { label: string; items: MenuEntry[] }[] = [
       "layer.flipV",
     ],
   },
+  // Each item adds a non-destructive adjustment layer.
+  { label: "Adjustments", items: ADJUSTMENTS.map((a) => `adjust.${a.type}` as const) },
   { label: "View", items: ["view.zoomIn", "view.zoomOut", "-", "view.fit", "view.actualPixels"] },
+  { label: "Help", items: ["help.welcome"] },
 ];
 
 function shortcutFor(id: UiActionId, isMac: boolean): string {
@@ -126,9 +138,21 @@ export function MenuBar({ actions }: { actions: Record<UiActionId, UiAction> }) 
 
   return (
     <div className={styles.menubar} ref={barRef}>
-      <Link href="/" className={styles.brand} aria-label="MYLPER home">
-        MYLPER
-      </Link>
+      <button
+        type="button"
+        className={styles.brand}
+        title="About MYLPER"
+        onClick={actions["help.welcome"].run}
+      >
+        <Image
+          src="/brand/mylper-logo-on-dark.png"
+          alt="MYLPER"
+          width={67}
+          height={18}
+          priority
+          unoptimized
+        />
+      </button>
       <div role="menubar" aria-label="Editor menu" style={{ display: "flex", gap: 2 }}>
         {MENUS.map((menu, index) => {
           const menuId = `${baseId}-menu-${index}`;

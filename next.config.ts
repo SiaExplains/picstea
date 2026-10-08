@@ -25,6 +25,10 @@ const nextConfig: NextConfig = {
   cacheComponents: true,
   partialPrefetching: true,
   poweredByHeader: false,
+  // The editor moved from /editor to the home page (v0.3.0); keep old links and bookmarks working.
+  async redirects() {
+    return [{ source: "/editor", destination: "/", permanent: true }];
+  },
   async headers() {
     return [
       {

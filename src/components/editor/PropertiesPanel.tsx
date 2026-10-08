@@ -2,10 +2,12 @@
 
 import { setFillColor, setLayerBlendMode, setLayerOpacity } from "@/editor/core/commands";
 import { activeLayer } from "@/editor/core/document/queries";
-import { BLEND_MODES, type BlendMode } from "@/editor/core/document/types";
+import { countLayers } from "@/editor/core/document/tree";
+import { BLEND_MODES, type BlendMode, type GroupBlendMode } from "@/editor/core/document/types";
 import { useActiveSession, useController } from "./editor-context";
 import styles from "./editor.module.css";
 import { ShapeSection, TextSection, TransformSection } from "./LayerSections";
+import { AdjustmentSection, EffectsSection, MaskSection } from "./StyleSections";
 
 const BLEND_LABELS: Record<BlendMode, string> = {
   normal: "Normal",
@@ -33,7 +35,10 @@ export function PropertiesPanel() {
   const layer = doc ? activeLayer(doc) : undefined;
 
   return (
-    <section className={styles.panel} aria-labelledby="properties-heading">
+    <section
+      className={`${styles.panel} ${styles.panelScroll}`}
+      aria-labelledby="properties-heading"
+    >
       <h2 id="properties-heading" className={styles.panelHeader}>
         Properties
       </h2>
@@ -95,9 +100,10 @@ export function PropertiesPanel() {
                 className={styles.select}
                 value={layer.blendMode}
                 onChange={(e) =>
-                  controller.execute(setLayerBlendMode(layer.id, e.target.value as BlendMode))
+                  controller.execute(setLayerBlendMode(layer.id, e.target.value as GroupBlendMode))
                 }
               >
+                {layer.kind === "group" && <option value="pass-through">Pass Through</option>}
                 {BLEND_MODES.map((mode) => (
                   <option key={mode} value={mode}>
                     {BLEND_LABELS[mode]}
@@ -128,9 +134,20 @@ export function PropertiesPanel() {
             )}
             {layer.kind === "text" && <TextSection key={`text-${layer.id}`} layer={layer} />}
             {layer.kind === "shape" && <ShapeSection key={`shape-${layer.id}`} layer={layer} />}
-            {layer.kind !== "fill" && doc && (
-              <TransformSection key={`transform-${layer.id}`} layer={layer} doc={doc} />
+            {layer.kind === "group" && (
+              <p className={styles.muted}>
+                Group · {countLayers(layer.children)}{" "}
+                {countLayers(layer.children) === 1 ? "layer" : "layers"}
+                {layer.blendMode === "pass-through" ? " · blends with layers below" : " · isolated"}
+              </p>
             )}
+            {layer.kind === "adjustment" && (
+              <AdjustmentSection key={`adj-${layer.id}`} layer={layer} />
+            )}
+            {(layer.kind === "raster" || layer.kind === "shape" || layer.kind === "text") &&
+              doc && <TransformSection key={`transform-${layer.id}`} layer={layer} doc={doc} />}
+            <MaskSection key={`mask-${layer.id}`} layer={layer} />
+            {layer.kind !== "adjustment" && <EffectsSection key={`fx-${layer.id}`} layer={layer} />}
           </fieldset>
         )}
       </div>

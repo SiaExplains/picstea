@@ -1,6 +1,7 @@
-import { setRasterContent } from "../../core/commands";
+import { setMaskContent, setRasterContent } from "../../core/commands";
+import { luminance, rgba } from "../../core/color";
 import { activeLayer } from "../../core/document/queries";
-import type { RasterLayer } from "../../core/document/types";
+import type { Layer, LayerMask } from "../../core/document/types";
 import { applyMatrix, fromTransform, invertMatrix, type Matrix } from "../../core/geometry/matrix";
 import { stepBrushSize, type BrushSettings } from "../../core/tool-settings";
 import type { Point } from "../../core/viewport/viewport";
@@ -23,11 +24,6 @@ function release(surface: Surface | null | undefined): void {
     surface.width = 0;
     surface.height = 0;
   }
-}
-
-function rgba(hex: string, alpha: number): string {
-  const n = Number.parseInt(hex.slice(1), 16);
-  return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${alpha})`;
 }
 
 /** Pre-rendered round brush tip: solid core out to `hardness`, then a soft falloff. */
@@ -68,7 +64,14 @@ interface Stroke {
   readonly tip: Surface;
   readonly half: number;
   readonly settings: BrushSettings;
+  /** Painting the layer's pixels, or its mask (grey level `level`, 0 = hide … 1 = reveal). */
+  readonly target: "content" | "mask";
+  readonly level: number;
 }
+
+type PaintTarget =
+  | { kind: "content"; layer: Layer & { kind: "raster" } }
+  | { kind: "mask"; layer: Layer; mask: LayerMask };
 
 /**
  * Brush and eraser. Dabs accumulate in a stroke buffer; the live preview is the layer's pixels
@@ -79,6 +82,7 @@ export class BrushTool implements Tool {
   private stroke: Stroke | null = null;
   private hover: Point | null = null;
   private readonly overrides = new Map<string, Surface>();
+  private readonly maskOverrides = new Map<string, Surface>();
 
   constructor(readonly id: "brush" | "eraser") {}
 
@@ -90,18 +94,12 @@ export class BrushTool implements Tool {
     return ctx.store.getState().toolSettings[this.id];
   }
 
-  private paintableLayer(ctx: ToolContext): RasterLayer | null {
+  private paintTarget(ctx: ToolContext): PaintTarget | null {
     const doc = ctx.store.getSession()?.document;
     const layer = doc ? activeLayer(doc) : undefined;
+    const tool = this.erase ? "The eraser" : "The brush";
     if (!layer) {
       ctx.notify("error", "Select a layer to paint on.");
-      return null;
-    }
-    if (layer.kind !== "raster") {
-      ctx.notify(
-        "error",
-        `${this.erase ? "The eraser" : "The brush"} works on pixel layers. Use Layer → New Layer to add one.`,
-      );
       return null;
     }
     if (layer.locked) {
@@ -112,7 +110,17 @@ export class BrushTool implements Tool {
       ctx.notify("error", `"${layer.name}" is hidden. Show it to paint on it.`);
       return null;
     }
-    return layer;
+    if (ctx.store.getState().editTarget === "mask" && layer.mask) {
+      return { kind: "mask", layer, mask: layer.mask };
+    }
+    if (layer.kind !== "raster") {
+      const hint = layer.mask
+        ? "Click the layer's mask thumbnail to paint on its mask, or use Layer → New Layer."
+        : "Use Layer → New Layer to add a pixel layer, or add a mask to paint on.";
+      ctx.notify("error", `${tool} works on pixel layers and masks. ${hint}`);
+      return null;
+    }
+    return { kind: "content", layer };
   }
 
   cursor(): string {
@@ -121,34 +129,55 @@ export class BrushTool implements Tool {
 
   pointerDown(ctx: ToolContext, pointer: ToolPointer): void {
     if (pointer.button !== 0 || this.stroke) return;
-    const layer = this.paintableLayer(ctx);
-    if (!layer) return;
+    const target = this.paintTarget(ctx);
+    if (!target) return;
+    const settings = this.settings(ctx);
+    const { colors } = ctx.store.getState();
 
     let existing: CanvasImageSource | undefined;
-    if (layer.assetId) {
-      existing = ctx.assets.getBitmap(layer.assetId);
+    const assetId = target.kind === "content" ? target.layer.assetId : target.mask.assetId;
+    if (assetId) {
+      existing = ctx.assets.getBitmap(assetId);
       if (!existing) {
         ctx.notify("info", "This layer is still loading. Try again in a moment.");
         return;
       }
     }
-    const toLocal = invertMatrix(fromTransform(layer.transform));
+
+    let width: number;
+    let height: number;
+    let toLocal: Matrix | null;
+    let radius: number;
+    let tipColor: string;
+    if (target.kind === "content") {
+      ({ width, height } = target.layer);
+      toLocal = invertMatrix(fromTransform(target.layer.transform));
+      // Brush size is in document pixels; convert to layer pixels for scaled layers.
+      const t = target.layer.transform;
+      const scale = Math.sqrt(Math.abs(t.scaleX * t.scaleY)) || 1;
+      radius = Math.max(0.5, settings.size / 2 / scale);
+      tipColor = this.erase ? "#000000" : colors.foreground;
+    } else {
+      ({ width, height } = target.mask);
+      toLocal = [1, 0, 0, 1, -target.mask.x, -target.mask.y];
+      radius = Math.max(0.5, settings.size / 2);
+      // Mask strokes record coverage only; the grey level is applied in refresh().
+      tipColor = "#ffffff";
+    }
     if (!toLocal) return;
 
-    const settings = this.settings(ctx);
-    const { width, height } = layer;
     const base = ctx.createSurface(width, height);
-    if (existing) context(base).drawImage(existing, 0, 0, width, height);
-
-    // Brush size is in document pixels; convert to layer pixels for scaled layers.
-    const t = layer.transform;
-    const scale = Math.sqrt(Math.abs(t.scaleX * t.scaleY)) || 1;
-    const radius = Math.max(0.5, settings.size / 2 / scale);
-    const color = this.erase ? "#000000" : ctx.store.getState().colors.foreground;
-    const { tip, half } = createTip(ctx.createSurface, radius, settings.hardness, color);
+    const bctx = context(base);
+    if (existing) bctx.drawImage(existing, 0, 0, width, height);
+    else if (target.kind === "mask") {
+      // An empty mask reveals everything.
+      bctx.fillStyle = "#ffffff";
+      bctx.fillRect(0, 0, width, height);
+    }
+    const { tip, half } = createTip(ctx.createSurface, radius, settings.hardness, tipColor);
 
     this.stroke = {
-      layerId: layer.id,
+      layerId: target.layer.id,
       width,
       height,
       base,
@@ -159,8 +188,15 @@ export class BrushTool implements Tool {
       tip,
       half,
       settings,
+      target: target.kind,
+      // Like professional editors: the brush paints the foreground grey on a mask, the eraser
+      // paints the background grey.
+      level: luminance(this.erase ? colors.background : colors.foreground),
     };
-    this.overrides.set(layer.id, this.stroke.preview);
+    (target.kind === "mask" ? this.maskOverrides : this.overrides).set(
+      target.layer.id,
+      this.stroke.preview,
+    );
     this.stamp(this.stroke.interpolator.start(applyMatrix(toLocal, pointer.doc)));
     this.refresh(ctx);
   }
@@ -182,12 +218,15 @@ export class BrushTool implements Tool {
     if (!stroke) return;
     this.stroke = null;
     this.overrides.clear();
+    this.maskOverrides.clear();
     release(stroke.base);
     release(stroke.buffer);
     release(stroke.tip);
     const asset = ctx.assets.addBitmap(stroke.preview, stroke.width, stroke.height);
     const result = ctx.store.dispatch(
-      setRasterContent(stroke.layerId, asset.id, this.erase ? "Eraser" : "Brush Stroke"),
+      stroke.target === "mask"
+        ? setMaskContent(stroke.layerId, asset.id, this.erase ? "Erase Mask" : "Paint Mask")
+        : setRasterContent(stroke.layerId, asset.id, this.erase ? "Eraser" : "Brush Stroke"),
     );
     if (!result.ok) ctx.notify("error", result.error);
     ctx.pixelsCommitted();
@@ -208,9 +247,20 @@ export class BrushTool implements Tool {
     p.globalCompositeOperation = "copy";
     p.globalAlpha = 1;
     p.drawImage(stroke.base, 0, 0);
-    p.globalAlpha = stroke.settings.opacity;
-    p.globalCompositeOperation = this.erase ? "destination-out" : "source-over";
-    p.drawImage(stroke.buffer, 0, 0);
+    const opacity = stroke.settings.opacity;
+    if (stroke.target === "mask") {
+      // Move the mask towards the grey level: a' = a·(1−k) + level·k for stroke coverage k.
+      p.globalAlpha = opacity;
+      p.globalCompositeOperation = "destination-out";
+      p.drawImage(stroke.buffer, 0, 0);
+      p.globalAlpha = opacity * stroke.level;
+      p.globalCompositeOperation = "lighter";
+      p.drawImage(stroke.buffer, 0, 0);
+    } else {
+      p.globalAlpha = opacity;
+      p.globalCompositeOperation = this.erase ? "destination-out" : "source-over";
+      p.drawImage(stroke.buffer, 0, 0);
+    }
     p.globalAlpha = 1;
     p.globalCompositeOperation = "source-over";
     ctx.invalidate();
@@ -228,6 +278,7 @@ export class BrushTool implements Tool {
     const stroke = this.stroke;
     this.stroke = null;
     this.overrides.clear();
+    this.maskOverrides.clear();
     if (stroke) {
       release(stroke.base);
       release(stroke.buffer);
@@ -250,6 +301,8 @@ export class BrushTool implements Tool {
   }
 
   preview(): CompositePreview | undefined {
-    return this.overrides.size > 0 ? { overrides: this.overrides } : undefined;
+    if (this.overrides.size > 0) return { overrides: this.overrides };
+    if (this.maskOverrides.size > 0) return { maskOverrides: this.maskOverrides };
+    return undefined;
   }
 }

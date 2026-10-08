@@ -1,4 +1,5 @@
 import { activeLayer } from "../../core/document/queries";
+import { flattenTopFirst } from "../../core/document/tree";
 import { hitTestLayer } from "../../core/geometry/layer-geometry";
 import type { Tool, ToolContext, ToolPointer } from "../tool";
 
@@ -18,8 +19,10 @@ export class TextTool implements Tool {
     if (!session || pointer.button !== 0) return;
     const doc = session.document;
     const tolerance = 4 / ctx.viewport().zoom;
-    for (let i = doc.layers.length - 1; i >= 0; i--) {
-      const layer = doc.layers[i];
+    for (const { layer, effectivelyVisible } of flattenTopFirst(doc.layers, {
+      includeCollapsed: true,
+    })) {
+      if (!effectivelyVisible) continue;
       if (layer.kind === "text" && hitTestLayer(layer, pointer.doc, doc, ctx.sizer, tolerance)) {
         if (layer.locked) {
           ctx.notify("error", `"${layer.name}" is locked. Unlock it to edit the text.`);

@@ -19,6 +19,8 @@ import {
 } from "./tool-settings";
 import { DEFAULT_VIEWPORT, type Viewport } from "./viewport/viewport";
 import { dropOldest } from "./history/history";
+import { findLayerDeep } from "./document/tree";
+import { setGroupExpanded } from "./commands/group-commands";
 
 export type { ToolId } from "./tool-settings";
 
@@ -42,7 +44,11 @@ export interface EditorState {
   readonly activeTool: ToolId;
   readonly toolSettings: ToolSettings;
   readonly colors: Colors;
+  /** Whether painting tools edit the active layer's pixels or its mask. */
+  readonly editTarget: EditTarget;
 }
+
+export type EditTarget = "content" | "mask";
 
 export type DispatchResult = { ok: true; changed: boolean } | { ok: false; error: string };
 
@@ -63,6 +69,7 @@ export class EditorStore {
     activeTool: "move",
     toolSettings: DEFAULT_TOOL_SETTINGS,
     colors: DEFAULT_COLORS,
+    editTarget: "content",
   };
   private readonly listeners = new Set<Listener>();
 
@@ -112,7 +119,7 @@ export class EditorStore {
 
   setActiveDocument(documentId: string): void {
     if (!this.getSession(documentId) || this.state.activeDocumentId === documentId) return;
-    this.setState({ ...this.state, activeDocumentId: documentId });
+    this.setState({ ...this.state, activeDocumentId: documentId, editTarget: "content" });
   }
 
   setActiveTool(tool: ToolId): void {
@@ -222,10 +229,31 @@ export class EditorStore {
   selectLayer(layerId: string, documentId = this.state.activeDocumentId): void {
     const session = this.getSession(documentId);
     if (!session || session.document.activeLayerId === layerId) return;
-    if (!session.document.layers.some((l) => l.id === layerId)) return;
+    if (!findLayerDeep(session.document.layers, layerId)) return;
+    this.state = { ...this.state, editTarget: "content" };
     this.updateSession(session.document.id, {
       document: { ...session.document, activeLayerId: layerId },
     });
+  }
+
+  /** Paint on the active layer's content or on its mask. */
+  setEditTarget(target: EditTarget): void {
+    if (this.state.editTarget !== target) this.setState({ ...this.state, editTarget: target });
+  }
+
+  /**
+   * Open/close a group in the layers panel. Panel state, so it is not an undoable edit (it is
+   * still saved with the document).
+   */
+  setGroupExpanded(
+    groupId: string,
+    expanded: boolean,
+    documentId = this.state.activeDocumentId,
+  ): void {
+    const session = this.getSession(documentId);
+    if (!session) return;
+    const document = setGroupExpanded(session.document, groupId, expanded);
+    if (document !== session.document) this.updateSession(session.document.id, { document });
   }
 
   setViewport(documentId: string, viewport: Viewport): void {

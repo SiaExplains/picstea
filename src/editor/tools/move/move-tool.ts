@@ -1,9 +1,10 @@
-import { setLayerTransform } from "../../core/commands";
+import { setLayerTransform, translateLayer } from "../../core/commands";
 import { activeLayer } from "../../core/document/queries";
 import type { Layer, Transform } from "../../core/document/types";
 import { createId } from "../../core/ids";
 import {
   hitTestLayer,
+  isMovable,
   isTransformable,
   layerCorners,
   layerLocalSize,
@@ -30,7 +31,7 @@ import {
 type Hit = { kind: "scale"; handle: ScaleHandle } | { kind: "rotate" } | { kind: "body" } | null;
 
 interface Drag {
-  readonly kind: "move" | "scale" | "rotate";
+  readonly kind: "move" | "scale" | "rotate" | "move-group";
   readonly documentId: string;
   readonly layerId: string;
   readonly start: Transform;
@@ -39,6 +40,8 @@ interface Drag {
   readonly handle?: ScaleHandle;
   readonly mergeKey: string;
   changed: boolean;
+  /** Group drags apply relative moves; this is what has been applied so far. */
+  applied: Point;
 }
 
 /** Rotation zone: just outside a corner handle, in CSS pixels. */
@@ -57,7 +60,7 @@ export class MoveTool implements Tool {
   private editableActive(ctx: ToolContext): Layer | undefined {
     const doc = ctx.store.getSession()?.document;
     const layer = doc ? activeLayer(doc) : undefined;
-    return layer && isTransformable(layer) && layer.visible ? layer : undefined;
+    return layer && isMovable(layer) && layer.visible ? layer : undefined;
   }
 
   private hitTest(ctx: ToolContext, pointer: ToolPointer): Hit {
@@ -70,7 +73,7 @@ export class MoveTool implements Tool {
     const toScreen = (p: Point) => documentToScreen(viewport, p);
     const distance = (p: Point) => Math.hypot(p.x - pointer.screen.x, p.y - pointer.screen.y);
 
-    if (!layer.locked) {
+    if (!layer.locked && isTransformable(layer)) {
       for (const handle of SCALE_HANDLES) {
         const p = toScreen(framePoint(layer.transform, size, HANDLE_FRACTION[handle]));
         if (distance(p) <= HANDLE_HIT_PX) return { kind: "scale", handle };
@@ -141,8 +144,10 @@ export class MoveTool implements Tool {
       startPointer: pointer.doc,
       mergeKey,
       changed: false,
+      applied: { x: 0, y: 0 },
     };
-    if (hit?.kind === "scale") this.drag = { ...base, kind: "scale", handle: hit.handle };
+    if (layer.kind === "group") this.drag = { ...base, kind: "move-group" };
+    else if (hit?.kind === "scale") this.drag = { ...base, kind: "scale", handle: hit.handle };
     else if (hit?.kind === "rotate") this.drag = { ...base, kind: "rotate" };
     else this.drag = { ...base, kind: "move" };
   }
@@ -150,6 +155,27 @@ export class MoveTool implements Tool {
   pointerMove(ctx: ToolContext, pointer: ToolPointer): void {
     const drag = this.drag;
     if (!drag) return;
+    if (drag.kind === "move-group") {
+      let dx = Math.round(pointer.doc.x - drag.startPointer.x);
+      let dy = Math.round(pointer.doc.y - drag.startPointer.y);
+      if (pointer.shiftKey) {
+        if (Math.abs(dx) > Math.abs(dy)) dy = 0;
+        else dx = 0;
+      }
+      const step = { x: dx - drag.applied.x, y: dy - drag.applied.y };
+      if (step.x === 0 && step.y === 0) return;
+      const result = ctx.store.dispatch(
+        translateLayer(drag.layerId, step.x, step.y, { mergeKey: drag.mergeKey, gesture: true }),
+      );
+      if (!result.ok) {
+        ctx.notify("error", result.error);
+        this.drag = null;
+        return;
+      }
+      drag.applied = { x: dx, y: dy };
+      drag.changed = true;
+      return;
+    }
     let next: Transform;
     switch (drag.kind) {
       case "move": {
@@ -173,7 +199,7 @@ export class MoveTool implements Tool {
           fromCenter: pointer.altKey,
         });
         break;
-      case "rotate":
+      default:
         next = rotateAroundCenter(
           drag.start,
           drag.size,
@@ -221,6 +247,16 @@ export class MoveTool implements Tool {
     const layer = this.editableActive(ctx);
     if (!delta || !layer || key.modKey) return false;
     const step = key.shiftKey ? 10 : 1;
+    if (layer.kind === "group") {
+      const moved = ctx.store.dispatch(
+        translateLayer(layer.id, delta.x * step, delta.y * step, {
+          label: "Nudge",
+          mergeKey: `nudge:${layer.id}`,
+        }),
+      );
+      if (!moved.ok) ctx.notify("error", moved.error);
+      return true;
+    }
     const t = layer.transform;
     const result = ctx.store.dispatch(
       setLayerTransform(
@@ -247,7 +283,7 @@ export class MoveTool implements Tool {
       {
         kind: "transform",
         corners: layerCorners(layer, session.document, ctx.sizer),
-        handles: !layer.locked,
+        handles: !layer.locked && isTransformable(layer),
       },
     ];
   }

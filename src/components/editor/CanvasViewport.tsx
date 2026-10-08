@@ -12,14 +12,8 @@ import { Canvas2DRenderer } from "@/editor/rendering/canvas/canvas2d-renderer";
 import type { ToolPointer } from "@/editor/tools/tool";
 import { useController, useIsMac } from "./editor-context";
 import styles from "./editor.module.css";
+import { isTypingTarget } from "./typing-target";
 import { TextEditorOverlay } from "./TextEditorOverlay";
-
-export function isTypingTarget(target: EventTarget | null): boolean {
-  return (
-    target instanceof HTMLElement &&
-    (target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName))
-  );
-}
 
 type Gesture =
   | { kind: "pan"; pointerId: number; last: Point }

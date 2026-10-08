@@ -7,7 +7,7 @@ import { ValidationError, validateDocument } from "./validate";
  * To change the stored shape: bump CURRENT_SCHEMA_VERSION, add a migration from the previous
  * version, and update the validator. Never edit a released migration.
  */
-export const CURRENT_SCHEMA_VERSION = 2;
+export const CURRENT_SCHEMA_VERSION = 3;
 
 export interface SerializedProject {
   readonly schemaVersion: number;
@@ -23,6 +23,11 @@ export const MIGRATIONS: Readonly<Record<number, Migration>> = {
    * identity — it exists so older builds refuse v2 projects instead of misreading them.
    */
   1: (document) => document,
+  /*
+   * v3 (0.3.0) added groups (nested `children`), layer masks, layer effects, adjustment layers
+   * and the "pass-through" group blend mode. Every v2 document is a valid v3 document.
+   */
+  2: (document) => document,
 };
 
 export function serializeDocument(doc: EditorDocument): SerializedProject {
