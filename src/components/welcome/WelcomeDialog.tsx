@@ -105,6 +105,13 @@ export function WelcomeDialog() {
             ))}
           </dl>
         </details>
+        <p className={styles.lead}>
+          New here? Read the{" "}
+          <a href="/docs/getting-started" target="_blank" rel="noopener">
+            getting started guide
+          </a>
+          .
+        </p>
         <div className={styles.actions}>
           <button type="submit" className={styles.primary} autoFocus>
             Start editing

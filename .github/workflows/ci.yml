@@ -40,8 +40,9 @@ jobs:
       - name: Unit tests
         run: pnpm test
 
+      # E2E needs a build with a fake AdSense ID to test consent gating (no real ads load).
       - name: Build
-        run: pnpm build
+        run: pnpm build:e2e
 
       - name: Install Playwright browser
         run: pnpm exec playwright install --with-deps chromium

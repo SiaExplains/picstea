@@ -39,7 +39,9 @@ export type UiActionId =
   | "select.expand"
   | "select.contract"
   | "select.transform"
-  | "help.welcome";
+  | "help.welcome"
+  | "help.docs"
+  | "help.blog";
 
 export interface UiAction {
   readonly label: string;
@@ -313,6 +315,17 @@ export function useEditorActions(hosts: ActionHosts): Record<UiActionId, UiActio
         run: () => controller.actualPixels(),
       },
       "help.welcome": { label: "Welcome to MYLPER", enabled: true, run: openWelcome },
+      // The website opens in a new tab so the editor and its work stay where they are.
+      "help.docs": {
+        label: "Documentation",
+        enabled: true,
+        run: () => window.open("/docs", "_blank", "noopener"),
+      },
+      "help.blog": {
+        label: "Blog",
+        enabled: true,
+        run: () => window.open("/blog", "_blank", "noopener"),
+      },
       "tool.move": tool("move", "Move Tool"),
       "tool.transform": { ...tool("move", "Free Transform"), enabled: canTransform },
       "tool.marquee": tool("marquee", "Marquee Tool"),

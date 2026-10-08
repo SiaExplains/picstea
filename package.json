@@ -1,11 +1,12 @@
 {
   "name": "mylper",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "private": true,
   "description": "MYLPER — a local-first, browser-native image editor.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:e2e": "NEXT_PUBLIC_ADSENSE_CLIENT=ca-pub-0000000000000000 NEXT_PUBLIC_ADSENSE_SLOT=1234567890 next build",
     "start": "next start",
     "lint": "eslint . --max-warnings 0",
     "typecheck": "tsc --noEmit",

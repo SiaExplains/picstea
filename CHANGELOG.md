@@ -3,6 +3,20 @@
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.7.0] — 2026-10-09
+
+### Added
+
+- **Website**: documentation (getting started, layers and masks, selections, painting, file
+  formats, keyboard shortcuts, privacy), guides for online photo editing and PSD editing, and a
+  blog. Help → Documentation and Help → Blog open them from the editor.
+- **Privacy choices**: on website pages, Google ads are only loaded if you agree. Accept, reject
+  or choose per category, and change it any time with "Privacy settings" at the bottom of every
+  page. The editor never loads advertising or third-party code.
+- **Sponsorships**: MYLPER's own sponsorships, clearly labelled and without tracking, on the
+  website and on the editor's start screen.
+- Legal pages (privacy, cookies, terms, imprint, advertising) as drafts.
+
 ## [0.6.0] — 2026-10-09
 
 ### Changed

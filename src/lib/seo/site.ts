@@ -23,9 +23,6 @@ export const SITE = {
     "It runs entirely in your browser: your images are never uploaded.",
 } as const;
 
-/** Public, indexable routes. The home page is the editor itself. */
-export const PUBLIC_ROUTES = ["/"] as const;
-
 export function absoluteUrl(path: string): string {
   return new URL(path, SITE.url).toString();
 }

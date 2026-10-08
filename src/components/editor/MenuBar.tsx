@@ -85,7 +85,7 @@ const MENUS: { label: string; items: MenuEntry[] }[] = [
     ],
   },
   { label: "View", items: ["view.zoomIn", "view.zoomOut", "-", "view.fit", "view.actualPixels"] },
-  { label: "Help", items: ["help.welcome"] },
+  { label: "Help", items: ["help.welcome", "-", "help.docs", "help.blog"] },
 ];
 
 function shortcutFor(id: UiActionId, isMac: boolean): string {
