@@ -19,6 +19,7 @@ const MENUS: { label: string; items: MenuEntry[] }[] = [
       "file.place",
       "-",
       "file.save",
+      "file.saveProject",
       "file.export",
       "-",
       "file.close",

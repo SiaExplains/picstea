@@ -12,7 +12,10 @@ import { createId } from "@/editor/core/ids";
 import type { ActionId } from "@/editor/core/shortcuts/shortcuts";
 import { DEFAULT_COLORS } from "@/editor/core/tool-settings";
 import { openWelcome } from "@/components/welcome/welcome";
+import type { EditorController } from "@/editor/controller/editor-controller";
+import { PROJECT_MIME } from "@/editor/formats/project/project-file";
 import { useActiveSession, useController, useEditorState } from "./editor-context";
+import { saveFile } from "./save-file";
 
 export type UiActionId =
   | ActionId
@@ -50,6 +53,15 @@ export interface ActionHosts {
   openModifySelectionDialog: (kind: SelectionModification) => void;
   openColorRangeDialog: () => void;
   pickImage: (mode: "open" | "place") => void;
+}
+
+/** Download the active document as a portable `.mylper` file (File → Save Project As…). */
+async function saveProjectFile(controller: EditorController): Promise<void> {
+  const result = await controller.saveProjectFile();
+  if (!result.ok) return;
+  const saved = await saveFile(result.blob, result.filename, PROJECT_MIME, "MYLPER project");
+  if (saved === "saved") controller.notify("info", `Saved ${result.filename}`);
+  if (saved === "failed") controller.notify("error", "The project file could not be saved.");
 }
 
 /** Every user-invokable editor action, shared by menus, toolbar buttons and shortcuts. */
@@ -100,6 +112,11 @@ export function useEditorActions(hosts: ActionHosts): Record<UiActionId, UiActio
         label: "Save to Browser",
         enabled: hasDoc,
         run: () => void controller.save(),
+      },
+      "file.saveProject": {
+        label: "Save Project As…",
+        enabled: hasDoc,
+        run: () => void saveProjectFile(controller),
       },
       "file.export": { label: "Export As…", enabled: hasDoc, run: hosts.openExportDialog },
       "file.close": {

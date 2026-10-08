@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent } fro
 import { createShortcutMatcher } from "@/editor/core/shortcuts/shortcuts";
 import type { SelectionModification } from "@/editor/core/commands";
 import { isDirty } from "@/editor/core/editor-store";
-import { IMPORT_ACCEPT } from "@/editor/formats/raster/raster-import";
+import { OPEN_ACCEPT } from "@/editor/formats/open-file";
 import { CanvasViewport } from "./CanvasViewport";
 import { DocumentTabs, OptionsBar, StatusBar, Toolbar } from "./Chrome";
 import { useActiveSession, useController, useIsMac } from "./editor-context";
@@ -56,8 +56,8 @@ export function EditorShell() {
   const importFiles = useCallback(
     async (files: File[], mode: "open" | "place") => {
       for (const file of files) {
-        if (mode === "place") await controller.placeImageFile(file, file.name);
-        else await controller.openImageFile(file, file.name);
+        if (mode === "place") await controller.placeFile(file, file.name);
+        else await controller.openFile(file, file.name);
       }
     },
     [controller],
@@ -150,7 +150,8 @@ export function EditorShell() {
         if (!hasFiles(e)) return;
         e.preventDefault();
         setDragging(false);
-        void importFiles(imageFiles(e.dataTransfer.files), "open");
+        // Every dropped file goes through content detection, which explains unsupported types.
+        void importFiles([...e.dataTransfer.files], "open");
       }}
     >
       <MenuBar actions={actions} />
@@ -174,12 +175,12 @@ export function EditorShell() {
       <input
         ref={fileInputRef}
         type="file"
-        accept={IMPORT_ACCEPT}
+        accept={OPEN_ACCEPT}
         multiple
         hidden
         data-testid="file-input"
         onChange={(e) => {
-          const files = imageFiles(e.target.files);
+          const files = [...(e.target.files ?? [])];
           e.target.value = "";
           void importFiles(files, pickModeRef.current);
         }}

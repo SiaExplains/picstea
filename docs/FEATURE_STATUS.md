@@ -89,11 +89,23 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 | Moving selected pixels with the Move tool | 📋 | Use Cut/Paste or Layer via Copy |
 | Quick mask, refine edge, saving selections, clipping masks, polygon shape | 📋 | |
 
+## Gate 6 — Formats
+
+| Feature | Status | Notes |
+|---|---|---|
+| Open PNG, JPEG, WebP, GIF (first frame) | ✅ | Sniffed by content, header-validated |
+| `.mylper` project files (save / open) | ✅ | ZIP + versioned JSON; same validator as local storage |
+| PSD import: 8-bit RGB/greyscale, layers, groups, names, opacity, visibility, blend modes, masks | ✅ | Text/smart objects as pixels; adjustments, styles, vector masks, clipping not imported |
+| PSD export: layers, groups, names, opacity, visibility, blend modes, masks, composite | ✅ | Shapes/text rasterised; effects merged; adjustments in composite only |
+| SVG export (vector shapes/text, images for the rest) | ✅ | Flattened when adjustment layers are present |
+| SVG import (rasterised safely via `<img>`) | ✅ | |
+| PDF export (one page, lossless with alpha) | ✅ | |
+| PDF import, TIFF, PSB, 16/32-bit and CMYK PSD | 📋 | Clear error messages today |
+
 ## Later gates (summary)
 
 | Area | Status |
 |---|---|
-| Gate 6: formats (SVG, PDF, PSD; open/save project files) | 📋 |
 | Gate 7: workers, tiling, tile-based undo, large documents | 📋 |
 | Gate 8: marketing pages, blog, consent, ads, sponsorships | 📋 |
 | Gate 10: cloud | ⏸ requires explicit product-owner approval |

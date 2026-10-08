@@ -39,6 +39,26 @@ const encodePng: BitmapEncoder = async (bitmap, width, height) => {
   }
 };
 
+/**
+ * Draw SVG through an <img> element: scripts never run and external resources are not loaded
+ * in this mode, and the SVG is never inserted into the page (docs/12).
+ */
+const rasterizeSvg = async (svg: Blob, width: number, height: number) => {
+  const url = URL.createObjectURL(svg);
+  try {
+    const image = new Image(width, height);
+    image.src = url;
+    await image.decode();
+    const surface = defaultSurfaceFactory(width, height);
+    const ctx = surface.getContext("2d") as CanvasRenderingContext2D | null;
+    if (!ctx) throw new Error("2D canvas is not available.");
+    ctx.drawImage(image, 0, 0, width, height);
+    return surface;
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+};
+
 /** One controller per page lifetime, created only in the browser. */
 function getBrowserController(): EditorController {
   browserController ??= new EditorController({
@@ -46,6 +66,7 @@ function getBrowserController(): EditorController {
     decode: (blob) => createImageBitmap(blob),
     encode: encodePng,
     createSurface: defaultSurfaceFactory,
+    rasterizeSvg,
     sizer: createCanvasTextSizer(
       () => defaultSurfaceFactory(1, 1).getContext("2d") as CanvasRenderingContext2D | null,
     ),

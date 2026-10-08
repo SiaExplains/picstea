@@ -1,7 +1,7 @@
 import type { RasterMime } from "../../assets/asset-store";
 
 /**
- * Identify PNG/JPEG/WebP files and read their pixel dimensions from the header alone.
+ * Identify PNG/JPEG/WebP/GIF files and read their pixel dimensions from the header alone.
  *
  * Imported files are untrusted (docs/12_SECURITY.md). Reading dimensions before decoding lets us
  * reject decompression bombs — a tiny file that would decode to gigabytes — without allocating.
@@ -30,6 +30,7 @@ export function sniffMime(bytes: Uint8Array): RasterMime | null {
   if (startsWith(bytes, PNG_SIGNATURE)) return "image/png";
   if (startsWith(bytes, [0xff, 0xd8, 0xff])) return "image/jpeg";
   if (ascii(bytes, 0, 4) === "RIFF" && ascii(bytes, 8, 4) === "WEBP") return "image/webp";
+  if (ascii(bytes, 0, 6) === "GIF87a" || ascii(bytes, 0, 6) === "GIF89a") return "image/gif";
   return null;
 }
 
@@ -107,6 +108,11 @@ export function readImageHeader(bytes: Uint8Array): ImageHeader | null {
       return readJpeg(view, bytes);
     case "image/webp":
       return readWebp(view, bytes);
+    case "image/gif":
+      // Logical screen size; browsers decode the first frame.
+      return bytes.length >= 10
+        ? { mime: "image/gif", width: view.getUint16(6, true), height: view.getUint16(8, true) }
+        : null;
     default:
       return null;
   }
