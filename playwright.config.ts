@@ -13,7 +13,7 @@ export default defineConfig({
     trace: "retain-on-failure",
   },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
-  // E2E runs against the production build: run `pnpm build` first.
+  // E2E runs against the production build: run `pnpm build:e2e` first (fake AdSense ID).
   webServer: {
     command: `pnpm start --port ${PORT}`,
     url: `http://localhost:${PORT}`,

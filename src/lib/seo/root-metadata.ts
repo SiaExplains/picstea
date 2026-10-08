@@ -1,8 +1,11 @@
 import type { Metadata, Viewport } from "next";
-import { SITE } from "@/lib/seo/site";
-import "./globals.css";
+import { SITE } from "./site";
 
-export const metadata: Metadata = {
+/**
+ * Metadata shared by both root layouts (editor and website). They are separate root layouts so
+ * that moving between them is always a full page load (ADR-0013).
+ */
+export const rootMetadata: Metadata = {
   metadataBase: new URL(SITE.url),
   title: {
     default: `${SITE.name} — ${SITE.tagline}`,
@@ -26,17 +29,9 @@ export const metadata: Metadata = {
   },
 };
 
-export const viewport: Viewport = {
+export const rootViewport: Viewport = {
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#ffffff" },
     { media: "(prefers-color-scheme: dark)", color: "#141518" },
   ],
 };
-
-export default function RootLayout({ children }: LayoutProps<"/">) {
-  return (
-    <html lang="en">
-      <body>{children}</body>
-    </html>
-  );
-}

@@ -1,28 +1,63 @@
 import type { NextConfig } from "next";
 
+import { ADSENSE_CLIENT, ADSENSE_CSP } from "./src/lib/ads/adsense";
+
 /*
- * Baseline security headers. `connect-src 'self'` is deliberate: the editor must never send
- * document data anywhere, and the browser enforces that for fetch/XHR/WebSocket/beacon.
- * Script/style directives are deferred until the ad/consent vendors are chosen (Gate 8) —
- * see docs/adr/ADR-0006-security-headers.md.
+ * Content-Security-Policy (ADR-0006, ADR-0013).
+ *
+ * The editor (and every route by default) gets the strict policy: `connect-src 'self'` means the
+ * browser itself stops any attempt to send document data elsewhere. Website pages (docs, blog,
+ * guides, legal) additionally allow Google's ad origins — only when an AdSense publisher ID is
+ * configured, and the ad code itself only loads after consent (src/lib/consent).
  */
-const contentSecurityPolicy = [
-  "default-src 'self'",
-  "connect-src 'self'",
-  "object-src 'none'",
-  "base-uri 'self'",
-  "form-action 'self'",
-  "frame-ancestors 'none'",
-  "img-src 'self' blob: data:",
-  "worker-src 'self' blob:",
-  "script-src 'self' 'unsafe-inline'" +
-    (process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""),
-  "style-src 'self' 'unsafe-inline'",
-  "font-src 'self'",
-].join("; ");
+const dev = process.env.NODE_ENV === "development";
+
+function policy(
+  extra: {
+    script?: readonly string[];
+    connect?: readonly string[];
+    frame?: readonly string[];
+    img?: readonly string[];
+  } = {},
+) {
+  const list = (base: string, more: readonly string[] = []) => [base, ...more].join(" ");
+  return [
+    "default-src 'self'",
+    list("connect-src 'self'", extra.connect),
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+    "frame-ancestors 'none'",
+    list("img-src 'self' blob: data:", extra.img),
+    "worker-src 'self' blob:",
+    list("script-src 'self' 'unsafe-inline'" + (dev ? " 'unsafe-eval'" : ""), extra.script),
+    "style-src 'self' 'unsafe-inline'",
+    "font-src 'self'",
+    ...(extra.frame ? [list("frame-src", extra.frame)] : []),
+  ].join("; ");
+}
+
+const editorPolicy = policy();
+const sitePolicy = ADSENSE_CLIENT ? policy(ADSENSE_CSP) : editorPolicy;
+
+/** Website routes (src/app/(site)); everything else, including the editor at /, stays strict. */
+const SITE_ROUTES = [
+  "/docs",
+  "/blog",
+  "/online-photo-editor",
+  "/psd-editor",
+  "/privacy",
+  "/cookies",
+  "/terms",
+  "/imprint",
+  "/sponsorship",
+];
 
 const nextConfig: NextConfig = {
   cacheComponents: true,
+  // The editor and the website have separate root layouts (ADR-0013), so the 404 for unmatched
+  // URLs is defined once in app/global-not-found.tsx.
+  experimental: { globalNotFound: true },
   partialPrefetching: true,
   poweredByHeader: false,
   // The editor moved from /editor to the home page (v0.3.0); keep old links and bookmarks working.
@@ -34,7 +69,7 @@ const nextConfig: NextConfig = {
       {
         source: "/:path*",
         headers: [
-          { key: "Content-Security-Policy", value: contentSecurityPolicy },
+          { key: "Content-Security-Policy", value: editorPolicy },
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "X-Frame-Options", value: "DENY" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
@@ -44,6 +79,11 @@ const nextConfig: NextConfig = {
           },
         ],
       },
+      // Later rules override the same header: website pages get the site policy.
+      ...SITE_ROUTES.flatMap((route) => [route, `${route}/:path*`]).map((source) => ({
+        source,
+        headers: [{ key: "Content-Security-Policy", value: sitePolicy }],
+      })),
     ];
   },
 };

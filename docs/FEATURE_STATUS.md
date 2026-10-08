@@ -116,11 +116,28 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 | Full-resolution adjustments in export/wand composites still on the main thread | 📋 | One-off actions |
 | Tiled rendering beyond 36 MP, tile-based undo | 📋 | Limits unchanged |
 
+## Gate 8 — Website, SEO/AEO & monetization
+
+| Feature | Status | Notes |
+|---|---|---|
+| Website (separate layout, static pages, no editor bundle) | ✅ | Links to the editor don't prefetch it |
+| Landing pages: /online-photo-editor, /psd-editor | ✅ | Direct answers, how-to, limitations, FAQ |
+| Docs (7 pages incl. generated shortcut table) | ✅ | |
+| Blog (index, posts, Article data) | ✅ | 3 posts written as **drafts** awaiting approval |
+| Structured data: WebSite, Organization, SoftwareApplication, BreadcrumbList, Article, FAQPage | ✅ | No ratings/reviews |
+| Sitemap from one routes registry; real 404s for unknown docs/blog URLs | ✅ | Drafts and unfinished legal pages excluded |
+| Consent system: banner, preferences, vendor registry, versioned storage | ✅ | Only shown when an optional vendor is configured |
+| Google AdSense (website only, after consent, non-personalised) | ✅ | Off until `NEXT_PUBLIC_ADSENSE_CLIENT`/`_SLOT` are set |
+| Custom sponsorships (no tracking), editor start-screen slot | ✅ | House ad until sponsors are booked |
+| Per-route CSP: strict editor, ad origins only on website pages | ✅ | ADR-0013 |
+| Legal pages: Privacy, Cookies, Terms, Imprint, Sponsorship | 🟡 | Drafts with [TO COMPLETE] fields; need operator details and legal review |
+| Google-certified CMP (IAB TCF) for personalised EU ads | 📋 | Product decision |
+| Analytics | ⏸ | None by decision; category ready |
+
 ## Later gates (summary)
 
 | Area | Status |
 |---|---|
-| Gate 8: marketing pages, blog, consent, ads, sponsorships | 📋 |
 | Gate 10: cloud | ⏸ requires explicit product-owner approval |
 
 ## Known limitations

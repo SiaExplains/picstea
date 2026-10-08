@@ -1,5 +1,9 @@
 "use client";
 
+import { useSyncExternalStore } from "react";
+import { SponsorCard } from "@/components/site/SponsorCard";
+import { SPONSORSHIPS } from "@/content/sponsorships";
+import { dayNumber, pickSponsorship } from "@/lib/sponsorship/sponsorship";
 import { useAppStatus, useController } from "./editor-context";
 import styles from "./editor.module.css";
 import { TrashIcon } from "./icons";
@@ -85,6 +89,34 @@ export function StartScreen({ actions }: { actions: Record<UiActionId, UiAction>
           ))}
         </ul>
       )}
+      <StartSponsorship />
     </div>
+  );
+}
+
+const noSubscribe = () => () => {};
+
+/**
+ * The editor's only sponsorship space (docs/08): on the start screen, before a document is open,
+ * never over the canvas or tools. MYLPER's own sponsorships only — no third-party code runs in
+ * the editor.
+ */
+function StartSponsorship() {
+  const day = useSyncExternalStore(
+    noSubscribe,
+    () => dayNumber(Date.now()),
+    () => 0,
+  );
+  const ad = pickSponsorship(SPONSORSHIPS, "editor-start", day);
+  return (
+    <SponsorCard
+      ad={ad}
+      styles={{
+        card: styles.sponsor,
+        label: styles.sponsorLabel,
+        title: styles.sponsorTitle,
+        text: styles.muted,
+      }}
+    />
   );
 }

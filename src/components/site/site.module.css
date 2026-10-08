@@ -1,0 +1,343 @@
+/* Public website (docs, blog, guides, legal). Uses the global light/dark tokens. */
+
+.site {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  max-width: 1120px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+.brand {
+  display: flex;
+}
+
+.logoDark {
+  display: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  .logoLight {
+    display: none;
+  }
+
+  .logoDark {
+    display: block;
+  }
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  font-size: 15px;
+}
+
+.nav a {
+  text-decoration: none;
+}
+
+.nav a:hover {
+  text-decoration: underline;
+}
+
+.cta,
+.ctaLarge {
+  background: var(--accent);
+  color: #fff !important;
+  border-radius: 6px;
+  padding: 7px 14px;
+  text-decoration: none !important;
+}
+
+.ctaLarge {
+  display: inline-block;
+  padding: 11px 20px;
+  font-weight: 600;
+  margin: 8px 0 24px;
+}
+
+.body {
+  flex: 1;
+  width: 100%;
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 0 16px 48px;
+}
+
+.page {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 40px;
+  align-items: start;
+}
+
+@media (max-width: 860px) {
+  .page {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.article {
+  min-width: 0;
+  max-width: 72ch;
+}
+
+.article h1 {
+  font-size: clamp(28px, 4vw, 40px);
+  line-height: 1.15;
+  margin: 8px 0 12px;
+}
+
+.lead {
+  font-size: 19px;
+  line-height: 1.55;
+  color: var(--muted);
+}
+
+.meta {
+  color: var(--muted);
+  font-size: 14px;
+  margin: 0 0 8px;
+}
+
+.note {
+  border-left: 3px solid #e0a400;
+  background: var(--surface);
+  padding: 10px 14px;
+  font-size: 14px;
+}
+
+.prose {
+  font-size: 17px;
+  line-height: 1.65;
+}
+
+.prose h2 {
+  font-size: 23px;
+  margin: 36px 0 8px;
+}
+
+.prose code,
+.prose kbd {
+  font-size: 0.9em;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0 4px;
+}
+
+.prose table,
+.table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 15px;
+  margin: 16px 0;
+}
+
+.prose th,
+.prose td,
+.table th,
+.table td {
+  border-bottom: 1px solid var(--border);
+  padding: 8px 10px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.crumbs ol {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  list-style: none;
+  padding: 0;
+  margin: 16px 0 0;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.crumbs li + li::before {
+  content: "›";
+  margin-right: 6px;
+}
+
+.sidebar {
+  position: sticky;
+  top: 16px;
+  margin-top: 56px;
+}
+
+/* Reserved ad space: fixed size so nothing shifts when an ad loads. */
+.adSlot {
+  width: 300px;
+  max-width: 100%;
+  height: 250px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  padding: 10px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.adLabel {
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.sponsor {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  height: 100%;
+  justify-content: center;
+}
+
+.sponsor a {
+  text-decoration: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sponsorTitle {
+  font-size: 18px;
+}
+
+.sponsorText {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.list {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 18px;
+}
+
+.list h2 {
+  font-size: 20px;
+  margin: 0 0 4px;
+}
+
+.list p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.footer {
+  border-top: 1px solid var(--border);
+  padding: 24px 16px 40px;
+  font-size: 14px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.footerNav {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px 18px;
+  margin-bottom: 12px;
+}
+
+.linkButton {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* Consent banner and dialog (docs/09: equal choices, no dark patterns). */
+.banner {
+  position: fixed;
+  left: 16px;
+  right: 16px;
+  bottom: 16px;
+  z-index: 20;
+  max-width: 760px;
+  margin: 0 auto;
+  background: var(--background);
+  color: var(--foreground);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 6px 28px rgba(0, 0, 0, 0.18);
+  padding: 16px 18px;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.banner p {
+  margin: 0 0 12px;
+}
+
+.bannerActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+/* All three choices look the same: no option is visually pushed. */
+.choice {
+  font: inherit;
+  font-size: 14px;
+  padding: 8px 14px;
+  border-radius: 6px;
+  border: 1px solid var(--foreground);
+  background: var(--background);
+  color: var(--foreground);
+  cursor: pointer;
+}
+
+.preferences {
+  max-width: min(520px, calc(100vw - 32px));
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--background);
+  color: var(--foreground);
+  padding: 20px;
+}
+
+.preferences::backdrop {
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.preferences h2 {
+  margin: 0 0 12px;
+  font-size: 20px;
+}
+
+.categories {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 16px;
+  display: grid;
+  gap: 12px;
+}
+
+.categories label {
+  font-weight: 600;
+}
+
+.categories p {
+  margin: 4px 0 0 24px;
+  font-size: 14px;
+  color: var(--muted);
+}

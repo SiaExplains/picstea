@@ -1040,3 +1040,40 @@
     animation: none;
   }
 }
+
+/* ---------- start-screen sponsorship (docs/08: fixed space, clearly labelled) ---------- */
+
+.sponsor {
+  margin-top: 32px;
+  max-width: 420px;
+  min-height: 86px;
+  padding: 12px 14px;
+  border: 1px solid var(--ed-border);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sponsor a {
+  color: var(--ed-text);
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sponsor a:hover .sponsorTitle {
+  text-decoration: underline;
+}
+
+.sponsorLabel {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ed-text-dim);
+}
+
+.sponsorTitle {
+  font-size: 14px;
+}

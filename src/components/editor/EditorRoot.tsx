@@ -132,6 +132,14 @@ class EditorErrorBoundary extends Component<{ children: ReactNode }, { failed: b
 export function EditorRoot() {
   const controller = useSyncExternalStore(subscribeNoop, getBrowserController, () => null);
 
+  // Backstop for ADR-0013: the editor must never share a page with third-party (ad) code. Website
+  // links reach it with a full page load; if ad code is somehow present, start over cleanly.
+  useEffect(() => {
+    if (document.querySelector("script[data-vendor]") || "adsbygoogle" in window) {
+      window.location.reload();
+    }
+  }, []);
+
   useEffect(() => {
     if (controller) void controller.refreshRecentProjects();
   }, [controller]);
