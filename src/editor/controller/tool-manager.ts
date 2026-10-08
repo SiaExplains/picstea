@@ -7,7 +7,13 @@ import { DEFAULT_VIEWPORT } from "../core/viewport/viewport";
 import type { SurfaceFactory } from "../rendering/canvas/canvas2d-renderer";
 import type { CompositePreview } from "../rendering/compositing/compositor";
 import type { Overlay } from "../rendering/overlay";
+import type { SelectionMask } from "../selection/mask";
 import { BrushTool } from "../tools/brush/brush-tool";
+import { BucketTool } from "../tools/bucket/bucket-tool";
+import { EyedropperTool } from "../tools/eyedropper/eyedropper-tool";
+import { GradientTool } from "../tools/gradient/gradient-tool";
+import { LassoTool, MagicWandTool, MarqueeTool } from "../tools/selection/selection-tools";
+import { TransformSelectionTool } from "../tools/selection/transform-selection-tool";
 import { CropTool } from "../tools/crop/crop-tool";
 import { MoveTool } from "../tools/move/move-tool";
 import { ShapeTool } from "../tools/shape/shape-tool";
@@ -32,6 +38,8 @@ export class ToolManager {
   /** Bumped whenever tool feedback changes and the canvas should be redrawn. */
   readonly revision = new Observable(0);
   readonly crop = new CropTool();
+  /** Select → Transform Selection: overrides the active tool until applied or cancelled. */
+  readonly selectionTransform = new TransformSelectionTool();
   private readonly tools: Partial<Record<ToolId, Tool>>;
   private readonly context: ToolContext;
   private activeId: ToolId;
@@ -41,9 +49,16 @@ export class ToolManager {
   constructor(private readonly host: ToolManagerHost) {
     this.tools = {
       move: new MoveTool(),
+      marquee: new MarqueeTool(),
+      lasso: new LassoTool(),
+      wand: new MagicWandTool(),
       crop: this.crop,
+      eyedropper: new EyedropperTool(),
       brush: new BrushTool("brush"),
+      pencil: new BrushTool("pencil"),
       eraser: new BrushTool("eraser"),
+      bucket: new BucketTool(),
+      gradient: new GradientTool(),
       shape: new ShapeTool(),
       text: new TextTool(),
     };
@@ -66,6 +81,7 @@ export class ToolManager {
       const next = host.store.getState();
       if (next.activeTool !== this.activeId || next.activeDocumentId !== this.documentId) {
         this.active()?.cancel(this.context);
+        if (this.selectionTransform.active) this.selectionTransform.end(this.context);
         this.activeId = next.activeTool;
         this.documentId = next.activeDocumentId;
         this.context.invalidate();
@@ -78,7 +94,18 @@ export class ToolManager {
   }
 
   private active(): Tool | undefined {
+    if (this.selectionTransform.active) return this.selectionTransform;
     return this.tools[this.host.store.getState().activeTool];
+  }
+
+  beginSelectionTransform(): void {
+    this.active()?.cancel(this.context);
+    if (this.selectionTransform.begin(this.context)) {
+      this.host.notify(
+        "info",
+        "Drag the handles to transform the selection. Enter applies, Esc cancels.",
+      );
+    }
   }
 
   /** True when the active tool consumes canvas pointer input (Hand/Zoom do not). */
@@ -134,5 +161,21 @@ export class ToolManager {
 
   preview(): CompositePreview | undefined {
     return this.active()?.preview(this.context);
+  }
+
+  private selectionOverride: SelectionMask | null | undefined = undefined;
+
+  /** Show a candidate selection (e.g. Color Range preview); `undefined` restores the real one. */
+  previewSelection(mask: SelectionMask | null | undefined): void {
+    this.selectionOverride = mask;
+    this.context.invalidate();
+  }
+
+  /** The selection outline to draw: a tool's live preview, else the document's selection. */
+  selection(): SelectionMask | undefined {
+    if (this.selectionOverride !== undefined) return this.selectionOverride ?? undefined;
+    const preview = this.active()?.selectionPreview?.(this.context);
+    if (preview === null) return undefined;
+    return preview ?? this.host.store.getSession()?.document.selection;
   }
 }

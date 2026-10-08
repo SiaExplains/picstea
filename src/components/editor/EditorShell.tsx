@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent } from "react";
 import { createShortcutMatcher } from "@/editor/core/shortcuts/shortcuts";
+import type { SelectionModification } from "@/editor/core/commands";
 import { isDirty } from "@/editor/core/editor-store";
 import { IMPORT_ACCEPT } from "@/editor/formats/raster/raster-import";
 import { CanvasViewport } from "./CanvasViewport";
@@ -15,6 +16,7 @@ import { MenuBar } from "./MenuBar";
 import { NewDocumentDialog } from "./NewDocumentDialog";
 import { Notices } from "./Notices";
 import { PropertiesPanel } from "./PropertiesPanel";
+import { ColorRangeDialog, ModifySelectionDialog } from "./SelectionDialogs";
 import { StartScreen } from "./StartScreen";
 import { useEditorActions, type ActionHosts } from "./use-editor-actions";
 
@@ -30,6 +32,8 @@ export function EditorShell() {
   const isMac = useIsMac();
   const [newDialogOpen, setNewDialogOpen] = useState(false);
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
+  const [modifyKind, setModifyKind] = useState<SelectionModification | null>(null);
+  const [colorRangeOpen, setColorRangeOpen] = useState(false);
   const [dragging, setDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const pickModeRef = useRef<"open" | "place">("open");
@@ -38,6 +42,8 @@ export function EditorShell() {
     () => ({
       openNewDocumentDialog: () => setNewDialogOpen(true),
       openExportDialog: () => setExportDialogOpen(true),
+      openModifySelectionDialog: (kind) => setModifyKind(kind),
+      openColorRangeDialog: () => setColorRangeOpen(true),
       pickImage: (mode) => {
         pickModeRef.current = mode;
         fileInputRef.current?.click();
@@ -90,9 +96,23 @@ export function EditorShell() {
     const onPaste = (event: ClipboardEvent) => {
       if (isTypingTarget(event.target)) return;
       const files = imageFiles(event.clipboardData?.files);
-      if (files.length === 0) return;
+      if (files.length === 0) {
+        // No image from another app: paste pixels copied in MYLPER, if any.
+        if (controller.store.getSession() && controller.hasClipboard()) {
+          event.preventDefault();
+          controller.pasteClipboard();
+        }
+        return;
+      }
       event.preventDefault();
-      void importFiles(files, controller.store.getSession() ? "place" : "open");
+      const hasDocument = !!controller.store.getSession();
+      void (async () => {
+        if (hasDocument && files.length === 1 && (await controller.isOwnClipboardImage(files[0]))) {
+          controller.pasteClipboard();
+          return;
+        }
+        await importFiles(files, hasDocument ? "place" : "open");
+      })();
     };
     window.addEventListener("paste", onPaste);
     return () => window.removeEventListener("paste", onPaste);
@@ -148,6 +168,8 @@ export function EditorShell() {
       <StatusBar />
       <NewDocumentDialog open={newDialogOpen} onClose={() => setNewDialogOpen(false)} />
       <ExportDialog open={exportDialogOpen} onClose={() => setExportDialogOpen(false)} />
+      <ModifySelectionDialog kind={modifyKind} onClose={() => setModifyKind(null)} />
+      {colorRangeOpen && <ColorRangeDialog open onClose={() => setColorRangeOpen(false)} />}
       <Notices />
       <input
         ref={fileInputRef}

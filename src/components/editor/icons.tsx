@@ -177,3 +177,52 @@ export const AdjustIcon = (p: IconProps) => (
     <path d="M8 2.5a5.5 5.5 0 0 1 0 11Z" fill="currentColor" />
   </Svg>
 );
+
+export const MarqueeIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <rect x="2.5" y="3.5" width="11" height="9" strokeDasharray="2 1.6" />
+  </Svg>
+);
+
+export const LassoIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M4.5 11.5C2.6 10.6 1.8 9.1 2.2 7.4 2.8 4.8 5.6 3 8.8 3c3 0 5.2 1.6 5.2 3.8 0 2.6-3 4.4-6.6 4.4-1 0-2-.1-2.9-.4" />
+    <path d="M4.5 11.5c-.4 1.2.2 2.2 1.4 2" />
+  </Svg>
+);
+
+export const WandIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="m2.5 13.5 7-7" />
+    <path d="M11 1.8v2.4M11 7.8v2.4M7.8 5H5.4M16.6 5h-2.4M9 3l.9.9M13 7l.9.9M13 3l-.9.9" />
+  </Svg>
+);
+
+export const EyedropperIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="m9.5 4.5 2 2M3 13l1-3 5.5-5.5 2 2L6 12l-3 1Z" />
+    <path d="M10.5 3.5 12 2a1.4 1.4 0 0 1 2 2l-1.5 1.5" />
+  </Svg>
+);
+
+export const PencilIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M10.5 2.5 13.5 5.5 5.5 13.5 2 14l.5-3.5 8-8Z" />
+    <path d="m9 4 3 3" />
+  </Svg>
+);
+
+export const BucketIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="m7 2.5 5.5 5.5-4.8 4.8a1.5 1.5 0 0 1-2.1 0L2.2 9.4a1.5 1.5 0 0 1 0-2.1L7 2.5Z" />
+    <path d="M2.5 8.5h9.5M13.5 10.5s1 1.4 1 2.1a1 1 0 0 1-2 0c0-.7 1-2.1 1-2.1Z" />
+  </Svg>
+);
+
+export const GradientIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <rect x="2" y="3" width="12" height="10" rx="1" />
+    <path d="M5 3v10M8 3v10" strokeOpacity="0.6" />
+    <path d="M11 3v10" strokeOpacity="0.3" />
+  </Svg>
+);

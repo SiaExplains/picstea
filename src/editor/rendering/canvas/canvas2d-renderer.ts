@@ -2,6 +2,8 @@ import type { EditorDocument } from "../../core/document/types";
 import { CompositeCache, compositeDocument } from "../compositing/compositor";
 import { documentToScreen, type Viewport } from "../../core/viewport/viewport";
 import { rectHandles } from "../../core/geometry/rect";
+import type { SelectionMask } from "../../selection/mask";
+import { selectionOutline } from "../../selection/outline";
 import { HANDLE_SIZE_PX, type Overlay } from "../overlay";
 import type { Renderer, RenderScene } from "../renderer";
 
@@ -96,7 +98,37 @@ export class Canvas2DRenderer implements Renderer {
     ctx.lineWidth = 1;
     ctx.strokeRect(Math.round(x) - 0.5, Math.round(y) - 0.5, Math.round(w) + 1, Math.round(h) + 1);
 
+    if (scene.selection) this.drawAnts(ctx, scene.selection, viewport, scene.antsPhase ?? 0);
     for (const overlay of scene.overlays ?? []) this.drawOverlay(ctx, overlay, viewport, screen);
+  }
+
+  /** Marching ants: a white line under a dashed black one, offset by `phase` to animate. */
+  private drawAnts(
+    ctx: CanvasRenderingContext2D,
+    selection: SelectionMask,
+    viewport: Viewport,
+    phase: number,
+  ): void {
+    const segments = selectionOutline(selection);
+    if (segments.length === 0) return;
+    const { zoom, panX, panY } = viewport;
+    // Snap to device-independent half pixels so 1px lines stay crisp.
+    const sx = (x: number) => Math.round(x * zoom + panX) + 0.5;
+    const sy = (y: number) => Math.round(y * zoom + panY) + 0.5;
+    ctx.save();
+    ctx.beginPath();
+    for (let i = 0; i < segments.length; i += 4) {
+      ctx.moveTo(sx(segments[i]), sy(segments[i + 1]));
+      ctx.lineTo(sx(segments[i + 2]), sy(segments[i + 3]));
+    }
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = "#ffffff";
+    ctx.stroke();
+    ctx.setLineDash([4, 4]);
+    ctx.lineDashOffset = -phase;
+    ctx.strokeStyle = "#000000";
+    ctx.stroke();
+    ctx.restore();
   }
 
   private drawOverlay(
@@ -148,6 +180,22 @@ export class Canvas2DRenderer implements Renderer {
           }
         });
         for (const p of Object.values(rectHandles(overlay.rect))) this.drawHandle(ctx, toScreen(p));
+        break;
+      }
+      case "path": {
+        if (overlay.points.length < 2) break;
+        const pts = overlay.points.map(toScreen);
+        const trace = () => {
+          ctx.beginPath();
+          pts.forEach((p, i) => (i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)));
+          if (overlay.closed) ctx.closePath();
+        };
+        trace();
+        ctx.strokeStyle = "#ffffff";
+        ctx.stroke();
+        ctx.setLineDash([4, 4]);
+        ctx.strokeStyle = "#000000";
+        ctx.stroke();
         break;
       }
       case "brush": {

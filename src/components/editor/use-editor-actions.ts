@@ -5,6 +5,7 @@ import { deleteLayer, duplicateLayer, shiftLayer } from "@/editor/core/commands"
 import { ADJUSTMENTS } from "@/editor/adjustments/registry";
 import { activeLayer } from "@/editor/core/document/queries";
 import { flattenTopFirst, locateLayer } from "@/editor/core/document/tree";
+import type { SelectionModification } from "@/editor/core/commands";
 import type { AdjustmentType } from "@/editor/core/document/types";
 import { isTransformable } from "@/editor/core/geometry/layer-geometry";
 import { createId } from "@/editor/core/ids";
@@ -28,6 +29,13 @@ export type UiActionId =
   | "layer.flipH"
   | "layer.flipV"
   | "image.crop"
+  | "image.cropToSelection"
+  | "edit.paste"
+  | "edit.clear"
+  | "select.colorRange"
+  | "select.expand"
+  | "select.contract"
+  | "select.transform"
   | "help.welcome";
 
 export interface UiAction {
@@ -39,6 +47,8 @@ export interface UiAction {
 export interface ActionHosts {
   openNewDocumentDialog: () => void;
   openExportDialog: () => void;
+  openModifySelectionDialog: (kind: SelectionModification) => void;
+  openColorRangeDialog: () => void;
   pickImage: (mode: "open" | "place") => void;
 }
 
@@ -69,6 +79,9 @@ export function useEditorActions(hosts: ActionHosts): Record<UiActionId, UiActio
     const undoLabel = history?.past.at(-1)?.label;
     const redoLabel = history?.future[0]?.label;
     const canTransform = !!layer && isTransformable(layer) && !layer.locked;
+    const selection = doc?.selection;
+    const hasSelection = !!selection;
+    const onPixels = hasSelection && layer?.kind === "raster" && !layer.locked;
     const tool = (id: Parameters<typeof controller.store.setActiveTool>[0], label: string) => ({
       label,
       enabled: true,
@@ -104,6 +117,78 @@ export function useEditorActions(hosts: ActionHosts): Record<UiActionId, UiActio
         enabled: !!redoLabel,
         run: () => controller.redo(),
       },
+      "edit.cut": {
+        label: "Cut",
+        enabled: !!onPixels,
+        run: () => controller.cutSelection(),
+      },
+      "edit.copy": {
+        label: "Copy",
+        enabled: hasSelection && !!layer,
+        run: () => void controller.copySelection(),
+      },
+      "edit.paste": {
+        // The clipboard is not React state, so Paste stays enabled and explains when it is empty.
+        label: "Paste",
+        enabled: hasDoc,
+        run: () => void controller.pasteClipboard(),
+      },
+      "edit.clear": {
+        label: "Clear",
+        enabled: !!onPixels,
+        run: () => void controller.clearSelection(),
+      },
+      "edit.fill": {
+        label: "Fill with Foreground",
+        enabled: !!onPixels,
+        run: () => controller.fillSelection(colors.foreground),
+      },
+      "select.all": { label: "All", enabled: hasDoc, run: () => controller.selectAll() },
+      "select.deselect": {
+        label: "Deselect",
+        enabled: hasSelection,
+        run: () => controller.deselect(),
+      },
+      "select.reselect": {
+        label: "Reselect",
+        enabled: hasDoc && !hasSelection && controller.canReselect(),
+        run: () => controller.reselect(),
+      },
+      "select.inverse": {
+        label: "Inverse",
+        enabled: hasDoc,
+        run: () => controller.invertSelection(),
+      },
+      "select.colorRange": {
+        label: "Color Range…",
+        enabled: hasDoc,
+        run: hosts.openColorRangeDialog,
+      },
+      "select.feather": {
+        label: "Feather…",
+        enabled: hasSelection,
+        run: () => hosts.openModifySelectionDialog("feather"),
+      },
+      "select.expand": {
+        label: "Expand…",
+        enabled: hasSelection,
+        run: () => hosts.openModifySelectionDialog("expand"),
+      },
+      "select.contract": {
+        label: "Contract…",
+        enabled: hasSelection,
+        run: () => hosts.openModifySelectionDialog("contract"),
+      },
+      "select.transform": {
+        label: "Transform Selection",
+        enabled: hasSelection,
+        run: () => controller.transformSelection(),
+      },
+      "image.cropToSelection": {
+        label: "Crop to Selection",
+        enabled: hasSelection,
+        run: () => controller.cropToSelection(),
+      },
       "image.crop": {
         label: activeTool === "crop" ? "Apply Crop" : "Crop",
         enabled: hasDoc,
@@ -118,15 +203,23 @@ export function useEditorActions(hosts: ActionHosts): Record<UiActionId, UiActio
         enabled: hasDoc,
         run: () => controller.addFillLayer(colors.foreground),
       },
+      // With a selection, Mod+J copies the selected pixels to a new layer (Layer via Copy).
       "layer.duplicate": {
-        label: "Duplicate Layer",
+        label: hasSelection ? "Layer via Copy" : "Duplicate Layer",
         enabled: !!activeId,
-        run: () => activeId && controller.execute(duplicateLayer(activeId, createId("layer"))),
+        run: () =>
+          hasSelection
+            ? controller.layerViaCopy()
+            : activeId && controller.execute(duplicateLayer(activeId, createId("layer"))),
       },
+      // With a selection, Delete/Backspace clears the selected pixels instead of the layer.
       "layer.delete": {
         label: "Delete Layer",
         enabled: !!activeId,
-        run: () => activeId && controller.execute(deleteLayer(activeId)),
+        run: () =>
+          hasSelection
+            ? void controller.clearSelection()
+            : activeId && controller.execute(deleteLayer(activeId)),
       },
       "layer.moveUp": {
         label: "Bring Forward",
@@ -205,9 +298,16 @@ export function useEditorActions(hosts: ActionHosts): Record<UiActionId, UiActio
       "help.welcome": { label: "Welcome to MYLPER", enabled: true, run: openWelcome },
       "tool.move": tool("move", "Move Tool"),
       "tool.transform": { ...tool("move", "Free Transform"), enabled: canTransform },
+      "tool.marquee": tool("marquee", "Marquee Tool"),
+      "tool.lasso": tool("lasso", "Lasso Tool"),
+      "tool.wand": tool("wand", "Magic Wand Tool"),
       "tool.crop": tool("crop", "Crop Tool"),
+      "tool.eyedropper": tool("eyedropper", "Eyedropper Tool"),
       "tool.brush": tool("brush", "Brush Tool"),
+      "tool.pencil": tool("pencil", "Pencil Tool"),
       "tool.eraser": tool("eraser", "Eraser Tool"),
+      "tool.bucket": tool("bucket", "Paint Bucket Tool"),
+      "tool.gradient": tool("gradient", "Gradient Tool"),
       "tool.shape": tool("shape", "Shape Tool"),
       "tool.text": tool("text", "Text Tool"),
       "tool.hand": tool("hand", "Hand Tool"),

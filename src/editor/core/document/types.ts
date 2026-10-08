@@ -6,6 +6,8 @@
  * reference immutable assets by id (see src/editor/assets).
  */
 
+import type { SelectionMask } from "../../selection/mask";
+
 export const BLEND_MODES = [
   "normal",
   "multiply",
@@ -249,4 +251,9 @@ export interface EditorDocument {
   readonly activeLayerId: string | null;
   readonly guides: readonly Guide[];
   readonly metadata: DocumentMetadata;
+  /**
+   * The active selection (ADR-0010). Part of the document so selection changes are undoable,
+   * but never saved: `serializeDocument` drops it.
+   */
+  readonly selection?: SelectionMask;
 }

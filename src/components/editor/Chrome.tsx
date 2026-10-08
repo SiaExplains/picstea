@@ -1,12 +1,20 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
+import { SELECTION_MODES, type SelectionMode } from "@/editor/selection/ops";
 import { FONT_FAMILIES, type FontFamily, type ShapeKind } from "@/editor/core/document/types";
 import { isDirty, type ToolId } from "@/editor/core/editor-store";
 import { primaryBinding, type ActionId } from "@/editor/core/shortcuts/shortcuts";
 import { useActiveSession, useController, useEditorState, useIsMac } from "./editor-context";
 import styles from "./editor.module.css";
 import {
+  BucketIcon,
+  EyedropperIcon,
+  GradientIcon,
+  LassoIcon,
+  MarqueeIcon,
+  PencilIcon,
+  WandIcon,
   BrushIcon,
   CloseIcon,
   CropIcon,
@@ -22,9 +30,21 @@ import type { UiAction, UiActionId } from "./use-editor-actions";
 
 const TOOLS: { id: ToolId; label: string; action: ActionId; icon: React.ReactNode }[] = [
   { id: "move", label: "Move", action: "tool.move", icon: <MoveIcon size={18} /> },
+  { id: "marquee", label: "Marquee", action: "tool.marquee", icon: <MarqueeIcon size={18} /> },
+  { id: "lasso", label: "Lasso", action: "tool.lasso", icon: <LassoIcon size={18} /> },
+  { id: "wand", label: "Magic Wand", action: "tool.wand", icon: <WandIcon size={18} /> },
   { id: "crop", label: "Crop", action: "tool.crop", icon: <CropIcon size={18} /> },
+  {
+    id: "eyedropper",
+    label: "Eyedropper",
+    action: "tool.eyedropper",
+    icon: <EyedropperIcon size={18} />,
+  },
   { id: "brush", label: "Brush", action: "tool.brush", icon: <BrushIcon size={18} /> },
+  { id: "pencil", label: "Pencil", action: "tool.pencil", icon: <PencilIcon size={18} /> },
   { id: "eraser", label: "Eraser", action: "tool.eraser", icon: <EraserIcon size={18} /> },
+  { id: "bucket", label: "Paint Bucket", action: "tool.bucket", icon: <BucketIcon size={18} /> },
+  { id: "gradient", label: "Gradient", action: "tool.gradient", icon: <GradientIcon size={18} /> },
   { id: "shape", label: "Shape", action: "tool.shape", icon: <ShapeIcon size={18} /> },
   { id: "text", label: "Text", action: "tool.text", icon: <TextIcon size={18} /> },
   { id: "hand", label: "Hand", action: "tool.hand", icon: <HandIcon size={18} /> },
@@ -134,7 +154,7 @@ function NumberOption({
   );
 }
 
-function BrushOptions({ tool }: { tool: "brush" | "eraser" }) {
+function BrushOptions({ tool }: { tool: "brush" | "pencil" | "eraser" }) {
   const controller = useController();
   const settings = useEditorState((s) => s.toolSettings[tool]);
   const set = (patch: Partial<typeof settings>) => controller.store.updateToolSettings(tool, patch);
@@ -148,13 +168,199 @@ function BrushOptions({ tool }: { tool: "brush" | "eraser" }) {
         suffix="px"
         onChange={(size) => set({ size })}
       />
+      {tool !== "pencil" && (
+        <NumberOption
+          label="Hardness"
+          value={Math.round(settings.hardness * 100)}
+          min={0}
+          max={100}
+          suffix="%"
+          onChange={(v) => set({ hardness: v / 100 })}
+        />
+      )}
       <NumberOption
-        label="Hardness"
-        value={Math.round(settings.hardness * 100)}
-        min={0}
+        label="Opacity"
+        value={Math.round(settings.opacity * 100)}
+        min={1}
         max={100}
         suffix="%"
-        onChange={(v) => set({ hardness: v / 100 })}
+        onChange={(v) => set({ opacity: v / 100 })}
+      />
+      <span>
+        {tool === "eraser"
+          ? "[ and ] change size"
+          : "[ and ] change size · Alt-click picks a colour"}
+      </span>
+    </>
+  );
+}
+
+const MODE_LABELS: Record<SelectionMode, string> = {
+  replace: "New",
+  add: "Add",
+  subtract: "Subtract",
+  intersect: "Intersect",
+};
+
+function SelectionModeOption({ tool }: { tool: "marquee" | "lasso" | "wand" }) {
+  const controller = useController();
+  const mode = useEditorState((s) => s.toolSettings[tool].mode);
+  return (
+    <div className={styles.segmented} role="group" aria-label="Selection mode">
+      {SELECTION_MODES.map((m) => (
+        <button
+          key={m}
+          type="button"
+          aria-pressed={mode === m}
+          onClick={() => controller.store.updateToolSettings(tool, { mode: m })}
+        >
+          {MODE_LABELS[m]}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function SegmentedOption<T extends string>({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  value: T;
+  options: readonly { id: T; label: string }[];
+  onChange: (value: T) => void;
+}) {
+  return (
+    <div className={styles.segmented} role="group" aria-label={label}>
+      {options.map((o) => (
+        <button
+          key={o.id}
+          type="button"
+          aria-pressed={value === o.id}
+          onClick={() => onChange(o.id)}
+        >
+          {o.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function CheckOption({
+  label,
+  checked,
+  onChange,
+}: {
+  label: string;
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+}) {
+  return (
+    <label className={styles.optionGroup}>
+      <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} />
+      {label}
+    </label>
+  );
+}
+
+function MarqueeOptions() {
+  const controller = useController();
+  const shape = useEditorState((s) => s.toolSettings.marquee.shape);
+  return (
+    <>
+      <SegmentedOption
+        label="Marquee shape"
+        value={shape}
+        options={[
+          { id: "rect", label: "Rectangle" },
+          { id: "ellipse", label: "Ellipse" },
+        ]}
+        onChange={(v) => controller.store.updateToolSettings("marquee", { shape: v })}
+      />
+      <SelectionModeOption tool="marquee" />
+      <span>Shift adds · Alt subtracts · drag inside to move</span>
+    </>
+  );
+}
+
+function LassoOptions() {
+  const controller = useController();
+  const kind = useEditorState((s) => s.toolSettings.lasso.kind);
+  return (
+    <>
+      <SegmentedOption
+        label="Lasso type"
+        value={kind}
+        options={[
+          { id: "freehand", label: "Freehand" },
+          { id: "polygonal", label: "Polygonal" },
+        ]}
+        onChange={(v) => controller.store.updateToolSettings("lasso", { kind: v })}
+      />
+      <SelectionModeOption tool="lasso" />
+      <span>
+        {kind === "polygonal"
+          ? "Click to add points · double-click or Enter closes"
+          : "Drag around an area"}
+      </span>
+    </>
+  );
+}
+
+function FloodOptions({ tool }: { tool: "wand" | "bucket" }) {
+  const controller = useController();
+  const settings = useEditorState((s) => s.toolSettings[tool]);
+  const set = (patch: Partial<typeof settings>) => controller.store.updateToolSettings(tool, patch);
+  return (
+    <>
+      <NumberOption
+        label="Tolerance"
+        value={settings.tolerance}
+        min={0}
+        max={255}
+        onChange={(tolerance) => set({ tolerance })}
+      />
+      <CheckOption
+        label="Contiguous"
+        checked={settings.contiguous}
+        onChange={(contiguous) => set({ contiguous })}
+      />
+      <CheckOption
+        label="Sample all layers"
+        checked={settings.sampleAll}
+        onChange={(sampleAll) => set({ sampleAll })}
+      />
+      {tool === "wand" && <SelectionModeOption tool="wand" />}
+    </>
+  );
+}
+
+function GradientOptions() {
+  const controller = useController();
+  const settings = useEditorState((s) => s.toolSettings.gradient);
+  const set = (patch: Partial<typeof settings>) =>
+    controller.store.updateToolSettings("gradient", patch);
+  return (
+    <>
+      <SegmentedOption
+        label="Gradient type"
+        value={settings.kind}
+        options={[
+          { id: "linear", label: "Linear" },
+          { id: "radial", label: "Radial" },
+        ]}
+        onChange={(kind) => set({ kind })}
+      />
+      <SegmentedOption
+        label="Gradient colours"
+        value={settings.to}
+        options={[
+          { id: "background", label: "To background" },
+          { id: "transparent", label: "To transparent" },
+        ]}
+        onChange={(to) => set({ to })}
       />
       <NumberOption
         label="Opacity"
@@ -164,7 +370,22 @@ function BrushOptions({ tool }: { tool: "brush" | "eraser" }) {
         suffix="%"
         onChange={(v) => set({ opacity: v / 100 })}
       />
-      <span>[ and ] change size</span>
+      <span>Drag to draw · Shift snaps to 45°</span>
+    </>
+  );
+}
+
+function EyedropperOptions() {
+  const controller = useController();
+  const sampleAll = useEditorState((s) => s.toolSettings.eyedropper.sampleAll);
+  return (
+    <>
+      <CheckOption
+        label="Sample all layers"
+        checked={sampleAll}
+        onChange={(v) => controller.store.updateToolSettings("eyedropper", { sampleAll: v })}
+      />
+      <span>Click sets the foreground colour · Alt-click the background colour</span>
     </>
   );
 }
@@ -383,9 +604,16 @@ function MoveOptions({ actions }: { actions: Record<UiActionId, UiAction> }) {
 
 const TOOL_LABELS: Record<ToolId, string> = {
   move: "Move",
+  marquee: "Marquee",
+  lasso: "Lasso",
+  wand: "Magic Wand",
   crop: "Crop",
+  eyedropper: "Eyedropper",
   brush: "Brush",
+  pencil: "Pencil",
   eraser: "Eraser",
+  bucket: "Paint Bucket",
+  gradient: "Gradient",
   shape: "Shape",
   text: "Text",
   hand: "Hand",
@@ -410,7 +638,14 @@ export function OptionsBar({ actions }: { actions: Record<UiActionId, UiAction> 
       <span className={styles.optionsLabel}>{TOOL_LABELS[activeTool]}</span>
       {activeTool === "move" && <MoveOptions actions={actions} />}
       {activeTool === "crop" && <CropOptions />}
-      {(activeTool === "brush" || activeTool === "eraser") && <BrushOptions tool={activeTool} />}
+      {activeTool === "marquee" && <MarqueeOptions />}
+      {activeTool === "lasso" && <LassoOptions />}
+      {(activeTool === "wand" || activeTool === "bucket") && <FloodOptions tool={activeTool} />}
+      {activeTool === "eyedropper" && <EyedropperOptions />}
+      {(activeTool === "brush" || activeTool === "pencil" || activeTool === "eraser") && (
+        <BrushOptions tool={activeTool} />
+      )}
+      {activeTool === "gradient" && <GradientOptions />}
       {activeTool === "shape" && <ShapeOptions />}
       {activeTool === "text" && <TextOptions />}
       {activeTool === "zoom" && (
@@ -502,6 +737,11 @@ export function StatusBar() {
           {cursor && (
             <span>
               {cursor.x}, {cursor.y}
+            </span>
+          )}
+          {doc.selection?.bounds && (
+            <span data-testid="selection-size">
+              Selection {doc.selection.bounds.width} × {doc.selection.bounds.height}
             </span>
           )}
           <span className={styles.statusSpacer} />

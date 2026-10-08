@@ -7,6 +7,8 @@ import { stepBrushSize, type BrushSettings } from "../../core/tool-settings";
 import type { Point } from "../../core/viewport/viewport";
 import type { CompositePreview } from "../../rendering/compositing/compositor";
 import type { Overlay } from "../../rendering/overlay";
+import { selectionSurface } from "../../pixels/layer-pixels";
+import { pickColor } from "../eyedropper/eyedropper-tool";
 import type { Tool, ToolContext, ToolKey, ToolPointer } from "../tool";
 import { StrokeInterpolator } from "./stroke-interpolator";
 
@@ -52,6 +54,27 @@ export function createTip(
   return { tip, half: c };
 }
 
+/** Aliased tip for the pencil: pixels whose centre is within the radius, no soft edge. */
+export function createPencilTip(
+  createSurface: (w: number, h: number) => Surface,
+  radius: number,
+  color: string,
+): { tip: Surface; half: number } {
+  const size = Math.max(1, Math.round(radius * 2));
+  const tip = createSurface(size, size);
+  const ctx = context(tip);
+  ctx.fillStyle = color;
+  const c = size / 2;
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const dx = x + 0.5 - c;
+      const dy = y + 0.5 - c;
+      if (size <= 2 || dx * dx + dy * dy <= c * c) ctx.fillRect(x, y, 1, 1);
+    }
+  }
+  return { tip, half: c };
+}
+
 interface Stroke {
   readonly layerId: string;
   readonly width: number;
@@ -67,6 +90,11 @@ interface Stroke {
   /** Painting the layer's pixels, or its mask (grey level `level`, 0 = hide … 1 = reveal). */
   readonly target: "content" | "mask";
   readonly level: number;
+  /** The selection in the stroke's pixel space; paint outside it is discarded. */
+  readonly clip: Surface | null;
+  readonly scratch: Surface | null;
+  /** Pencil dabs snap to whole pixels. */
+  readonly aliased: boolean;
 }
 
 type PaintTarget =
@@ -74,7 +102,7 @@ type PaintTarget =
   | { kind: "mask"; layer: Layer; mask: LayerMask };
 
 /**
- * Brush and eraser. Dabs accumulate in a stroke buffer; the live preview is the layer's pixels
+ * Brush, pencil and eraser. Dabs accumulate in a stroke buffer; the live preview is the layer's pixels
  * with the buffer composited on top (or cut out, for the eraser) at the tool opacity. On release
  * the preview becomes a new immutable asset and one undoable `setRasterContent` command.
  */
@@ -84,7 +112,7 @@ export class BrushTool implements Tool {
   private readonly overrides = new Map<string, Surface>();
   private readonly maskOverrides = new Map<string, Surface>();
 
-  constructor(readonly id: "brush" | "eraser") {}
+  constructor(readonly id: "brush" | "pencil" | "eraser") {}
 
   private get erase(): boolean {
     return this.id === "eraser";
@@ -97,7 +125,7 @@ export class BrushTool implements Tool {
   private paintTarget(ctx: ToolContext): PaintTarget | null {
     const doc = ctx.store.getSession()?.document;
     const layer = doc ? activeLayer(doc) : undefined;
-    const tool = this.erase ? "The eraser" : "The brush";
+    const tool = this.erase ? "The eraser" : this.id === "pencil" ? "The pencil" : "The brush";
     if (!layer) {
       ctx.notify("error", "Select a layer to paint on.");
       return null;
@@ -129,6 +157,11 @@ export class BrushTool implements Tool {
 
   pointerDown(ctx: ToolContext, pointer: ToolPointer): void {
     if (pointer.button !== 0 || this.stroke) return;
+    // Alt-click picks a colour with the brush and pencil, as in professional editors.
+    if (pointer.altKey && !this.erase) {
+      pickColor(ctx, pointer.doc, "foreground", true);
+      return;
+    }
     const target = this.paintTarget(ctx);
     if (!target) return;
     const settings = this.settings(ctx);
@@ -174,7 +207,19 @@ export class BrushTool implements Tool {
       bctx.fillStyle = "#ffffff";
       bctx.fillRect(0, 0, width, height);
     }
-    const { tip, half } = createTip(ctx.createSurface, radius, settings.hardness, tipColor);
+    const aliased = this.id === "pencil";
+    const { tip, half } = aliased
+      ? createPencilTip(ctx.createSurface, radius, tipColor)
+      : createTip(ctx.createSurface, radius, settings.hardness, tipColor);
+
+    const selection = ctx.store.getSession()?.document.selection;
+    let clip: Surface | null = null;
+    if (selection) {
+      clip = ctx.createSurface(width, height);
+      const cctx = context(clip);
+      cctx.setTransform(...toLocal);
+      cctx.drawImage(selectionSurface(ctx, selection), 0, 0);
+    }
 
     this.stroke = {
       layerId: target.layer.id,
@@ -184,10 +229,13 @@ export class BrushTool implements Tool {
       buffer: ctx.createSurface(width, height),
       preview: ctx.createSurface(width, height),
       toLocal,
-      interpolator: new StrokeInterpolator(Math.max(0.5, radius * 0.25)),
+      interpolator: new StrokeInterpolator(aliased ? 0.5 : Math.max(0.5, radius * 0.25)),
       tip,
       half,
       settings,
+      clip,
+      scratch: clip ? ctx.createSurface(width, height) : null,
+      aliased,
       target: target.kind,
       // Like professional editors: the brush paints the foreground grey on a mask, the eraser
       // paints the background grey.
@@ -222,6 +270,8 @@ export class BrushTool implements Tool {
     release(stroke.base);
     release(stroke.buffer);
     release(stroke.tip);
+    release(stroke.clip);
+    release(stroke.scratch);
     const asset = ctx.assets.addBitmap(stroke.preview, stroke.width, stroke.height);
     const result = ctx.store.dispatch(
       stroke.target === "mask"
@@ -237,7 +287,13 @@ export class BrushTool implements Tool {
     const stroke = this.stroke;
     if (!stroke || points.length === 0) return;
     const ctx = context(stroke.buffer);
-    for (const p of points) ctx.drawImage(stroke.tip, p.x - stroke.half, p.y - stroke.half);
+    for (const p of points) {
+      if (stroke.aliased) {
+        ctx.drawImage(stroke.tip, Math.round(p.x - stroke.half), Math.round(p.y - stroke.half));
+      } else {
+        ctx.drawImage(stroke.tip, p.x - stroke.half, p.y - stroke.half);
+      }
+    }
   }
 
   private refresh(ctx: ToolContext): void {
@@ -248,18 +304,29 @@ export class BrushTool implements Tool {
     p.globalAlpha = 1;
     p.drawImage(stroke.base, 0, 0);
     const opacity = stroke.settings.opacity;
+    // Clip a copy each time, so soft selection edges are not applied twice.
+    let paint: Surface = stroke.buffer;
+    if (stroke.clip && stroke.scratch) {
+      const s = context(stroke.scratch);
+      s.globalCompositeOperation = "copy";
+      s.drawImage(stroke.buffer, 0, 0);
+      s.globalCompositeOperation = "destination-in";
+      s.drawImage(stroke.clip, 0, 0);
+      s.globalCompositeOperation = "source-over";
+      paint = stroke.scratch;
+    }
     if (stroke.target === "mask") {
       // Move the mask towards the grey level: a' = a·(1−k) + level·k for stroke coverage k.
       p.globalAlpha = opacity;
       p.globalCompositeOperation = "destination-out";
-      p.drawImage(stroke.buffer, 0, 0);
+      p.drawImage(paint, 0, 0);
       p.globalAlpha = opacity * stroke.level;
       p.globalCompositeOperation = "lighter";
-      p.drawImage(stroke.buffer, 0, 0);
+      p.drawImage(paint, 0, 0);
     } else {
       p.globalAlpha = opacity;
       p.globalCompositeOperation = this.erase ? "destination-out" : "source-over";
-      p.drawImage(stroke.buffer, 0, 0);
+      p.drawImage(paint, 0, 0);
     }
     p.globalAlpha = 1;
     p.globalCompositeOperation = "source-over";
@@ -284,6 +351,8 @@ export class BrushTool implements Tool {
       release(stroke.buffer);
       release(stroke.preview);
       release(stroke.tip);
+      release(stroke.clip);
+      release(stroke.scratch);
     }
     this.hover = null;
     ctx.invalidate();

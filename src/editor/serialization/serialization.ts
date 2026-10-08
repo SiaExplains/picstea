@@ -31,8 +31,11 @@ export const MIGRATIONS: Readonly<Record<number, Migration>> = {
 };
 
 export function serializeDocument(doc: EditorDocument): SerializedProject {
+  // The selection is session state (ADR-0010) and is never written to a project.
+  const persisted: EditorDocument = { ...doc };
+  delete (persisted as { selection?: unknown }).selection;
   // JSON round trip guarantees a plain, structured-clone-safe value with no shared references.
-  return { schemaVersion: CURRENT_SCHEMA_VERSION, document: JSON.parse(JSON.stringify(doc)) };
+  return { schemaVersion: CURRENT_SCHEMA_VERSION, document: JSON.parse(JSON.stringify(persisted)) };
 }
 
 export type DeserializeResult =

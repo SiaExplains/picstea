@@ -48,6 +48,7 @@ export function CanvasViewport() {
     if (!canvas) return;
     const renderer = new Canvas2DRenderer(canvas);
     let frame = 0;
+    let antsPhase = 0;
     const draw = () => {
       frame = 0;
       const session = controller.store.getSession();
@@ -70,6 +71,8 @@ export function CanvasViewport() {
         sizer: controller.sizer,
         preview,
         overlays: textEdit ? [] : controller.tools.overlays(),
+        selection: controller.tools.selection(),
+        antsPhase,
       });
     };
     const schedule = () => {
@@ -84,9 +87,17 @@ export function CanvasViewport() {
     ];
     const dprQuery = window.matchMedia(`(resolution: ${window.devicePixelRatio || 1}dppx)`);
     dprQuery.addEventListener("change", schedule);
+    // Marching ants: advance the dash a few times a second while there is a selection.
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const ants = window.setInterval(() => {
+      if (reducedMotion.matches || !controller.tools.selection()) return;
+      antsPhase = (antsPhase + 1) % 8;
+      schedule();
+    }, 120);
     schedule();
     return () => {
       unsubscribers.forEach((u) => u());
+      window.clearInterval(ants);
       dprQuery.removeEventListener("change", schedule);
       if (frame) cancelAnimationFrame(frame);
       renderer.dispose();

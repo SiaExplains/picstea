@@ -1,9 +1,25 @@
 import { DEFAULT_TEXT_STYLE, type TextStyle } from "./document/factory";
 import type { ShapeKind } from "./document/types";
+import type { SelectionMode } from "../selection/ops";
 
 /** Tool options and colours. UI state: shared by tools and panels, never part of undo history. */
 
-export type ToolId = "move" | "crop" | "brush" | "eraser" | "shape" | "text" | "hand" | "zoom";
+export type ToolId =
+  | "move"
+  | "marquee"
+  | "lasso"
+  | "wand"
+  | "crop"
+  | "eyedropper"
+  | "brush"
+  | "pencil"
+  | "eraser"
+  | "bucket"
+  | "gradient"
+  | "shape"
+  | "text"
+  | "hand"
+  | "zoom";
 
 export interface BrushSettings {
   /** Diameter in document pixels. */
@@ -24,10 +40,52 @@ export interface ShapeSettings {
   readonly cornerRadius: number;
 }
 
+export interface MarqueeSettings {
+  readonly shape: "rect" | "ellipse";
+  readonly mode: SelectionMode;
+}
+
+export interface LassoSettings {
+  readonly kind: "freehand" | "polygonal";
+  readonly mode: SelectionMode;
+}
+
+export interface FloodSettings {
+  /** 0 … 255, largest per-channel difference from the clicked colour. */
+  readonly tolerance: number;
+  readonly contiguous: boolean;
+  /** Sample the visible image instead of the active layer only. */
+  readonly sampleAll: boolean;
+}
+
+export interface WandSettings extends FloodSettings {
+  readonly mode: SelectionMode;
+}
+
+export interface GradientSettings {
+  readonly kind: "linear" | "radial";
+  /** Foreground → background, or foreground → transparent. */
+  readonly to: "background" | "transparent";
+  /** 0 … 1 */
+  readonly opacity: number;
+}
+
+export interface EyedropperSettings {
+  readonly sampleAll: boolean;
+}
+
 export interface ToolSettings {
   readonly move: { readonly autoSelect: boolean };
+  readonly marquee: MarqueeSettings;
+  readonly lasso: LassoSettings;
+  readonly wand: WandSettings;
+  readonly eyedropper: EyedropperSettings;
   readonly brush: BrushSettings;
+  /** Pencil: hard, aliased edges; hardness is ignored. */
+  readonly pencil: BrushSettings;
   readonly eraser: BrushSettings;
+  readonly bucket: FloodSettings;
+  readonly gradient: GradientSettings;
   readonly shape: ShapeSettings;
   /** Text colour comes from the foreground colour. */
   readonly text: Omit<TextStyle, "color">;
@@ -45,8 +103,15 @@ export const MAX_BRUSH_SIZE = 1000;
 
 export const DEFAULT_TOOL_SETTINGS: ToolSettings = {
   move: { autoSelect: true },
+  marquee: { shape: "rect", mode: "replace" },
+  lasso: { kind: "freehand", mode: "replace" },
+  wand: { tolerance: 32, contiguous: true, sampleAll: false, mode: "replace" },
+  eyedropper: { sampleAll: true },
   brush: { size: 24, hardness: 0.8, opacity: 1 },
+  pencil: { size: 1, hardness: 1, opacity: 1 },
   eraser: { size: 40, hardness: 0.8, opacity: 1 },
+  bucket: { tolerance: 32, contiguous: true, sampleAll: false },
+  gradient: { kind: "linear", to: "background", opacity: 1 },
   shape: {
     kind: "rect",
     fillEnabled: true,

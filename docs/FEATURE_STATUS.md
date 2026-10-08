@@ -62,7 +62,7 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 | Shapes: rectangle (rounded), ellipse, line | ✅ | Polygon 📋 |
 | Text: on-canvas editing, font, size, bold/italic, colour, align, line height, spacing | ✅ | Wrapping/rich text 📋 |
 | Export PNG / JPEG / WebP | ✅ | File System Access save dialog where supported |
-| Foreground/background colours | ✅ | Eyedropper, swatches 📋 |
+| Foreground/background colours | ✅ | Eyedropper ✅ (Gate 5), swatches 📋 |
 
 ## Gate 4 — Professional layer workflow
 
@@ -75,11 +75,24 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 | Adjustment layers: Brightness/Contrast, Hue/Saturation, Exposure, Temperature/Tint, Black & White, Invert, Posterize, Threshold | ✅ | Curves/Levels 📋 |
 | Layer effects: drop shadow, outer glow, outer stroke, colour overlay | ✅ | Inner shadow, bevel 📋 |
 
+## Gate 5 — Selection & advanced tools
+
+| Feature | Status | Notes |
+|---|---|---|
+| Selection subsystem (coverage mask, undoable, not saved in projects) | ✅ | ADR-0010 |
+| Rectangular & elliptical marquee, freehand & polygonal lasso, magic wand | ✅ | New/add/subtract/intersect; Shift/Alt modifiers |
+| Select All / Deselect / Reselect / Inverse, Color Range | ✅ | |
+| Feather, expand, contract, transform selection, move outline | ✅ | Expand/contract use a square radius |
+| Painting, fill and gradient limited to the selection | ✅ | |
+| Clear, Fill, Cut/Copy/Paste, Layer via Copy, Mask from Selection, Crop to Selection | ✅ | Copy also goes to the system clipboard where allowed |
+| Pencil, Paint Bucket, Gradient (linear/radial), Eyedropper | ✅ | Gradient presets/editor 📋 |
+| Moving selected pixels with the Move tool | 📋 | Use Cut/Paste or Layer via Copy |
+| Quick mask, refine edge, saving selections, clipping masks, polygon shape | 📋 | |
+
 ## Later gates (summary)
 
 | Area | Status |
 |---|---|
-| Gate 5: selections | 📋 |
 | Gate 6: formats (SVG, PDF, PSD; open/save project files) | 📋 |
 | Gate 7: workers, tiling, tile-based undo, large documents | 📋 |
 | Gate 8: marketing pages, blog, consent, ads, sponsorships | 📋 |
@@ -93,4 +106,6 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 - Text is point text (manual line breaks, no wrapping). Fonts are limited to common system fonts.
 - Adjustments run on the main thread over the whole document. Edits above an adjustment are cached; very large documents can feel slow until Gate 7.
 - Masks follow moves but not scale/rotate of their layer.
+- Selection tools, the paint bucket and Color Range read pixels on the main thread; very large documents can pause briefly until Gate 7.
+- Fill, gradient and the paint bucket edit inside a pixel layer's own box; they do not grow the layer.
 - Documents are capped at 12,000 px per side and 36 MP until tiled rendering (Gate 7).

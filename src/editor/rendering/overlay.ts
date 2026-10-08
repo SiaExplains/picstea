@@ -13,6 +13,8 @@ export type Overlay =
       readonly handles: boolean;
     }
   | { readonly kind: "crop"; readonly rect: Rect }
-  | { readonly kind: "brush"; readonly center: Point; readonly radius: number };
+  | { readonly kind: "brush"; readonly center: Point; readonly radius: number }
+  /** A selection being drawn (marquee, lasso), shown as a dashed path. */
+  | { readonly kind: "path"; readonly points: readonly Point[]; readonly closed: boolean };
 
 export const HANDLE_SIZE_PX = 8;

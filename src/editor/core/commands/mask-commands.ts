@@ -3,15 +3,20 @@ import type { Layer } from "../document/types";
 import { CommandError, replaceLayer, requireLayer, requireUnlocked, type Command } from "./command";
 
 /** Add a reveal-all mask covering the canvas. */
-export function addLayerMask(layerId: string): Command {
+/** Add a document-sized mask: reveal-all, or the given pixels (e.g. made from a selection). */
+export function addLayerMask(
+  layerId: string,
+  assetId: string | null = null,
+  label = "Add Layer Mask",
+): Command {
   return {
     type: "mask.add",
-    label: "Add Layer Mask",
+    label,
     apply(doc) {
       const layer = requireLayer(doc, layerId);
       requireUnlocked(layer, doc);
       if (layer.mask) return doc;
-      return replaceLayer(doc, { ...layer, mask: createMask(doc) } as Layer);
+      return replaceLayer(doc, { ...layer, mask: { ...createMask(doc), assetId } } as Layer);
     },
   };
 }
