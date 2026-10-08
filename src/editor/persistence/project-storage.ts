@@ -1,4 +1,5 @@
 import type { RasterMime } from "../assets/asset-store";
+import { countLayers } from "../core/document/tree";
 import type { EditorDocument } from "../core/document/types";
 
 /**
@@ -68,7 +69,7 @@ export function summarize(doc: EditorDocument): ProjectSummary {
     name: doc.name,
     width: doc.width,
     height: doc.height,
-    layerCount: doc.layers.length,
+    layerCount: countLayers(doc.layers),
     modifiedAt: doc.metadata.modifiedAt,
   };
 }

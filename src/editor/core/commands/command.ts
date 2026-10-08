@@ -1,3 +1,4 @@
+import { ancestorIds, findLayerDeep, replaceLayerDeep } from "../document/tree";
 import type { EditorDocument, Layer } from "../document/types";
 
 /**
@@ -27,15 +28,24 @@ export class CommandError extends Error {
 }
 
 export function requireLayer(doc: EditorDocument, layerId: string): Layer {
-  const layer = doc.layers.find((l) => l.id === layerId);
+  const layer = findLayerDeep(doc.layers, layerId);
   if (!layer) throw new CommandError("That layer no longer exists.");
   return layer;
 }
 
-export function requireUnlocked(layer: Layer): void {
+/** A locked layer — or a layer inside a locked group — cannot be edited. */
+export function requireUnlocked(layer: Layer, doc?: EditorDocument): void {
   if (layer.locked) throw new CommandError(`"${layer.name}" is locked. Unlock it to edit it.`);
+  if (!doc) return;
+  for (const id of ancestorIds(doc.layers, layer.id)) {
+    const group = findLayerDeep(doc.layers, id);
+    if (group?.locked) {
+      throw new CommandError(`"${group.name}" is locked. Unlock the group to edit its layers.`);
+    }
+  }
 }
 
 export function replaceLayer(doc: EditorDocument, next: Layer): EditorDocument {
-  return { ...doc, layers: doc.layers.map((layer) => (layer.id === next.id ? next : layer)) };
+  const layers = replaceLayerDeep(doc.layers, next);
+  return layers === doc.layers ? doc : { ...doc, layers };
 }

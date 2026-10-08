@@ -150,3 +150,30 @@ export const SwapIcon = (p: IconProps) => (
     <path d="M4 6V4.5a1.5 1.5 0 0 1 1.5-1.5H11m0 0L9.5 1.5M11 3 9.5 4.5" />
   </Svg>
 );
+
+export const FolderIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M1.5 4.5a1 1 0 0 1 1-1h3.3l1.5 1.5h6.2a1 1 0 0 1 1 1v6.5a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1Z" />
+  </Svg>
+);
+
+export const ChevronIcon = ({ open, ...p }: IconProps & { open: boolean }) => (
+  <Svg {...p}>
+    <path d={open ? "m4 6 4 4 4-4" : "m6 4 4 4-4 4"} />
+  </Svg>
+);
+
+export const MaskIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <rect x="2" y="2.5" width="12" height="11" rx="1" />
+    <circle cx="8" cy="8" r="3" fill="currentColor" />
+  </Svg>
+);
+
+export const AdjustIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <circle cx="8" cy="8" r="5.5" />
+    <path d="M8 2.5v11" />
+    <path d="M8 2.5a5.5 5.5 0 0 1 0 11Z" fill="currentColor" />
+  </Svg>
+);

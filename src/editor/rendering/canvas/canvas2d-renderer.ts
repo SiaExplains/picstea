@@ -1,5 +1,5 @@
 import type { EditorDocument } from "../../core/document/types";
-import { compositeDocument } from "../compositing/compositor";
+import { CompositeCache, compositeDocument } from "../compositing/compositor";
 import { documentToScreen, type Viewport } from "../../core/viewport/viewport";
 import { rectHandles } from "../../core/geometry/rect";
 import { HANDLE_SIZE_PX, type Overlay } from "../overlay";
@@ -50,6 +50,7 @@ export class Canvas2DRenderer implements Renderer {
   private compositeComplete = false;
   private compositeHadPreview = false;
   private checker: CanvasPattern | null = null;
+  private readonly cache = new CompositeCache();
 
   constructor(
     private readonly canvas: HTMLCanvasElement,
@@ -195,6 +196,7 @@ export class Canvas2DRenderer implements Renderer {
     this.composite = null;
     this.compositeOf = null;
     this.checker = null;
+    this.cache.clear();
   }
 
   private ensureComposite(scene: RenderScene): void {
@@ -224,6 +226,9 @@ export class Canvas2DRenderer implements Renderer {
     const result = compositeDocument(ctx, doc, scene.assets, {
       preview: scene.preview,
       sizer: scene.sizer,
+      createSurface: this.createSurface,
+      cache: this.cache,
+      assetVersion: scene.assetVersion,
     });
     this.compositeHadPreview = !!scene.preview;
     this.compositeOf = doc;

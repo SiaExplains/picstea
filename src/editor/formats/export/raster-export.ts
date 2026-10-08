@@ -62,13 +62,13 @@ export function drawFlattened(
   createSurface: SurfaceFactory,
 ): { pendingAssetIds: readonly string[] } {
   const format = EXPORT_FORMATS[options.format];
-  if (format.alpha) return compositeDocument(ctx, doc, assets, { sizer });
+  if (format.alpha) return compositeDocument(ctx, doc, assets, { sizer, createSurface });
 
   // Composite separately so blend modes act on the layers, not on the matte.
   const layers = createSurface(doc.width, doc.height);
   const lctx = layers.getContext("2d") as CompositeContext | null;
   if (!lctx) throw new ExportError("2D canvas is not available.");
-  const result = compositeDocument(lctx, doc, assets, { sizer });
+  const result = compositeDocument(lctx, doc, assets, { sizer, createSurface });
   ctx.clearRect(0, 0, doc.width, doc.height);
   ctx.fillStyle = options.matte ?? "#ffffff";
   ctx.fillRect(0, 0, doc.width, doc.height);

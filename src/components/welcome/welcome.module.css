@@ -1,0 +1,106 @@
+/* Matches the editor's dark chrome (editor.module.css tokens are scoped to the editor root). */
+.dialog {
+  padding: 0;
+  border: 1px solid #3a3b40;
+  border-radius: 10px;
+  background: #2a2b2f;
+  color: #e6e6e8;
+  width: min(480px, calc(100vw - 32px));
+  max-height: calc(100dvh - 32px);
+  font-family: inherit;
+}
+
+.dialog::backdrop {
+  background: rgba(0, 0, 0, 0.55);
+}
+
+.body {
+  padding: 24px;
+}
+
+.logo {
+  display: block;
+  height: 36px;
+  width: auto;
+  margin-bottom: 16px;
+}
+
+.title {
+  margin: 0 0 8px;
+  font-size: 20px;
+  line-height: 1.25;
+}
+
+.lead {
+  margin: 0 0 16px;
+  color: #a4a5ab;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.highlights {
+  list-style: none;
+  margin: 0 0 16px;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.highlights li {
+  display: grid;
+  gap: 2px;
+  padding-left: 12px;
+  border-left: 2px solid #4c8dff;
+}
+
+.highlights span {
+  color: #a4a5ab;
+}
+
+.faq {
+  font-size: 13px;
+  color: #a4a5ab;
+}
+
+.faq summary {
+  cursor: pointer;
+  color: #e6e6e8;
+}
+
+.faq dl {
+  margin: 8px 0 0;
+  display: grid;
+  gap: 8px;
+}
+
+.faq dt {
+  color: #e6e6e8;
+}
+
+.faq dd {
+  margin: 2px 0 0;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+
+.primary {
+  font: inherit;
+  font-size: 14px;
+  padding: 8px 18px;
+  border-radius: 6px;
+  border: 1px solid #4c8dff;
+  background: #4c8dff;
+  color: #fff;
+  cursor: pointer;
+}
+
+.primary:focus-visible {
+  outline: 2px solid #8ab4ff;
+  outline-offset: 2px;
+}

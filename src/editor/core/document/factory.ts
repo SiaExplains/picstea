@@ -1,7 +1,11 @@
 import { createId } from "../ids";
 import { checkDimensions } from "./limits";
+import { walkLayers } from "./tree";
 import type {
+  Adjustment,
+  AdjustmentLayer,
   EditorDocument,
+  LayerMask,
   FillLayer,
   FontFamily,
   Layer,
@@ -190,9 +194,42 @@ export function createDocument(options: NewDocumentOptions): EditorDocument {
 export function nextLayerName(doc: EditorDocument, base = "Layer"): string {
   const pattern = new RegExp(`^${base} (\\d+)$`);
   let max = 0;
-  for (const layer of doc.layers) {
+  walkLayers(doc.layers, (layer) => {
     const match = pattern.exec(layer.name);
     if (match) max = Math.max(max, Number(match[1]));
-  }
+  });
   return `${base} ${max + 1}`;
+}
+
+/** A reveal-all mask covering the document. */
+export function createMask(doc: Pick<EditorDocument, "width" | "height">): LayerMask {
+  return {
+    assetId: null,
+    enabled: true,
+    x: 0,
+    y: 0,
+    width: doc.width,
+    height: doc.height,
+    linked: true,
+  };
+}
+
+export function createAdjustmentLayer(
+  doc: Pick<EditorDocument, "width" | "height">,
+  adjustment: Adjustment,
+  name: string,
+): AdjustmentLayer {
+  return {
+    id: createId("layer"),
+    kind: "adjustment",
+    name,
+    adjustment,
+    visible: true,
+    locked: false,
+    opacity: 1,
+    blendMode: "normal",
+    transform: IDENTITY_TRANSFORM,
+    // Adjustment layers come with a mask so the effect can be painted in or out.
+    mask: createMask(doc),
+  };
 }

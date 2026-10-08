@@ -15,6 +15,10 @@ export type ActionId =
   | "layer.new"
   | "layer.duplicate"
   | "layer.delete"
+  | "layer.group"
+  | "layer.ungroup"
+  | "layer.selectAbove"
+  | "layer.selectBelow"
   | "view.zoomIn"
   | "view.zoomOut"
   | "view.fit"
@@ -51,6 +55,10 @@ export const DEFAULT_KEYMAP: Readonly<Record<ActionId, readonly string[]>> = {
   "layer.new": ["Mod+Shift+N"],
   "layer.duplicate": ["Mod+J"],
   "layer.delete": ["Delete", "Backspace"],
+  "layer.group": ["Mod+G"],
+  "layer.ungroup": ["Mod+Shift+G"],
+  "layer.selectAbove": ["Alt+ArrowUp"],
+  "layer.selectBelow": ["Alt+ArrowDown"],
   "view.zoomIn": ["Mod+=", "Mod++"],
   "view.zoomOut": ["Mod+-"],
   "view.fit": ["Mod+0"],

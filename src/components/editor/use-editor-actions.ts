@@ -2,15 +2,24 @@
 
 import { useMemo } from "react";
 import { deleteLayer, duplicateLayer, shiftLayer } from "@/editor/core/commands";
+import { ADJUSTMENTS } from "@/editor/adjustments/registry";
 import { activeLayer } from "@/editor/core/document/queries";
+import { flattenTopFirst, locateLayer } from "@/editor/core/document/tree";
+import type { AdjustmentType } from "@/editor/core/document/types";
 import { isTransformable } from "@/editor/core/geometry/layer-geometry";
 import { createId } from "@/editor/core/ids";
 import type { ActionId } from "@/editor/core/shortcuts/shortcuts";
 import { DEFAULT_COLORS } from "@/editor/core/tool-settings";
+import { openWelcome } from "@/components/welcome/welcome";
 import { useActiveSession, useController, useEditorState } from "./editor-context";
 
 export type UiActionId =
   | ActionId
+  | `adjust.${AdjustmentType}`
+  | "layer.newGroup"
+  | "layer.addMask"
+  | "layer.deleteMask"
+  | "layer.toggleMask"
   | "file.place"
   | "file.close"
   | "layer.newFill"
@@ -18,7 +27,8 @@ export type UiActionId =
   | "layer.moveDown"
   | "layer.flipH"
   | "layer.flipV"
-  | "image.crop";
+  | "image.crop"
+  | "help.welcome";
 
 export interface UiAction {
   readonly label: string;
@@ -44,7 +54,17 @@ export function useEditorActions(hosts: ActionHosts): Record<UiActionId, UiActio
     const hasDoc = !!doc;
     const layer = doc ? activeLayer(doc) : undefined;
     const activeId = layer?.id ?? null;
-    const activeIndex = doc && activeId ? doc.layers.findIndex((l) => l.id === activeId) : -1;
+    const location = doc && activeId ? locateLayer(doc.layers, activeId) : undefined;
+    // Up/down also step out of groups, so they are only disabled at the very top/bottom.
+    const canMoveUp =
+      !!location && (location.parentId !== null || location.index < location.siblings.length - 1);
+    const canMoveDown = !!location && (location.parentId !== null || location.index > 0);
+    const visibleRows = doc ? flattenTopFirst(doc.layers) : [];
+    const rowIndex = visibleRows.findIndex((r) => r.layer.id === activeId);
+    const select = (offset: number) => {
+      const row = visibleRows[rowIndex === -1 ? 0 : rowIndex + offset];
+      if (row) controller.store.selectLayer(row.layer.id);
+    };
     const history = session?.history;
     const undoLabel = history?.past.at(-1)?.label;
     const redoLabel = history?.future[0]?.label;
@@ -110,14 +130,60 @@ export function useEditorActions(hosts: ActionHosts): Record<UiActionId, UiActio
       },
       "layer.moveUp": {
         label: "Bring Forward",
-        enabled: !!doc && activeIndex !== -1 && activeIndex < doc.layers.length - 1,
+        enabled: canMoveUp,
         run: () => doc && activeId && controller.execute(shiftLayer(doc, activeId, 1)),
       },
       "layer.moveDown": {
         label: "Send Backward",
-        enabled: activeIndex > 0,
+        enabled: canMoveDown,
         run: () => doc && activeId && controller.execute(shiftLayer(doc, activeId, -1)),
       },
+      "layer.newGroup": { label: "New Group", enabled: hasDoc, run: () => controller.addGroup() },
+      "layer.group": {
+        label: "Group Layer",
+        enabled: !!layer,
+        run: () => controller.groupActiveLayer(),
+      },
+      "layer.ungroup": {
+        label: "Ungroup",
+        enabled: layer?.kind === "group",
+        run: () => controller.ungroupActiveLayer(),
+      },
+      "layer.addMask": {
+        label: "Add Layer Mask",
+        enabled: !!layer && !layer.mask,
+        run: () => controller.addMaskToActiveLayer(),
+      },
+      "layer.deleteMask": {
+        label: "Delete Layer Mask",
+        enabled: !!layer?.mask,
+        run: () => controller.deleteActiveMask(),
+      },
+      "layer.toggleMask": {
+        label: layer?.mask?.enabled === false ? "Enable Layer Mask" : "Disable Layer Mask",
+        enabled: !!layer?.mask,
+        run: () => controller.toggleActiveMask(),
+      },
+      "layer.selectAbove": {
+        label: "Select Layer Above",
+        enabled: rowIndex > 0,
+        run: () => select(-1),
+      },
+      "layer.selectBelow": {
+        label: "Select Layer Below",
+        enabled: rowIndex !== -1 && rowIndex < visibleRows.length - 1,
+        run: () => select(1),
+      },
+      ...(Object.fromEntries(
+        ADJUSTMENTS.map((a) => [
+          `adjust.${a.type}`,
+          {
+            label: `${a.label}…`,
+            enabled: hasDoc,
+            run: () => controller.addAdjustmentLayer(a.type),
+          },
+        ]),
+      ) as Record<`adjust.${AdjustmentType}`, UiAction>),
       "layer.flipH": {
         label: "Flip Horizontal",
         enabled: canTransform,
@@ -136,6 +202,7 @@ export function useEditorActions(hosts: ActionHosts): Record<UiActionId, UiActio
         enabled: hasDoc,
         run: () => controller.actualPixels(),
       },
+      "help.welcome": { label: "Welcome to MYLPER", enabled: true, run: openWelcome },
       "tool.move": tool("move", "Move Tool"),
       "tool.transform": { ...tool("move", "Free Transform"), enabled: canTransform },
       "tool.crop": tool("crop", "Crop Tool"),

@@ -2,15 +2,25 @@ import { describeError, silentLogger, type Logger } from "@/lib/logging/logger";
 import { AssetStore, type BitmapDecoder, type BitmapEncoder } from "../assets/asset-store";
 import {
   addLayer,
+  addLayerMask,
+  createGroup,
   deleteLayer,
+  deleteLayerMask,
+  groupLayer,
+  nextGroupName,
   setLayerTransform,
+  setMaskEnabled,
+  ungroup,
   updateTextLayer,
   type Command,
 } from "../core/commands";
+import { adjustmentDefinition } from "../adjustments/registry";
+import type { AdjustmentType } from "../core/document/types";
 import { EditorStore, isDirty, type DocumentSession } from "../core/editor-store";
 import {
   createDocument,
   createFillLayer,
+  createAdjustmentLayer,
   createEmptyRasterLayer,
   createRasterLayer,
   createTextLayer,
@@ -20,7 +30,7 @@ import {
   type TextStyle,
 } from "../core/document/factory";
 import type { Transform } from "../core/document/types";
-import { activeLayer } from "../core/document/queries";
+import { activeLayer, findLayer } from "../core/document/queries";
 import {
   isTransformable,
   layerLocalSize,
@@ -228,6 +238,60 @@ export class EditorController {
     if (!session) return;
     const layer = createEmptyRasterLayer(session.document, nextLayerName(session.document));
     this.execute(addLayer(layer, "New Layer"));
+  }
+
+  // ---------------------------------------------------------------- groups, masks, adjustments
+
+  /** Add an empty group above the active layer. */
+  addGroup(): void {
+    const session = this.store.getSession();
+    if (!session) return;
+    this.execute(addLayer(createGroup(nextGroupName(session.document)), "New Group"));
+  }
+
+  /** Put the active layer into a new group (Mod+G). */
+  groupActiveLayer(): void {
+    const session = this.store.getSession();
+    const layer = session ? activeLayer(session.document) : undefined;
+    if (!session || !layer) return;
+    this.execute(groupLayer(layer.id, createGroup(nextGroupName(session.document))));
+  }
+
+  /** Dissolve the active group (Mod+Shift+G). */
+  ungroupActiveLayer(): void {
+    const session = this.store.getSession();
+    const layer = session ? activeLayer(session.document) : undefined;
+    if (layer) this.execute(ungroup(layer.id));
+  }
+
+  addMaskToActiveLayer(): void {
+    const session = this.store.getSession();
+    const layer = session ? activeLayer(session.document) : undefined;
+    if (!layer) return;
+    if (this.execute(addLayerMask(layer.id))) this.store.setEditTarget("mask");
+  }
+
+  deleteActiveMask(): void {
+    const session = this.store.getSession();
+    const layer = session ? activeLayer(session.document) : undefined;
+    if (!layer) return;
+    this.execute(deleteLayerMask(layer.id));
+    this.store.setEditTarget("content");
+  }
+
+  toggleActiveMask(): void {
+    const session = this.store.getSession();
+    const layer = session ? activeLayer(session.document) : undefined;
+    if (layer?.mask) this.execute(setMaskEnabled(layer.id, !layer.mask.enabled));
+  }
+
+  /** Add an adjustment layer (with a reveal-all mask) above the active layer. */
+  addAdjustmentLayer(type: AdjustmentType): void {
+    const session = this.store.getSession();
+    if (!session) return;
+    const def = adjustmentDefinition(type);
+    const layer = createAdjustmentLayer(session.document, def.defaults, def.label);
+    this.execute(addLayer(layer, `New ${def.label}`));
   }
 
   /** Mirror the active layer about its centre. */
@@ -496,7 +560,7 @@ export class EditorController {
     if (!session) return;
     const { colors, toolSettings } = this.store.getState();
     if (request.mode === "edit") {
-      const layer = session.document.layers.find((l) => l.id === request.layerId);
+      const layer = findLayer(session.document, request.layerId);
       if (layer?.kind !== "text") return;
       this.textEdit.set({
         documentId: session.document.id,

@@ -18,7 +18,7 @@ The full engineering handbook is in [`docs/`](docs/INDEX.md). Start with
 | Command                             | What it does                                                                                                              |
 | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
 | `pnpm install`                      | Install dependencies                                                                                                      |
-| `pnpm dev`                          | Dev server on http://localhost:3000 (`/editor` for the editor)                                                            |
+| `pnpm dev`                          | Dev server on http://localhost:3000 (the editor is the home page)                                                         |
 | `pnpm lint`                         | ESLint, zero warnings allowed                                                                                             |
 | `pnpm format` / `pnpm format:check` | Prettier                                                                                                                  |
 | `pnpm typecheck`                    | TypeScript                                                                                                                |
@@ -29,7 +29,7 @@ The full engineering handbook is in [`docs/`](docs/INDEX.md). Start with
 ## Layout
 
 ```text
-src/app/          Next.js routes: landing page, /editor, robots, sitemap, error pages
+src/app/          Next.js routes: editor home page, manifest, robots, sitemap, error pages
 src/components/   React UI (editor chrome, panels, dialogs; marketing)
 src/editor/       Framework-independent engine — no React/Next imports (lint-enforced)
   core/           document model, commands, history, store, viewport, shortcuts

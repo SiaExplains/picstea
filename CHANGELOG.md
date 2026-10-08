@@ -3,6 +3,36 @@
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.3.0] — 2026-10-08
+
+### Added
+
+- **Layer groups**: group a layer with Cmd/Ctrl+G and ungroup with Cmd/Ctrl+Shift+G. You can also
+  make a new empty group, nest groups inside groups, and collapse them in the Layers panel.
+  Groups pass blending through by default. Give a group opacity, a blend mode, a mask or effects
+  to treat it as one unit. Moving a group moves everything in it.
+- **Drag and drop in the Layers panel**: drag a layer above or below another, or into a group.
+  Bring Forward / Send Backward also move layers into and out of groups.
+- **Layer masks**: Layer → Add Layer Mask. Click the mask thumbnail and paint black to hide or
+  white to reveal (greys give partial transparency). Shift-click the thumbnail to turn the mask
+  off for a moment. A mask follows its layer when you move it.
+- **Adjustment layers** (Adjustments menu): Brightness/Contrast, Hue/Saturation, Exposure,
+  Temperature/Tint, Black & White, Invert, Posterize and Threshold. They change the look of
+  everything below them without touching the pixels, and each comes with a mask.
+- **Layer effects**: drop shadow, outer glow, outer stroke and colour overlay, with live
+  controls in the Properties panel. Layers with effects show an "fx" badge.
+
+- The MYLPER logo in the menu bar, plus a favicon and app icons.
+- A short welcome dialog on your first visit that explains MYLPER. Open it again from the logo or
+  Help → Welcome to MYLPER.
+
+### Changed
+
+- The editor now opens straight away at the home page. The old text-heavy landing page is gone,
+  and old `/editor` links forward to the home page.
+- The project format moved to version 3. Projects saved with earlier versions open automatically.
+- Alt+↑ / Alt+↓ select the layer above or below.
+
 ## [0.2.0] — 2026-10-08
 
 ### Added

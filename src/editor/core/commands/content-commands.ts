@@ -1,6 +1,13 @@
 import { isHexColor } from "../document/factory";
 import { checkDimensions } from "../document/limits";
-import { FONT_FAMILIES, type ShapeLayer, type TextLayer, type Transform } from "../document/types";
+import {
+  FONT_FAMILIES,
+  type Layer,
+  type ShapeLayer,
+  type TextLayer,
+  type Transform,
+} from "../document/types";
+import { translateAllLayers } from "./group-commands";
 import { CommandError, replaceLayer, requireLayer, requireUnlocked, type Command } from "./command";
 
 const MAX_COORDINATE = 1e6;
@@ -35,8 +42,12 @@ export function setLayerTransform(
     mergeUntilSealed: options.gesture,
     apply(doc) {
       const layer = requireLayer(doc, layerId);
-      if (layer.kind === "fill") throw new CommandError("Fill layers always cover the canvas.");
-      requireUnlocked(layer);
+      if (layer.kind === "fill" || layer.kind === "adjustment") {
+        throw new CommandError("This layer always covers the canvas.");
+      }
+      if (layer.kind === "group")
+        throw new CommandError("Groups can be moved but not transformed yet.");
+      requireUnlocked(layer, doc);
       if (!validTransform(transform)) throw new CommandError("That transform is out of range.");
       const t = layer.transform;
       if (
@@ -48,7 +59,24 @@ export function setLayerTransform(
       ) {
         return doc;
       }
-      return replaceLayer(doc, { ...layer, transform: { ...transform } });
+      // A pure move carries a linked mask along; scaling/rotating leaves the mask in place.
+      const moved =
+        t.scaleX === transform.scaleX &&
+        t.scaleY === transform.scaleY &&
+        t.rotation === transform.rotation;
+      const mask =
+        layer.mask && layer.mask.linked && moved
+          ? {
+              ...layer.mask,
+              x: layer.mask.x + transform.x - t.x,
+              y: layer.mask.y + transform.y - t.y,
+            }
+          : layer.mask;
+      return replaceLayer(doc, {
+        ...layer,
+        transform: { ...transform },
+        ...(mask ? { mask } : {}),
+      } as Layer);
     },
   };
 }
@@ -61,7 +89,7 @@ export function setRasterContent(layerId: string, assetId: string | null, label:
     apply(doc) {
       const layer = requireLayer(doc, layerId);
       if (layer.kind !== "raster") throw new CommandError("Only pixel layers can be painted on.");
-      requireUnlocked(layer);
+      requireUnlocked(layer, doc);
       if (layer.assetId === assetId) return doc;
       return replaceLayer(doc, { ...layer, assetId });
     },
@@ -124,7 +152,7 @@ export function updateTextLayer(layerId: string, patch: TextPatch, label = "Edit
     apply(doc) {
       const layer = requireLayer(doc, layerId);
       if (layer.kind !== "text") throw new CommandError("That layer is not a text layer.");
-      requireUnlocked(layer);
+      requireUnlocked(layer, doc);
       checkTextPatch(patch);
       const next: TextLayer = {
         ...layer,
@@ -153,7 +181,7 @@ export function updateShapeLayer(
     apply(doc) {
       const layer = requireLayer(doc, layerId);
       if (layer.kind !== "shape") throw new CommandError("That layer is not a shape layer.");
-      requireUnlocked(layer);
+      requireUnlocked(layer, doc);
       if (patch.fill !== undefined && patch.fill !== null && !isHexColor(patch.fill)) {
         throw new CommandError("Fill must be a hex colour.");
       }
@@ -206,14 +234,7 @@ export function cropDocument(rect: {
       const check = checkDimensions(width, height);
       if (!check.ok) throw new CommandError(check.reason);
       if (x === 0 && y === 0 && width === doc.width && height === doc.height) return doc;
-      const layers = doc.layers.map((layer) =>
-        layer.kind === "fill"
-          ? layer
-          : {
-              ...layer,
-              transform: { ...layer.transform, x: layer.transform.x - x, y: layer.transform.y - y },
-            },
-      );
+      const layers = translateAllLayers(doc, -x, -y);
       const guides = doc.guides.map((g) => ({
         ...g,
         position: g.position - (g.orientation === "vertical" ? x : y),

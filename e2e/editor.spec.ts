@@ -1,4 +1,5 @@
 import { expect, test, type Page, type Request } from "@playwright/test";
+import { openEditor } from "./helpers";
 
 const layerNames = (page: Page) =>
   page
@@ -6,7 +7,7 @@ const layerNames = (page: Page) =>
     .evaluateAll((rows) => rows.map((r) => r.getAttribute("data-layer-name")));
 
 async function createDocument(page: Page, name: string) {
-  await page.goto("/editor");
+  await openEditor(page);
   await page.getByRole("button", { name: "New document" }).click();
   const dialog = page.getByRole("dialog", { name: "New document" });
   await dialog.getByLabel("Name").fill(name);
@@ -81,7 +82,7 @@ test("viewport zoom controls update the zoom level", async ({ page }) => {
 });
 
 test("rejects non-image files with a clear message", async ({ page }) => {
-  await page.goto("/editor");
+  await openEditor(page);
   await page.getByTestId("file-input").setInputFiles({
     name: "evil.png",
     mimeType: "image/png",
@@ -104,7 +105,7 @@ test("local-first: opening and editing an image sends no data anywhere", async (
     }
   };
 
-  await page.goto("/editor");
+  await openEditor(page);
   const png = await makePng(page, 320, 200);
   page.on("request", watch);
 

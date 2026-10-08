@@ -1,5 +1,6 @@
 import { checkDimensions } from "../document/limits";
 import { CommandError, type Command } from "./command";
+import { translateAllLayers } from "./group-commands";
 
 export const MAX_DOCUMENT_NAME_LENGTH = 255;
 
@@ -37,21 +38,7 @@ export function resizeCanvas(width: number, height: number, anchor: CanvasAnchor
       if (width === doc.width && height === doc.height) return doc;
       const dx = anchor === "center" ? Math.round((width - doc.width) / 2) : 0;
       const dy = anchor === "center" ? Math.round((height - doc.height) / 2) : 0;
-      const layers =
-        dx === 0 && dy === 0
-          ? doc.layers
-          : doc.layers.map((layer) =>
-              layer.kind === "fill"
-                ? layer
-                : {
-                    ...layer,
-                    transform: {
-                      ...layer.transform,
-                      x: layer.transform.x + dx,
-                      y: layer.transform.y + dy,
-                    },
-                  },
-            );
+      const layers = translateAllLayers(doc, dx, dy);
       return { ...doc, width, height, layers };
     },
   };

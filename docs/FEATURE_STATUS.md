@@ -1,6 +1,6 @@
 # Feature status
 
-Last updated: 2026-10-08 · version 0.2.0 · current gate: **3 (Core Editing) — awaiting review**
+Last updated: 2026-10-08 · version 0.3.0 · current gate: **4 (Professional Layer Workflow) — awaiting review**
 
 Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ deferred
 
@@ -22,7 +22,7 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 
 | Feature | Status | Notes |
 |---|---|---|
-| `/editor` route (noindex) | ✅ | |
+| Editor at `/` with first-visit welcome dialog (`/editor` → 308 to `/`) | ✅ | ADR-0009 |
 | Menu bar (File / Edit / Layer / View) | ✅ | WAI-ARIA menubar, keyboard navigable |
 | Toolbar | ✅ | Move, Crop, Brush, Eraser, Shape, Text, Hand, Zoom + colour swatches |
 | Tool options bar | ✅ | |
@@ -33,7 +33,7 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 | Status bar (zoom, size, cursor, save state) | ✅ | |
 | Keyboard shortcuts | ✅ | `src/editor/core/shortcuts` |
 | Mobile/tablet layout | 🚧 | Panels stack under the canvas. A dedicated touch UI is planned |
-| Routes `/editor/new`, `/editor/[documentId]` | 📋 | |
+| Deep links to a document (e.g. `/?doc=…`) | 📋 | |
 
 ## Gate 2 — Document engine
 
@@ -47,7 +47,7 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 | Memory fallback when storage is unavailable | ✅ | User is warned |
 | Open PNG/JPEG/WebP (picker, drag & drop, paste) | ✅ | Header-validated before decode |
 | Place image as layer | ✅ | |
-| Layer ops: add fill, delete, rename, duplicate, reorder, visibility, lock, opacity, blend, fill colour | ✅ | Drag-and-drop reordering 📋 |
+| Layer ops: add fill, delete, rename, duplicate, reorder, visibility, lock, opacity, blend, fill colour | ✅ | Drag-and-drop reordering ✅ (Gate 4) |
 | Canvas size command | ✅ | Engine only, no UI yet |
 
 ## Gate 3 — Core editing
@@ -64,11 +64,21 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 | Export PNG / JPEG / WebP | ✅ | File System Access save dialog where supported |
 | Foreground/background colours | ✅ | Eyedropper, swatches 📋 |
 
+## Gate 4 — Professional layer workflow
+
+| Feature | Status | Notes |
+|---|---|---|
+| Groups (nesting, pass-through/isolated, collapse, move) | ✅ | Group scale/rotate 📋 |
+| Drag-and-drop in Layers panel; Bring Forward/Send Backward enter/leave groups | ✅ | |
+| Blend modes & opacity (layers and groups) | ✅ | |
+| Raster layer masks (paint grey levels, enable/disable, linked) | ✅ | Vector & clipping masks 📋; masks don't follow scale/rotate |
+| Adjustment layers: Brightness/Contrast, Hue/Saturation, Exposure, Temperature/Tint, Black & White, Invert, Posterize, Threshold | ✅ | Curves/Levels 📋 |
+| Layer effects: drop shadow, outer glow, outer stroke, colour overlay | ✅ | Inner shadow, bevel 📋 |
+
 ## Later gates (summary)
 
 | Area | Status |
 |---|---|
-| Gate 4: groups, masks, adjustment layers, effects | 📋 |
 | Gate 5: selections | 📋 |
 | Gate 6: formats (SVG, PDF, PSD; open/save project files) | 📋 |
 | Gate 7: workers, tiling, tile-based undo, large documents | 📋 |
@@ -81,4 +91,6 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 - Each brush stroke keeps a full-layer copy for undo. Above ~768 MB the oldest undo steps are dropped (ADR-0007).
 - Scaling a shape also scales its stroke width.
 - Text is point text (manual line breaks, no wrapping). Fonts are limited to common system fonts.
+- Adjustments run on the main thread over the whole document. Edits above an adjustment are cached; very large documents can feel slow until Gate 7.
+- Masks follow moves but not scale/rotate of their layer.
 - Documents are capped at 12,000 px per side and 36 MP until tiled rendering (Gate 7).

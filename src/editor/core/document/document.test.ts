@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { createDocument, DocumentError, nextLayerName } from "./factory";
+import { createGroup } from "../commands/group-commands";
+import {
+  createDocument,
+  createMask,
+  createRasterLayer,
+  DocumentError,
+  nextLayerName,
+} from "./factory";
 import { checkDimensions, MAX_DIMENSION, MAX_PIXELS } from "./limits";
 import { activeLayer, referencedAssetIds } from "./queries";
 
@@ -74,16 +81,12 @@ describe("nextLayerName", () => {
 });
 
 describe("referencedAssetIds", () => {
-  it("deduplicates asset ids across raster layers", () => {
+  it("deduplicates asset ids across raster layers, nested groups and masks", () => {
     const doc = createDocument({ name: "x", width: 1, height: 1 });
-    const raster = {
-      ...doc.layers[0],
-      kind: "raster" as const,
-      assetId: "asset_1",
-      width: 1,
-      height: 1,
-    };
-    const withRasters = { ...doc, layers: [raster, { ...raster, id: "b" }] };
-    expect(referencedAssetIds(withRasters)).toEqual(["asset_1"]);
+    const raster = createRasterLayer({ assetId: "asset_1", width: 1, height: 1, name: "r" });
+    const masked = { ...raster, id: "b", mask: { ...createMask(doc), assetId: "mask_1" } };
+    const group = { ...createGroup("g"), children: [masked] };
+    const withRasters = { ...doc, layers: [raster, group] };
+    expect(referencedAssetIds(withRasters)).toEqual(["asset_1", "mask_1"]);
   });
 });
