@@ -132,6 +132,33 @@ export const EraserIcon = (p: IconProps) => (
   </Svg>
 );
 
+export const CloneIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M6 2.5h4v3.2l2.5 1.3v2.5h-9V7l2.5-1.3Z" />
+    <path d="M3 12h10M4.5 14.5h7" />
+  </Svg>
+);
+
+export const HealIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <rect x="1.8" y="5.5" width="12.4" height="5" rx="2.5" transform="rotate(-45 8 8)" />
+    <path d="M7 7h.01M9 9h.01M9 7h.01M7 9h.01" />
+  </Svg>
+);
+
+export const ToneIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <circle cx="6.5" cy="6.5" r="4" />
+    <path d="m9.5 9.5 4.5 4.5" />
+  </Svg>
+);
+
+export const FocusIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M8 1.8C8 1.8 3.5 7 3.5 10a4.5 4.5 0 0 0 9 0C12.5 7 8 1.8 8 1.8Z" />
+  </Svg>
+);
+
 export const ShapeIcon = (p: IconProps) => (
   <Svg {...p}>
     <rect x="1.5" y="1.5" width="8" height="8" rx="0.5" />

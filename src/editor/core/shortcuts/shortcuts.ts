@@ -47,6 +47,10 @@ export type ActionId =
   | "tool.brush"
   | "tool.pencil"
   | "tool.eraser"
+  | "tool.clone"
+  | "tool.heal"
+  | "tool.tone"
+  | "tool.focus"
   | "tool.bucket"
   | "tool.gradient"
   | "tool.shape"
@@ -114,6 +118,10 @@ export const DEFAULT_KEYMAP: Readonly<Record<ActionId, readonly string[]>> = {
   "tool.brush": ["B"],
   "tool.pencil": ["N"],
   "tool.eraser": ["E"],
+  "tool.clone": ["S"],
+  "tool.heal": ["J"],
+  "tool.tone": ["O"],
+  "tool.focus": ["R"],
   "tool.bucket": ["Shift+G"],
   "tool.gradient": ["G"],
   "tool.shape": ["U"],

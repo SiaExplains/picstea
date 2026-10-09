@@ -322,3 +322,43 @@ export function readPixelsBelow(
     releaseSurface(surface);
   }
 }
+
+/**
+ * The visible document resampled into a pixel layer's own space (`layer.width × layer.height`),
+ * so tools working on the layer can sample "all layers", with `inside` (0…255) saying which
+ * layer pixels fall on the canvas at all. Null while a bitmap is still decoding.
+ */
+export function readCompositeInLayerSpace(
+  env: PixelEnv,
+  doc: EditorDocument,
+  layer: RasterLayer,
+): { pixels: RgbaPixels; inside: Uint8Array } | null {
+  const toLocal = invertMatrix(fromTransform(layer.transform));
+  if (!toLocal) return null;
+  const composite = env.createSurface(doc.width, doc.height);
+  const local = env.createSurface(layer.width, layer.height);
+  try {
+    const result = compositeDocument(context2d(composite) as CompositeContext, doc, env.assets, {
+      sizer: env.sizer,
+      createSurface: env.createSurface,
+    });
+    if (result.pendingAssetIds.length > 0) return null;
+    const ctx = context2d(local, true);
+    ctx.setTransform(...toLocal);
+    ctx.fillStyle = "#000";
+    ctx.fillRect(0, 0, doc.width, doc.height);
+    const canvasArea = ctx.getImageData(0, 0, layer.width, layer.height).data;
+    const inside = new Uint8Array(layer.width * layer.height);
+    for (let i = 0; i < inside.length; i++) inside[i] = canvasArea[i * 4 + 3];
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, layer.width, layer.height);
+    ctx.restore();
+    ctx.drawImage(composite, 0, 0);
+    const image = ctx.getImageData(0, 0, layer.width, layer.height);
+    return { pixels: { width: layer.width, height: layer.height, data: image.data }, inside };
+  } finally {
+    releaseSurface(composite);
+    releaseSurface(local);
+  }
+}

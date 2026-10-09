@@ -1,6 +1,7 @@
 import type { AssetStore } from "../assets/asset-store";
 import type { EditorStore } from "../core/editor-store";
 import type { ContentSizer } from "../core/geometry/layer-geometry";
+import { RetouchTool } from "../tools/retouch/retouch-tool";
 import { snapTargets, type SnapTargets } from "../core/geometry/snapping";
 import type { EditorDocument, Guide } from "../core/document/types";
 import type { ViewSettings } from "../core/view-settings";
@@ -78,6 +79,10 @@ export class ToolManager {
       brush: new BrushTool("brush"),
       pencil: new BrushTool("pencil"),
       eraser: new BrushTool("eraser"),
+      clone: new RetouchTool("clone"),
+      heal: new RetouchTool("heal"),
+      tone: new RetouchTool("tone"),
+      focus: new RetouchTool("focus"),
       bucket: new BucketTool(),
       gradient: new GradientTool(),
       shape: new ShapeTool(),

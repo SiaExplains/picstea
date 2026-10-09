@@ -28,6 +28,10 @@ const FAQS: Faq[] = [
     a: "PNG, JPEG, WebP, SVG, PDF and layered PSD.",
   },
   {
+    q: "Can I remove blemishes or unwanted objects?",
+    a: "Yes. Use the Healing Brush to remove spots and blemishes (it matches the surrounding colour and brightness), or the Clone Stamp to copy one area over another. Both work in your browser; nothing is uploaded.",
+  },
+  {
     q: "Can I edit many photos at once?",
     a: "Yes. Record an action (for example an adjustment and a filter), then use File → Batch… to apply it to many photos. The results are saved as one ZIP file, built on your device.",
   },
@@ -64,6 +68,9 @@ export default function OnlinePhotoEditor() {
         <li>Filters such as blur, sharpen, noise and pixelate; smart objects and smart filters.</li>
         <li>Marquee, lasso and magic-wand selections; feather, expand, contract, transform.</li>
         <li>Brush, pencil, eraser, paint bucket, gradient, shapes and text.</li>
+        <li>
+          Retouching: Clone Stamp, Healing Brush, Dodge, Burn, Sponge, Blur, Sharpen and Smudge.
+        </li>
         <li>Drop shadows, glows, outlines and colour overlays.</li>
         <li>Open and save layered PSD files; export PNG, JPEG, WebP, SVG and PDF.</li>
         <li>Record actions and replay them, or batch-process many photos into one ZIP download.</li>
@@ -73,7 +80,7 @@ export default function OnlinePhotoEditor() {
       <h2>Limitations</h2>
       <p>
         Images can be up to 12,000 pixels per side (36 megapixels). There are no AI tools such as
-        automatic background removal, and no clone stamp or healing brush yet. See the{" "}
+        automatic background removal or content-aware fill. See the{" "}
         <Link href="/docs">documentation</Link> for everything that is available.
       </p>
     </LandingPage>

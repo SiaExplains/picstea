@@ -19,6 +19,10 @@ import {
   CloseIcon,
   CropIcon,
   EraserIcon,
+  CloneIcon,
+  HealIcon,
+  ToneIcon,
+  FocusIcon,
   HandIcon,
   MoveIcon,
   PathSelectIcon,
@@ -45,6 +49,15 @@ const TOOLS: { id: ToolId; label: string; action: ActionId; icon: React.ReactNod
   { id: "brush", label: "Brush", action: "tool.brush", icon: <BrushIcon size={18} /> },
   { id: "pencil", label: "Pencil", action: "tool.pencil", icon: <PencilIcon size={18} /> },
   { id: "eraser", label: "Eraser", action: "tool.eraser", icon: <EraserIcon size={18} /> },
+  { id: "clone", label: "Clone Stamp", action: "tool.clone", icon: <CloneIcon size={18} /> },
+  { id: "heal", label: "Healing Brush", action: "tool.heal", icon: <HealIcon size={18} /> },
+  { id: "tone", label: "Dodge, Burn, Sponge", action: "tool.tone", icon: <ToneIcon size={18} /> },
+  {
+    id: "focus",
+    label: "Blur, Sharpen, Smudge",
+    action: "tool.focus",
+    icon: <FocusIcon size={18} />,
+  },
   { id: "bucket", label: "Paint Bucket", action: "tool.bucket", icon: <BucketIcon size={18} /> },
   { id: "gradient", label: "Gradient", action: "tool.gradient", icon: <GradientIcon size={18} /> },
   { id: "shape", label: "Shape", action: "tool.shape", icon: <ShapeIcon size={18} /> },
@@ -194,6 +207,205 @@ function BrushOptions({ tool }: { tool: "brush" | "pencil" | "eraser" }) {
           ? "[ and ] change size"
           : "[ and ] change size · Alt-click picks a colour"}
       </span>
+    </>
+  );
+}
+
+/** Size and hardness, shared by the retouching tools. */
+function TipOptions({ tool }: { tool: "clone" | "heal" | "tone" | "focus" }) {
+  const controller = useController();
+  const size = useEditorState((s) => s.toolSettings[tool].size);
+  const hardness = useEditorState((s) => s.toolSettings[tool].hardness);
+  return (
+    <>
+      <NumberOption
+        label="Size"
+        value={size}
+        min={1}
+        max={1000}
+        suffix="px"
+        onChange={(v) => controller.store.updateToolSettings(tool, { size: v })}
+      />
+      <NumberOption
+        label="Hardness"
+        value={Math.round(hardness * 100)}
+        min={0}
+        max={100}
+        suffix="%"
+        onChange={(v) => controller.store.updateToolSettings(tool, { hardness: v / 100 })}
+      />
+    </>
+  );
+}
+
+function Segmented<T extends string>({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  value: T;
+  options: readonly (readonly [T, string])[];
+  onChange: (value: T) => void;
+}) {
+  return (
+    <div className={styles.segmented} role="group" aria-label={label}>
+      {options.map(([v, text]) => (
+        <button key={v} type="button" aria-pressed={value === v} onClick={() => onChange(v)}>
+          {text}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function SourceBrushOptions({ tool }: { tool: "clone" | "heal" }) {
+  const controller = useController();
+  const settings = useEditorState((s) => s.toolSettings[tool]);
+  const set = (patch: Partial<typeof settings>) => controller.store.updateToolSettings(tool, patch);
+  return (
+    <>
+      <TipOptions tool={tool} />
+      {tool === "clone" && (
+        <NumberOption
+          label="Opacity"
+          value={Math.round(settings.opacity * 100)}
+          min={1}
+          max={100}
+          suffix="%"
+          onChange={(v) => set({ opacity: v / 100 })}
+        />
+      )}
+      <label className={styles.optionGroup}>
+        <input
+          type="checkbox"
+          checked={settings.aligned}
+          onChange={(e) => set({ aligned: e.target.checked })}
+        />
+        Aligned
+      </label>
+      <label className={styles.optionGroup}>
+        Sample
+        <select
+          className={styles.input}
+          value={settings.sample}
+          onChange={(e) => set({ sample: e.target.value === "all" ? "all" : "current" })}
+        >
+          <option value="current">Current layer</option>
+          <option value="all">All layers</option>
+        </select>
+      </label>
+      <span>Alt-click sets the source · [ and ] change size</span>
+    </>
+  );
+}
+
+function ToneOptions() {
+  const controller = useController();
+  const settings = useEditorState((s) => s.toolSettings.tone);
+  const set = (patch: Partial<typeof settings>) =>
+    controller.store.updateToolSettings("tone", patch);
+  return (
+    <>
+      <Segmented
+        label="Tone mode"
+        value={settings.mode}
+        options={[
+          ["dodge", "Dodge"],
+          ["burn", "Burn"],
+          ["sponge", "Sponge"],
+        ]}
+        onChange={(mode) => set({ mode })}
+      />
+      <TipOptions tool="tone" />
+      {settings.mode === "sponge" ? (
+        <>
+          <label className={styles.optionGroup}>
+            Mode
+            <select
+              className={styles.input}
+              value={settings.sponge}
+              onChange={(e) =>
+                set({ sponge: e.target.value === "saturate" ? "saturate" : "desaturate" })
+              }
+            >
+              <option value="desaturate">Desaturate</option>
+              <option value="saturate">Saturate</option>
+            </select>
+          </label>
+          <NumberOption
+            label="Flow"
+            value={Math.round(settings.flow * 100)}
+            min={1}
+            max={100}
+            suffix="%"
+            onChange={(v) => set({ flow: v / 100 })}
+          />
+        </>
+      ) : (
+        <>
+          <label className={styles.optionGroup}>
+            Range
+            <select
+              className={styles.input}
+              value={settings.range}
+              onChange={(e) =>
+                set({
+                  range:
+                    e.target.value === "shadows"
+                      ? "shadows"
+                      : e.target.value === "highlights"
+                        ? "highlights"
+                        : "midtones",
+                })
+              }
+            >
+              <option value="shadows">Shadows</option>
+              <option value="midtones">Midtones</option>
+              <option value="highlights">Highlights</option>
+            </select>
+          </label>
+          <NumberOption
+            label="Exposure"
+            value={Math.round(settings.exposure * 100)}
+            min={1}
+            max={100}
+            suffix="%"
+            onChange={(v) => set({ exposure: v / 100 })}
+          />
+        </>
+      )}
+    </>
+  );
+}
+
+function FocusOptions() {
+  const controller = useController();
+  const settings = useEditorState((s) => s.toolSettings.focus);
+  const set = (patch: Partial<typeof settings>) =>
+    controller.store.updateToolSettings("focus", patch);
+  return (
+    <>
+      <Segmented
+        label="Focus mode"
+        value={settings.mode}
+        options={[
+          ["blur", "Blur"],
+          ["sharpen", "Sharpen"],
+          ["smudge", "Smudge"],
+        ]}
+        onChange={(mode) => set({ mode })}
+      />
+      <TipOptions tool="focus" />
+      <NumberOption
+        label="Strength"
+        value={Math.round(settings.strength * 100)}
+        min={1}
+        max={100}
+        suffix="%"
+        onChange={(v) => set({ strength: v / 100 })}
+      />
     </>
   );
 }
@@ -666,6 +878,10 @@ const TOOL_LABELS: Record<ToolId, string> = {
   brush: "Brush",
   pencil: "Pencil",
   eraser: "Eraser",
+  clone: "Clone Stamp",
+  heal: "Healing Brush",
+  tone: "Dodge · Burn · Sponge",
+  focus: "Blur · Sharpen · Smudge",
   bucket: "Paint Bucket",
   gradient: "Gradient",
   shape: "Shape",
@@ -701,6 +917,11 @@ export function OptionsBar({ actions }: { actions: Record<UiActionId, UiAction> 
       {(activeTool === "brush" || activeTool === "pencil" || activeTool === "eraser") && (
         <BrushOptions tool={activeTool} />
       )}
+      {(activeTool === "clone" || activeTool === "heal") && (
+        <SourceBrushOptions tool={activeTool} />
+      )}
+      {activeTool === "tone" && <ToneOptions />}
+      {activeTool === "focus" && <FocusOptions />}
       {activeTool === "gradient" && <GradientOptions />}
       {activeTool === "shape" && <ShapeOptions />}
       {activeTool === "pen" && <PenOptions actions={actions} />}

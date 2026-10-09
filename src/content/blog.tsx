@@ -532,6 +532,45 @@ export const POSTS: readonly BlogPost[] = [
       </>
     ),
   },
+  {
+    slug: "remove-blemishes-and-retouch-photos-in-your-browser",
+    title: "Remove blemishes and retouch photos in your browser",
+    description:
+      "MYLPER now has a Clone Stamp, Healing Brush, Dodge and Burn, Sponge, Blur, Sharpen and Smudge — classic retouching tools that run entirely in your browser.",
+    published: "2026-10-09",
+    draft: true,
+    body: () => (
+      <>
+        <p>
+          A speck of dust on a product shot, a power line across the sky, a blemish in a portrait:
+          small distractions that take seconds to fix with the right tool. MYLPER now has those
+          tools — and like everything else in MYLPER, your photos never leave your device.
+        </p>
+        <h2>Heal it</h2>
+        <p>
+          Choose the Healing Brush (J), Alt-click on a clean area nearby and paint over the blemish.
+          When you let go, the patch takes on the colour and brightness of its new surroundings
+          while keeping the texture you copied, so it blends in.
+        </p>
+        <h2>Clone it</h2>
+        <p>
+          The Clone Stamp (S) copies exactly, which is what you want for removing an object or
+          duplicating a detail. With Sample set to All layers you can clone onto an empty layer and
+          keep the original photo untouched.
+        </p>
+        <h2>Shape the light</h2>
+        <p>
+          Dodge and Burn (O) lighten or darken just where you paint — shadows, midtones or
+          highlights. Sponge adds or removes colour. Blur, Sharpen and Smudge (R) soften, crisp up
+          or push pixels around.
+        </p>
+        <p>
+          <EditorLink>Open a photo in MYLPER</EditorLink> and try them — no account, no upload. The
+          details are in <Link href="/docs/retouching">Retouching</Link>.
+        </p>
+      </>
+    ),
+  },
 ];
 
 const showDrafts = process.env.NODE_ENV !== "production";

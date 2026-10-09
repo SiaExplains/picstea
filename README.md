@@ -38,10 +38,11 @@ src/editor/       Framework-independent engine — no React/Next imports (lint-e
   core/           document model (incl. smart objects), commands, history, store, viewport,
                   shortcuts, vector paths
   controller/     use cases: open, import, save, restore, autosave, export; tool routing
-  tools/          move/transform, crop, brush/eraser, shape, text, guides, pen and
-                  direct selection (framework-free)
+  tools/          move/transform, crop, brush/eraser, retouching, shape, text, guides, pen
+                  and direct selection (framework-free)
   filters/        filter catalogue and pure pixel filters (run in the worker)
   automation/     recorded action steps, action files and batch helpers
+  retouch/        pure pixel strokes for clone, heal, dodge/burn/sponge, blur/sharpen/smudge
   adjustments/    adjustment catalogue, pixel operations, Levels/Curves
   rendering/      Renderer interface, Canvas 2D renderer, compositor
   assets/         immutable binary assets
