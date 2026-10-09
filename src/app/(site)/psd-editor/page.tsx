@@ -3,7 +3,7 @@ import Link from "next/link";
 import { LandingPage, type Faq } from "@/components/site/LandingPage";
 
 const PATH = "/psd-editor";
-const TITLE = "Online PSD editor — open Photoshop files in your browser";
+const TITLE = "Online PSD editor: open Photoshop files";
 const DESCRIPTION =
   "Open and edit PSD files online with their layers, groups and masks, and save them back as PSD. The file stays on your computer — nothing is uploaded.";
 

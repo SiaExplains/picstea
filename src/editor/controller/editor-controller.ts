@@ -1867,14 +1867,31 @@ export class EditorController {
     }
   }
 
-  async saveAllDirty(): Promise<void> {
+  /** Save every document with unsaved changes; true when all of them were stored. */
+  async saveAllDirty(): Promise<boolean> {
+    let ok = true;
     // Edit Contents tabs first: applying them makes their parent documents dirty.
     for (const childId of this.smartChildren.keys()) {
       const child = this.store.getSession(childId);
-      if (child && isDirty(child)) this.applySmartChild(childId);
+      if (child && isDirty(child) && !this.applySmartChild(childId).ok) ok = false;
     }
     const dirty = this.store.getState().sessions.filter(isDirty);
-    await Promise.all(dirty.map((s) => this.save(s.document.id)));
+    const results = await Promise.all(dirty.map((s) => this.save(s.document.id)));
+    return ok && results.every((r) => r.ok);
+  }
+
+  /**
+   * After the UI crashed: keep any text still being typed, then store every open document.
+   * True only when everything reached persistent browser storage.
+   */
+  async saveAfterCrash(): Promise<boolean> {
+    try {
+      if (this.textEdit.get()) this.commitTextEdit();
+    } catch (error) {
+      this.logger.warn("committing text after a crash failed", describeError(error));
+    }
+    const saved = await this.saveAllDirty();
+    return saved && this.storageKind !== "memory";
   }
 
   async openProject(id: string): Promise<Result> {

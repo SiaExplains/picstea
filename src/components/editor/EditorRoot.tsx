@@ -119,8 +119,11 @@ function persist<T>(observable: Observable<T>, key: string, parse: (value: unkno
 
 const subscribeNoop = () => () => {};
 
-class EditorErrorBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
-  state = { failed: false };
+class EditorErrorBoundary extends Component<
+  { children: ReactNode },
+  { failed: boolean; saved: boolean | null }
+> {
+  state = { failed: false, saved: null as boolean | null };
 
   static getDerivedStateFromError() {
     return { failed: true };
@@ -128,6 +131,17 @@ class EditorErrorBoundary extends Component<{ children: ReactNode }, { failed: b
 
   componentDidCatch(error: unknown) {
     logger.error("editor crashed", describeError(error));
+    // The UI broke, but documents are immutable data: try to store any unsaved changes now
+    // instead of losing what happened since the last autosave.
+    const controller = browserController;
+    if (!controller) return;
+    controller
+      .saveAfterCrash()
+      .then((saved) => this.setState({ saved }))
+      .catch((saveError: unknown) => {
+        logger.error("saving after crash failed", describeError(saveError));
+        this.setState({ saved: false });
+      });
   }
 
   render() {
@@ -137,8 +151,12 @@ class EditorErrorBoundary extends Component<{ children: ReactNode }, { failed: b
         <div className={styles.fatal} role="alert">
           <div>
             <h1 className={styles.startTitle}>The editor ran into a problem</h1>
-            <p className={styles.startLead}>
-              Your work up to the last autosave is still in this browser. Reload to continue.
+            <p className={styles.startLead} role="status">
+              {this.state.saved === true
+                ? "Your open documents were saved in this browser. Reload to continue."
+                : this.state.saved === false
+                  ? "Your work up to the last autosave is still in this browser. Reload to continue."
+                  : "Saving your open documents…"}
             </p>
             <button
               type="button"

@@ -19,8 +19,8 @@ export const SITE = {
   url: resolveSiteUrl(),
   tagline: "Free online image editor that keeps your images on your device",
   description:
-    "MYLPER is a free, browser-based image editor with layers, masks, adjustment layers and undo history. " +
-    "It runs entirely in your browser: your images are never uploaded.",
+    "MYLPER is a free image editor in your browser, with layers, masks and adjustment layers. " +
+    "Your images stay on your device and are never uploaded.",
 } as const;
 
 export function absoluteUrl(path: string): string {

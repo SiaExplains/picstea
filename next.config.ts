@@ -71,6 +71,9 @@ const nextConfig: NextConfig = {
         headers: [
           { key: "Content-Security-Policy", value: editorPolicy },
           { key: "X-Content-Type-Options", value: "nosniff" },
+          // HTTPS only from now on. Not in development (an HTTPS dev server would pin every
+          // localhost port). No preload or includeSubDomains: those are the operator's decision.
+          ...(dev ? [] : [{ key: "Strict-Transport-Security", value: "max-age=63072000" }]),
           { key: "X-Frame-Options", value: "DENY" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
           {

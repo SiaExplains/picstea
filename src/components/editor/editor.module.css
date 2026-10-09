@@ -9,6 +9,8 @@
   --ed-text: #e6e6e8;
   --ed-text-dim: #a4a5ab;
   --ed-accent: #4c8dff;
+  /* Filled backgrounds that carry text: white on it meets 4.5:1 (WCAG 1.4.3). */
+  --ed-accent-strong: #2f6fd8;
   --ed-accent-soft: rgba(76, 141, 255, 0.18);
   --ed-danger: #ff6b6b;
   --ed-focus: #8ab4ff;
@@ -129,7 +131,7 @@
 
 .menuItem:hover:not(:disabled),
 .menuItem:focus-visible {
-  background: var(--ed-accent);
+  background: var(--ed-accent-strong);
   color: #fff;
   outline: none;
 }
@@ -195,9 +197,10 @@
   cursor: default;
 }
 
-.primary {
-  background: var(--ed-accent);
-  border-color: var(--ed-accent);
+.primary,
+.button.primary {
+  background: var(--ed-accent-strong);
+  border-color: var(--ed-accent-strong);
   color: #fff;
 }
 
@@ -958,7 +961,7 @@
 }
 
 .segmented button[aria-pressed="true"] {
-  background: var(--ed-accent);
+  background: var(--ed-accent-strong);
   color: #fff;
 }
 

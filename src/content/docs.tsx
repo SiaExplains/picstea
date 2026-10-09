@@ -446,7 +446,7 @@ export const DOCS: readonly DocPage[] = [
   },
   {
     slug: "filters",
-    title: "Filters: blur, sharpen, noise, pixelate, emboss and edges",
+    title: "Filters: blur, sharpen, noise and more",
     description:
       "Apply filters to a pixel layer in MYLPER with a live preview: Gaussian, box and motion blur, Unsharp Mask, Add Noise, Pixelate, Emboss and Find Edges.",
     updated: "2026-10-09",
@@ -510,7 +510,7 @@ export const DOCS: readonly DocPage[] = [
     slug: "paths-and-the-pen-tool",
     title: "Paths and the Pen tool",
     description:
-      "Draw precise shapes and selections in MYLPER with the Pen tool: anchor points, curves, editing with Direct Selection, paths to selections and back, and vector masks.",
+      "Draw precise shapes and selections in MYLPER with the Pen tool: anchor points, curves, Direct Selection, paths to selections and back, and vector masks.",
     updated: "2026-10-09",
     body: () => (
       <>
@@ -581,7 +581,7 @@ export const DOCS: readonly DocPage[] = [
     slug: "smart-objects-and-smart-filters",
     title: "Smart objects and smart filters",
     description:
-      "Use smart objects in MYLPER to scale and transform without losing quality, edit embedded contents in their own tab, and apply filters you can change or remove later.",
+      "Use smart objects in MYLPER to scale and transform without losing quality, edit their contents in their own tab, and apply filters you can change later.",
     updated: "2026-10-09",
     body: () => (
       <>
@@ -712,7 +712,7 @@ export const DOCS: readonly DocPage[] = [
   },
   {
     slug: "file-formats",
-    title: "File formats: PSD, PNG, JPEG, WebP, SVG, PDF and .mylper",
+    title: "File formats: PSD, PNG, JPEG, WebP, SVG, PDF",
     description:
       "Which file types MYLPER opens and exports, what each format keeps, and how to move projects between MYLPER and other tools.",
     updated: "2026-10-09",

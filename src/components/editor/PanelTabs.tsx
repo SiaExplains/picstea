@@ -53,14 +53,19 @@ export function PanelTabs() {
           </button>
         ))}
       </div>
-      <div
-        role="tabpanel"
-        id={`${prefix}-${TABS[active].id}-panel`}
-        aria-labelledby={`${prefix}-${TABS[active].id}-tab`}
-        className={styles.tabPanelBody}
-      >
-        <Panel />
-      </div>
+      {TABS.map((tab, i) => (
+        // Every panel exists so each tab's aria-controls resolves; only the active one renders.
+        <div
+          key={tab.id}
+          role="tabpanel"
+          id={`${prefix}-${tab.id}-panel`}
+          aria-labelledby={`${prefix}-${tab.id}-tab`}
+          className={styles.tabPanelBody}
+          hidden={i !== active}
+        >
+          {i === active && <Panel />}
+        </div>
+      ))}
     </section>
   );
 }
