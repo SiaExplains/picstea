@@ -15,17 +15,18 @@ The full engineering handbook is in [`docs/`](docs/INDEX.md). Start with
 
 ## Commands
 
-| Command                             | What it does                                                                                                                  |
-| ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| `pnpm install`                      | Install dependencies                                                                                                          |
-| `pnpm dev`                          | Dev server on http://localhost:3000 (the editor is the home page)                                                             |
-| `pnpm lint`                         | ESLint, zero warnings allowed                                                                                                 |
-| `pnpm format` / `pnpm format:check` | Prettier                                                                                                                      |
-| `pnpm typecheck`                    | TypeScript                                                                                                                    |
-| `pnpm test`                         | Unit tests (Vitest)                                                                                                           |
-| `pnpm build`                        | Production build                                                                                                              |
-| `pnpm build:e2e`                    | Production build with a fake AdSense ID, for the consent E2E tests (no real ads load)                                         |
-| `pnpm test:e2e`                     | Playwright E2E against the production build (run `pnpm build:e2e` first; first time: `pnpm exec playwright install chromium`) |
+| Command                             | What it does                                                                                                                                                                 |
+| ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm install`                      | Install dependencies                                                                                                                                                         |
+| `pnpm dev`                          | Dev server on http://localhost:3000 (the editor is the home page)                                                                                                            |
+| `pnpm lint`                         | ESLint, zero warnings allowed                                                                                                                                                |
+| `pnpm format` / `pnpm format:check` | Prettier                                                                                                                                                                     |
+| `pnpm typecheck`                    | TypeScript                                                                                                                                                                   |
+| `pnpm test`                         | Unit tests (Vitest)                                                                                                                                                          |
+| `pnpm build`                        | Production build                                                                                                                                                             |
+| `pnpm build:e2e`                    | Production build with a fake AdSense ID, for the consent E2E tests (no real ads load)                                                                                        |
+| `pnpm test:e2e`                     | Playwright E2E against the production build, incl. accessibility, keyboard and site audits (run `pnpm build:e2e` first; first time: `pnpm exec playwright install chromium`) |
+| `pnpm profile`                      | Large-document profile against a running production build (see `scripts/profile-large.mjs`)                                                                                  |
 
 ## Layout
 

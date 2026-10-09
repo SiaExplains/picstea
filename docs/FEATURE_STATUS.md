@@ -1,6 +1,6 @@
 # Feature status
 
-Last updated: 2026-10-09 · version 0.15.0 · current gate: **9h (Professional Parity: adjustments and layer styles) — awaiting review**
+Last updated: 2026-10-09 · version 0.15.1 · current step: **launch-readiness pass — awaiting review** (report: `docs/audits/2026-10-launch-readiness.md`)
 
 Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ deferred
 
@@ -11,7 +11,7 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 | Next.js 16 + React 19 + TypeScript (strict) | ✅ | App Router, Cache Components |
 | ESLint (0 warnings) + Prettier | ✅ | Editor-core import boundary enforced by lint |
 | Unit tests (Vitest) | ✅ | `pnpm test` |
-| E2E tests (Playwright, Chromium) | ✅ | `pnpm build && pnpm test:e2e` |
+| E2E tests (Playwright, Chromium) | ✅ | `pnpm build:e2e && pnpm test:e2e`; includes the accessibility, keyboard and site audits |
 | CI (GitHub Actions) | ✅ | lint · format · typecheck · unit · build · e2e · prod audit |
 | Error boundaries | ✅ | `error.tsx`, `global-error.tsx`, editor boundary |
 | Logging strategy | ✅ | `src/lib/logging` — primitives only, no document data |
@@ -23,8 +23,8 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 | Feature | Status | Notes |
 |---|---|---|
 | Editor at `/` with first-visit welcome dialog (`/editor` → 308 to `/`) | ✅ | ADR-0009 |
-| Menu bar (File / Edit / Layer / View) | ✅ | WAI-ARIA menubar, keyboard navigable |
-| Toolbar | ✅ | Move, Crop, Brush, Eraser, Shape, Text, Hand, Zoom + colour swatches |
+| Menu bar (File, Edit, Image, Layer, Adjustments, Filter, Select, View, Help) | ✅ | WAI-ARIA menubar, keyboard navigable |
+| Toolbar | ✅ | 24 tools (selection, crop, painting, retouching, shapes, pen, text, navigation) + colour picker |
 | Tool options bar | ✅ | |
 | Canvas viewport | ✅ | Canvas 2D, checkerboard, crisp pixels above 200% |
 | Zoom (steps, wheel, pinch, fit, 100%) / pan (hand, Space, middle button, wheel) | ✅ | |
@@ -113,7 +113,7 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 | Web Worker jobs: PSD read/encode, PDF encode, flood fill (wand, bucket) | ✅ | Main-thread fallback |
 | Device-aware memory budget, large-document note, busy overlay | ✅ | |
 | Profiling harness (`pnpm profile`) | ✅ | `scripts/profile-large.mjs` |
-| Full-resolution adjustments in export/wand composites still on the main thread | 📋 | One-off actions |
+| Full-resolution adjustments in export/wand composites still on the main thread | 📋 | One-off actions; PSD export of a 24 MP document with three adjustments blocks ~2.4 s (audit 2026-10) |
 | Tiled rendering beyond 36 MP, tile-based undo | 📋 | Limits unchanged |
 
 ## Gate 8 — Website, SEO/AEO & monetization
@@ -145,7 +145,7 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 | 9e | Automation (record/play actions, batch), swatches and colour picker, history panel | ✅ |
 | 9f | Retouching: clone stamp, healing brush, dodge/burn/sponge, blur/sharpen/smudge | ✅ |
 | 9g | Multi-layer selection: move/scale/rotate together, group transforms, align/distribute, group/duplicate/delete | ✅ |
-| 9h | Vibrance, Color Balance, Photo Filter, Channel Mixer, Gradient Map; inner shadow, bevel, gradient overlay | 🚧 awaiting review |
+| 9h | Vibrance, Color Balance, Photo Filter, Channel Mixer, Gradient Map; inner shadow, bevel, gradient overlay | ✅ |
 
 ### 9a
 
@@ -190,8 +190,8 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 | Feature | Status | Notes |
 |---|---|---|
 | Hardened descriptor and EngineData parsers | ✅ | Bounded, null-prototype; ADR-0017 |
-| Import: adjustment layers (9 kinds) | ✅ | Vibrance, Color Balance, Photo Filter, Channel Mixer, Selective Color, Gradient Map, Color Lookup 📋 |
-| Import: layer styles → drop shadow, outer glow, stroke, colour overlay | ✅ | Bevel, inner shadow, satin, gradient/pattern overlay 📋 (kept in pixels) |
+| Import: adjustment layers (9 kinds) | ✅ | Vibrance, Color Balance, Photo Filter, Channel Mixer, Gradient Map ✅ (9h); Selective Color, Color Lookup 📋 |
+| Import: layer styles → drop shadow, outer glow, stroke, colour overlay | ✅ | Bevel, inner shadow, gradient overlay ✅ (9h); satin, pattern overlay 📋 (kept in pixels) |
 | Import: vector masks, shape layers (fill + stroke), solid fills | ✅ | Inverted vector masks lose inversion |
 | Import: editable text (first style run, mapped fonts) | ✅ | Mixed styles, warps, paragraph boxes simplified |
 | Import: smart objects with embedded PNG/JPEG/WebP/GIF/PSD | ✅ | Warped, perspective, smart-filtered and linked ones open as pixels |
@@ -240,6 +240,16 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 | PSD export of Vibrance, Color Balance, Channel Mixer | ✅ | Photo Filter, Gradient Map flattened; Photoshop check pending |
 | Selective Color, Color Lookup; inner glow, satin, pattern overlay | 📋 | |
 
+## Launch readiness (2026-10)
+
+| Check | Status | Notes |
+|---|---|---|
+| Accessibility audit (in-house, WCAG 2.1 AA subset) on every site page and the editor's main states | ✅ | `e2e/a11y.ts`, runs in CI; manual checks listed in the report |
+| Keyboard walkthrough (menus, dialogs, layers, properties) | ✅ | `e2e/keyboard.spec.ts` |
+| Site audit: metadata, canonical, Open Graph, JSON-LD, links, drafts, lab Web Vitals | ✅ | `e2e/site-audit.spec.ts` |
+| Large-document profile incl. 9-series features | ✅ | Two deferred items in the report |
+| Security hardening review | ✅ | HSTS; crash-time save; storage-full test |
+
 ## Later gates (summary)
 
 | Area | Status |
@@ -253,6 +263,7 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 - Scaling a shape also scales its stroke width.
 - Text is point text (manual line breaks, no wrapping). Fonts are limited to common system fonts.
 - Masks follow moves but not scale/rotate of their layer.
-- Exporting, the magic wand and Color Range still draw the full-resolution image on the main thread, so very large documents with adjustment layers can pause for under a second.
+- Exporting, the magic wand and Color Range still draw the full-resolution image on the main thread, so very large documents with several adjustment layers can pause for a few seconds while exporting.
+- Starting a retouching stroke on a very large layer (20+ MP) takes a noticeable moment while the layer is read.
 - Fill, gradient and the paint bucket edit inside a pixel layer's own box; they do not grow the layer.
 - Documents are capped at 12,000 px per side and 36 MP (full-resolution export and pixel tools still need one canvas of the whole image).

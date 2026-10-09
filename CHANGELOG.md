@@ -3,6 +3,21 @@
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.15.1] — 2026-10-09
+
+### Fixed
+
+- Text on blue buttons, pressed buttons and highlighted menu items now has enough contrast to
+  read comfortably (WCAG AA).
+- The History, Swatches and Actions tabs are announced correctly by screen readers.
+- Several page titles and descriptions were too long for search results.
+
+### Changed
+
+- If the editor ever crashes, it now saves your open documents before showing the error.
+- The site asks browsers to always use HTTPS.
+- Automated accessibility, keyboard and site checks run with every change.
+
 ## [0.15.0] — 2026-10-09
 
 ### Added

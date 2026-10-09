@@ -153,6 +153,54 @@ await page.mouse.click(cx - 300, cy - 200);
 await frame();
 await stats("magic wand click", t);
 await page.keyboard.press(`${mod}+d`);
+// Post-9b workload (launch-readiness pass): 9h styles and adjustments, retouching,
+// multi-layer and smart object transforms.
+await page.keyboard.press("v");
+await page.getByRole("button", { name: "Rectangle 2", exact: true }).click();
+for (const name of ["Inner shadow", "Bevel", "Gradient overlay"]) {
+  await page.getByRole("checkbox", { name }).check();
+}
+await frame();
+for (const item of ["Gradient Map…", "Channel Mixer…"]) {
+  await page.getByRole("menuitem", { name: "Adjustments" }).click();
+  t = Date.now();
+  await reset();
+  await page.getByRole("menuitem", { name: item }).click();
+  await frame();
+  await stats(`add ${item.replace("…", "")}`, t);
+}
+await page.getByRole("button", { name: "big", exact: true }).click();
+await page.keyboard.press("j");
+await page.keyboard.down("Alt");
+await page.mouse.click(cx - 250, cy - 150);
+await page.keyboard.up("Alt");
+t = Date.now();
+await reset();
+await dragPath(40, 300, 100);
+await stats("healing stroke (40 moves)", t);
+await page.keyboard.press("v");
+await page.getByRole("button", { name: "Rectangle 1", exact: true }).click();
+await page.getByRole("button", { name: "Rectangle 2", exact: true }).click({ modifiers: [mod] });
+t = Date.now();
+await reset();
+await page.mouse.move(cx + 175, cy + 100);
+await page.mouse.down();
+for (let i = 1; i <= 30; i++) await page.mouse.move(cx + 175 + i * 4, cy + 100 + i * 2);
+await page.mouse.up();
+await frame();
+await stats("multi-layer drag (30 moves)", t);
+await page.getByRole("button", { name: "Rectangle 1", exact: true }).click();
+await page.getByRole("menuitem", { name: "Layer", exact: true }).click();
+await page.getByRole("menuitem", { name: "Convert to Smart Object" }).click();
+await frame();
+t = Date.now();
+await reset();
+await page.mouse.move(cx - 100, cy);
+await page.mouse.down();
+for (let i = 1; i <= 30; i++) await page.mouse.move(cx - 100 + i * 4, cy + i * 2);
+await page.mouse.up();
+await frame();
+await stats("smart object drag (30 moves)", t);
 // Save
 t = Date.now();
 await reset();
