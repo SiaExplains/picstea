@@ -9,6 +9,8 @@ import {
   type GroupBlendMode,
   type SmartFilter,
 } from "@/editor/core/document/types";
+import { selectedLayerIds } from "@/editor/core/editor-store";
+import { ArrangeButtons } from "./ArrangeButtons";
 import { SmartObjectSection } from "./SmartFilterSection";
 import { useActiveSession, useController } from "./editor-context";
 import styles from "./editor.module.css";
@@ -43,6 +45,7 @@ export function PropertiesPanel({
   const session = useActiveSession();
   const doc = session?.document;
   const layer = doc ? activeLayer(doc) : undefined;
+  const selected = selectedLayerIds(session);
 
   return (
     <section
@@ -58,6 +61,20 @@ export function PropertiesPanel({
           <p className={styles.muted}>
             {doc.width} × {doc.height} px · {doc.resolution} ppi
           </p>
+        )}
+        {selected.length > 1 && (
+          <div className={styles.multiSelection} data-testid="multi-selection">
+            <p>
+              <strong>{selected.length} layers selected</strong>
+              <span className={styles.muted}>
+                {" "}
+                · settings below are for {layer?.name ?? "the active layer"}
+              </span>
+            </p>
+            <div className={styles.arrange}>
+              <ArrangeButtons count={selected.length} />
+            </div>
+          </div>
         )}
         {layer && (
           <fieldset disabled={layer.locked} style={{ border: 0, margin: 0, padding: 0 }}>

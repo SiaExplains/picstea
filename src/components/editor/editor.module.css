@@ -620,6 +620,31 @@
   border-color: var(--ed-accent);
 }
 
+.multiSelection {
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--ed-border);
+}
+
+.multiSelection p {
+  margin: 0 0 8px;
+}
+
+.arrange {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.arrange .segmented {
+  flex-wrap: wrap;
+}
+
+.layerRowSelected {
+  background: color-mix(in srgb, var(--ed-accent-soft) 55%, transparent);
+  border-color: color-mix(in srgb, var(--ed-accent) 55%, transparent);
+}
+
 .layerHidden .layerName {
   opacity: 0.5;
 }
@@ -1044,7 +1069,8 @@
 
 .panelScroll {
   flex: 0 1 auto;
-  max-height: 58%;
+  /* Leave room for the tabbed panel and a usable layers list on short windows. */
+  max-height: 42%;
   overflow-y: auto;
 }
 
@@ -1268,8 +1294,9 @@
 /* ---------- History · Swatches · Actions (Gate 9e) ---------- */
 
 .tabbedPanel {
-  flex: 0 0 auto;
-  height: 210px;
+  flex: 0 1 auto;
+  height: 180px;
+  min-height: 90px;
 }
 
 .panelTabs {

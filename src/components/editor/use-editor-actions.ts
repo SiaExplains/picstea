@@ -4,7 +4,9 @@ import { useMemo, useSyncExternalStore } from "react";
 import { FILTERS, type FilterId } from "@/editor/filters/registry";
 import type { AlignEdge } from "@/editor/core/geometry/snapping";
 import { ALIGN_LABELS } from "@/editor/controller/editor-controller";
-import { deleteLayer, shiftLayer } from "@/editor/core/commands";
+import { shiftLayer } from "@/editor/core/commands";
+import { selectedLayerIds } from "@/editor/core/editor-store";
+import { DISTRIBUTE_LABELS, type DistributeMode } from "@/editor/core/geometry/multi-transform";
 import { ADJUSTMENTS } from "@/editor/adjustments/registry";
 import { activeLayer } from "@/editor/core/document/queries";
 import { flattenTopFirst, locateLayer } from "@/editor/core/document/tree";
@@ -24,6 +26,8 @@ export type UiActionId =
   | `adjust.${AdjustmentType}`
   | `filter.${FilterId}`
   | `align.${AlignEdge}`
+  | `distribute.${DistributeMode}`
+  | "select.deselectLayers"
   | "view.lockGuides"
   | "view.newGuide"
   | "view.clearGuides"
@@ -129,7 +133,13 @@ export function useEditorActions(hosts: ActionHosts): Record<UiActionId, UiActio
     const history = session?.history;
     const undoLabel = history?.past.at(-1)?.label;
     const redoLabel = history?.future[0]?.label;
-    const canTransform = !!layer && isTransformable(layer) && !layer.locked;
+    const selectedCount = selectedLayerIds(session).length;
+    const multiSelected = selectedCount > 1;
+    // Several layers, or a group, flip together about their shared centre.
+    const canTransform =
+      !!layer &&
+      (isTransformable(layer) || multiSelected || layer.kind === "group") &&
+      !layer.locked;
     const selection = doc?.selection;
     const hasSelection = !!selection;
     const hasWorkPath = !!doc?.workPath;
@@ -275,12 +285,10 @@ export function useEditorActions(hosts: ActionHosts): Record<UiActionId, UiActio
       },
       // With a selection, Delete/Backspace clears the selected pixels instead of the layer.
       "layer.delete": {
-        label: "Delete Layer",
+        label: multiSelected ? "Delete Layers" : "Delete Layer",
         enabled: !!activeId,
         run: () =>
-          hasSelection
-            ? void controller.clearSelection()
-            : activeId && controller.execute(deleteLayer(activeId)),
+          hasSelection ? void controller.clearSelection() : controller.deleteSelectedLayers(),
       },
       "layer.moveUp": {
         label: "Bring Forward",
@@ -293,8 +301,18 @@ export function useEditorActions(hosts: ActionHosts): Record<UiActionId, UiActio
         run: () => doc && activeId && controller.execute(shiftLayer(doc, activeId, -1)),
       },
       "layer.newGroup": { label: "New Group", enabled: hasDoc, run: () => controller.addGroup() },
+      "select.allLayers": {
+        label: "All Layers",
+        enabled: hasDoc,
+        run: () => controller.store.selectAllLayers(),
+      },
+      "select.deselectLayers": {
+        label: "Deselect Layers",
+        enabled: multiSelected,
+        run: () => activeId && controller.store.selectLayer(activeId),
+      },
       "layer.group": {
-        label: "Group Layer",
+        label: multiSelected ? "Group Layers" : "Group Layer",
         enabled: !!layer,
         run: () => controller.groupActiveLayer(),
       },
@@ -465,6 +483,16 @@ export function useEditorActions(hosts: ActionHosts): Record<UiActionId, UiActio
           },
         ]),
       ) as Record<`align.${AlignEdge}`, UiAction>),
+      ...(Object.fromEntries(
+        (Object.keys(DISTRIBUTE_LABELS) as DistributeMode[]).map((mode) => [
+          `distribute.${mode}`,
+          {
+            label: DISTRIBUTE_LABELS[mode],
+            enabled: selectedCount >= 3,
+            run: () => controller.distributeSelectedLayers(mode),
+          },
+        ]),
+      ) as Record<`distribute.${DistributeMode}`, UiAction>),
       ...(Object.fromEntries(
         FILTERS.map((f) => [
           `filter.${f.id}`,

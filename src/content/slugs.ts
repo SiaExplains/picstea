@@ -29,4 +29,5 @@ export const POST_SLUGS: Readonly<Record<string, "draft" | "published">> = {
   "open-psd-files-with-editable-text-and-adjustments": "draft",
   "record-actions-and-batch-process-images": "draft",
   "remove-blemishes-and-retouch-photos-in-your-browser": "draft",
+  "select-align-and-distribute-several-layers": "draft",
 };

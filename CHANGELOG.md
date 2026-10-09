@@ -3,6 +3,23 @@
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.14.0] — 2026-10-09
+
+### Added
+
+- **Select several layers**: Cmd/Ctrl-click and Shift-click in the Layers panel, Select → All
+  Layers (Cmd/Ctrl+Alt+A), or Shift-click on the canvas with the Move tool.
+- Selected layers **move, scale, rotate, flip, group, duplicate and delete together**, each as one
+  undo step.
+- **Groups can now be scaled and rotated** with the Move tool.
+- **Layer → Distribute**: horizontal or vertical centres, or equal spacing. **Align** now lines up
+  several layers with each other.
+- Align and distribute buttons in the Move tool's options bar and the Properties panel.
+
+### Changed
+
+- The Layers panel keeps more room on short windows.
+
 ## [0.13.0] — 2026-10-09
 
 ### Added

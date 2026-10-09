@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, type DragEvent, type KeyboardEvent } from "react";
+import { useRef, useState, type DragEvent, type KeyboardEvent, type MouseEvent } from "react";
+import { selectedLayerIds } from "@/editor/core/editor-store";
 import {
   moveLayerRelative,
   renameLayer,
@@ -87,6 +88,8 @@ interface RowProps {
   depth: number;
   clipBase: boolean;
   active: boolean;
+  /** Selected together with the active layer (ADR-0020). */
+  selected: boolean;
   dimmed: boolean;
   drop: DropPosition | null;
   onDragOverRow: (event: DragEvent<HTMLLIElement>, layer: Layer) => void;
@@ -98,6 +101,7 @@ function LayerRow({
   depth,
   clipBase,
   active,
+  selected,
   dimmed,
   drop,
   onDragOverRow,
@@ -107,6 +111,15 @@ function LayerRow({
   const editTarget = useEditorState((s) => s.editTarget);
   const [editing, setEditing] = useState(false);
   const maskTargeted = active && editTarget === "mask" && !!layer.mask;
+
+  const pointerFocus = useRef(false);
+
+  /** Click selects; Cmd/Ctrl-click adds or removes; Shift-click selects a range. */
+  const selectRow = (event: MouseEvent | KeyboardEvent) => {
+    if (event.shiftKey) controller.store.selectLayerRange(layer.id);
+    else if (event.metaKey || event.ctrlKey) controller.store.toggleLayerSelected(layer.id);
+    else controller.store.selectLayer(layer.id);
+  };
 
   const commitRename = (value: string) => {
     setEditing(false);
@@ -121,7 +134,7 @@ function LayerRow({
 
   const classes = [
     styles.layerRow,
-    active ? styles.layerRowActive : "",
+    active ? styles.layerRowActive : selected ? styles.layerRowSelected : "",
     dimmed ? styles.layerHidden : "",
     drop === "above" ? styles.dropAbove : "",
     drop === "below" ? styles.dropBelow : "",
@@ -135,6 +148,7 @@ function LayerRow({
       data-layer-name={layer.name}
       data-depth={depth}
       data-clipped={layer.clipped ? "true" : undefined}
+      data-selected={selected || active ? "true" : undefined}
       draggable={!editing}
       onDragStart={(e) => {
         e.dataTransfer.setData(DRAG_TYPE, layer.id);
@@ -142,7 +156,7 @@ function LayerRow({
       }}
       onDragOver={(e) => onDragOverRow(e, layer)}
       onDrop={(e) => onDropRow(e, layer)}
-      onClick={() => controller.store.selectLayer(layer.id)}
+      onClick={(e) => selectRow(e)}
       style={{ paddingLeft: 4 + depth * 14 + (layer.clipped ? 14 : 0) }}
     >
       <button
@@ -192,7 +206,7 @@ function LayerRow({
         }}
         onClick={(e) => {
           e.stopPropagation();
-          controller.store.selectLayer(layer.id);
+          selectRow(e);
           controller.store.setEditTarget("content");
         }}
       >
@@ -280,10 +294,24 @@ function LayerRow({
             if (e.key === "F2") setEditing(true);
             if (e.key === "Enter" || e.key === " ") {
               e.preventDefault();
-              controller.store.selectLayer(layer.id);
+              selectRow(e);
             }
           }}
-          onFocus={() => controller.store.selectLayer(layer.id)}
+          // Pointer clicks select through the row (with Cmd/Ctrl/Shift); focus selects only when
+          // it comes from the keyboard, so a modified click isn't undone by the focus first.
+          onPointerDown={() => {
+            pointerFocus.current = true;
+          }}
+          onPointerUp={() => {
+            pointerFocus.current = false;
+          }}
+          onBlur={() => {
+            pointerFocus.current = false;
+          }}
+          onFocus={() => {
+            if (!pointerFocus.current) controller.store.selectLayer(layer.id);
+            pointerFocus.current = false;
+          }}
         >
           <span className={clipBase ? styles.clipBase : undefined}>{layer.name}</span>
           {layer.clipped && <span className={styles.srOnly}> (clipped)</span>}
@@ -324,6 +352,8 @@ export function LayersPanel({ actions }: { actions: Record<UiActionId, UiAction>
   const session = useActiveSession();
   const doc = session?.document;
   const rows = doc ? flattenTopFirst(doc.layers) : [];
+  const selectedIds = selectedLayerIds(session);
+  const selected = new Set(selectedIds.length > 1 ? selectedIds : []);
   const [drop, setDrop] = useState<{ id: string; position: DropPosition } | null>(null);
 
   const toolbarButton = (id: UiActionId, icon: React.ReactNode) => (
@@ -367,8 +397,14 @@ export function LayersPanel({ actions }: { actions: Record<UiActionId, UiAction>
       )}
       {!doc && <p className={`${styles.panelBody} ${styles.muted}`}>No document open.</p>}
       <p id="layer-rename-hint" className={styles.srOnly}>
-        Double-click or press F2 to rename. Drag to reorder or to move into a group.
+        Double-click or press F2 to rename. Drag to reorder or to move into a group. Cmd or
+        Ctrl-click adds a layer to the selection; Shift-click selects a range.
       </p>
+      {selected.size > 1 && (
+        <p className={styles.srOnly} role="status">
+          {selected.size} layers selected
+        </p>
+      )}
       <ul className={styles.layerList} aria-label="Layers" onDragEnd={() => setDrop(null)}>
         {rows.map(({ layer, depth, effectivelyVisible }, i) => (
           <LayerRow
@@ -380,6 +416,7 @@ export function LayersPanel({ actions }: { actions: Record<UiActionId, UiAction>
               !layer.clipped && rows[i - 1]?.depth === depth && !!rows[i - 1]?.layer.clipped
             }
             active={layer.id === doc?.activeLayerId}
+            selected={selected.has(layer.id)}
             dimmed={!effectivelyVisible}
             drop={drop?.id === layer.id ? drop.position : null}
             onDragOverRow={onDragOverRow}

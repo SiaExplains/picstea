@@ -13,8 +13,13 @@ import {
   setSelection,
   type SelectionModification,
   deleteLayer,
+  deleteLayers,
   deleteLayerMask,
   duplicateLayer,
+  duplicateLayers,
+  groupLayers,
+  transformLayers,
+  translateLayersEach,
   groupLayer,
   nextGroupName,
   setLayerTransform,
@@ -39,7 +44,7 @@ import { compositeDocument, type CompositeContext } from "../rendering/compositi
 import { checkDimensions } from "../core/document/limits";
 import { pathToSelection, selectionToPath } from "../core/path/trace";
 import type { VectorPath } from "../core/path/path";
-import { findLayerDeep, locateLayer } from "../core/document/tree";
+import { findLayerDeep, locateLayer, topLevelSelection } from "../core/document/tree";
 import { pathTargets } from "../tools/pen/path-targets";
 import { ALIGN_LABELS, alignDelta, type AlignEdge } from "../core/geometry/snapping";
 import {
@@ -66,7 +71,16 @@ import type {
   SmartObjectLayer,
   ToneChannel,
 } from "../core/document/types";
-import { EditorStore, isDirty, type DocumentSession } from "../core/editor-store";
+import { EditorStore, isDirty, selectedLayerIds, type DocumentSession } from "../core/editor-store";
+import {
+  applyFrameChange,
+  distributeDeltas,
+  flipMatrix,
+  targetsBounds,
+  transformTargets,
+  DISTRIBUTE_LABELS,
+  type DistributeMode,
+} from "../core/geometry/multi-transform";
 import {
   createDocument,
   createFillLayer,
@@ -426,12 +440,25 @@ export class EditorController {
     this.execute(addLayer(createGroup(nextGroupName(session.document)), "New Group"));
   }
 
-  /** Put the active layer into a new group (Mod+G). */
+  /** The selected layers of the active document (ADR-0020), the active layer included. */
+  selectedLayers(): readonly string[] {
+    return selectedLayerIds(this.store.getSession());
+  }
+
+  /** Put the selected layers into a new group (Mod+G). */
   groupActiveLayer(): void {
     const session = this.store.getSession();
-    const layer = session ? activeLayer(session.document) : undefined;
-    if (!session || !layer) return;
-    this.execute(groupLayer(layer.id, createGroup(nextGroupName(session.document))));
+    const ids = this.selectedLayers();
+    if (!session || ids.length === 0) return;
+    const group = createGroup(nextGroupName(session.document));
+    this.execute(ids.length > 1 ? groupLayers(ids, group) : groupLayer(ids[0], group));
+  }
+
+  /** Delete the selected layers (Layer → Delete Layer). */
+  deleteSelectedLayers(): void {
+    const ids = this.selectedLayers();
+    if (ids.length === 0) return;
+    this.execute(ids.length > 1 ? deleteLayers(ids) : deleteLayer(ids[0]));
   }
 
   /** Dissolve the active group (Mod+Shift+G). */
@@ -1009,8 +1036,41 @@ export class EditorController {
    */
   alignActiveLayer(edge: AlignEdge): void {
     const doc = this.store.getSession()?.document;
-    const layer = doc ? activeLayer(doc) : undefined;
-    if (!doc || !layer) return;
+    const active = doc ? activeLayer(doc) : undefined;
+    if (!doc || !active) return;
+    const ids = topLevelSelection(doc.layers, this.selectedLayers()).filter((id) => {
+      const l = findLayerDeep(doc.layers, id);
+      return !!l && isMovable(l);
+    });
+    // A group selected with its own child: the group is what lines up.
+    const layer = ids.length === 1 ? findLayerDeep(doc.layers, ids[0])! : active;
+    if (ids.length > 1) {
+      // Several layers line up with the pixel selection, or with each other (their bounds).
+      const boxes = ids.map((id) =>
+        boundsOf(layerCorners(findLayerDeep(doc.layers, id)!, doc, this.sizer)),
+      );
+      const target =
+        doc.selection?.bounds ??
+        boundsOf(
+          boxes.flatMap((b) => [
+            { x: b.x, y: b.y },
+            { x: b.x + b.width, y: b.y + b.height },
+          ]),
+        );
+      const round = (v: number) => Math.round(v * 1000) / 1000;
+      this.recordIfOk({ type: "align", edge }, () =>
+        this.execute(
+          translateLayersEach(
+            ids.map((layerId, i) => {
+              const d = alignDelta(boxes[i], target, edge);
+              return { layerId, dx: round(d.x), dy: round(d.y) };
+            }),
+            ALIGN_LABELS[edge],
+          ),
+        ),
+      );
+      return;
+    }
     if (!isMovable(layer)) {
       this.notify("error", "This layer covers the whole canvas and cannot be aligned.");
       return;
@@ -1022,6 +1082,37 @@ export class EditorController {
     this.recordIfOk({ type: "align", edge }, () =>
       this.execute(
         translateLayer(layer.id, round(delta.x), round(delta.y), { label: ALIGN_LABELS[edge] }),
+      ),
+    );
+  }
+
+  /** Layer → Distribute: spread three or more selected layers evenly. */
+  distributeSelectedLayers(mode: DistributeMode): void {
+    const doc = this.store.getSession()?.document;
+    if (!doc) return;
+    const ids = topLevelSelection(doc.layers, this.selectedLayers()).filter((id) => {
+      const l = findLayerDeep(doc.layers, id);
+      return !!l && isMovable(l);
+    });
+    if (ids.length < 3) {
+      this.notify("error", "Select at least three layers to distribute them.");
+      return;
+    }
+    const boxes = ids.map((id) =>
+      boundsOf(layerCorners(findLayerDeep(doc.layers, id)!, doc, this.sizer)),
+    );
+    const deltas = distributeDeltas(boxes, mode);
+    const round = (v: number) => Math.round(v * 1000) / 1000;
+    this.recordIfOk({ type: "distribute", mode }, () =>
+      this.execute(
+        translateLayersEach(
+          ids.map((layerId, i) => ({
+            layerId,
+            dx: round(deltas[i].x),
+            dy: round(deltas[i].y),
+          })),
+          DISTRIBUTE_LABELS[mode],
+        ),
       ),
     );
   }
@@ -1357,6 +1448,24 @@ export class EditorController {
     const session = this.store.getSession();
     const layer = session ? activeLayer(session.document) : undefined;
     if (!session || !layer) return;
+    const label = axis === "horizontal" ? "Flip Horizontal" : "Flip Vertical";
+    const ids = this.selectedLayers();
+    if (ids.length > 1 || layer.kind === "group") {
+      // Several layers (or a group) mirror together about the centre of their bounds.
+      const targets = transformTargets(session.document, ids, this.sizer);
+      const bounds = targetsBounds(targets);
+      if (!bounds) {
+        this.notify("error", "Nothing in the selection can be flipped.");
+        return;
+      }
+      const centre = { x: bounds.x + bounds.width / 2, y: bounds.y + bounds.height / 2 };
+      this.recordIfOk({ type: "flip", axis }, () =>
+        this.execute(
+          transformLayers(applyFrameChange(targets, flipMatrix(centre, axis)), { label }),
+        ),
+      );
+      return;
+    }
     if (!isTransformable(layer)) {
       this.notify("error", "Fill layers cannot be flipped.");
       return;
@@ -1375,8 +1484,25 @@ export class EditorController {
   duplicateActiveLayer(): void {
     const session = this.store.getSession();
     const layer = session ? activeLayer(session.document) : undefined;
-    if (!layer) {
+    if (!session || !layer) {
       if (this.playing.get()) this.notify("error", "Select a layer first.");
+      return;
+    }
+    const ids = topLevelSelection(session.document.layers, this.selectedLayers());
+    // A group selected with its own child: the group is what's duplicated (as Move would).
+    if (ids.length === 1 && ids[0] !== layer.id) {
+      this.recordIfOk({ type: "duplicateLayer" }, () =>
+        this.execute(duplicateLayer(ids[0], createId("layer"))),
+      );
+      return;
+    }
+    if (ids.length > 1) {
+      const copies = ids.map(() => createId("layer"));
+      this.recordIfOk({ type: "duplicateLayer" }, () => {
+        if (this.execute(duplicateLayers(ids, copies))) {
+          this.store.setLayerSelection(copies, copies.at(-1)!);
+        }
+      });
       return;
     }
     this.recordIfOk({ type: "duplicateLayer" }, () =>
@@ -2060,6 +2186,9 @@ export class EditorController {
         return;
       case "align":
         this.alignActiveLayer(step.edge);
+        return;
+      case "distribute":
+        this.distributeSelectedLayers(step.mode);
         return;
       case "select":
         if (step.op === "all") this.selectAll();

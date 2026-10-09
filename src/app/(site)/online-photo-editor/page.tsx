@@ -62,6 +62,7 @@ export default function OnlinePhotoEditor() {
       <h2>What you can do</h2>
       <ul>
         <li>Layers with 16 blend modes, opacity, groups and layer masks.</li>
+        <li>Select several layers to move, scale, rotate, align and distribute them together.</li>
         <li>
           Adjustment layers — including Levels and Curves — that never change the original pixels.
         </li>

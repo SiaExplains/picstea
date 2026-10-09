@@ -19,7 +19,7 @@ import {
 } from "./tool-settings";
 import { DEFAULT_VIEWPORT, type Viewport } from "./viewport/viewport";
 import { collapseSince, dropOldest, jumpTo } from "./history/history";
-import { findLayerDeep } from "./document/tree";
+import { findLayerDeep, flattenTopFirst } from "./document/tree";
 import { setGroupExpanded } from "./commands/group-commands";
 
 export type { ToolId } from "./tool-settings";
@@ -35,6 +35,11 @@ export interface DocumentSession {
   readonly revision: number;
   /** Revision last written to local storage; null if never saved. */
   readonly savedRevision: number | null;
+  /**
+   * Layers selected together with the active layer (ADR-0020). UI state: not saved, not in
+   * history. Read it through `selectedLayerIds()`, which drops stale entries.
+   */
+  readonly selectedLayerIds: readonly string[];
 }
 
 export interface EditorState {
@@ -55,6 +60,21 @@ export type DispatchResult = { ok: true; changed: boolean } | { ok: false; error
 export type Listener = () => void;
 
 export const isDirty = (session: DocumentSession) => session.revision !== session.savedRevision;
+
+/**
+ * The selected layers: existing ids that include the active layer. If the active layer changed
+ * since the selection was made (a command, undo, a click elsewhere), the selection is just the
+ * active layer — so commands never have to maintain it.
+ */
+export function selectedLayerIds(session: DocumentSession | undefined): readonly string[] {
+  const doc = session?.document;
+  const active = doc?.activeLayerId;
+  if (!doc || !active || !findLayerDeep(doc.layers, active)) return [];
+  const ids = session.selectedLayerIds;
+  if (ids.length <= 1 || !ids.includes(active)) return [active];
+  const existing = ids.filter((id) => findLayerDeep(doc.layers, id));
+  return existing.length > 0 ? existing : [active];
+}
 
 /**
  * The single source of truth for editor state (docs/01_PRODUCT_PRINCIPLES.md §3).
@@ -98,6 +118,7 @@ export class EditorStore {
       viewportInitialized: false,
       revision: 0,
       savedRevision: options.saved ? 0 : null,
+      selectedLayerIds: [],
     };
     this.setState({
       ...this.state,
@@ -254,11 +275,85 @@ export class EditorStore {
    */
   selectLayer(layerId: string, documentId = this.state.activeDocumentId): void {
     const session = this.getSession(documentId);
-    if (!session || session.document.activeLayerId === layerId) return;
-    if (!findLayerDeep(session.document.layers, layerId)) return;
+    if (!session || !findLayerDeep(session.document.layers, layerId)) return;
+    if (session.document.activeLayerId === layerId && session.selectedLayerIds.length <= 1) return;
     this.state = { ...this.state, editTarget: "content" };
     this.updateSession(session.document.id, {
       document: { ...session.document, activeLayerId: layerId },
+      selectedLayerIds: [layerId],
+    });
+  }
+
+  /**
+   * Cmd/Ctrl-click: add a layer to the selection (it becomes active) or remove it (the most
+   * recently added remaining layer becomes active).
+   */
+  toggleLayerSelected(layerId: string, documentId = this.state.activeDocumentId): void {
+    const session = this.getSession(documentId);
+    if (!session || !findLayerDeep(session.document.layers, layerId)) return;
+    const current = selectedLayerIds(session);
+    let ids: readonly string[];
+    let active: string;
+    if (current.includes(layerId)) {
+      if (current.length === 1) return;
+      ids = current.filter((id) => id !== layerId);
+      active =
+        session.document.activeLayerId === layerId ? ids.at(-1)! : session.document.activeLayerId!;
+    } else {
+      ids = [...current, layerId];
+      active = layerId;
+    }
+    this.state = { ...this.state, editTarget: "content" };
+    this.updateSession(session.document.id, {
+      document: { ...session.document, activeLayerId: active },
+      selectedLayerIds: ids,
+    });
+  }
+
+  /** Shift-click: select every layer between the active one and `layerId`, as listed in the panel. */
+  selectLayerRange(layerId: string, documentId = this.state.activeDocumentId): void {
+    const session = this.getSession(documentId);
+    const anchor = session?.document.activeLayerId;
+    if (!session || !anchor || !findLayerDeep(session.document.layers, layerId)) return;
+    const order = flattenTopFirst(session.document.layers, { includeCollapsed: true }).map(
+      (row) => row.layer.id,
+    );
+    const a = order.indexOf(anchor);
+    const b = order.indexOf(layerId);
+    if (a < 0 || b < 0) return;
+    const range = order.slice(Math.min(a, b), Math.max(a, b) + 1);
+    // Keep the anchor last so it stays the active layer.
+    this.updateSession(session.document.id, {
+      selectedLayerIds: [...range.filter((id) => id !== anchor), anchor],
+    });
+  }
+
+  /** Select → All Layers: every top-level layer (groups bring their contents). */
+  selectAllLayers(documentId = this.state.activeDocumentId): void {
+    const session = this.getSession(documentId);
+    if (!session || session.document.layers.length === 0) return;
+    const ids = session.document.layers.map((l) => l.id);
+    const active = ids.includes(session.document.activeLayerId ?? "")
+      ? session.document.activeLayerId!
+      : ids.at(-1)!;
+    this.updateSession(session.document.id, {
+      document: { ...session.document, activeLayerId: active },
+      selectedLayerIds: [...ids.filter((id) => id !== active), active],
+    });
+  }
+
+  /** Make the given layers the selection, `active` among them (after duplicating several). */
+  setLayerSelection(
+    ids: readonly string[],
+    active: string,
+    documentId = this.state.activeDocumentId,
+  ): void {
+    const session = this.getSession(documentId);
+    if (!session || !ids.includes(active) || !findLayerDeep(session.document.layers, active))
+      return;
+    this.updateSession(session.document.id, {
+      document: { ...session.document, activeLayerId: active },
+      selectedLayerIds: ids,
     });
   }
 
