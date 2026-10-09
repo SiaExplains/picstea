@@ -132,12 +132,13 @@ test("a clipping mask limits a layer to the one below; survives reload; release 
     .getByRole("button", { name: /^Clipping/ })
     .click();
   await page.getByRole("button", { name: "100%" }).click();
-  expect(isDark(await pixel(page, 200, 200))).toBe(true);
+  // Images of a reopened project decode asynchronously.
+  await expect.poll(async () => isDark(await pixel(page, 200, 200))).toBe(true);
   expect(isWhite(await pixel(page, 50, 50))).toBe(true);
 
   await page.getByRole("button", { name: "Layer 1", exact: true }).click();
   await menu(page, "Layer", "Release Clipping Mask");
-  expect(isDark(await pixel(page, 50, 50))).toBe(true);
+  await expect.poll(async () => isDark(await pixel(page, 50, 50))).toBe(true);
   expect(errors).toEqual([]);
 });
 

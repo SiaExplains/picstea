@@ -1,7 +1,7 @@
 import { FormatError } from "../binary/bytes";
 import { cropToContent } from "../crop";
 import type { RgbaPixels } from "../../selection/flood";
-import type { PsdFile, PsdMask, PsdNode } from "./psd-model";
+import type { PsdBlock, PsdFile, PsdMask, PsdNode } from "./psd-model";
 
 /**
  * A PSD export whose pixels are still ImageBitmaps rendered on the main thread (ADR-0012). The
@@ -21,6 +21,8 @@ interface DraftBase {
   readonly blendKey: string;
   readonly mask?: DraftMask;
   readonly clipping?: boolean;
+  /** Photoshop tagged blocks written as they are (adjustment and vector mask data). */
+  readonly blocks?: readonly PsdBlock[];
 }
 
 export type DraftNode =
@@ -102,8 +104,10 @@ export function resolveDraft(draft: PsdDraft): PsdFile {
       if (node.kind === "group") {
         return { ...base, kind: "group", open: node.open, children: convert(node.children) };
       }
+      const blocks = node.blocks?.length ? { blocks: node.blocks } : {};
       const empty = {
         ...base,
+        ...blocks,
         kind: "pixels" as const,
         rect: { top: 0, left: 0, bottom: 0, right: 0 },
         rgba: null,
@@ -116,6 +120,7 @@ export function resolveDraft(draft: PsdDraft): PsdFile {
       const top = node.region.y + cropped.y;
       return {
         ...base,
+        ...blocks,
         kind: "pixels",
         rect: { top, left, bottom: top + cropped.height, right: left + cropped.width },
         rgba: cropped.rgba,

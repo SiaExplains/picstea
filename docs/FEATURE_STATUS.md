@@ -1,6 +1,6 @@
 # Feature status
 
-Last updated: 2026-10-09 · version 0.10.0 · current gate: **9c (Professional Parity: smart objects & smart filters) — awaiting review**
+Last updated: 2026-10-09 · version 0.11.0 · current gate: **9d (Professional Parity: advanced PSD) — awaiting review**
 
 Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ deferred
 
@@ -95,7 +95,7 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 |---|---|---|
 | Open PNG, JPEG, WebP, GIF (first frame) | ✅ | Sniffed by content, header-validated |
 | `.mylper` project files (save / open) | ✅ | ZIP + versioned JSON; same validator as local storage |
-| PSD import: 8-bit RGB/greyscale, layers, groups, names, opacity, visibility, blend modes, masks | ✅ | Text/smart objects as pixels; adjustments, styles, vector masks not imported; clipping ✅ (9b) |
+| PSD import: 8-bit RGB/greyscale, layers, groups, names, opacity, visibility, blend modes, masks | ✅ | Text, adjustments, styles, vector masks, shapes, smart objects ✅ (9d); clipping ✅ (9b) |
 | PSD export: layers, groups, names, opacity, visibility, blend modes, masks, composite | ✅ | Shapes/text rasterised; effects merged; adjustments in composite only |
 | SVG export (vector shapes/text, images for the rest) | ✅ | Flattened when adjustment layers are present |
 | SVG import (rasterised safely via `<img>`) | ✅ | |
@@ -140,8 +140,8 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 |---|---|---|
 | 9a | Rulers, guides, grid, snapping, align; filters; Levels and Curves | ✅ |
 | 9b | Pen tool, paths, path ↔ selection, vector masks, clipping masks | ✅ |
-| 9c | Smart objects (embedded documents), smart filters, rasterize, place embedded | 🚧 awaiting review |
-| 9d | Advanced PSD: descriptor parser; text, adjustment layers, effects, vector masks, shapes and smart objects | 📋 |
+| 9c | Smart objects (embedded documents), smart filters, rasterize, place embedded | ✅ |
+| 9d | Advanced PSD: descriptor parser; text, adjustment layers, effects, vector masks, shapes and smart objects | 🚧 awaiting review |
 | 9e | Automation (record/play actions, batch), swatches and colour picker, history panel | 📋 |
 
 ### 9a
@@ -180,7 +180,20 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 | Smart filters (any filter; hide, edit, reorder, delete) | ✅ | Run on the main thread at render scale, cached |
 | Place Embedded (image, SVG, PSD with layers, .mylper) | ✅ | Place keeps creating pixel layers |
 | Rasterize Layer (smart objects, shapes, text) | ✅ | Keeps opacity, blend, masks, effects, clipping |
-| Linked smart objects, PSD smart object import/export | 📋 | PSD part in 9d |
+| Linked smart objects, PSD smart object import/export | 🚧 | PSD import ✅ (9d); linked files and PSD export 📋 |
+
+### 9d
+
+| Feature | Status | Notes |
+|---|---|---|
+| Hardened descriptor and EngineData parsers | ✅ | Bounded, null-prototype; ADR-0017 |
+| Import: adjustment layers (9 kinds) | ✅ | Vibrance, Color Balance, Photo Filter, Channel Mixer, Selective Color, Gradient Map, Color Lookup 📋 |
+| Import: layer styles → drop shadow, outer glow, stroke, colour overlay | ✅ | Bevel, inner shadow, satin, gradient/pattern overlay 📋 (kept in pixels) |
+| Import: vector masks, shape layers (fill + stroke), solid fills | ✅ | Inverted vector masks lose inversion |
+| Import: editable text (first style run, mapped fonts) | ✅ | Mixed styles, warps, paragraph boxes simplified |
+| Import: smart objects with embedded PNG/JPEG/WebP/GIF/PSD | ✅ | Warped, perspective, smart-filtered and linked ones open as pixels |
+| Export: adjustment layers (8 kinds) and vector masks | ✅ | Temperature/Tint, Black & White in the flattened image only |
+| Export: text, shapes, smart objects, effects as editable Photoshop data | 📋 | Rasterised with a notice |
 
 ## Later gates (summary)
 

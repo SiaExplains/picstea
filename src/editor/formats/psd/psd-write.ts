@@ -3,6 +3,7 @@ import { packBits } from "./packbits";
 import {
   rectHeight,
   rectWidth,
+  type PsdBlock,
   type PsdFile,
   type PsdMask,
   type PsdNode,
@@ -78,6 +79,8 @@ interface Record {
   readonly blendKey: string;
   readonly clipping?: boolean;
   readonly channels: readonly Channel[];
+  /** Extra tagged blocks (adjustment data, vector masks). */
+  readonly blocks?: readonly PsdBlock[];
   readonly mask?: PsdMask;
   /** lsct type: 1 open folder, 2 closed folder, 3 bounding divider. */
   readonly section?: { type: number; blendKey?: string };
@@ -163,6 +166,7 @@ function writeRecord(w: ByteWriter, r: Record): void {
   extra.u32(0); // blending ranges
   pascalName(extra, r.name);
   block(extra, "luni", unicodeName(r.name));
+  for (const b of r.blocks ?? []) block(extra, b.key, b.data);
   if (r.section) {
     const s = new ByteWriter();
     s.u32(r.section.type);
@@ -209,6 +213,7 @@ export function writePsd(file: PsdFile): Uint8Array {
   const layerSection = new ByteWriter();
   layerSection.u32(infoBytes.length).bytes(infoBytes);
   layerSection.u32(0); // global layer mask info
+  for (const b of file.globalBlocks ?? []) block(layerSection, b.key, b.data);
   const layerBytes = layerSection.toBytes();
   w.u32(layerBytes.length).bytes(layerBytes);
 

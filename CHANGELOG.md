@@ -3,6 +3,22 @@
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.11.0] — 2026-10-09
+
+### Added
+
+- **Much better PSD import**: Photoshop text opens as editable text; adjustment layers (Levels,
+  Curves, Brightness/Contrast, Hue/Saturation, Exposure, Invert, Posterize, Threshold, Black &
+  White) as adjustment layers; shape and fill layers as shapes and fills; smart objects with
+  embedded images or PSDs as smart objects; vector masks as vector masks; drop shadow, outer
+  glow, stroke and colour overlay styles as effects.
+- **Better PSD export**: adjustment layers and vector masks are now saved as Photoshop
+  adjustment layers and vector masks instead of being flattened.
+
+### Changed
+
+- When a PSD opens, the notice lists exactly which Photoshop features were simplified.
+
 ## [0.10.0] — 2026-10-09
 
 ### Added
