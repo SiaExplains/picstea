@@ -222,3 +222,103 @@ export function copySelectedPixels(
     releaseSurface(full);
   }
 }
+
+/**
+ * A pixel layer's own pixels (layer space, `layer.width × layer.height`), optionally resampled
+ * by `scale` for a quick preview. Null while the layer is still loading.
+ */
+export function readLayerPixels(env: PixelEnv, layer: RasterLayer, scale = 1): RgbaPixels | null {
+  const width = Math.max(1, Math.round(layer.width * scale));
+  const height = Math.max(1, Math.round(layer.height * scale));
+  const surface = env.createSurface(width, height);
+  try {
+    const ctx = context2d(surface, true);
+    if (layer.assetId) {
+      const bitmap = env.assets.getBitmap(layer.assetId);
+      if (!bitmap) return null;
+      ctx.imageSmoothingQuality = "high";
+      ctx.drawImage(bitmap, 0, 0, width, height);
+    }
+    return { width, height, data: ctx.getImageData(0, 0, width, height).data };
+  } finally {
+    releaseSurface(surface);
+  }
+}
+
+/**
+ * How much of each layer pixel the document selection covers (0…255, layer space, resampled by
+ * `scale`), so a filter can be limited to the selection on moved or transformed layers.
+ */
+export function layerSelectionCoverage(
+  env: PixelEnv,
+  layer: RasterLayer,
+  selection: SelectionMask,
+  scale = 1,
+): Uint8Array {
+  const width = Math.max(1, Math.round(layer.width * scale));
+  const height = Math.max(1, Math.round(layer.height * scale));
+  const toLocal = invertMatrix(fromTransform(layer.transform));
+  const coverage = new Uint8Array(width * height);
+  if (!toLocal) return coverage;
+  const surface = env.createSurface(width, height);
+  try {
+    const ctx = context2d(surface, true);
+    ctx.scale(width / layer.width, height / layer.height);
+    ctx.transform(...toLocal);
+    ctx.drawImage(selectionSurface(env, selection), 0, 0);
+    const data = ctx.getImageData(0, 0, width, height).data;
+    for (let i = 0; i < coverage.length; i++) coverage[i] = data[i * 4 + 3];
+    return coverage;
+  } finally {
+    releaseSurface(surface);
+  }
+}
+
+/**
+ * The document as it looks beneath one layer (that layer and everything above it hidden),
+ * reduced to at most `maxPixels` — what an adjustment layer receives, for its histogram.
+ * Null while a bitmap is still decoding.
+ */
+export function readPixelsBelow(
+  env: PixelEnv,
+  doc: EditorDocument,
+  layerId: string,
+  maxPixels = 1_000_000,
+): RgbaPixels | null {
+  const below = (layers: readonly Layer[]): { layers: Layer[]; found: boolean } => {
+    const out: Layer[] = [];
+    for (const layer of layers) {
+      if (layer.id === layerId) return { layers: out, found: true };
+      if (layer.kind === "group") {
+        const inner = below(layer.children);
+        if (inner.found) {
+          out.push({ ...layer, children: inner.layers });
+          return { layers: out, found: true };
+        }
+      }
+      out.push(layer);
+    }
+    return { layers: out, found: false };
+  };
+  const scale = Math.min(1, Math.sqrt(maxPixels / (doc.width * doc.height)));
+  const width = Math.max(1, Math.round(doc.width * scale));
+  const height = Math.max(1, Math.round(doc.height * scale));
+  const surface = env.createSurface(width, height);
+  try {
+    const ctx = context2d(surface, true);
+    const result = compositeDocument(
+      ctx as CompositeContext,
+      { ...doc, layers: below(doc.layers).layers },
+      env.assets,
+      {
+        sizer: env.sizer,
+        createSurface: env.createSurface,
+        space: { x: 0, y: 0, width, height, scale: width / doc.width },
+      },
+    );
+    if (result.pendingAssetIds.length > 0) return null;
+    return { width, height, data: ctx.getImageData(0, 0, width, height).data };
+  } finally {
+    releaseSurface(surface);
+  }
+}

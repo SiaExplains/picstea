@@ -1,6 +1,9 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useSyncExternalStore } from "react";
+import { FILTERS, type FilterId } from "@/editor/filters/registry";
+import type { AlignEdge } from "@/editor/core/geometry/snapping";
+import { ALIGN_LABELS } from "@/editor/controller/editor-controller";
 import { deleteLayer, duplicateLayer, shiftLayer } from "@/editor/core/commands";
 import { ADJUSTMENTS } from "@/editor/adjustments/registry";
 import { activeLayer } from "@/editor/core/document/queries";
@@ -20,6 +23,12 @@ import { saveFile } from "./save-file";
 export type UiActionId =
   | ActionId
   | `adjust.${AdjustmentType}`
+  | `filter.${FilterId}`
+  | `align.${AlignEdge}`
+  | "view.lockGuides"
+  | "view.newGuide"
+  | "view.clearGuides"
+  | "view.gridSettings"
   | "layer.newGroup"
   | "layer.addMask"
   | "layer.deleteMask"
@@ -47,6 +56,8 @@ export interface UiAction {
   readonly label: string;
   readonly enabled: boolean;
   readonly run: () => void;
+  /** For on/off settings (View → Rulers…): shown as a checkable menu item. */
+  readonly checked?: boolean;
 }
 
 export interface ActionHosts {
@@ -55,6 +66,9 @@ export interface ActionHosts {
   openModifySelectionDialog: (kind: SelectionModification) => void;
   openColorRangeDialog: () => void;
   pickImage: (mode: "open" | "place") => void;
+  openFilterDialog: (id: FilterId) => void;
+  openGuideDialog: () => void;
+  openGridDialog: () => void;
 }
 
 /** Download the active document as a portable `.mylper` file (File → Save Project As…). */
@@ -72,6 +86,16 @@ export function useEditorActions(hosts: ActionHosts): Record<UiActionId, UiActio
   const session = useActiveSession();
   const activeTool = useEditorState((s) => s.activeTool);
   const colors = useEditorState((s) => s.colors);
+  const view = useSyncExternalStore(
+    controller.view.subscribe,
+    controller.view.get,
+    controller.view.get,
+  );
+  const lastFilter = useSyncExternalStore(
+    controller.lastFilter.subscribe,
+    controller.lastFilter.get,
+    () => null,
+  );
 
   return useMemo(() => {
     const doc = session?.document;
@@ -314,6 +338,77 @@ export function useEditorActions(hosts: ActionHosts): Record<UiActionId, UiActio
         enabled: hasDoc,
         run: () => controller.actualPixels(),
       },
+      "view.rulers": {
+        label: "Rulers",
+        enabled: true,
+        checked: view.rulers,
+        run: () => controller.setView({ rulers: !view.rulers }),
+      },
+      "view.guides": {
+        label: "Guides",
+        enabled: true,
+        checked: view.guides,
+        run: () => controller.setView({ guides: !view.guides }),
+      },
+      "view.grid": {
+        label: "Grid",
+        enabled: true,
+        checked: view.grid,
+        run: () => controller.setView({ grid: !view.grid }),
+      },
+      "view.snap": {
+        label: "Snap",
+        enabled: true,
+        checked: view.snap,
+        run: () => controller.setView({ snap: !view.snap }),
+      },
+      "view.lockGuides": {
+        label: "Lock Guides",
+        enabled: true,
+        checked: view.lockGuides,
+        run: () => controller.setView({ lockGuides: !view.lockGuides }),
+      },
+      "view.newGuide": { label: "New Guide…", enabled: hasDoc, run: hosts.openGuideDialog },
+      "view.clearGuides": {
+        label: "Clear Guides",
+        enabled: !!doc?.guides.length,
+        run: () => controller.clearGuides(),
+      },
+      "view.gridSettings": { label: "Grid Size…", enabled: true, run: hosts.openGridDialog },
+      ...(Object.fromEntries(
+        (Object.keys(ALIGN_LABELS) as AlignEdge[]).map((edge) => [
+          `align.${edge}`,
+          {
+            label: ALIGN_LABELS[edge].replace(
+              "Align ",
+              hasSelection ? "Align to Selection: " : "Align ",
+            ),
+            enabled:
+              !!layer && layer.kind !== "fill" && layer.kind !== "adjustment" && !layer.locked,
+            run: () => controller.alignActiveLayer(edge),
+          },
+        ]),
+      ) as Record<`align.${AlignEdge}`, UiAction>),
+      ...(Object.fromEntries(
+        FILTERS.map((f) => [
+          `filter.${f.id}`,
+          {
+            label: f.parameters.length ? `${f.name}…` : f.name,
+            enabled: layer?.kind === "raster" && !layer.locked,
+            run: () =>
+              f.parameters.length
+                ? hosts.openFilterDialog(f.id)
+                : void controller.applyFilter(f.id, {}),
+          },
+        ]),
+      ) as Record<`filter.${FilterId}`, UiAction>),
+      "filter.last": {
+        label: lastFilter
+          ? `Last Filter (${FILTERS.find((f) => f.id === lastFilter.id)?.name})`
+          : "Last Filter",
+        enabled: !!lastFilter && layer?.kind === "raster" && !layer.locked,
+        run: () => void controller.repeatLastFilter(),
+      },
       "help.welcome": { label: "Welcome to MYLPER", enabled: true, run: openWelcome },
       // The website opens in a new tab so the editor and its work stay where they are.
       "help.docs": {
@@ -357,5 +452,5 @@ export function useEditorActions(hosts: ActionHosts): Record<UiActionId, UiActio
         run: () => controller.store.setColors(DEFAULT_COLORS),
       },
     };
-  }, [controller, session, hosts, activeTool, colors]);
+  }, [controller, session, hosts, activeTool, colors, view, lastFilter]);
 }

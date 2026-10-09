@@ -2,10 +2,13 @@ import { cropDocument } from "../../core/commands";
 import type { Rect } from "../../core/geometry/layer-geometry";
 import { rectFromPoints, rectHandles, resizeRect, roundRect } from "../../core/geometry/rect";
 import { SCALE_HANDLES, type ScaleHandle } from "../../core/geometry/transform-handles";
+import { snapRect, type SnapLine } from "../../core/geometry/snapping";
 import { documentToScreen, type Point } from "../../core/viewport/viewport";
 import type { Overlay } from "../../rendering/overlay";
 import {
+  dragSnapping,
   HANDLE_HIT_PX,
+  snappedPointer,
   type Tool,
   type ToolContext,
   type ToolKey,
@@ -37,6 +40,7 @@ export class CropTool implements Tool {
   private rect: Rect | null = null;
   private rectDocId: string | null = null;
   private drag: Drag | null = null;
+  private snapLines: readonly SnapLine[] = [];
 
   /** The current crop box (the whole canvas until the user changes it). */
   currentRect(ctx: ToolContext): Rect | null {
@@ -86,26 +90,37 @@ export class CropTool implements Tool {
     if (handle) this.drag = { kind: "resize", startRect: rect, handle };
     else if (this.inside(ctx, pointer.doc)) {
       this.drag = { kind: "move", startRect: rect, startPointer: pointer.doc };
-    } else this.drag = { kind: "new", start: pointer.doc };
+    } else this.drag = { kind: "new", start: snappedPointer(ctx, pointer).point };
   }
 
   pointerMove(ctx: ToolContext, pointer: ToolPointer): void {
     const drag = this.drag;
     if (!drag) return;
     switch (drag.kind) {
-      case "new":
-        this.setRect(ctx, rectFromPoints(drag.start, pointer.doc));
+      case "new": {
+        const snapped = snappedPointer(ctx, pointer);
+        this.snapLines = snapped.lines;
+        this.setRect(ctx, rectFromPoints(drag.start, snapped.point));
         break;
-      case "move":
-        this.setRect(ctx, {
+      }
+      case "move": {
+        const moved = {
           ...drag.startRect,
           x: drag.startRect.x + pointer.doc.x - drag.startPointer.x,
           y: drag.startRect.y + pointer.doc.y - drag.startPointer.y,
-        });
+        };
+        const snapping = dragSnapping(ctx, pointer);
+        const snap = snapping ? snapRect(moved, snapping.targets, snapping.threshold) : null;
+        this.snapLines = snap?.lines ?? [];
+        this.setRect(ctx, { ...moved, x: moved.x + (snap?.dx ?? 0), y: moved.y + (snap?.dy ?? 0) });
         break;
-      case "resize":
-        this.setRect(ctx, resizeRect(drag.startRect, drag.handle, pointer.doc));
+      }
+      case "resize": {
+        const snapped = snappedPointer(ctx, pointer);
+        this.snapLines = snapped.lines;
+        this.setRect(ctx, resizeRect(drag.startRect, drag.handle, snapped.point));
         break;
+      }
     }
   }
 
@@ -115,6 +130,8 @@ export class CropTool implements Tool {
       this.reset(ctx);
     }
     this.drag = null;
+    this.snapLines = [];
+    ctx.invalidate();
   }
 
   keyDown(ctx: ToolContext, key: ToolKey): boolean {
@@ -143,6 +160,7 @@ export class CropTool implements Tool {
     this.rect = null;
     this.rectDocId = null;
     this.drag = null;
+    this.snapLines = [];
     ctx.invalidate();
   }
 
@@ -152,7 +170,11 @@ export class CropTool implements Tool {
 
   overlays(ctx: ToolContext): readonly Overlay[] {
     const rect = this.currentRect(ctx);
-    return rect ? [{ kind: "crop", rect: roundRect(rect) }] : [];
+    if (!rect) return [];
+    return [
+      { kind: "crop", rect: roundRect(rect) },
+      { kind: "snap", lines: this.drag ? this.snapLines : [] },
+    ];
   }
 
   preview(): undefined {

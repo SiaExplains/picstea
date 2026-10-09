@@ -230,6 +230,86 @@ export const POSTS: readonly BlogPost[] = [
       </>
     ),
   },
+  {
+    slug: "levels-and-curves-explained",
+    title: "Levels and Curves explained: fix brightness and contrast like a pro",
+    description:
+      "What Levels and Curves do, when to use which, and how to correct a dull or dark photo with them — without changing the original pixels.",
+    published: "2026-10-09",
+    draft: true,
+    body: () => (
+      <>
+        <p>
+          Brightness and contrast sliders are blunt: they move every tone by the same amount. Levels
+          and Curves let you decide which tones change and by how much. They are the two tools
+          photographers reach for first when a picture looks flat, dark or washed out.
+        </p>
+        <h2>Levels: set the black point, white point and midtones</h2>
+        <p>
+          Levels shows a histogram — how many pixels there are at each brightness, from black on the
+          left to white on the right. A dull photo often has a histogram that doesn&apos;t reach
+          either end.
+        </p>
+        <ul>
+          <li>
+            Move <strong>Input black</strong> to where the histogram starts: those pixels become
+            pure black.
+          </li>
+          <li>
+            Move <strong>Input white</strong> to where it ends: those become pure white. The tones
+            in between stretch to fill the full range, and contrast improves.
+          </li>
+          <li>
+            <strong>Gamma</strong> brightens or darkens the midtones without moving black and white.
+          </li>
+          <li>
+            <strong>Output black and white</strong> do the opposite — they compress the range, for a
+            faded, matte look.
+          </li>
+        </ul>
+        <h2>Curves: control every tone</h2>
+        <p>
+          Curves draws a line from dark (bottom left) to light (top right). Bending it changes
+          tones: lift a point and those tones get brighter, lower it and they get darker.
+        </p>
+        <ul>
+          <li>
+            <strong>S-curve</strong>: lower a point in the shadows and raise one in the highlights
+            for punchier contrast.
+          </li>
+          <li>
+            <strong>Lift the bottom-left end</strong> for faded blacks.
+          </li>
+          <li>
+            <strong>One channel at a time</strong>: switch to Red, Green or Blue to remove a colour
+            cast — for example, lower the blue curve slightly to warm up a cold photo.
+          </li>
+        </ul>
+        <h2>Why adjustment layers</h2>
+        <p>
+          In MYLPER, Levels and Curves are adjustment layers. They change how the image looks, not
+          its pixels: hide the layer to compare, change the settings later, or paint on its mask to
+          apply the correction to only part of the image.
+        </p>
+        <h2>Try it</h2>
+        <ol>
+          <li>
+            Open a photo in <EditorLink>MYLPER</EditorLink>.
+          </li>
+          <li>
+            Choose Adjustments → Levels and drag the black and white inputs to the ends of the
+            histogram.
+          </li>
+          <li>Add Adjustments → Curves above it and make a gentle S-curve.</li>
+          <li>Toggle the layers&apos; eye icons to compare before and after.</li>
+        </ol>
+        <p>
+          Everything happens in your browser — the photo is never uploaded. Read more in the{" "}
+          <Link href="/docs/layers-groups-and-masks">layers documentation</Link>.
+        </p>
+      </>
+    ),
+  },
 ];
 
 const showDrafts = process.env.NODE_ENV !== "production";

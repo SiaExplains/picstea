@@ -53,8 +53,8 @@ export const DOCS: readonly DocPage[] = [
         <h2>The workspace</h2>
         <ul>
           <li>
-            <strong>Menu bar</strong> — File, Edit, Image, Layer, Adjustments, Select, View and
-            Help.
+            <strong>Menu bar</strong> — File, Edit, Image, Layer, Adjustments, Filter, Select, View
+            and Help.
           </li>
           <li>
             <strong>Tool options</strong> — settings for the active tool, such as brush size or
@@ -113,11 +113,20 @@ export const DOCS: readonly DocPage[] = [
             <strong>Fill layers</strong> — a solid colour covering the canvas.
           </li>
           <li>
-            <strong>Adjustment layers</strong> — Brightness/Contrast, Hue/Saturation, Exposure,
-            Temperature/Tint, Black &amp; White, Invert, Posterize and Threshold. They change
-            everything below them without touching the pixels.
+            <strong>Adjustment layers</strong> — Levels, Curves, Brightness/Contrast,
+            Hue/Saturation, Exposure, Temperature/Tint, Black &amp; White, Invert, Posterize and
+            Threshold. They change everything below them without touching the pixels.
           </li>
         </ul>
+        <h2>Levels and Curves</h2>
+        <p>
+          Adjustments → Levels sets the black point, white point and midtones (gamma) of the image
+          below, and can compress the output range. Adjustments → Curves gives full control of the
+          tones: click the curve to add a point, drag it, and drag a point off the graph to remove
+          it. A point can also be moved with the arrow keys (Shift for steps of 10), or by typing
+          its input and output values. Both work on the combined RGB channel or on red, green and
+          blue separately, and show a histogram of the image beneath the layer.
+        </p>
         <h2>Opacity and blend modes</h2>
         <p>
           Each layer has an opacity and one of 16 blend modes (Multiply, Screen, Overlay and more)
@@ -146,7 +155,7 @@ export const DOCS: readonly DocPage[] = [
         <ul>
           <li>Masks follow a layer when it moves, but not when it is scaled or rotated.</li>
           <li>Groups can be moved but not yet scaled or rotated as a whole.</li>
-          <li>Clipping masks, vector masks, Curves and Levels are not available yet.</li>
+          <li>Clipping masks and vector masks are not available yet.</li>
         </ul>
       </>
     ),
@@ -240,6 +249,132 @@ export const DOCS: readonly DocPage[] = [
           X swaps the foreground and background colours, D resets them to black and white. With a
           selection, all of these tools stay inside it.
         </p>
+      </>
+    ),
+  },
+  {
+    slug: "guides-grid-and-snapping",
+    title: "Rulers, guides, grid and snapping",
+    description:
+      "Place layers precisely in MYLPER: rulers, guides you drag from the ruler, a grid, snapping with smart guides, and aligning layers to the canvas or a selection.",
+    updated: "2026-10-09",
+    body: () => (
+      <>
+        <h2>Rulers</h2>
+        <p>
+          View → Rulers (Cmd/Ctrl+R) shows rulers along the top and left of the canvas, in pixels.
+          They follow zoom and scrolling, and mark where the pointer is.
+        </p>
+        <h2>Guides</h2>
+        <ul>
+          <li>
+            Drag down from the top ruler for a horizontal guide, or right from the left ruler for a
+            vertical one.
+          </li>
+          <li>View → New Guide… places a guide at an exact position.</li>
+          <li>
+            With the Move tool, drag a guide to move it. Drag it back onto a ruler (or off the
+            canvas) to delete it.
+          </li>
+          <li>
+            View → Guides (Cmd/Ctrl+;) hides or shows them, View → Lock Guides stops them moving and
+            View → Clear Guides removes them all.
+          </li>
+        </ul>
+        <p>
+          Guides are saved with the project and can be undone like any other change. They never
+          appear in exported images.
+        </p>
+        <h2>Grid</h2>
+        <p>
+          View → Grid (Cmd/Ctrl+&apos;) shows a grid over the canvas. Set its spacing with View →
+          Grid Size…. When you zoom out far, the grid shows every second or fourth line so it stays
+          readable.
+        </p>
+        <h2>Snapping and smart guides</h2>
+        <p>
+          With View → Snap on (the default), moving or resizing a layer, drawing a selection or
+          shape, adjusting the crop box and dragging a guide all snap to nearby guides, grid lines,
+          the edges and centre of the canvas, and the edges and centres of other layers. Pink lines
+          show what something snapped to. Hold Cmd (macOS) or Ctrl while dragging to place it
+          freely; turn snapping off entirely with View → Snap.
+        </p>
+        <h2>Align</h2>
+        <p>
+          Layer → Align lines up the active layer&apos;s left edges, horizontal centres, right
+          edges, top edges, vertical centres or bottom edges with the canvas — or with the
+          selection, when there is one.
+        </p>
+        <h2>Limitations</h2>
+        <ul>
+          <li>
+            Distributing several layers evenly is not available yet (it needs multi-layer
+            selection).
+          </li>
+          <li>Rotated layers snap when moved, but their handles don&apos;t snap while scaling.</li>
+        </ul>
+      </>
+    ),
+  },
+  {
+    slug: "filters",
+    title: "Filters: blur, sharpen, noise, pixelate, emboss and edges",
+    description:
+      "Apply filters to a pixel layer in MYLPER with a live preview: Gaussian, box and motion blur, Unsharp Mask, Add Noise, Pixelate, Emboss and Find Edges.",
+    updated: "2026-10-09",
+    body: () => (
+      <>
+        <p>
+          Filters change the pixels of the active pixel layer. Choose one from the Filter menu,
+          adjust its settings and watch the result on the canvas, then press OK. Every filter is one
+          undo step. With a selection, only the selected area changes (feathered edges blend
+          smoothly).
+        </p>
+        <h2>Available filters</h2>
+        <ul>
+          <li>
+            <strong>Gaussian Blur</strong> — a smooth, natural blur. Radius 0.1–250 px.
+          </li>
+          <li>
+            <strong>Box Blur</strong> — an even blur over a square area.
+          </li>
+          <li>
+            <strong>Motion Blur</strong> — a streak in one direction, set by angle and distance.
+          </li>
+          <li>
+            <strong>Unsharp Mask</strong> — sharpens edges. Amount sets the strength, radius the
+            size of the edges, and threshold leaves smooth areas (and noise) alone.
+          </li>
+          <li>
+            <strong>Add Noise</strong> — grain, uniform or Gaussian, in colour or monochrome.
+          </li>
+          <li>
+            <strong>Pixelate</strong> — a mosaic of square cells.
+          </li>
+          <li>
+            <strong>Emboss</strong> — a grey relief lit from the chosen angle.
+          </li>
+          <li>
+            <strong>Find Edges</strong> — outlines edges as dark lines on white.
+          </li>
+        </ul>
+        <p>
+          Filter → Last Filter (Cmd/Ctrl+Option/Alt+F) repeats the previous filter with the same
+          settings.
+        </p>
+        <h2>Large images</h2>
+        <p>
+          Filters run in the background so the editor stays responsive. On very large layers the
+          preview is calculated at a reduced size; the result you apply is always full resolution.
+        </p>
+        <h2>Limitations</h2>
+        <ul>
+          <li>
+            Filters change pixels directly. To change only the tones of an image without touching
+            its pixels, use an adjustment layer (Levels, Curves and others) instead.
+          </li>
+          <li>Shape and text layers can&apos;t be filtered yet; filters work on pixel layers.</li>
+        </ul>
       </>
     ),
   },

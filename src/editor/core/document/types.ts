@@ -207,7 +207,31 @@ export type Adjustment =
   | { readonly type: "black-white" }
   | { readonly type: "invert" }
   | { readonly type: "posterize"; readonly levels: number }
-  | { readonly type: "threshold"; readonly level: number };
+  | { readonly type: "threshold"; readonly level: number }
+  | ({ readonly type: "levels" } & ToneChannels<LevelsChannel>)
+  | ({ readonly type: "curves" } & ToneChannels<readonly CurvePoint[]>);
+
+/** Levels for one channel, all in 0…255 except `gamma` (0.1…9.99, 1 = unchanged). */
+export interface LevelsChannel {
+  readonly inBlack: number;
+  readonly inWhite: number;
+  readonly gamma: number;
+  readonly outBlack: number;
+  readonly outWhite: number;
+}
+
+/** A curve control point: input → output, both 0…255. */
+export type CurvePoint = readonly [number, number];
+
+/** Settings for the composite RGB channel and each colour channel (applied after RGB). */
+export interface ToneChannels<T> {
+  readonly rgb: T;
+  readonly red: T;
+  readonly green: T;
+  readonly blue: T;
+}
+
+export type ToneChannel = keyof ToneChannels<unknown>;
 
 export type AdjustmentType = Adjustment["type"];
 

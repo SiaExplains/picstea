@@ -1,4 +1,5 @@
 import type { Adjustment } from "../core/document/types";
+import { curveLut, levelsLut, toneLuts } from "./tone";
 
 /**
  * Pure colour adjustments on straight (non-premultiplied) RGBA bytes, applied in place.
@@ -173,5 +174,9 @@ export function applyAdjustment(data: Pixels, adjustment: Adjustment): void {
       return posterize(data, adjustment.levels);
     case "threshold":
       return threshold(data, adjustment.level);
+    case "levels":
+      return applyLut(data, ...toneLuts(adjustment, levelsLut));
+    case "curves":
+      return applyLut(data, ...toneLuts(adjustment, curveLut));
   }
 }

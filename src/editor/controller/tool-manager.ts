@@ -1,9 +1,12 @@
 import type { AssetStore } from "../assets/asset-store";
 import type { EditorStore } from "../core/editor-store";
 import type { ContentSizer } from "../core/geometry/layer-geometry";
+import { snapTargets, type SnapTargets } from "../core/geometry/snapping";
+import type { EditorDocument, Guide } from "../core/document/types";
+import type { ViewSettings } from "../core/view-settings";
 import { Observable } from "../core/observable";
 import type { ToolId } from "../core/tool-settings";
-import { DEFAULT_VIEWPORT } from "../core/viewport/viewport";
+import { DEFAULT_VIEWPORT, type Size } from "../core/viewport/viewport";
 import type { SurfaceFactory } from "../rendering/canvas/canvas2d-renderer";
 import type { CompositePreview } from "../rendering/compositing/compositor";
 import type { Overlay } from "../rendering/overlay";
@@ -16,6 +19,7 @@ import { GradientTool } from "../tools/gradient/gradient-tool";
 import { LassoTool, MagicWandTool, MarqueeTool } from "../tools/selection/selection-tools";
 import { TransformSelectionTool } from "../tools/selection/transform-selection-tool";
 import { CropTool } from "../tools/crop/crop-tool";
+import { GuideDrag } from "../tools/guide/guide-drag";
 import { MoveTool } from "../tools/move/move-tool";
 import { ShapeTool } from "../tools/shape/shape-tool";
 import { TextTool } from "../tools/text/text-tool";
@@ -30,6 +34,10 @@ export interface ToolManagerHost {
   notify(kind: "info" | "error", message: string): void;
   pixelsCommitted(): void;
   beginTextEdit(request: TextEditRequest): void;
+  /** View preferences: guides, grid and snapping. */
+  view(): ViewSettings;
+  /** Size of the canvas viewport in CSS pixels. */
+  screenSize(): Size;
 }
 
 /**
@@ -42,7 +50,15 @@ export class ToolManager {
   readonly crop = new CropTool();
   /** Select → Transform Selection: overrides the active tool until applied or cancelled. */
   readonly selectionTransform = new TransformSelectionTool();
+  /** Moving guides with the Move tool and creating them from the rulers. */
+  readonly guides = new GuideDrag();
   private readonly tools: Partial<Record<ToolId, Tool>>;
+  private snapCache: {
+    doc: EditorDocument;
+    view: ViewSettings;
+    key: string;
+    targets: SnapTargets;
+  } | null = null;
   private readonly context: ToolContext;
   private activeId: ToolId;
   private documentId: string | null;
@@ -75,6 +91,7 @@ export class ToolManager {
       invalidate: () => this.revision.update((n) => n + 1),
       pixelsCommitted: () => host.pixelsCommitted(),
       beginTextEdit: (request) => host.beginTextEdit(request),
+      snapTargets: (exclude) => this.snapTargets(exclude),
     };
     const state = host.store.getState();
     this.activeId = state.activeTool;
@@ -84,6 +101,7 @@ export class ToolManager {
       const next = host.store.getState();
       if (next.activeTool !== this.activeId || next.activeDocumentId !== this.documentId) {
         this.active()?.cancel(this.context);
+        this.guides.cancel(this.context);
         if (this.selectionTransform.active) this.selectionTransform.end(this.context);
         this.activeId = next.activeTool;
         this.documentId = next.activeDocumentId;
@@ -116,22 +134,71 @@ export class ToolManager {
     return !!this.active();
   }
 
+  /** Snap targets for the active document (cached per document state), or null when off. */
+  private snapTargets(exclude: readonly string[] = []): SnapTargets | null {
+    const view = this.host.view();
+    const doc = this.host.store.getSession()?.document;
+    if (!view.snap || !doc) return null;
+    const key = exclude.join(",");
+    const cached = this.snapCache;
+    if (cached && cached.doc === doc && cached.view === view && cached.key === key) {
+      return cached.targets;
+    }
+    const targets = snapTargets(doc, this.host.sizer, {
+      guides: view.guides,
+      grid: view.grid ? view.gridSize : null,
+      canvas: true,
+      layers: true,
+      excludeLayerIds: exclude,
+    });
+    this.snapCache = { doc, view, key, targets };
+    return targets;
+  }
+
+  /** A guide the pointer can pick up: Move tool, guides shown and not locked. */
+  private guideAt(pointer: ToolPointer | null): Guide | null {
+    const view = this.host.view();
+    if (!pointer || !view.guides || view.lockGuides || this.selectionTransform.active) return null;
+    if (this.host.store.getState().activeTool !== "move") return null;
+    return this.guides.hitTest(this.context, pointer.screen);
+  }
+
+  /** Guides to draw: none when hidden; the one being dragged is drawn as an overlay instead. */
+  visibleGuides(): readonly Guide[] | undefined {
+    if (!this.host.view().guides) return undefined;
+    const guides = this.host.store.getSession()?.document.guides ?? [];
+    const dragged = this.guides.draggedGuideId;
+    return dragged ? guides.filter((g) => g.id !== dragged) : guides;
+  }
+
   cursor(pointer: ToolPointer | null): string {
+    const guide = this.guideAt(pointer);
+    if (guide) return this.guides.cursor(guide.orientation);
     return this.active()?.cursor(this.context, pointer) ?? "default";
   }
 
   pointerDown(pointer: ToolPointer): void {
-    this.active()?.pointerDown(this.context, pointer);
+    const guide = this.guideAt(pointer);
+    if (guide) this.guides.begin(this.context, guide.orientation, guide);
+    else this.active()?.pointerDown(this.context, pointer);
     this.context.invalidate();
   }
 
   pointerMove(pointer: ToolPointer): void {
-    this.active()?.pointerMove(this.context, pointer);
+    if (this.guides.active) this.guides.move(this.context, pointer, this.host.screenSize());
+    else this.active()?.pointerMove(this.context, pointer);
   }
 
   pointerUp(pointer: ToolPointer): void {
-    this.active()?.pointerUp(this.context, pointer);
+    if (this.guides.active) this.guides.end(this.context);
+    else this.active()?.pointerUp(this.context, pointer);
     this.context.invalidate();
+  }
+
+  /** Start dragging a new guide out of a ruler. */
+  beginRulerGuide(orientation: Guide["orientation"]): void {
+    this.active()?.cancel(this.context);
+    this.guides.begin(this.context, orientation);
   }
 
   doubleClick(pointer: ToolPointer): void {
@@ -147,7 +214,8 @@ export class ToolManager {
   }
 
   cancel(): void {
-    this.active()?.cancel(this.context);
+    if (this.guides.active) this.guides.cancel(this.context);
+    else this.active()?.cancel(this.context);
   }
 
   applyCrop(): void {
@@ -159,11 +227,25 @@ export class ToolManager {
   }
 
   overlays(): readonly Overlay[] {
-    return this.active()?.overlays(this.context) ?? [];
+    const tool = this.active()?.overlays(this.context) ?? [];
+    return this.guides.active ? [...tool, ...this.guides.overlays()] : tool;
+  }
+
+  private layerOverride: { layerId: string; source: CanvasImageSource } | null = null;
+
+  /** Show other pixels for one raster layer (a filter preview); null restores the layer. */
+  previewLayerPixels(layerId: string | null, source: CanvasImageSource | null = null): void {
+    this.layerOverride = layerId && source ? { layerId, source } : null;
+    this.context.invalidate();
   }
 
   preview(): CompositePreview | undefined {
-    return this.active()?.preview(this.context);
+    const tool = this.active()?.preview(this.context);
+    const override = this.layerOverride;
+    if (!override) return tool;
+    const overrides = new Map(tool?.overrides ?? []);
+    overrides.set(override.layerId, override.source);
+    return { ...tool, overrides };
   }
 
   private selectionOverride: SelectionMask | null | undefined = undefined;

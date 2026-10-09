@@ -5,7 +5,9 @@ import { constrainDrag, rectFromPoints } from "../../core/geometry/rect";
 import type { ShapeSettings } from "../../core/tool-settings";
 import type { Point } from "../../core/viewport/viewport";
 import type { CompositePreview } from "../../rendering/compositing/compositor";
-import type { Tool, ToolContext, ToolPointer } from "../tool";
+import type { SnapLine } from "../../core/geometry/snapping";
+import type { Overlay } from "../../rendering/overlay";
+import { snappedPointer, type Tool, type ToolContext, type ToolPointer } from "../tool";
 
 const SHAPE_NAMES: Record<ShapeKind, string> = {
   rect: "Rectangle",
@@ -78,6 +80,7 @@ export class ShapeTool implements Tool {
   readonly id = "shape";
   private start: Point | null = null;
   private draft: ShapeLayer | null = null;
+  private snapLines: readonly SnapLine[] = [];
 
   cursor(): string {
     return "crosshair";
@@ -85,13 +88,15 @@ export class ShapeTool implements Tool {
 
   pointerDown(ctx: ToolContext, pointer: ToolPointer): void {
     if (pointer.button !== 0 || !ctx.store.getSession()) return;
-    this.start = pointer.doc;
+    this.start = snappedPointer(ctx, pointer).point;
     this.draft = null;
   }
 
   pointerMove(ctx: ToolContext, pointer: ToolPointer): void {
     if (!this.start) return;
-    this.draft = shapeFromDrag(ctx.store.getState().toolSettings.shape, this.start, pointer.doc, {
+    const end = snappedPointer(ctx, pointer);
+    this.snapLines = end.lines;
+    this.draft = shapeFromDrag(ctx.store.getState().toolSettings.shape, this.start, end.point, {
       constrain: pointer.shiftKey,
       fromCenter: pointer.altKey,
     });
@@ -104,6 +109,7 @@ export class ShapeTool implements Tool {
     const draft = this.draft;
     this.start = null;
     this.draft = null;
+    this.snapLines = [];
     ctx.invalidate();
     const session = ctx.store.getSession();
     if (!draft || !session) return;
@@ -115,11 +121,12 @@ export class ShapeTool implements Tool {
   cancel(ctx: ToolContext): void {
     this.start = null;
     this.draft = null;
+    this.snapLines = [];
     ctx.invalidate();
   }
 
-  overlays(): readonly [] {
-    return [];
+  overlays(): readonly Overlay[] {
+    return this.start ? [{ kind: "snap", lines: this.snapLines }] : [];
   }
 
   preview(ctx: ToolContext): CompositePreview | undefined {

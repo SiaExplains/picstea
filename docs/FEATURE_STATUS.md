@@ -1,6 +1,6 @@
 # Feature status
 
-Last updated: 2026-10-08 · version 0.3.0 · current gate: **4 (Professional Layer Workflow) — awaiting review**
+Last updated: 2026-10-09 · version 0.8.0 · current gate: **9a (Professional Parity: precision, filters, colour) — awaiting review**
 
 Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ deferred
 
@@ -72,7 +72,7 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 | Drag-and-drop in Layers panel; Bring Forward/Send Backward enter/leave groups | ✅ | |
 | Blend modes & opacity (layers and groups) | ✅ | |
 | Raster layer masks (paint grey levels, enable/disable, linked) | ✅ | Vector & clipping masks 📋; masks don't follow scale/rotate |
-| Adjustment layers: Brightness/Contrast, Hue/Saturation, Exposure, Temperature/Tint, Black & White, Invert, Posterize, Threshold | ✅ | Curves/Levels 📋 |
+| Adjustment layers: Brightness/Contrast, Hue/Saturation, Exposure, Temperature/Tint, Black & White, Invert, Posterize, Threshold | ✅ | Levels/Curves ✅ (Gate 9a) |
 | Layer effects: drop shadow, outer glow, outer stroke, colour overlay | ✅ | Inner shadow, bevel 📋 |
 
 ## Gate 5 — Selection & advanced tools
@@ -133,6 +133,29 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 | Legal pages: Privacy, Cookies, Terms, Imprint, Sponsorship | 🟡 | Drafts with [TO COMPLETE] fields; need operator details and legal review |
 | Google-certified CMP (IAB TCF) for personalised EU ads | 📋 | Product decision |
 | Analytics | ⏸ | None by decision; category ready |
+
+## Gate 9 — Professional parity (open-ended, shipped in slices)
+
+| Slice | Contents | Status |
+|---|---|---|
+| 9a | Rulers, guides, grid, snapping, align; filters; Levels and Curves | 🚧 awaiting review |
+| 9b | Pen tool, paths, path ↔ selection, vector masks, clipping masks | 📋 |
+| 9c | Smart objects (embedded documents), advanced PSD (text, clipping, adjustment layers, effects) | 📋 |
+| 9d | Automation (record/play actions, batch), swatches and colour picker, history panel | 📋 |
+
+### 9a
+
+| Feature | Status | Notes |
+|---|---|---|
+| Rulers (zoom-aware ticks, pointer marker) | ✅ | View → Rulers, Mod+R; off by default |
+| Guides: drag from ruler, move, drag off to delete, New Guide…, Lock, Clear | ✅ | Saved with the project, undoable, never exported (ADR-0014) |
+| Grid with adjustable spacing | ✅ | Thins out when zoomed far out |
+| Snapping + smart guides: guides, grid, canvas edges/centre, other layers | ✅ | Move, scale handles, marquee, shapes, crop, guides; Mod while dragging disables |
+| Layer → Align to canvas or selection | ✅ | Distribute 📋 (needs multi-layer selection) |
+| Filter framework (catalogue, dialog, live preview, worker job, selection blending) | ✅ | Destructive on pixel layers; smart filters come with 9c |
+| Filters: Gaussian, Box and Motion Blur, Unsharp Mask, Add Noise, Pixelate, Emboss, Find Edges | ✅ | Last Filter (Mod+Alt+F) |
+| Levels and Curves adjustment layers (RGB + per channel, histogram) | ✅ | Composite only in PSD export |
+| View preferences remembered per browser | ✅ | `mylper.view` in local storage |
 
 ## Later gates (summary)
 

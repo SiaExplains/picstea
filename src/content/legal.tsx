@@ -156,6 +156,14 @@ export const LEGAL: Record<"privacy" | "cookies" | "terms" | "imprint" | "sponso
                 <td>Remembers that you have seen the welcome dialog.</td>
                 <td>Until cleared</td>
               </tr>
+              <tr>
+                <td>
+                  <code>mylper.view</code>
+                </td>
+                <td>Local storage</td>
+                <td>Remembers your view settings: rulers, guides, grid and snapping.</td>
+                <td>Until cleared</td>
+              </tr>
             </tbody>
           </table>
           <p>This data stays on your device and is never sent to us.</p>

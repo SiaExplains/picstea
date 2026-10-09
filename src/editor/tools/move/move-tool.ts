@@ -3,6 +3,7 @@ import { activeLayer } from "../../core/document/queries";
 import type { Layer, Transform } from "../../core/document/types";
 import { createId } from "../../core/ids";
 import {
+  boundsOf,
   hitTestLayer,
   isMovable,
   isTransformable,
@@ -18,9 +19,12 @@ import {
   framePoint,
   type ScaleHandle,
 } from "../../core/geometry/transform-handles";
+import { snapPoint, snapRect, type SnapLine } from "../../core/geometry/snapping";
+import type { Rect } from "../../core/geometry/layer-geometry";
 import { documentToScreen, type Point, type Size } from "../../core/viewport/viewport";
 import type { Overlay } from "../../rendering/overlay";
 import {
+  dragSnapping,
   HANDLE_HIT_PX,
   type Tool,
   type ToolContext,
@@ -37,6 +41,8 @@ interface Drag {
   readonly start: Transform;
   readonly size: Size;
   readonly startPointer: Point;
+  /** Axis-aligned bounds at the start, for snapping a move. */
+  readonly startBounds: Rect;
   readonly handle?: ScaleHandle;
   readonly mergeKey: string;
   changed: boolean;
@@ -56,6 +62,30 @@ const RESIZE_CURSORS = ["ew-resize", "nwse-resize", "ns-resize", "nesw-resize"];
 export class MoveTool implements Tool {
   readonly id = "move";
   private drag: Drag | null = null;
+  /** Smart guides for the current drag. */
+  private snapLines: readonly SnapLine[] = [];
+
+  /**
+   * Snap a move by (dx, dy) of a box that started at `bounds`: returns the adjusted offset.
+   * With Shift (axis lock) only the moving axis snaps.
+   */
+  private snapMove(
+    ctx: ToolContext,
+    pointer: ToolPointer,
+    drag: Drag,
+    dx: number,
+    dy: number,
+  ): Point {
+    this.snapLines = [];
+    const snapping = dragSnapping(ctx, pointer, [drag.layerId]);
+    if (!snapping) return { x: dx, y: dy };
+    const b = drag.startBounds;
+    const snap = snapRect({ ...b, x: b.x + dx, y: b.y + dy }, snapping.targets, snapping.threshold);
+    const lockX = pointer.shiftKey && dx === 0;
+    const lockY = pointer.shiftKey && dy === 0;
+    this.snapLines = snap.lines.filter((l) => (l.axis === "x" ? !lockX : !lockY));
+    return { x: lockX ? dx : dx + snap.dx, y: lockY ? dy : dy + snap.dy };
+  }
 
   private editableActive(ctx: ToolContext): Layer | undefined {
     const doc = ctx.store.getSession()?.document;
@@ -142,6 +172,7 @@ export class MoveTool implements Tool {
       start: layer.transform,
       size: layerLocalSize(layer, doc, ctx.sizer),
       startPointer: pointer.doc,
+      startBounds: boundsOf(layerCorners(layer, doc, ctx.sizer)),
       mergeKey,
       changed: false,
       applied: { x: 0, y: 0 },
@@ -156,12 +187,15 @@ export class MoveTool implements Tool {
     const drag = this.drag;
     if (!drag) return;
     if (drag.kind === "move-group") {
-      let dx = Math.round(pointer.doc.x - drag.startPointer.x);
-      let dy = Math.round(pointer.doc.y - drag.startPointer.y);
+      let dx = pointer.doc.x - drag.startPointer.x;
+      let dy = pointer.doc.y - drag.startPointer.y;
       if (pointer.shiftKey) {
         if (Math.abs(dx) > Math.abs(dy)) dy = 0;
         else dx = 0;
       }
+      const snapped = this.snapMove(ctx, pointer, drag, dx, dy);
+      dx = Math.round(snapped.x);
+      dy = Math.round(snapped.y);
       const step = { x: dx - drag.applied.x, y: dy - drag.applied.y };
       if (step.x === 0 && step.y === 0) return;
       const result = ctx.store.dispatch(
@@ -186,19 +220,39 @@ export class MoveTool implements Tool {
           if (Math.abs(dx) > Math.abs(dy)) dy = 0;
           else dx = 0;
         }
+        const snapped = this.snapMove(ctx, pointer, drag, dx, dy);
+        const snappedX = this.snapLines.some((l) => l.axis === "x");
+        const snappedY = this.snapLines.some((l) => l.axis === "y");
+        // A snapped axis keeps the exact offset so the edge lands on the line; otherwise the
+        // origin moves in whole pixels.
         next = {
           ...drag.start,
-          x: Math.round(drag.start.x + dx),
-          y: Math.round(drag.start.y + dy),
+          x: snappedX ? drag.start.x + snapped.x : Math.round(drag.start.x + snapped.x),
+          y: snappedY ? drag.start.y + snapped.y : Math.round(drag.start.y + snapped.y),
         };
         break;
       }
-      case "scale":
-        next = scaleFromHandle(drag.start, drag.size, drag.handle!, pointer.doc, {
+      case "scale": {
+        // The dragged handle snaps when the layer isn't rotated (its edges are axis-aligned).
+        let target = pointer.doc;
+        this.snapLines = [];
+        const snapping =
+          drag.start.rotation === 0 ? dragSnapping(ctx, pointer, [drag.layerId]) : null;
+        if (snapping) {
+          const f = HANDLE_FRACTION[drag.handle!];
+          const snap = snapPoint(target, snapping.targets, snapping.threshold, {
+            x: f.x !== 0.5,
+            y: f.y !== 0.5,
+          });
+          target = { x: target.x + snap.dx, y: target.y + snap.dy };
+          this.snapLines = snap.lines;
+        }
+        next = scaleFromHandle(drag.start, drag.size, drag.handle!, target, {
           keepAspect: pointer.shiftKey,
           fromCenter: pointer.altKey,
         });
         break;
+      }
       default:
         next = rotateAroundCenter(
           drag.start,
@@ -224,6 +278,7 @@ export class MoveTool implements Tool {
   pointerUp(ctx: ToolContext): void {
     if (!this.drag) return;
     this.drag = null;
+    this.snapLines = [];
     ctx.store.sealHistory();
   }
 
@@ -273,6 +328,7 @@ export class MoveTool implements Tool {
     // The whole drag is one merged history entry, so undoing it restores the start state.
     if (this.drag?.changed) ctx.store.undo(this.drag.documentId);
     this.drag = null;
+    this.snapLines = [];
   }
 
   overlays(ctx: ToolContext): readonly Overlay[] {
@@ -280,6 +336,7 @@ export class MoveTool implements Tool {
     const layer = this.editableActive(ctx);
     if (!session || !layer) return [];
     return [
+      { kind: "snap", lines: this.drag ? this.snapLines : [] },
       {
         kind: "transform",
         corners: layerCorners(layer, session.document, ctx.sizer),

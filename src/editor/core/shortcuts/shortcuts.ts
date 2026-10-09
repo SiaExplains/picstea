@@ -32,6 +32,11 @@ export type ActionId =
   | "view.zoomOut"
   | "view.fit"
   | "view.actualPixels"
+  | "view.rulers"
+  | "view.guides"
+  | "view.grid"
+  | "view.snap"
+  | "filter.last"
   | "tool.move"
   | "tool.transform"
   | "tool.marquee"
@@ -89,6 +94,12 @@ export const DEFAULT_KEYMAP: Readonly<Record<ActionId, readonly string[]>> = {
   "view.zoomOut": ["Mod+-"],
   "view.fit": ["Mod+0"],
   "view.actualPixels": ["Mod+1"],
+  "view.rulers": ["Mod+R"],
+  "view.guides": ["Mod+;"],
+  "view.grid": ["Mod+'"],
+  // Shift+; on US keyboards.
+  "view.snap": ["Mod+:"],
+  "filter.last": ["Mod+Alt+F"],
   "tool.move": ["V"],
   "tool.transform": ["Mod+T"],
   "tool.marquee": ["M"],

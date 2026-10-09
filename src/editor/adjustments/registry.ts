@@ -1,4 +1,11 @@
 import type { Adjustment, AdjustmentType } from "../core/document/types";
+import {
+  NEUTRAL_CURVE,
+  NEUTRAL_LEVELS,
+  parseCurve,
+  parseLevelsChannel,
+  parseToneChannels,
+} from "./tone";
 
 /**
  * Adjustment catalogue: labels, defaults and parameter ranges. Drives the menus, the properties
@@ -18,6 +25,11 @@ export interface AdjustmentDefinition {
   readonly label: string;
   readonly defaults: Adjustment;
   readonly params: readonly AdjustmentParam[];
+  /**
+   * Validates settings that aren't plain numbers (Levels, Curves). When present it replaces the
+   * range check over `params`; it receives the untrusted value and returns the settings or null.
+   */
+  readonly parse?: (value: Record<string, unknown>) => Adjustment | null;
 }
 
 export const ADJUSTMENTS: readonly AdjustmentDefinition[] = [
@@ -72,6 +84,38 @@ export const ADJUSTMENTS: readonly AdjustmentDefinition[] = [
     defaults: { type: "threshold", level: 128 },
     params: [{ key: "level", label: "Level", min: 0, max: 255, step: 1 }],
   },
+  {
+    type: "levels",
+    label: "Levels",
+    defaults: {
+      type: "levels",
+      rgb: NEUTRAL_LEVELS,
+      red: NEUTRAL_LEVELS,
+      green: NEUTRAL_LEVELS,
+      blue: NEUTRAL_LEVELS,
+    },
+    params: [],
+    parse: (value) => {
+      const channels = parseToneChannels(value, parseLevelsChannel);
+      return channels && { type: "levels", ...channels };
+    },
+  },
+  {
+    type: "curves",
+    label: "Curves",
+    defaults: {
+      type: "curves",
+      rgb: NEUTRAL_CURVE,
+      red: NEUTRAL_CURVE,
+      green: NEUTRAL_CURVE,
+      blue: NEUTRAL_CURVE,
+    },
+    params: [],
+    parse: (value) => {
+      const channels = parseToneChannels(value, parseCurve);
+      return channels && { type: "curves", ...channels };
+    },
+  },
 ];
 
 export function adjustmentDefinition(type: AdjustmentType): AdjustmentDefinition {
@@ -86,6 +130,7 @@ export function parseAdjustment(value: unknown): Adjustment | null {
   const type = (value as { type?: unknown }).type;
   const def = ADJUSTMENTS.find((a) => a.type === type);
   if (!def) return null;
+  if (def.parse) return def.parse(value as Record<string, unknown>);
   const out: Record<string, unknown> = { type: def.type };
   for (const p of def.params) {
     const v = (value as Record<string, unknown>)[p.key];
