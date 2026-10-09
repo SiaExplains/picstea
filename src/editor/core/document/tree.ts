@@ -208,10 +208,29 @@ export function countLayers(layers: readonly Layer[]): number {
   return n;
 }
 
+/** Deepest group nesting a document may have (also enforced when projects are loaded). */
+export const MAX_GROUP_DEPTH = 32;
+
 export function maxDepth(layers: readonly Layer[]): number {
   let max = 0;
   walkLayers(layers, (_layer, depth) => {
     max = Math.max(max, depth);
   });
   return max;
+}
+
+/**
+ * The selected layers that should be acted on: ids that exist, without layers whose ancestor
+ * group is also selected (so nothing is moved or deleted twice), in document order (bottom
+ * first, as in `doc.layers`).
+ */
+export function topLevelSelection(layers: readonly Layer[], ids: readonly string[]): string[] {
+  const wanted = new Set(ids);
+  const out: string[] = [];
+  walkLayers(layers, (layer) => {
+    if (!wanted.has(layer.id)) return;
+    if (ancestorIds(layers, layer.id).some((a) => wanted.has(a))) return;
+    out.push(layer.id);
+  });
+  return out;
 }

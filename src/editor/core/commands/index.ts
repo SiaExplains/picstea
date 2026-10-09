@@ -10,3 +10,4 @@ export * from "./selection-commands";
 export * from "./guide-commands";
 export * from "./path-commands";
 export * from "./smart-commands";
+export * from "./multi-commands";

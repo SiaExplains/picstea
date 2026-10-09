@@ -3,6 +3,7 @@ import { parseHexColor } from "../core/color";
 import type { SelectionModification } from "../core/commands/selection-commands";
 import type { Adjustment } from "../core/document/types";
 import { ALIGN_LABELS, type AlignEdge } from "../core/geometry/snapping";
+import { DISTRIBUTE_LABELS, type DistributeMode } from "../core/geometry/multi-transform";
 import {
   filterById,
   parseFilterValues,
@@ -20,6 +21,7 @@ export type ActionStep =
   | { readonly type: "adjustment"; readonly adjustment: Adjustment }
   | { readonly type: "flip"; readonly axis: "horizontal" | "vertical" }
   | { readonly type: "align"; readonly edge: AlignEdge }
+  | { readonly type: "distribute"; readonly mode: DistributeMode }
   | { readonly type: "select"; readonly op: "all" | "deselect" | "inverse" }
   | {
       readonly type: "modifySelection";
@@ -47,6 +49,8 @@ export function stepLabel(step: ActionStep): string {
       return step.axis === "horizontal" ? "Flip Horizontal" : "Flip Vertical";
     case "align":
       return ALIGN_LABELS[step.edge];
+    case "distribute":
+      return DISTRIBUTE_LABELS[step.mode];
     case "select":
       return SELECT_LABELS[step.op];
     case "modifySelection":
@@ -93,6 +97,10 @@ export function parseStep(value: unknown): ActionStep | null {
     case "align": {
       const edge = oneOf(own(value, "edge"), Object.keys(ALIGN_LABELS) as AlignEdge[]);
       return edge ? { type: "align", edge } : null;
+    }
+    case "distribute": {
+      const mode = oneOf(own(value, "mode"), Object.keys(DISTRIBUTE_LABELS) as DistributeMode[]);
+      return mode ? { type: "distribute", mode } : null;
     }
     case "select": {
       const op = oneOf(own(value, "op"), ["all", "deselect", "inverse"] as const);

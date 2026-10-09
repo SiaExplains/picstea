@@ -1,6 +1,6 @@
 # Feature status
 
-Last updated: 2026-10-09 · version 0.13.0 · current gate: **9f (Professional Parity: retouching tools) — awaiting review**
+Last updated: 2026-10-09 · version 0.14.0 · current gate: **9g (Professional Parity: multi-layer selection) — awaiting review**
 
 Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ deferred
 
@@ -68,7 +68,7 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 
 | Feature | Status | Notes |
 |---|---|---|
-| Groups (nesting, pass-through/isolated, collapse, move) | ✅ | Group scale/rotate 📋 |
+| Groups (nesting, pass-through/isolated, collapse, move, scale/rotate) | ✅ | Group scale/rotate ✅ (9g) |
 | Drag-and-drop in Layers panel; Bring Forward/Send Backward enter/leave groups | ✅ | |
 | Blend modes & opacity (layers and groups) | ✅ | |
 | Raster layer masks (paint grey levels, enable/disable, linked) | ✅ | Vector & clipping masks ✅ (Gate 9b); masks don't follow scale/rotate |
@@ -143,7 +143,8 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 | 9c | Smart objects (embedded documents), smart filters, rasterize, place embedded | ✅ |
 | 9d | Advanced PSD: descriptor parser; text, adjustment layers, effects, vector masks, shapes and smart objects | ✅ |
 | 9e | Automation (record/play actions, batch), swatches and colour picker, history panel | ✅ |
-| 9f | Retouching: clone stamp, healing brush, dodge/burn/sponge, blur/sharpen/smudge | 🚧 awaiting review |
+| 9f | Retouching: clone stamp, healing brush, dodge/burn/sponge, blur/sharpen/smudge | ✅ |
+| 9g | Multi-layer selection: move/scale/rotate together, group transforms, align/distribute, group/duplicate/delete | 🚧 awaiting review |
 
 ### 9a
 
@@ -153,7 +154,7 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 | Guides: drag from ruler, move, drag off to delete, New Guide…, Lock, Clear | ✅ | Saved with the project, undoable, never exported (ADR-0014) |
 | Grid with adjustable spacing | ✅ | Thins out when zoomed far out |
 | Snapping + smart guides: guides, grid, canvas edges/centre, other layers | ✅ | Move, scale handles, marquee, shapes, crop, guides; Mod while dragging disables |
-| Layer → Align to canvas or selection | ✅ | Distribute 📋 (needs multi-layer selection) |
+| Layer → Align to canvas or selection | ✅ | Several layers and Distribute ✅ (9g) |
 | Filter framework (catalogue, dialog, live preview, worker job, selection blending) | ✅ | Destructive on pixel layers; smart filters come with 9c |
 | Filters: Gaussian, Box and Motion Blur, Unsharp Mask, Add Noise, Pixelate, Emboss, Find Edges | ✅ | Last Filter (Mod+Alt+F) |
 | Levels and Curves adjustment layers (RGB + per channel, histogram) | ✅ | Composite only in PSD export |
@@ -217,6 +218,16 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 | Dodge, Burn (shadows/midtones/highlights, exposure), Sponge (saturate/desaturate, flow) | ✅ | |
 | Blur, Sharpen (strength), Smudge (strength) | ✅ | Finger painting 📋 |
 | Retouching masks or non-pixel layers | 📋 | Pixel layers only (as filters) |
+
+### 9g
+
+| Feature | Status | Notes |
+|---|---|---|
+| Multi-layer selection: Cmd/Ctrl-click, Shift-click range, All Layers, Shift-click on canvas | ✅ | Session state, not saved; ADR-0020 |
+| Move / scale / rotate / nudge several layers or a group through one frame | ✅ | One undo step; no skew (rotated layers stay rectangular) |
+| Flip, Group, Duplicate, Delete on the selection | ✅ | |
+| Align to each other or the selection; Distribute centres or spacing (3+) | ✅ | Recordable in actions |
+| Opacity/blend/visibility for several layers at once | 📋 | Properties panel edits the active layer |
 
 ## Later gates (summary)
 

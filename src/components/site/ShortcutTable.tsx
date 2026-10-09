@@ -17,6 +17,7 @@ const LABELS: Record<ActionId, string> = {
   "select.deselect": "Deselect",
   "select.reselect": "Reselect",
   "select.inverse": "Invert selection",
+  "select.allLayers": "Select all layers",
   "select.feather": "Feather selection",
   "layer.new": "New pixel layer",
   "layer.duplicate": "Duplicate layer (Layer via Copy with a selection)",

@@ -1,6 +1,6 @@
 import { isHexColor } from "../core/document/factory";
 import { checkDimensions, MAX_DIMENSION } from "../core/document/limits";
-import { walkLayers } from "../core/document/tree";
+import { MAX_GROUP_DEPTH, walkLayers } from "../core/document/tree";
 import { checkEffect } from "../core/commands/effect-commands";
 import { parseAdjustment } from "../adjustments/registry";
 import { MAX_GUIDES } from "../core/commands/guide-commands";
@@ -93,7 +93,7 @@ function transform(value: unknown, path: string): Transform {
   };
 }
 
-export const MAX_GROUP_DEPTH = 32;
+export { MAX_GROUP_DEPTH };
 
 interface Budget {
   count: number;

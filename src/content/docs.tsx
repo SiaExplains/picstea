@@ -134,10 +134,37 @@ export const DOCS: readonly DocPage[] = [
         </p>
         <h2>Groups</h2>
         <p>
-          Select a layer and press Cmd/Ctrl+G to put it in a group; Cmd/Ctrl+Shift+G ungroups. Drag
+          Select layers and press Cmd/Ctrl+G to put them in a group; Cmd/Ctrl+Shift+G ungroups. Drag
           layers in the Layers panel to reorder them or move them into a group. By default a group
           passes its layers&apos; blending through; give it opacity, a blend mode, a mask or effects
-          to treat it as one unit.
+          to treat it as one unit. With the Move tool, a selected group shows a frame: drag it to
+          move the group, drag its handles to scale everything inside, or drag just outside a corner
+          to rotate it.
+        </p>
+        <h2>Selecting several layers</h2>
+        <ul>
+          <li>
+            In the Layers panel, Cmd-click (Ctrl-click on Windows) adds or removes a layer;
+            Shift-click selects every layer between the active one and the one you click. Select →
+            All Layers (Cmd/Ctrl+Alt+A) selects everything.
+          </li>
+          <li>
+            With the Move tool and Auto-select on, Shift-click a layer on the canvas to add it.
+          </li>
+          <li>
+            Selected layers move, scale, rotate and flip together, and can be grouped, duplicated or
+            deleted in one step. The Properties panel shows the settings of the active layer (the
+            one you selected last).
+          </li>
+          <li>Painting, filters and adjustments still work on the active layer only.</li>
+        </ul>
+        <h2>Align and distribute</h2>
+        <p>
+          Layer → Align lines up the selected layers with each other — or with the pixel selection,
+          if there is one. A single layer aligns to the canvas. Layer → Distribute spaces three or
+          more layers evenly, by their centres or with equal gaps between them; the outermost layers
+          stay where they are. The same buttons are in the Move tool&apos;s options bar and the
+          Properties panel when several layers are selected.
         </p>
         <h2>Masks</h2>
         <p>
@@ -170,7 +197,11 @@ export const DOCS: readonly DocPage[] = [
         <h2>Limitations</h2>
         <ul>
           <li>Masks follow a layer when it moves, but not when it is scaled or rotated.</li>
-          <li>Groups can be moved but not yet scaled or rotated as a whole.</li>
+          <li>
+            Stretching a selection that contains rotated layers keeps each of those layers
+            rectangular (MYLPER has no skew): their centres move correctly, but their shape is not
+            sheared.
+          </li>
           <li>
             Clipped layers are limited to the base layer&apos;s pixels; on semi-transparent base
             pixels the result can differ slightly from Photoshop.

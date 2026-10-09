@@ -20,6 +20,7 @@ export type ActionId =
   | "select.deselect"
   | "select.reselect"
   | "select.inverse"
+  | "select.allLayers"
   | "select.feather"
   | "layer.new"
   | "layer.duplicate"
@@ -90,6 +91,7 @@ export const DEFAULT_KEYMAP: Readonly<Record<ActionId, readonly string[]>> = {
   "select.deselect": ["Mod+D"],
   "select.reselect": ["Mod+Shift+D"],
   "select.inverse": ["Mod+Shift+I"],
+  "select.allLayers": ["Mod+Alt+A"],
   "select.feather": ["Shift+F6"],
   "layer.new": ["Mod+Shift+N"],
   "layer.duplicate": ["Mod+J"],

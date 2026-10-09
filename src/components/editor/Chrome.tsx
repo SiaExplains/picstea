@@ -3,7 +3,7 @@
 import { useSyncExternalStore } from "react";
 import { SELECTION_MODES, type SelectionMode } from "@/editor/selection/ops";
 import { FONT_FAMILIES, type FontFamily, type ShapeKind } from "@/editor/core/document/types";
-import { isDirty, type ToolId } from "@/editor/core/editor-store";
+import { isDirty, selectedLayerIds, type ToolId } from "@/editor/core/editor-store";
 import { primaryBinding, type ActionId } from "@/editor/core/shortcuts/shortcuts";
 import { useActiveSession, useController, useEditorState, useIsMac } from "./editor-context";
 import styles from "./editor.module.css";
@@ -33,6 +33,7 @@ import {
   ZoomIcon,
 } from "./icons";
 import type { UiAction, UiActionId } from "./use-editor-actions";
+import { ArrangeButtons } from "./ArrangeButtons";
 
 const TOOLS: { id: ToolId; label: string; action: ActionId; icon: React.ReactNode }[] = [
   { id: "move", label: "Move", action: "tool.move", icon: <MoveIcon size={18} /> },
@@ -784,6 +785,7 @@ function CropOptions() {
 function MoveOptions({ actions }: { actions: Record<UiActionId, UiAction> }) {
   const controller = useController();
   const autoSelect = useEditorState((s) => s.toolSettings.move.autoSelect);
+  const count = selectedLayerIds(useActiveSession()).length;
   return (
     <>
       <label className={styles.optionGroup}>
@@ -812,7 +814,14 @@ function MoveOptions({ actions }: { actions: Record<UiActionId, UiAction> }) {
       >
         Flip V
       </button>
-      <span>Drag handles to scale (Shift keeps ratio) · drag outside a corner to rotate</span>
+      {count > 1 ? (
+        <ArrangeButtons count={count} />
+      ) : (
+        <span>
+          Drag handles to scale (Shift keeps ratio) · drag outside a corner to rotate · Shift-click
+          adds a layer
+        </span>
+      )}
     </>
   );
 }

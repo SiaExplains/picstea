@@ -571,6 +571,45 @@ export const POSTS: readonly BlogPost[] = [
       </>
     ),
   },
+  {
+    slug: "select-align-and-distribute-several-layers",
+    title: "Select, align and distribute several layers at once",
+    description:
+      "MYLPER now lets you select several layers, move and transform them together, scale and rotate whole groups, and align or distribute them evenly.",
+    published: "2026-10-09",
+    draft: true,
+    body: () => (
+      <>
+        <p>
+          Laying out a banner, a product grid or a social post means arranging many things at once.
+          Until now MYLPER worked on one layer at a time. Now you can select as many as you like.
+        </p>
+        <h2>Select several layers</h2>
+        <p>
+          Cmd-click (Ctrl-click) layers in the Layers panel to add them, Shift-click to select a
+          range, or press Cmd/Ctrl+Alt+A to select them all. On the canvas, Shift-click with the
+          Move tool adds the layer under the pointer.
+        </p>
+        <h2>Move, scale and rotate together</h2>
+        <p>
+          The selected layers get one frame: drag inside to move them, drag a handle to scale, or
+          drag outside a corner to rotate. The same frame appears on a group, so a whole group can
+          now be scaled and rotated too. Flip, group, duplicate and delete work on the whole
+          selection — and each is a single undo step.
+        </p>
+        <h2>Align and distribute</h2>
+        <p>
+          Line layers up by their edges or centres, or spread three or more of them evenly — by
+          centre or with equal gaps — from the Layer menu, the Move tool&apos;s options bar or the
+          Properties panel.
+        </p>
+        <p>
+          <EditorLink>Try it in MYLPER</EditorLink> — free, no account, nothing uploaded. More in{" "}
+          <Link href="/docs/layers-groups-and-masks">Layers, groups and masks</Link>.
+        </p>
+      </>
+    ),
+  },
 ];
 
 const showDrafts = process.env.NODE_ENV !== "production";
