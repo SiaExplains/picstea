@@ -28,6 +28,10 @@ const FAQS: Faq[] = [
     a: "PNG, JPEG, WebP, SVG, PDF and layered PSD.",
   },
   {
+    q: "Can I edit many photos at once?",
+    a: "Yes. Record an action (for example an adjustment and a filter), then use File → Batch… to apply it to many photos. The results are saved as one ZIP file, built on your device.",
+  },
+  {
     q: "Does it work offline?",
     a: "Once the page has loaded, editing happens in the browser. A full offline mode is not available yet.",
   },
@@ -54,17 +58,22 @@ export default function OnlinePhotoEditor() {
       <h2>What you can do</h2>
       <ul>
         <li>Layers with 16 blend modes, opacity, groups and layer masks.</li>
-        <li>Adjustment layers that never change the original pixels.</li>
+        <li>
+          Adjustment layers — including Levels and Curves — that never change the original pixels.
+        </li>
+        <li>Filters such as blur, sharpen, noise and pixelate; smart objects and smart filters.</li>
         <li>Marquee, lasso and magic-wand selections; feather, expand, contract, transform.</li>
         <li>Brush, pencil, eraser, paint bucket, gradient, shapes and text.</li>
         <li>Drop shadows, glows, outlines and colour overlays.</li>
         <li>Open and save layered PSD files; export PNG, JPEG, WebP, SVG and PDF.</li>
-        <li>Projects save automatically in your browser; full undo history.</li>
+        <li>Record actions and replay them, or batch-process many photos into one ZIP download.</li>
+        <li>A colour picker with Hex, RGB and HSB values, and your own swatches.</li>
+        <li>Projects save automatically in your browser; a History panel to go back any step.</li>
       </ul>
       <h2>Limitations</h2>
       <p>
         Images can be up to 12,000 pixels per side (36 megapixels). There are no AI tools such as
-        automatic background removal, and no curves, levels or clone stamp yet. See the{" "}
+        automatic background removal, and no clone stamp or healing brush yet. See the{" "}
         <Link href="/docs">documentation</Link> for everything that is available.
       </p>
     </LandingPage>

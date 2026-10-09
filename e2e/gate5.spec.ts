@@ -10,6 +10,7 @@ import {
   newDocument,
   pixel,
   trackErrors,
+  setForegroundColor,
 } from "./helpers";
 
 const luminance = (rgba: number[]) => (rgba[0] + rgba[1] + rgba[2]) / 3;
@@ -149,14 +150,20 @@ test("eyedropper picks the colour under the pointer", async ({ page }) => {
   await drag(page, [50, 50], [150, 150]);
   await page.keyboard.press("i");
   await click(page, 100, 100);
-  await expect(page.getByLabel("Foreground colour")).toHaveValue("#4c8dff");
+  await expect(page.getByRole("button", { name: "Foreground colour" })).toHaveAttribute(
+    "data-color",
+    "#4c8dff",
+  );
   // Alt-click with the brush picks too.
   await page.keyboard.press("b");
   const p = await at(page, 300, 300);
   await page.keyboard.down("Alt");
   await page.mouse.click(p.x, p.y);
   await page.keyboard.up("Alt");
-  await expect(page.getByLabel("Foreground colour")).toHaveValue("#ffffff");
+  await expect(page.getByRole("button", { name: "Foreground colour" })).toHaveAttribute(
+    "data-color",
+    "#ffffff",
+  );
   expect(errors).toEqual([]);
 });
 
@@ -263,7 +270,7 @@ test("polygonal lasso, Color Range and Transform Selection, all without network"
   await deselect(page);
   await page.keyboard.press("u");
   await drag(page, [300, 50], [400, 150]);
-  await page.getByLabel("Foreground colour").fill("#4c8dff");
+  await setForegroundColor(page, "#4c8dff");
   await page.getByRole("menuitem", { name: "Select" }).click();
   await page.getByRole("menuitem", { name: "Color Range…" }).click();
   const dialog = page.getByRole("dialog", { name: "Color Range" });

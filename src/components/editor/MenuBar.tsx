@@ -24,6 +24,8 @@ const MENUS: { label: string; items: MenuEntry[] }[] = [
       "file.saveProject",
       "file.export",
       "-",
+      "file.batch",
+      "-",
       "file.close",
     ],
   },

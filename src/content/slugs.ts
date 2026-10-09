@@ -11,6 +11,7 @@ export const DOC_SLUGS: readonly string[] = [
   "filters",
   "paths-and-the-pen-tool",
   "smart-objects-and-smart-filters",
+  "actions-batch-colours-and-history",
   "file-formats",
   "keyboard-shortcuts",
   "privacy-and-storage",
@@ -25,4 +26,5 @@ export const POST_SLUGS: Readonly<Record<string, "draft" | "published">> = {
   "how-to-use-the-pen-tool": "draft",
   "smart-objects-explained": "draft",
   "open-psd-files-with-editable-text-and-adjustments": "draft",
+  "record-actions-and-batch-process-images": "draft",
 };

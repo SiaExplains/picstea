@@ -3,6 +3,7 @@
 import { createContext, useContext, useSyncExternalStore } from "react";
 import type { AppStatus, EditorController } from "@/editor/controller/editor-controller";
 import type { DocumentSession, EditorState } from "@/editor/core/editor-store";
+import type { Observable } from "@/editor/core/observable";
 
 export const EditorContext = createContext<EditorController | null>(null);
 
@@ -36,6 +37,11 @@ export function useAppStatus<T>(selector: (status: AppStatus) => T): T {
     () => selector(status.get()),
     () => selector(status.get()),
   );
+}
+
+/** Subscribe to one of the controller's observable values. */
+export function useObservable<T>(observable: Observable<T>): T {
+  return useSyncExternalStore(observable.subscribe, observable.get, observable.get);
 }
 
 const subscribeNoop = () => () => {};

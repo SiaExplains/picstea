@@ -529,6 +529,79 @@ export const DOCS: readonly DocPage[] = [
     ),
   },
   {
+    slug: "actions-batch-colours-and-history",
+    title: "Actions, batch processing, colours and history",
+    description:
+      "Record actions in MYLPER and replay them on any image or a whole batch of files, pick exact colours, keep swatches, and step back through the History panel.",
+    updated: "2026-10-09",
+    body: () => (
+      <>
+        <p>
+          The History, Swatches and Actions panels share one tabbed panel on the right, between
+          Properties and Layers.
+        </p>
+        <h2>History</h2>
+        <p>
+          The History panel lists every undo step of the active document, starting with the moment
+          it was opened. Click a step (or use the arrow keys, Home and End) to go back to it; the
+          later steps stay available, dimmed, until you make a new change. The history lives with
+          the open document and is not saved in the project.
+        </p>
+        <h2>Colour picker and swatches</h2>
+        <ul>
+          <li>
+            Click the foreground or background colour in the toolbar to open the colour picker. Drag
+            in the square to choose saturation and brightness (or use the arrow keys; Shift moves in
+            bigger steps), pick the hue on the slider, or type exact Hex, RGB or HSB values. OK
+            applies the colour.
+          </li>
+          <li>
+            In the Swatches panel, click a swatch to make it the foreground colour, or Alt-click for
+            the background colour. Add Foreground saves the current colour; Delete removes the
+            focused swatch; Reset brings back the default palette.
+          </li>
+          <li>Swatches are remembered in this browser.</li>
+        </ul>
+        <h2>Recording an action</h2>
+        <ol>
+          <li>Open the Actions panel and choose New…, name the action and choose Record.</li>
+          <li>
+            Edit as usual. These operations are recorded: filters (with their settings), adjustment
+            layers (with the settings they have when you stop), Select All, Deselect, Inverse,
+            Feather/Expand/Contract, Fill, Clear, New Layer, Duplicate Layer, New Fill Layer, Flip,
+            Align and Crop to Selection.
+          </li>
+          <li>Choose Stop. Expand the action to see its steps; × deletes a step.</li>
+        </ol>
+        <p>
+          Brush strokes, moves and transforms, text and changes made in the Properties panel (other
+          than adjustment settings) are not recorded.
+        </p>
+        <h2>Playing an action</h2>
+        <p>
+          Select an action and choose Play. It runs on the active document as one step in its
+          history, so a single Undo reverts it. If a step can&apos;t run — for example Crop to
+          Selection without a selection — playback stops and says which step failed.
+        </p>
+        <h2>Batch processing</h2>
+        <p>
+          File → Batch… plays an action on many files (up to 200 at a time): choose the action, the
+          files and the output format (PNG, JPEG or WebP). Each file is opened, the action is played
+          and the result is added to one ZIP file that you save at the end. The files are processed
+          on your device and are not stored in the browser. Files that can&apos;t be opened or
+          processed are skipped and listed.
+        </p>
+        <h2>Sharing actions</h2>
+        <p>
+          Actions are stored in this browser. Export… saves all of them as a{" "}
+          <code>mylper-actions.json</code> file; Import… adds the actions from such a file, for
+          example on another computer. Imported files are checked strictly: anything MYLPER does not
+          recognise is refused.
+        </p>
+      </>
+    ),
+  },
+  {
     slug: "file-formats",
     title: "File formats: PSD, PNG, JPEG, WebP, SVG, PDF and .mylper",
     description:

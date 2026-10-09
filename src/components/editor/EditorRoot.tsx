@@ -3,11 +3,11 @@
 import { Component, useEffect, useSyncExternalStore, type ReactNode } from "react";
 import { createLogger, describeError } from "@/lib/logging/logger";
 import { EditorController, pixelBudgetFor } from "@/editor/controller/editor-controller";
-import {
-  DEFAULT_VIEW_SETTINGS,
-  parseViewSettings,
-  type ViewSettings,
-} from "@/editor/core/view-settings";
+import { parseViewSettings } from "@/editor/core/view-settings";
+import { parseStoredActions } from "@/editor/automation/actions";
+import { createId } from "@/editor/core/ids";
+import type { Observable } from "@/editor/core/observable";
+import { DEFAULT_SWATCHES, parseSwatches } from "@/editor/core/swatches";
 import {
   IndexedDbProjectStorage,
   isIndexedDbAvailable,
@@ -90,29 +90,31 @@ function getBrowserController(): EditorController {
     ),
     logger,
   });
-  browserController.view.set(loadViewSettings());
-  browserController.view.subscribe(() => saveViewSettings(browserController!.view.get()));
-  return browserController;
+  const c = browserController;
+  persist(c.view, "mylper.view", parseViewSettings);
+  persist(c.swatches, "mylper.swatches", (v) => parseSwatches(v) ?? DEFAULT_SWATCHES);
+  persist(c.actions, "mylper.actions", (v) => parseStoredActions(v, () => createId("action")));
+  return c;
 }
 
-/** View preferences (rulers, guides, grid, snap) are per browser; storage may be unavailable. */
-const VIEW_SETTINGS_KEY = "mylper.view";
-
-function loadViewSettings(): ViewSettings {
+/**
+ * Per-browser preferences (view settings, swatches, actions) live in local storage, which may be
+ * unavailable (private mode, blocked storage): then they just aren't remembered.
+ */
+function persist<T>(observable: Observable<T>, key: string, parse: (value: unknown) => T): void {
   try {
-    const raw = window.localStorage.getItem(VIEW_SETTINGS_KEY);
-    return parseViewSettings(raw ? JSON.parse(raw) : null);
+    const raw = window.localStorage.getItem(key);
+    if (raw !== null) observable.set(parse(JSON.parse(raw)));
   } catch {
-    return DEFAULT_VIEW_SETTINGS;
+    // Unreadable or malformed: keep the defaults.
   }
-}
-
-function saveViewSettings(settings: ViewSettings): void {
-  try {
-    window.localStorage.setItem(VIEW_SETTINGS_KEY, JSON.stringify(settings));
-  } catch {
-    // Private mode or blocked storage: the settings just aren't remembered.
-  }
+  observable.subscribe(() => {
+    try {
+      window.localStorage.setItem(key, JSON.stringify(observable.get()));
+    } catch {
+      // Not remembered.
+    }
+  });
 }
 
 const subscribeNoop = () => () => {};

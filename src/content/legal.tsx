@@ -164,6 +164,22 @@ export const LEGAL: Record<"privacy" | "cookies" | "terms" | "imprint" | "sponso
                 <td>Remembers your view settings: rulers, guides, grid and snapping.</td>
                 <td>Until cleared</td>
               </tr>
+              <tr>
+                <td>
+                  <code>mylper.swatches</code>
+                </td>
+                <td>Local storage</td>
+                <td>Remembers your colour swatches.</td>
+                <td>Until cleared</td>
+              </tr>
+              <tr>
+                <td>
+                  <code>mylper.actions</code>
+                </td>
+                <td>Local storage</td>
+                <td>Remembers the actions you recorded (names and steps, no images).</td>
+                <td>Until cleared</td>
+              </tr>
             </tbody>
           </table>
           <p>This data stays on your device and is never sent to us.</p>

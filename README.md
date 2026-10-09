@@ -41,6 +41,7 @@ src/editor/       Framework-independent engine — no React/Next imports (lint-e
   tools/          move/transform, crop, brush/eraser, shape, text, guides, pen and
                   direct selection (framework-free)
   filters/        filter catalogue and pure pixel filters (run in the worker)
+  automation/     recorded action steps, action files and batch helpers
   adjustments/    adjustment catalogue, pixel operations, Levels/Curves
   rendering/      Renderer interface, Canvas 2D renderer, compositor
   assets/         immutable binary assets

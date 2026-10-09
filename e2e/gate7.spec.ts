@@ -1,5 +1,13 @@
 import { expect, test, type Page } from "@playwright/test";
-import { drag, MOD, newDocument, openEditor, pixel, trackErrors } from "./helpers";
+import {
+  drag,
+  MOD,
+  newDocument,
+  openEditor,
+  pixel,
+  trackErrors,
+  setForegroundColor,
+} from "./helpers";
 
 const close = (a: number[], b: number[], tolerance = 10) =>
   a.slice(0, 3).every((v, i) => Math.abs(v - b[i]) <= tolerance);
@@ -44,7 +52,7 @@ test("a zoomed-out view renders the same colours as 100%", async ({ page }) => {
   await page.getByRole("checkbox", { name: "Drop shadow" }).check();
   await page.getByRole("menuitem", { name: "Adjustments" }).click();
   await page.getByRole("menuitem", { name: "Black & White…" }).click();
-  await page.getByLabel("Foreground colour").fill("#e01010");
+  await setForegroundColor(page, "#e01010");
   await page.keyboard.press("u");
   await page.getByLabel("Fill colour").fill("#e01010");
   await drag(page, [350, 200], [550, 350]);

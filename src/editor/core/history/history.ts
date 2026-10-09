@@ -104,3 +104,45 @@ export function dropOldest(state: HistoryState, count: number): HistoryState {
   if (count <= 0 || state.past.length === 0) return state;
   return { ...state, past: state.past.slice(Math.min(count, state.past.length)) };
 }
+
+/**
+ * Undo or redo until `pastLength` entries remain in the past (History panel). `null` when the
+ * target is out of range or already current.
+ */
+export function jumpTo(state: HistoryState, pastLength: number): HistoryStep | null {
+  const total = state.past.length + state.future.length;
+  if (!Number.isInteger(pastLength) || pastLength < 0 || pastLength > total) return null;
+  if (pastLength === state.past.length) return null;
+  const all = [...state.past, ...state.future];
+  const next: HistoryState = {
+    ...state,
+    past: all.slice(0, pastLength),
+    future: all.slice(pastLength),
+  };
+  const document =
+    pastLength < state.past.length ? all[pastLength].before : all[pastLength - 1].after;
+  const label = (pastLength < state.past.length ? all[pastLength] : all[pastLength - 1]).label;
+  return { state: next, document, label };
+}
+
+/**
+ * Fold every entry recorded since the document was `before` into one undo step (action
+ * playback). Unchanged when no entry starts at `before` — e.g. it was trimmed for memory.
+ */
+export function collapseSince(
+  state: HistoryState,
+  before: EditorDocument,
+  label: string,
+): HistoryState {
+  let start = -1;
+  for (let i = state.past.length - 1; i >= 0; i--) {
+    if (state.past[i].before === before) {
+      start = i;
+      break;
+    }
+  }
+  if (start < 0) return state;
+  const last = state.past.at(-1)!;
+  const merged: HistoryEntry = { label, before, after: last.after, timestamp: last.timestamp };
+  return { ...state, past: [...state.past.slice(0, start), merged] };
+}

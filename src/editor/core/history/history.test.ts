@@ -4,7 +4,10 @@ import type { EditorDocument } from "../document/types";
 import {
   canRedo,
   canUndo,
+  collapseSince,
   createHistory,
+  dropOldest,
+  jumpTo,
   MERGE_WINDOW_MS,
   recordChange,
   redo,
@@ -79,5 +82,57 @@ describe("history", () => {
 
   it("rejects invalid limits", () => {
     expect(() => createHistory(0)).toThrow(RangeError);
+  });
+
+  describe("jumpTo", () => {
+    const build = () => {
+      let h = createHistory();
+      for (let i = 0; i < 4; i++) {
+        h = recordChange(h, { label: `s${i}`, before: docs[i], after: docs[i + 1] }, i * 5000);
+      }
+      return h;
+    };
+
+    it("moves back and forward to any step", () => {
+      const back = jumpTo(build(), 1)!;
+      expect(back.document).toBe(docs[1]);
+      expect(back.state.past.map((e) => e.label)).toEqual(["s0"]);
+      expect(back.state.future.map((e) => e.label)).toEqual(["s1", "s2", "s3"]);
+      const start = jumpTo(back.state, 0)!;
+      expect(start.document).toBe(docs[0]);
+      const forward = jumpTo(start.state, 3)!;
+      expect(forward.document).toBe(docs[3]);
+      expect(forward.state.future.map((e) => e.label)).toEqual(["s3"]);
+    });
+
+    it("rejects the current step and out-of-range targets", () => {
+      const h = build();
+      expect(jumpTo(h, 4)).toBeNull();
+      expect(jumpTo(h, 5)).toBeNull();
+      expect(jumpTo(h, -1)).toBeNull();
+      expect(jumpTo(h, 1.5)).toBeNull();
+    });
+  });
+
+  describe("collapseSince", () => {
+    it("folds the steps since a document into one", () => {
+      let h = createHistory();
+      for (let i = 0; i < 4; i++) {
+        h = recordChange(h, { label: `s${i}`, before: docs[i], after: docs[i + 1] }, i * 5000);
+      }
+      const c = collapseSince(h, docs[1], "Action: Test");
+      expect(c.past.map((e) => e.label)).toEqual(["s0", "Action: Test"]);
+      const u = undo(c)!;
+      expect(u.document).toBe(docs[1]);
+    });
+
+    it("leaves history alone when the start was trimmed", () => {
+      let h = createHistory();
+      for (let i = 0; i < 3; i++) {
+        h = recordChange(h, { label: `s${i}`, before: docs[i], after: docs[i + 1] }, i * 5000);
+      }
+      const trimmed = dropOldest(h, 1);
+      expect(collapseSince(trimmed, docs[0], "x")).toBe(trimmed);
+    });
   });
 });

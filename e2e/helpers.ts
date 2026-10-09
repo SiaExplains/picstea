@@ -122,3 +122,15 @@ export const layerNames = (page: Page) =>
   page
     .getByTestId("layer-row")
     .evaluateAll((rows) => rows.map((r) => r.getAttribute("data-layer-name")));
+
+/** Set the foreground colour through the toolbar colour picker. */
+export async function setForegroundColor(page: Page, hex: string) {
+  await page.getByRole("button", { name: "Foreground colour" }).click();
+  const dialog = page.getByRole("dialog", { name: "Foreground Colour" });
+  await dialog.getByLabel("Hex").fill(hex);
+  await dialog.getByRole("button", { name: "OK" }).click();
+  await expect(page.getByRole("button", { name: "Foreground colour" })).toHaveAttribute(
+    "data-color",
+    hex,
+  );
+}
