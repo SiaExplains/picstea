@@ -1,4 +1,5 @@
 import type { Adjustment } from "../core/document/types";
+import { channelMixer, colorBalance, gradientMap, photoFilter, vibrance } from "./color-ops";
 import { curveLut, levelsLut, toneLuts } from "./tone";
 
 /**
@@ -178,5 +179,15 @@ export function applyAdjustment(data: Pixels, adjustment: Adjustment): void {
       return applyLut(data, ...toneLuts(adjustment, levelsLut));
     case "curves":
       return applyLut(data, ...toneLuts(adjustment, curveLut));
+    case "vibrance":
+      return vibrance(data, adjustment.vibrance, adjustment.saturation);
+    case "color-balance":
+      return colorBalance(data, adjustment, adjustment.preserveLuminosity);
+    case "photo-filter":
+      return photoFilter(data, adjustment.color, adjustment.density, adjustment.preserveLuminosity);
+    case "channel-mixer":
+      return channelMixer(data, adjustment, adjustment.monochrome);
+    case "gradient-map":
+      return gradientMap(data, adjustment.stops, adjustment.reverse);
   }
 }

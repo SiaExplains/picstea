@@ -3,6 +3,20 @@
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.15.0] — 2026-10-09
+
+### Added
+
+- **New adjustment layers**: Vibrance, Color Balance, Photo Filter, Channel Mixer and Gradient
+  Map (with up to 16 colour stops).
+- **New layer effects**: inner shadow, bevel and gradient overlay.
+- PSD files with these adjustments and styles now open with them editable, and Vibrance, Color
+  Balance and Channel Mixer are saved back to PSD as adjustment layers.
+
+### Changed
+
+- The project format moved to version 6. Older projects open as before.
+
 ## [0.14.0] — 2026-10-09
 
 ### Added

@@ -43,7 +43,7 @@ src/editor/       Framework-independent engine — no React/Next imports (lint-e
   filters/        filter catalogue and pure pixel filters (run in the worker)
   automation/     recorded action steps, action files and batch helpers
   retouch/        pure pixel strokes for clone, heal, dodge/burn/sponge, blur/sharpen/smudge
-  adjustments/    adjustment catalogue, pixel operations, Levels/Curves
+  adjustments/    adjustment catalogue, pixel operations, Levels/Curves, gradients
   rendering/      Renderer interface, Canvas 2D renderer, compositor
   assets/         immutable binary assets
   formats/        untrusted-input parsing (raster headers), raster export

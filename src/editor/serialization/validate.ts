@@ -1,7 +1,7 @@
 import { isHexColor } from "../core/document/factory";
 import { checkDimensions, MAX_DIMENSION } from "../core/document/limits";
 import { MAX_GROUP_DEPTH, walkLayers } from "../core/document/tree";
-import { checkEffect } from "../core/commands/effect-commands";
+import { checkEffect, normalizeEffect } from "../core/commands/effect-commands";
 import { parseAdjustment } from "../adjustments/registry";
 import { MAX_GUIDES } from "../core/commands/guide-commands";
 import { filterById, parseFilterValues } from "../filters/registry";
@@ -128,26 +128,26 @@ function mask(value: unknown, path: string): LayerMask {
   };
 }
 
+const EFFECT_KINDS = [
+  "dropShadow",
+  "outerGlow",
+  "innerShadow",
+  "bevel",
+  "gradientOverlay",
+  "stroke",
+  "colorOverlay",
+] as const;
+
 function effects(value: unknown, path: string): LayerEffects {
   const o = obj(value, path);
   const out: Record<string, unknown> = {};
-  for (const kind of ["dropShadow", "outerGlow", "stroke", "colorOverlay"] as const) {
+  for (const kind of EFFECT_KINDS) {
     if (o[kind] === undefined) continue;
     const e = obj(o[kind], `${path}.${kind}`);
     const error = checkEffect(kind, e);
     if (error) fail(`${path}.${kind}`, error);
     // Rebuild with known fields only.
-    const common = {
-      enabled: e.enabled,
-      color: (e.color as string).toLowerCase(),
-      opacity: e.opacity,
-    };
-    out[kind] =
-      kind === "dropShadow"
-        ? { ...common, angle: e.angle, distance: e.distance, blur: e.blur }
-        : kind === "colorOverlay"
-          ? common
-          : { ...common, size: e.size };
+    out[kind] = normalizeEffect(kind, e);
   }
   return out as LayerEffects;
 }

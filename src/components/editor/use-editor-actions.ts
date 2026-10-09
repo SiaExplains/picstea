@@ -410,7 +410,18 @@ export function useEditorActions(hosts: ActionHosts): Record<UiActionId, UiActio
           {
             label: `${a.label}…`,
             enabled: hasDoc,
-            run: () => controller.addAdjustmentLayer(a.type),
+            run: () =>
+              a.type === "gradient-map"
+                ? // A new Gradient Map runs from the foreground to the background colour.
+                  controller.addAdjustmentLayer(a.type, {
+                    type: "gradient-map",
+                    stops: [
+                      { position: 0, color: colors.foreground },
+                      { position: 1, color: colors.background },
+                    ],
+                    reverse: false,
+                  })
+                : controller.addAdjustmentLayer(a.type),
           },
         ]),
       ) as Record<`adjust.${AdjustmentType}`, UiAction>),

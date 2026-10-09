@@ -161,3 +161,134 @@ export function linkedFilesBlock(
   for (let i = bytes.length; i % 4 !== 0; i++) w.u8(0);
   return w.toBytes();
 }
+
+const long = (value: number): WritableValue => ({ type: "long", value });
+const enm = (enumType: string, value: string): WritableValue => ({ type: "enum", enumType, value });
+
+/** A PSD colour record: RGB colour space and 16-bit channels. */
+function colorRecord(w: ByteWriter, hex: string): void {
+  const n = Number.parseInt(hex.slice(1), 16);
+  w.u16(0)
+    .u16(((n >> 16) & 255) * 257)
+    .u16(((n >> 8) & 255) * 257)
+    .u16((n & 255) * 257)
+    .u16(0);
+}
+
+/** `phfl` version 2 (RGB colour record). */
+export function photoFilterBlock(color: string, density: number, preserve: boolean): Uint8Array {
+  const w = new ByteWriter();
+  w.u16(2);
+  colorRecord(w, color);
+  w.u32(density).u8(preserve ? 1 : 0);
+  return w.toBytes();
+}
+
+/** `grdm` with RGB colour stops (location 0…4096). */
+export function gradientMapBlock(
+  stops: readonly { position: number; color: string }[],
+  reverse: boolean,
+): Uint8Array {
+  const w = new ByteWriter();
+  w.u16(1)
+    .u8(reverse ? 1 : 0)
+    .u8(0);
+  writeUnicodeString(w, "Custom");
+  w.u16(stops.length);
+  for (const s of stops) {
+    w.u32(Math.round(s.position * 4096)).u32(50);
+    colorRecord(w, s.color);
+    w.u16(0);
+  }
+  // Opacity stops and the rest of the gradient, which MYLPER doesn't read.
+  w.u16(2).u32(0).u32(50).u16(255).u32(4096).u32(50).u16(255);
+  return w.toBytes();
+}
+
+/** `lfx2` with an inner shadow, an inner bevel and a linear gradient overlay. */
+export function innerStylesBlock(options: {
+  shadow: string;
+  bevelHighlight: string;
+  gradient: readonly { position: number; color: string }[];
+}): Uint8Array {
+  const w = new ByteWriter();
+  w.u32(0);
+  writeVersionedDescriptor(w, {
+    classId: "null",
+    items: [
+      ["masterFXSwitch", bool(true)],
+      [
+        "IrSh",
+        objc({
+          classId: "IrSh",
+          items: [
+            ["enab", bool(true)],
+            ["Clr ", rgbColor(options.shadow)],
+            ["Opct", untf("#Prc", 50)],
+            ["uglg", bool(false)],
+            ["lagl", untf("#Ang", 90)],
+            ["Dstn", untf("#Pxl", 4)],
+            ["blur", untf("#Pxl", 6)],
+          ],
+        }),
+      ],
+      [
+        "ebbl",
+        objc({
+          classId: "ebbl",
+          items: [
+            ["enab", bool(true)],
+            ["bvlS", enm("BESl", "InrB")],
+            ["bvlD", enm("BESs", "In  ")],
+            ["hglC", rgbColor(options.bevelHighlight)],
+            ["hglO", untf("#Prc", 80)],
+            ["sdwC", rgbColor("#000000")],
+            ["sdwO", untf("#Prc", 60)],
+            ["uglg", bool(false)],
+            ["lagl", untf("#Ang", 135)],
+            ["blur", untf("#Pxl", 7)],
+          ],
+        }),
+      ],
+      [
+        "GrFl",
+        objc({
+          classId: "GrFl",
+          items: [
+            ["enab", bool(true)],
+            ["Opct", untf("#Prc", 100)],
+            ["Angl", untf("#Ang", 0)],
+            ["Type", enm("GrdT", "Lnr ")],
+            ["Rvrs", bool(false)],
+            [
+              "Grad",
+              objc({
+                classId: "Grdn",
+                items: [
+                  ["GrdF", enm("GrdF", "CstS")],
+                  [
+                    "Clrs",
+                    {
+                      type: "VlLs",
+                      values: options.gradient.map((s) =>
+                        objc({
+                          classId: "Clrt",
+                          items: [
+                            ["Clr ", rgbColor(s.color)],
+                            ["Lctn", long(Math.round(s.position * 4096))],
+                            ["Mdpn", long(50)],
+                          ],
+                        }),
+                      ),
+                    },
+                  ],
+                ],
+              }),
+            ],
+          ],
+        }),
+      ],
+    ],
+  });
+  return w.toBytes();
+}

@@ -91,9 +91,55 @@ export interface ColorOverlayEffect {
   readonly opacity: number;
 }
 
+/** A colour at a position (0…1) along a gradient (Gradient Map, gradient overlay). */
+export interface GradientStop {
+  readonly position: number;
+  /** `#rrggbb` */
+  readonly color: string;
+}
+
+/** Shadow cast inside the layer's edges (Gate 9h). */
+export interface InnerShadowEffect {
+  readonly enabled: boolean;
+  readonly color: string;
+  readonly opacity: number;
+  readonly angle: number;
+  readonly distance: number;
+  readonly blur: number;
+}
+
+/**
+ * Inner bevel: a highlight on the edges facing the light and a shadow on the others. `color` and
+ * `opacity` are the highlight's.
+ */
+export interface BevelEffect {
+  readonly enabled: boolean;
+  readonly color: string;
+  readonly opacity: number;
+  readonly shadowColor: string;
+  readonly shadowOpacity: number;
+  /** Degrees, like the drop shadow's light angle. */
+  readonly angle: number;
+  /** Width of the bevel in px. */
+  readonly size: number;
+  /** "up" raises the shape; "down" presses it in. */
+  readonly direction: "up" | "down";
+}
+
+export interface GradientOverlayEffect {
+  readonly enabled: boolean;
+  readonly opacity: number;
+  readonly angle: number;
+  readonly stops: readonly GradientStop[];
+  readonly reverse: boolean;
+}
+
 export interface LayerEffects {
   readonly dropShadow?: DropShadowEffect;
   readonly outerGlow?: OuterGlowEffect;
+  readonly innerShadow?: InnerShadowEffect;
+  readonly bevel?: BevelEffect;
+  readonly gradientOverlay?: GradientOverlayEffect;
   readonly stroke?: StrokeEffect;
   readonly colorOverlay?: ColorOverlayEffect;
 }
@@ -228,7 +274,50 @@ export type Adjustment =
   | { readonly type: "posterize"; readonly levels: number }
   | { readonly type: "threshold"; readonly level: number }
   | ({ readonly type: "levels" } & ToneChannels<LevelsChannel>)
-  | ({ readonly type: "curves" } & ToneChannels<readonly CurvePoint[]>);
+  | ({ readonly type: "curves" } & ToneChannels<readonly CurvePoint[]>)
+  | { readonly type: "vibrance"; readonly vibrance: number; readonly saturation: number }
+  | {
+      readonly type: "color-balance";
+      readonly shadows: ColorBalanceRange;
+      readonly midtones: ColorBalanceRange;
+      readonly highlights: ColorBalanceRange;
+      readonly preserveLuminosity: boolean;
+    }
+  | {
+      readonly type: "photo-filter";
+      readonly color: string;
+      /** 1…100 % */
+      readonly density: number;
+      readonly preserveLuminosity: boolean;
+    }
+  | {
+      readonly type: "channel-mixer";
+      readonly red: MixerRow;
+      readonly green: MixerRow;
+      readonly blue: MixerRow;
+      /** Every output channel uses the `red` row (shown as "Gray"). */
+      readonly monochrome: boolean;
+    }
+  | {
+      readonly type: "gradient-map";
+      readonly stops: readonly GradientStop[];
+      readonly reverse: boolean;
+    };
+
+/** Color Balance shift for one tonal range, each −100…100. */
+export interface ColorBalanceRange {
+  readonly cyanRed: number;
+  readonly magentaGreen: number;
+  readonly yellowBlue: number;
+}
+
+/** Channel Mixer: how much of each source channel (and a constant) feeds one output, −200…200 %. */
+export interface MixerRow {
+  readonly red: number;
+  readonly green: number;
+  readonly blue: number;
+  readonly constant: number;
+}
 
 /** Levels for one channel, all in 0…255 except `gamma` (0.1…9.99, 1 = unchanged). */
 export interface LevelsChannel {

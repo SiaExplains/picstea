@@ -252,6 +252,7 @@ export function getColor(d: Descriptor | undefined, key = "Clr "): string | unde
   const g = getNumber(c, "Grn ");
   const b = getNumber(c, "Bl  ") ?? getNumber(c, "Bl ");
   if (r === undefined || g === undefined || b === undefined) return undefined;
+  if (![r, g, b].every(Number.isFinite)) return undefined;
   const hex = (v: number) =>
     Math.round(Math.min(255, Math.max(0, v)))
       .toString(16)

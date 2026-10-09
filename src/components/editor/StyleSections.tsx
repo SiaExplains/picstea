@@ -16,6 +16,13 @@ import type {
 } from "@/editor/core/document/types";
 import { useController } from "./editor-context";
 import { CurvesEditor, LevelsEditor } from "./ToneEditors";
+import {
+  ChannelMixerEditor,
+  ColorBalanceEditor,
+  GradientMapEditor,
+  GradientStopsEditor,
+  PhotoFilterEditor,
+} from "./AdjustmentEditors";
 import styles from "./editor.module.css";
 
 /** A labelled slider that merges a drag into one undo step and seals on release. */
@@ -62,6 +69,14 @@ export function AdjustmentSection({ layer }: { layer: AdjustmentLayer }) {
   const { adjustment } = layer;
   if (adjustment.type === "levels") return <LevelsEditor layer={{ ...layer, adjustment }} />;
   if (adjustment.type === "curves") return <CurvesEditor layer={{ ...layer, adjustment }} />;
+  if (adjustment.type === "color-balance")
+    return <ColorBalanceEditor layer={layer} adjustment={adjustment} />;
+  if (adjustment.type === "photo-filter")
+    return <PhotoFilterEditor layer={layer} adjustment={adjustment} />;
+  if (adjustment.type === "channel-mixer")
+    return <ChannelMixerEditor layer={layer} adjustment={adjustment} />;
+  if (adjustment.type === "gradient-map")
+    return <GradientMapEditor layer={layer} adjustment={adjustment} />;
   const def = adjustmentDefinition(layer.adjustment.type);
   const values = layer.adjustment as unknown as Record<string, number>;
   return (
@@ -93,6 +108,9 @@ export function AdjustmentSection({ layer }: { layer: AdjustmentLayer }) {
 const EFFECT_LABELS: Record<EffectKind, string> = {
   dropShadow: "Drop shadow",
   outerGlow: "Outer glow",
+  innerShadow: "Inner shadow",
+  bevel: "Bevel",
+  gradientOverlay: "Gradient overlay",
   stroke: "Outer stroke",
   colorOverlay: "Colour overlay",
 };
@@ -126,7 +144,7 @@ export function EffectsSection({ layer }: { layer: Layer }) {
                 }}
               />
               <span>{EFFECT_LABELS[kind]}</span>
-              {effect && (
+              {effect && "color" in effect && (
                 <input
                   type="color"
                   aria-label={`${EFFECT_LABELS[kind]} colour`}
@@ -173,6 +191,111 @@ export function EffectsSection({ layer }: { layer: Layer }) {
                       max={100}
                       onChange={(blur) => update("dropShadow", { blur })}
                     />
+                  </>
+                )}
+                {kind === "innerShadow" && effects.innerShadow && (
+                  <>
+                    <Slider
+                      label="Angle"
+                      value={effects.innerShadow.angle}
+                      min={-180}
+                      max={180}
+                      format={(v) => `${v}°`}
+                      onChange={(angle) => update("innerShadow", { angle })}
+                    />
+                    <Slider
+                      label="Distance"
+                      value={effects.innerShadow.distance}
+                      min={0}
+                      max={100}
+                      onChange={(distance) => update("innerShadow", { distance })}
+                    />
+                    <Slider
+                      label="Blur"
+                      value={effects.innerShadow.blur}
+                      min={0}
+                      max={100}
+                      onChange={(blur) => update("innerShadow", { blur })}
+                    />
+                  </>
+                )}
+                {kind === "bevel" && effects.bevel && (
+                  <>
+                    <Slider
+                      label="Size"
+                      value={effects.bevel.size}
+                      min={1}
+                      max={100}
+                      onChange={(size) => update("bevel", { size })}
+                    />
+                    <Slider
+                      label="Angle"
+                      value={effects.bevel.angle}
+                      min={-180}
+                      max={180}
+                      format={(v) => `${v}°`}
+                      onChange={(angle) => update("bevel", { angle })}
+                    />
+                    <label className={styles.smallLabel}>
+                      <span>Shadow</span>
+                      <input
+                        type="color"
+                        aria-label="Bevel shadow colour"
+                        className={styles.colorInput}
+                        style={{ width: 36 }}
+                        value={effects.bevel.shadowColor}
+                        onChange={(e) => update("bevel", { shadowColor: e.target.value })}
+                        onBlur={() => controller.store.sealHistory()}
+                      />
+                    </label>
+                    <Slider
+                      label="Shadow opacity"
+                      value={effects.bevel.shadowOpacity}
+                      min={0}
+                      max={1}
+                      step={0.01}
+                      format={percent}
+                      onChange={(shadowOpacity) => update("bevel", { shadowOpacity })}
+                    />
+                    <label className={styles.smallLabel}>
+                      <input
+                        type="checkbox"
+                        checked={effects.bevel.direction === "down"}
+                        onChange={(e) => {
+                          update("bevel", { direction: e.target.checked ? "down" : "up" });
+                          controller.store.sealHistory();
+                        }}
+                      />
+                      <span>Pressed in</span>
+                    </label>
+                  </>
+                )}
+                {kind === "gradientOverlay" && effects.gradientOverlay && (
+                  <>
+                    <Slider
+                      label="Angle"
+                      value={effects.gradientOverlay.angle}
+                      min={-180}
+                      max={180}
+                      format={(v) => `${v}°`}
+                      onChange={(angle) => update("gradientOverlay", { angle })}
+                    />
+                    <GradientStopsEditor
+                      label="Overlay gradient"
+                      stops={effects.gradientOverlay.stops}
+                      onChange={(stops) => update("gradientOverlay", { stops })}
+                    />
+                    <label className={styles.smallLabel}>
+                      <input
+                        type="checkbox"
+                        checked={effects.gradientOverlay.reverse}
+                        onChange={(e) => {
+                          update("gradientOverlay", { reverse: e.target.checked });
+                          controller.store.sealHistory();
+                        }}
+                      />
+                      <span>Reverse</span>
+                    </label>
                   </>
                 )}
                 {kind === "outerGlow" && effects.outerGlow && (
