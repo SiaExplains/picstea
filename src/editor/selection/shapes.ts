@@ -15,14 +15,30 @@ export function polygonSelection(
   points: readonly Point[],
   antiAlias = true,
 ): SelectionMask {
+  return polygonsSelection(width, height, [points], antiAlias);
+}
+
+/**
+ * Rasterise several closed rings with the even-odd rule, so a ring inside another cuts a hole
+ * (paths with holes, traced selections).
+ */
+export function polygonsSelection(
+  width: number,
+  height: number,
+  polygons: readonly (readonly Point[])[],
+  antiAlias = true,
+): SelectionMask {
   const data = new Uint8Array(width * height);
-  if (points.length < 3) return createSelection(width, height, data);
+  const rings = polygons.filter((r) => r.length >= 3);
+  if (rings.length === 0) return createSelection(width, height, data);
 
   let minY = Infinity;
   let maxY = -Infinity;
-  for (const p of points) {
-    if (p.y < minY) minY = p.y;
-    if (p.y > maxY) maxY = p.y;
+  for (const ring of rings) {
+    for (const p of ring) {
+      if (p.y < minY) minY = p.y;
+      if (p.y > maxY) maxY = p.y;
+    }
   }
   const rowStart = Math.max(0, Math.floor(minY));
   const rowEnd = Math.min(height - 1, Math.ceil(maxY));
@@ -36,12 +52,14 @@ export function polygonSelection(
     for (let s = 0; s < samples; s++) {
       const sy = row + (s + 0.5) / samples;
       xs.length = 0;
-      for (let i = 0; i < points.length; i++) {
-        const a = points[i];
-        const b = points[(i + 1) % points.length];
-        // Half-open rule so shared vertices are counted once.
-        if ((a.y <= sy && b.y > sy) || (b.y <= sy && a.y > sy)) {
-          xs.push(a.x + ((sy - a.y) / (b.y - a.y)) * (b.x - a.x));
+      for (const points of rings) {
+        for (let i = 0; i < points.length; i++) {
+          const a = points[i];
+          const b = points[(i + 1) % points.length];
+          // Half-open rule so shared vertices are counted once.
+          if ((a.y <= sy && b.y > sy) || (b.y <= sy && a.y > sy)) {
+            xs.push(a.x + ((sy - a.y) / (b.y - a.y)) * (b.x - a.x));
+          }
         }
       }
       if (xs.length < 2) continue;

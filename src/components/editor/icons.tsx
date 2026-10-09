@@ -139,6 +139,20 @@ export const ShapeIcon = (p: IconProps) => (
   </Svg>
 );
 
+export const PenIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M8 1.5 12.5 7 9.5 12.5h-3L3.5 7Z" />
+    <circle cx="8" cy="8" r="1" />
+    <path d="M8 1.5V7M6 14.5h4" />
+  </Svg>
+);
+
+export const PathSelectIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M3 2.5v10l3-3 2 4.5 1.6-.7-2-4.4H12Z" />
+  </Svg>
+);
+
 export const TextIcon = (p: IconProps) => (
   <Svg {...p}>
     <path d="M3 3.5V2.5h10v1M8 2.5v11M6 13.5h4" />

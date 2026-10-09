@@ -1,3 +1,4 @@
+import { translatePath } from "../path/path";
 import { createId } from "../ids";
 import {
   findLayerDeep,
@@ -24,6 +25,12 @@ export function translateLayerContent(layer: Layer, dx: number, dy: number): Lay
   }
   if (next.mask)
     next = { ...next, mask: { ...next.mask, x: next.mask.x + dx, y: next.mask.y + dy } } as Layer;
+  if (next.vectorMask) {
+    next = {
+      ...next,
+      vectorMask: { ...next.vectorMask, path: translatePath(next.vectorMask.path, dx, dy) },
+    } as Layer;
+  }
   return next;
 }
 
@@ -133,21 +140,19 @@ export function translateLayer(
       }
       if (dx === 0 && dy === 0) return doc;
       const moved = isGroup(layer)
-        ? mapLayers([layer], (l) =>
-            l.mask?.linked === false
-              ? translateUnlinked(l, dx, dy)
-              : translateLayerContent(l, dx, dy),
-          )[0]
-        : layer.mask && !layer.mask.linked
-          ? translateUnlinked(layer, dx, dy)
-          : translateLayerContent(layer, dx, dy);
+        ? mapLayers([layer], (l) => translateUnlinked(l, dx, dy))[0]
+        : translateUnlinked(layer, dx, dy);
       return { ...doc, layers: mapLayers(doc.layers, (l) => (l.id === layerId ? moved : l)) };
     },
   };
 }
 
-/** Move content but leave an unlinked mask where it is. */
+/** Move content but leave unlinked masks (raster or vector) where they are. */
 function translateUnlinked(layer: Layer, dx: number, dy: number): Layer {
-  const moved = translateLayerContent(layer, dx, dy);
-  return layer.mask ? ({ ...moved, mask: layer.mask } as Layer) : moved;
+  let moved = translateLayerContent(layer, dx, dy);
+  if (layer.mask && !layer.mask.linked) moved = { ...moved, mask: layer.mask } as Layer;
+  if (layer.vectorMask && !layer.vectorMask.linked) {
+    moved = { ...moved, vectorMask: layer.vectorMask } as Layer;
+  }
+  return moved;
 }

@@ -310,6 +310,72 @@ export const POSTS: readonly BlogPost[] = [
       </>
     ),
   },
+  {
+    slug: "how-to-use-the-pen-tool",
+    title: "How to use the Pen tool: precise shapes, cut-outs and masks",
+    description:
+      "A practical introduction to the Pen tool: corner and curve points, closing a path, editing it, and turning it into a shape, a selection or a vector mask.",
+    published: "2026-10-09",
+    draft: true,
+    body: () => (
+      <>
+        <p>
+          The Pen tool has a reputation for being hard. It isn&apos;t — it just works differently
+          from a brush. Instead of painting pixels, you place points and the editor draws perfectly
+          smooth lines between them. Once you have the outline, you can use it for almost anything.
+        </p>
+        <h2>Two kinds of points</h2>
+        <ul>
+          <li>
+            <strong>Click</strong> to place a corner point. Straight lines connect corner points.
+          </li>
+          <li>
+            <strong>Click and drag</strong> to place a smooth point. The direction you drag sets the
+            direction of the curve, and the distance sets how strongly it bends.
+          </li>
+        </ul>
+        <p>
+          A good habit: use as few points as you can, and put smooth points at the widest part of a
+          curve rather than at its ends.
+        </p>
+        <h2>Close it, then fix it</h2>
+        <p>
+          Click the first point to close the path. It rarely comes out perfect the first time —
+          that&apos;s expected. Switch to the Direct Selection tool (A) and drag points or their
+          handles until the outline sits exactly where you want it. Alt-click a point to switch it
+          between corner and smooth.
+        </p>
+        <h2>What to do with a path</h2>
+        <ul>
+          <li>
+            <strong>A shape</strong>: in Shape mode the path becomes a filled shape layer that stays
+            sharp at any size.
+          </li>
+          <li>
+            <strong>A cut-out</strong>: in Path mode, trace around an object, then press
+            Cmd/Ctrl+Enter to turn the path into a selection with clean edges.
+          </li>
+          <li>
+            <strong>A mask</strong>: Layer → Add Vector Mask from Path hides everything outside the
+            outline, without deleting anything.
+          </li>
+        </ul>
+        <h2>Try it</h2>
+        <ol>
+          <li>
+            Open a photo in <EditorLink>MYLPER</EditorLink> and press P.
+          </li>
+          <li>Choose Path in the options bar and click around an object, closing the path.</li>
+          <li>Press A and adjust the points, then press Cmd/Ctrl+Enter.</li>
+          <li>Press Cmd/Ctrl+J to copy the object to its own layer.</li>
+        </ol>
+        <p>
+          Read more in <Link href="/docs/paths-and-the-pen-tool">Paths and the Pen tool</Link>.
+          Everything happens in your browser — nothing is uploaded.
+        </p>
+      </>
+    ),
+  },
 ];
 
 const showDrafts = process.env.NODE_ENV !== "production";

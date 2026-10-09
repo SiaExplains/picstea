@@ -29,6 +29,12 @@ export type UiActionId =
   | "view.newGuide"
   | "view.clearGuides"
   | "view.gridSettings"
+  | "path.vectorMask"
+  | "path.shape"
+  | "path.delete"
+  | "path.fromSelection"
+  | "layer.deleteVectorMask"
+  | "layer.toggleVectorMask"
   | "layer.newGroup"
   | "layer.addMask"
   | "layer.deleteMask"
@@ -69,6 +75,7 @@ export interface ActionHosts {
   openFilterDialog: (id: FilterId) => void;
   openGuideDialog: () => void;
   openGridDialog: () => void;
+  openWorkPathDialog: () => void;
 }
 
 /** Download the active document as a portable `.mylper` file (File → Save Project As…). */
@@ -119,6 +126,8 @@ export function useEditorActions(hosts: ActionHosts): Record<UiActionId, UiActio
     const canTransform = !!layer && isTransformable(layer) && !layer.locked;
     const selection = doc?.selection;
     const hasSelection = !!selection;
+    const hasWorkPath = !!doc?.workPath;
+    const isPathShape = layer?.kind === "shape" && layer.shape === "path";
     const onPixels = hasSelection && layer?.kind === "raster" && !layer.locked;
     const tool = (id: Parameters<typeof controller.store.setActiveTool>[0], label: string) => ({
       label,
@@ -300,6 +309,46 @@ export function useEditorActions(hosts: ActionHosts): Record<UiActionId, UiActio
         enabled: !!layer?.mask,
         run: () => controller.toggleActiveMask(),
       },
+      "layer.clip": {
+        label: layer?.clipped ? "Release Clipping Mask" : "Create Clipping Mask",
+        enabled: !!layer && !layer.locked && (!!layer.clipped || (location?.index ?? 0) > 0),
+        run: () => controller.toggleClipping(),
+      },
+      "path.makeSelection": {
+        label: "Make Selection from Path",
+        enabled: hasWorkPath || isPathShape,
+        run: () => controller.selectionFromPath(),
+      },
+      "path.fromSelection": {
+        label: "Make Work Path from Selection…",
+        enabled: hasSelection,
+        run: hosts.openWorkPathDialog,
+      },
+      "path.vectorMask": {
+        label: "Add Vector Mask from Path",
+        enabled: hasWorkPath && !!layer && !layer.locked,
+        run: () => controller.vectorMaskFromPath(),
+      },
+      "path.shape": {
+        label: "Shape from Path",
+        enabled: hasWorkPath,
+        run: () => controller.shapeFromWorkPath(),
+      },
+      "path.delete": {
+        label: "Delete Work Path",
+        enabled: hasWorkPath,
+        run: () => controller.deleteWorkPath(),
+      },
+      "layer.deleteVectorMask": {
+        label: "Delete Vector Mask",
+        enabled: !!layer?.vectorMask && !layer.locked,
+        run: () => controller.deleteVectorMask(),
+      },
+      "layer.toggleVectorMask": {
+        label: layer?.vectorMask?.enabled === false ? "Enable Vector Mask" : "Disable Vector Mask",
+        enabled: !!layer?.vectorMask && !layer.locked,
+        run: () => controller.toggleVectorMask(),
+      },
       "layer.selectAbove": {
         label: "Select Layer Above",
         enabled: rowIndex > 0,
@@ -434,6 +483,8 @@ export function useEditorActions(hosts: ActionHosts): Record<UiActionId, UiActio
       "tool.bucket": tool("bucket", "Paint Bucket Tool"),
       "tool.gradient": tool("gradient", "Gradient Tool"),
       "tool.shape": tool("shape", "Shape Tool"),
+      "tool.pen": tool("pen", "Pen Tool"),
+      "tool.pathSelect": tool("path-select", "Direct Selection Tool"),
       "tool.text": tool("text", "Text Tool"),
       "tool.hand": tool("hand", "Hand Tool"),
       "tool.zoom": tool("zoom", "Zoom Tool"),

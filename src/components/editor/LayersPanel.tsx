@@ -8,6 +8,7 @@ import {
   setLayerVisibility,
   setMaskEnabled,
   type DropPosition,
+  setVectorMask,
 } from "@/editor/core/commands";
 import { flattenTopFirst } from "@/editor/core/document/tree";
 import type { Layer } from "@/editor/core/document/types";
@@ -31,6 +32,7 @@ import {
   TextIcon,
   TrashIcon,
   UnlockIcon,
+  PenIcon,
 } from "./icons";
 import type { UiAction, UiActionId } from "./use-editor-actions";
 
@@ -77,6 +79,7 @@ function LayerThumb({ layer, targeted }: { layer: Layer; targeted: boolean }) {
 interface RowProps {
   layer: Layer;
   depth: number;
+  clipBase: boolean;
   active: boolean;
   dimmed: boolean;
   drop: DropPosition | null;
@@ -84,7 +87,16 @@ interface RowProps {
   onDropRow: (event: DragEvent<HTMLLIElement>, layer: Layer) => void;
 }
 
-function LayerRow({ layer, depth, active, dimmed, drop, onDragOverRow, onDropRow }: RowProps) {
+function LayerRow({
+  layer,
+  depth,
+  clipBase,
+  active,
+  dimmed,
+  drop,
+  onDragOverRow,
+  onDropRow,
+}: RowProps) {
   const controller = useController();
   const editTarget = useEditorState((s) => s.editTarget);
   const [editing, setEditing] = useState(false);
@@ -116,6 +128,7 @@ function LayerRow({ layer, depth, active, dimmed, drop, onDragOverRow, onDropRow
       data-testid="layer-row"
       data-layer-name={layer.name}
       data-depth={depth}
+      data-clipped={layer.clipped ? "true" : undefined}
       draggable={!editing}
       onDragStart={(e) => {
         e.dataTransfer.setData(DRAG_TYPE, layer.id);
@@ -124,7 +137,7 @@ function LayerRow({ layer, depth, active, dimmed, drop, onDragOverRow, onDropRow
       onDragOver={(e) => onDragOverRow(e, layer)}
       onDrop={(e) => onDropRow(e, layer)}
       onClick={() => controller.store.selectLayer(layer.id)}
-      style={{ paddingLeft: 4 + depth * 14 }}
+      style={{ paddingLeft: 4 + depth * 14 + (layer.clipped ? 14 : 0) }}
     >
       <button
         type="button"
@@ -139,6 +152,11 @@ function LayerRow({ layer, depth, active, dimmed, drop, onDragOverRow, onDropRow
       >
         {layer.visible ? <EyeIcon /> : <EyeOffIcon />}
       </button>
+      {layer.clipped && (
+        <span className={styles.clipMarker} title="Clipped to the layer below" aria-hidden>
+          ↳
+        </span>
+      )}
       {layer.kind === "group" ? (
         <button
           type="button"
@@ -189,6 +207,36 @@ function LayerRow({ layer, depth, active, dimmed, drop, onDragOverRow, onDropRow
           <MaskIcon size={12} />
         </button>
       )}
+      {layer.vectorMask && (
+        <button
+          type="button"
+          className={`${styles.thumbButton} ${styles.maskThumb} ${
+            layer.vectorMask.enabled ? "" : styles.maskDisabled
+          }`}
+          aria-label={`Edit ${layer.name} vector mask${layer.vectorMask.enabled ? "" : " (disabled)"}`}
+          title="Click to edit the vector mask path · Shift-click to enable/disable it"
+          data-testid="vector-mask-thumb"
+          onClick={(e) => {
+            e.stopPropagation();
+            if (e.shiftKey) {
+              controller.execute(
+                setVectorMask(
+                  layer.id,
+                  { ...layer.vectorMask!, enabled: !layer.vectorMask!.enabled },
+                  {
+                    label: layer.vectorMask!.enabled ? "Disable Vector Mask" : "Enable Vector Mask",
+                  },
+                ),
+              );
+              return;
+            }
+            controller.store.selectLayer(layer.id);
+            controller.store.setActiveTool("path-select");
+          }}
+        >
+          <PenIcon size={12} />
+        </button>
+      )}
       {editing ? (
         <input
           className={`${styles.input} ${styles.layerRename}`}
@@ -223,7 +271,8 @@ function LayerRow({ layer, depth, active, dimmed, drop, onDragOverRow, onDropRow
           }}
           onFocus={() => controller.store.selectLayer(layer.id)}
         >
-          {layer.name}
+          <span className={clipBase ? styles.clipBase : undefined}>{layer.name}</span>
+          {layer.clipped && <span className={styles.srOnly}> (clipped)</span>}
         </span>
       )}
       {hasActiveEffects(layer.effects) && (
@@ -307,11 +356,15 @@ export function LayersPanel({ actions }: { actions: Record<UiActionId, UiAction>
         Double-click or press F2 to rename. Drag to reorder or to move into a group.
       </p>
       <ul className={styles.layerList} aria-label="Layers" onDragEnd={() => setDrop(null)}>
-        {rows.map(({ layer, depth, effectivelyVisible }) => (
+        {rows.map(({ layer, depth, effectivelyVisible }, i) => (
           <LayerRow
             key={layer.id}
             layer={layer}
             depth={depth}
+            // Rows are top first: a layer is a clipping base when the sibling above it is clipped.
+            clipBase={
+              !layer.clipped && rows[i - 1]?.depth === depth && !!rows[i - 1]?.layer.clipped
+            }
             active={layer.id === doc?.activeLayerId}
             dimmed={!effectivelyVisible}
             drop={drop?.id === layer.id ? drop.position : null}

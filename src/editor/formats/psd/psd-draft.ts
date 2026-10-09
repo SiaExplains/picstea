@@ -20,6 +20,7 @@ interface DraftBase {
   readonly visible: boolean;
   readonly blendKey: string;
   readonly mask?: DraftMask;
+  readonly clipping?: boolean;
 }
 
 export type DraftNode =
@@ -96,6 +97,7 @@ export function resolveDraft(draft: PsdDraft): PsdFile {
         visible: node.visible,
         blendKey: node.blendKey,
         mask: toMask(node.mask),
+        ...(node.clipping ? { clipping: true } : {}),
       };
       if (node.kind === "group") {
         return { ...base, kind: "group", open: node.open, children: convert(node.children) };

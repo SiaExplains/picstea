@@ -50,6 +50,10 @@ export type ActionId =
   | "tool.bucket"
   | "tool.gradient"
   | "tool.shape"
+  | "tool.pen"
+  | "tool.pathSelect"
+  | "path.makeSelection"
+  | "layer.clip"
   | "tool.text"
   | "tool.hand"
   | "tool.zoom"
@@ -113,6 +117,10 @@ export const DEFAULT_KEYMAP: Readonly<Record<ActionId, readonly string[]>> = {
   "tool.bucket": ["Shift+G"],
   "tool.gradient": ["G"],
   "tool.shape": ["U"],
+  "tool.pen": ["P"],
+  "tool.pathSelect": ["A"],
+  "path.makeSelection": ["Mod+Enter"],
+  "layer.clip": ["Mod+Alt+G"],
   "tool.text": ["T"],
   "tool.hand": ["H"],
   "tool.zoom": ["Z"],

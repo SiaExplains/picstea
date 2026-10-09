@@ -31,6 +31,8 @@ interface PsdNodeBase {
   /** Photoshop blend key, e.g. "norm", "mul ", "pass". */
   readonly blendKey: string;
   readonly mask?: PsdMask;
+  /** Clipped to the layer below (the record's clipping byte). */
+  readonly clipping?: boolean;
 }
 
 export interface PsdPixelLayer extends PsdNodeBase {

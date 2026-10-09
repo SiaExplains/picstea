@@ -1,6 +1,6 @@
 # Feature status
 
-Last updated: 2026-10-09 · version 0.8.0 · current gate: **9a (Professional Parity: precision, filters, colour) — awaiting review**
+Last updated: 2026-10-09 · version 0.9.0 · current gate: **9b (Professional Parity: paths, vector & clipping masks) — awaiting review**
 
 Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ deferred
 
@@ -71,7 +71,7 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 | Groups (nesting, pass-through/isolated, collapse, move) | ✅ | Group scale/rotate 📋 |
 | Drag-and-drop in Layers panel; Bring Forward/Send Backward enter/leave groups | ✅ | |
 | Blend modes & opacity (layers and groups) | ✅ | |
-| Raster layer masks (paint grey levels, enable/disable, linked) | ✅ | Vector & clipping masks 📋; masks don't follow scale/rotate |
+| Raster layer masks (paint grey levels, enable/disable, linked) | ✅ | Vector & clipping masks ✅ (Gate 9b); masks don't follow scale/rotate |
 | Adjustment layers: Brightness/Contrast, Hue/Saturation, Exposure, Temperature/Tint, Black & White, Invert, Posterize, Threshold | ✅ | Levels/Curves ✅ (Gate 9a) |
 | Layer effects: drop shadow, outer glow, outer stroke, colour overlay | ✅ | Inner shadow, bevel 📋 |
 
@@ -95,7 +95,7 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 |---|---|---|
 | Open PNG, JPEG, WebP, GIF (first frame) | ✅ | Sniffed by content, header-validated |
 | `.mylper` project files (save / open) | ✅ | ZIP + versioned JSON; same validator as local storage |
-| PSD import: 8-bit RGB/greyscale, layers, groups, names, opacity, visibility, blend modes, masks | ✅ | Text/smart objects as pixels; adjustments, styles, vector masks, clipping not imported |
+| PSD import: 8-bit RGB/greyscale, layers, groups, names, opacity, visibility, blend modes, masks | ✅ | Text/smart objects as pixels; adjustments, styles, vector masks not imported; clipping ✅ (9b) |
 | PSD export: layers, groups, names, opacity, visibility, blend modes, masks, composite | ✅ | Shapes/text rasterised; effects merged; adjustments in composite only |
 | SVG export (vector shapes/text, images for the rest) | ✅ | Flattened when adjustment layers are present |
 | SVG import (rasterised safely via `<img>`) | ✅ | |
@@ -138,8 +138,8 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 
 | Slice | Contents | Status |
 |---|---|---|
-| 9a | Rulers, guides, grid, snapping, align; filters; Levels and Curves | 🚧 awaiting review |
-| 9b | Pen tool, paths, path ↔ selection, vector masks, clipping masks | 📋 |
+| 9a | Rulers, guides, grid, snapping, align; filters; Levels and Curves | ✅ |
+| 9b | Pen tool, paths, path ↔ selection, vector masks, clipping masks | 🚧 awaiting review |
 | 9c | Smart objects (embedded documents), advanced PSD (text, clipping, adjustment layers, effects) | 📋 |
 | 9d | Automation (record/play actions, batch), swatches and colour picker, history panel | 📋 |
 
@@ -156,6 +156,18 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 | Filters: Gaussian, Box and Motion Blur, Unsharp Mask, Add Noise, Pixelate, Emboss, Find Edges | ✅ | Last Filter (Mod+Alt+F) |
 | Levels and Curves adjustment layers (RGB + per channel, histogram) | ✅ | Composite only in PSD export |
 | View preferences remembered per browser | ✅ | `mylper.view` in local storage |
+
+### 9b
+
+| Feature | Status | Notes |
+|---|---|---|
+| Vector path model (cubic Bézier subpaths), schema v4 | ✅ | ADR-0015; validated like all project data |
+| Pen tool: corners, smooth points, close, Shape / Path modes | ✅ | Anchors snap (9a) |
+| Path shape layers (fill, stroke, transform, effects; SVG `<path>`) | ✅ | Rasterised in PSD export |
+| Direct Selection: anchors, handles, corner/smooth, delete, nudge | ✅ | Edits the active path shape, its vector mask and the work path |
+| Work path ↔ selection (even-odd, holes; trace with tolerance) | ✅ | One work path per document; Paths panel 📋 |
+| Vector masks (linked, enable/disable, edit) | ✅ | Rasterised into layer pixels in PSD export; `vmsk` 📋 (9c) |
+| Clipping masks (incl. clipped adjustments), PSD clipping flag read/write | ✅ | Semi-transparent bases differ slightly from Photoshop |
 
 ## Later gates (summary)
 

@@ -88,10 +88,14 @@ export async function documentToPsdDraft(
         visible: layer.visible,
         blendKey: blendKey(layer.blendMode),
         mask: layer.mask ? await maskDraft(env, doc, layer.mask) : undefined,
+        ...(layer.clipped ? { clipping: true } : {}),
       };
       if (layer.kind === "group") {
         if (hasEffects(layer)) {
           warnings.add("Effects on groups are included in the flattened image only.");
+        }
+        if (layer.vectorMask?.enabled) {
+          warnings.add("Vector masks on groups are included in the flattened image only.");
         }
         out.push({
           ...base,
@@ -105,6 +109,8 @@ export async function documentToPsdDraft(
       if (layer.kind === "text" || layer.kind === "shape") {
         warnings.add("Shapes and text were converted to pixels.");
       }
+      if (layer.vectorMask?.enabled)
+        warnings.add("Vector masks were merged into the layer pixels.");
       // The layer's own look, without its opacity, blend mode or mask (stored separately).
       const plain = {
         ...layer,
@@ -112,6 +118,7 @@ export async function documentToPsdDraft(
         blendMode: "normal",
         visible: true,
         mask: undefined,
+        clipped: false,
       } as Layer;
       const region = leafRegion(env, doc, layer);
       out.push({
@@ -211,6 +218,7 @@ export function psdToDocument(
       const common = {
         opacity: Math.round((node.opacity / 255) * 100) / 100,
         visible: node.visible,
+        ...(node.clipping ? { clipped: true } : {}),
       };
       const mask = toMask(node.mask);
       if (node.kind === "group") {

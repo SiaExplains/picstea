@@ -162,3 +162,25 @@ describe("PSD reader hardening", () => {
     }
   });
 });
+
+describe("PSD clipping masks", () => {
+  it("writes and reads the clipping flag", async () => {
+    const file = sample();
+    const clipped: PsdPixelLayer = {
+      kind: "pixels",
+      name: "Clipped",
+      opacity: 255,
+      visible: true,
+      blendKey: "norm",
+      clipping: true,
+      rect: { top: 0, left: 0, bottom: 2, right: 2 },
+      rgba: solid(2, 2, [0, 0, 255, 255]),
+    };
+    const result = await readPsd(writePsd({ ...file, layers: [...file.layers, clipped] }));
+    const top = result.file.layers.at(-1)!;
+    expect(top.name).toBe("Clipped");
+    expect(top.clipping).toBe(true);
+    expect(result.file.layers[0].clipping).toBeUndefined();
+    expect([...result.warnings].join(" ")).not.toMatch(/Clipping/);
+  });
+});

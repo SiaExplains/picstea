@@ -13,6 +13,7 @@ const SHAPE_NAMES: Record<ShapeKind, string> = {
   rect: "Rectangle",
   ellipse: "Ellipse",
   line: "Line",
+  path: "Shape",
 };
 
 /** Smallest drag (document px) that creates a shape; anything less counts as a click. */

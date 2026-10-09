@@ -53,6 +53,7 @@ interface RawRecord {
   readonly blendKey: string;
   readonly opacity: number;
   readonly visible: boolean;
+  readonly clipping: boolean;
   readonly name: string;
   readonly mask?: { rect: PsdRect; defaultColor: number; disabled: boolean };
   readonly section?: { type: number; blendKey?: string };
@@ -93,7 +94,6 @@ function readRecord(r: ByteReader, warnings: Set<string>): RawRecord {
   const clipping = r.u8();
   const flags = r.u8();
   r.skip(1);
-  if (clipping) warnings.add("Clipping masks were imported as normal layers.");
 
   const extra = r.sub(r.u32());
   let mask: RawRecord["mask"];
@@ -183,6 +183,7 @@ function readRecord(r: ByteReader, warnings: Set<string>): RawRecord {
     blendKey,
     opacity,
     visible: (flags & 2) === 0,
+    clipping: clipping !== 0,
     name,
     mask,
     section,
@@ -346,6 +347,7 @@ export async function readPsd(bytes: Uint8Array): Promise<PsdReadResult> {
           visible: rec.visible,
           blendKey: rec.section?.blendKey ?? rec.blendKey,
           mask,
+          ...(rec.clipping ? { clipping: true } : {}),
         };
         if (rec.section?.type === 3) {
           decoded.push({ kind: "divider" });

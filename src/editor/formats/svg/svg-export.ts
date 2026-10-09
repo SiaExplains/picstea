@@ -1,3 +1,4 @@
+import { EMPTY_PATH, pathToSvgD } from "../../core/path/path";
 import { allLayers } from "../../core/document/tree";
 import type {
   EditorDocument,
@@ -88,6 +89,8 @@ function shapeElement(layer: ShapeLayer): string {
       return `<ellipse cx="${num(w / 2)}" cy="${num(h / 2)}" rx="${num(w / 2)}" ry="${num(h / 2)}"${paint}/>`;
     case "line":
       return `<line x1="0" y1="0" x2="${num(w)}" y2="${num(h)}"${paint}/>`;
+    case "path":
+      return `<path d="${pathToSvgD(layer.path ?? EMPTY_PATH)}" fill-rule="evenodd"${paint}/>`;
   }
 }
 
@@ -114,6 +117,7 @@ function textElement(layer: TextLayer, sizer: ContentSizer): string {
 /** Can this layer be written as plain SVG without changing how it looks? */
 function isVector(layer: Layer): boolean {
   if (layer.mask && layer.mask.enabled) return false;
+  if (layer.vectorMask?.enabled) return false;
   if (layer.effects && Object.values(layer.effects).some((e) => e?.enabled)) return false;
   return layer.kind === "shape" || layer.kind === "text" || layer.kind === "fill";
 }
@@ -131,7 +135,8 @@ export async function buildSvg(
     return `<image x="${num(r.x)}" y="${num(r.y)}" width="${num(r.width)}" height="${num(r.height)}" href="${r.href}"${attrs}/>`;
   };
 
-  const flattened = allLayers(doc).some((l) => l.kind === "adjustment" && l.visible);
+  // Adjustments and clipping masks depend on the layers beneath, so the image is flattened.
+  const flattened = allLayers(doc).some((l) => (l.kind === "adjustment" || l.clipped) && l.visible);
   let body: string;
   if (flattened) {
     body = await image(doc.layers, "");
@@ -176,5 +181,6 @@ export async function buildSvg(
 
 function isVectorGroup(group: GroupLayer): boolean {
   if (group.mask && group.mask.enabled) return false;
+  if (group.vectorMask?.enabled) return false;
   return !(group.effects && Object.values(group.effects).some((e) => e?.enabled));
 }

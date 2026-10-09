@@ -1211,3 +1211,15 @@
 .previewDialog::backdrop {
   background: transparent;
 }
+
+/* Clipping masks in the Layers panel */
+.clipMarker {
+  color: var(--ed-text-dim);
+  font-size: 12px;
+  margin-right: 2px;
+}
+
+.clipBase {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}

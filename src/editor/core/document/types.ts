@@ -7,6 +7,7 @@
  */
 
 import type { SelectionMask } from "../../selection/mask";
+import type { VectorPath } from "../path/path";
 
 export const BLEND_MODES = [
   "normal",
@@ -99,6 +100,16 @@ export interface LayerEffects {
 
 export type EffectKind = keyof LayerEffects;
 
+/**
+ * Vector mask (ADR-0015): the layer shows only inside the filled path (even-odd). The path is in
+ * document space and, when linked, moves with the layer.
+ */
+export interface VectorMask {
+  readonly path: VectorPath;
+  readonly enabled: boolean;
+  readonly linked: boolean;
+}
+
 export interface BaseLayer {
   readonly id: string;
   readonly name: string;
@@ -109,7 +120,13 @@ export interface BaseLayer {
   readonly blendMode: BlendMode;
   readonly transform: Transform;
   readonly mask?: LayerMask;
+  readonly vectorMask?: VectorMask;
   readonly effects?: LayerEffects;
+  /**
+   * Clipping mask (ADR-0015): shown only where the nearest unclipped layer below it in the same
+   * list (the base) has pixels.
+   */
+  readonly clipped?: boolean;
 }
 
 /** Bitmap content stored as an immutable asset. */
@@ -128,7 +145,7 @@ export interface FillLayer extends BaseLayer {
   readonly color: string;
 }
 
-export type ShapeKind = "rect" | "ellipse" | "line";
+export type ShapeKind = "rect" | "ellipse" | "line" | "path";
 
 export interface StrokeStyle {
   /** `#rrggbb` */
@@ -150,6 +167,8 @@ export interface ShapeLayer extends BaseLayer {
   readonly fill: string | null;
   readonly stroke: StrokeStyle | null;
   readonly cornerRadius: number;
+  /** For `shape: "path"`: the outline in layer-local coordinates, within the box. */
+  readonly path?: VectorPath;
 }
 
 export const FONT_FAMILIES = [
@@ -274,6 +293,8 @@ export interface EditorDocument {
   readonly layers: readonly Layer[];
   readonly activeLayerId: string | null;
   readonly guides: readonly Guide[];
+  /** The Pen tool's work path in document space (ADR-0015), if any. */
+  readonly workPath?: VectorPath;
   readonly metadata: DocumentMetadata;
   /**
    * The active selection (ADR-0010). Part of the document so selection changes are undoable,

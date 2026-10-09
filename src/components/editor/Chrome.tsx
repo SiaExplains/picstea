@@ -21,6 +21,8 @@ import {
   EraserIcon,
   HandIcon,
   MoveIcon,
+  PathSelectIcon,
+  PenIcon,
   ShapeIcon,
   SwapIcon,
   TextIcon,
@@ -46,6 +48,13 @@ const TOOLS: { id: ToolId; label: string; action: ActionId; icon: React.ReactNod
   { id: "bucket", label: "Paint Bucket", action: "tool.bucket", icon: <BucketIcon size={18} /> },
   { id: "gradient", label: "Gradient", action: "tool.gradient", icon: <GradientIcon size={18} /> },
   { id: "shape", label: "Shape", action: "tool.shape", icon: <ShapeIcon size={18} /> },
+  { id: "pen", label: "Pen", action: "tool.pen", icon: <PenIcon size={18} /> },
+  {
+    id: "path-select",
+    label: "Direct Selection",
+    action: "tool.pathSelect",
+    icon: <PathSelectIcon size={18} />,
+  },
   { id: "text", label: "Text", action: "tool.text", icon: <TextIcon size={18} /> },
   { id: "hand", label: "Hand", action: "tool.hand", icon: <HandIcon size={18} /> },
   { id: "zoom", label: "Zoom", action: "tool.zoom", icon: <ZoomIcon size={18} /> },
@@ -395,7 +404,7 @@ function ShapeOptions() {
   const settings = useEditorState((s) => s.toolSettings.shape);
   const set = (patch: Partial<typeof settings>) =>
     controller.store.updateToolSettings("shape", patch);
-  const kinds: { id: ShapeKind; label: string }[] = [
+  const kinds: { id: Exclude<ShapeKind, "path">; label: string }[] = [
     { id: "rect", label: "Rectangle" },
     { id: "ellipse", label: "Ellipse" },
     { id: "line", label: "Line" },
@@ -602,6 +611,57 @@ function MoveOptions({ actions }: { actions: Record<UiActionId, UiAction> }) {
   );
 }
 
+/** Work-path actions shared by the Pen and Direct Selection options. */
+function PathButtons({ actions }: { actions: Record<UiActionId, UiAction> }) {
+  const ids: UiActionId[] = ["path.makeSelection", "path.vectorMask", "path.shape", "path.delete"];
+  const labels: Partial<Record<UiActionId, string>> = {
+    "path.makeSelection": "Selection",
+    "path.vectorMask": "Mask",
+    "path.shape": "Shape",
+    "path.delete": "Delete Path",
+  };
+  return (
+    <div className={styles.segmented} role="group" aria-label="Work path">
+      {ids.map((id) => (
+        <button
+          key={id}
+          type="button"
+          disabled={!actions[id].enabled}
+          onClick={actions[id].run}
+          title={actions[id].label}
+        >
+          {labels[id]}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function PenOptions({ actions }: { actions: Record<UiActionId, UiAction> }) {
+  const controller = useController();
+  const mode = useEditorState((s) => s.toolSettings.pen.mode);
+  return (
+    <>
+      <div className={styles.segmented} role="group" aria-label="Pen mode">
+        {(["shape", "path"] as const).map((m) => (
+          <button
+            key={m}
+            type="button"
+            aria-pressed={mode === m}
+            onClick={() => controller.store.updateToolSettings("pen", { mode: m })}
+          >
+            {m === "shape" ? "Shape" : "Path"}
+          </button>
+        ))}
+      </div>
+      <PathButtons actions={actions} />
+      <span>
+        Click for corners, drag for curves · click the first point to close · Enter finishes
+      </span>
+    </>
+  );
+}
+
 const TOOL_LABELS: Record<ToolId, string> = {
   move: "Move",
   marquee: "Marquee",
@@ -615,6 +675,8 @@ const TOOL_LABELS: Record<ToolId, string> = {
   bucket: "Paint Bucket",
   gradient: "Gradient",
   shape: "Shape",
+  pen: "Pen",
+  "path-select": "Direct Selection",
   text: "Text",
   hand: "Hand",
   zoom: "Zoom",
@@ -647,6 +709,15 @@ export function OptionsBar({ actions }: { actions: Record<UiActionId, UiAction> 
       )}
       {activeTool === "gradient" && <GradientOptions />}
       {activeTool === "shape" && <ShapeOptions />}
+      {activeTool === "pen" && <PenOptions actions={actions} />}
+      {activeTool === "path-select" && (
+        <>
+          <PathButtons actions={actions} />
+          <span>
+            Drag anchors or handles · Alt-click an anchor for corner/smooth · Delete removes it
+          </span>
+        </>
+      )}
       {activeTool === "text" && <TextOptions />}
       {activeTool === "zoom" && (
         <>

@@ -1,3 +1,4 @@
+import { translatePath } from "../path/path";
 import { withoutSelection } from "./selection-commands";
 import { checkDimensions } from "../document/limits";
 import { CommandError, type Command } from "./command";
@@ -40,7 +41,8 @@ export function resizeCanvas(width: number, height: number, anchor: CanvasAnchor
       const dx = anchor === "center" ? Math.round((width - doc.width) / 2) : 0;
       const dy = anchor === "center" ? Math.round((height - doc.height) / 2) : 0;
       const layers = translateAllLayers(doc, dx, dy);
-      return { ...withoutSelection(doc), width, height, layers };
+      const workPath = doc.workPath && translatePath(doc.workPath, dx, dy);
+      return { ...withoutSelection(doc), width, height, layers, ...(workPath ? { workPath } : {}) };
     },
   };
 }

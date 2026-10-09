@@ -1,3 +1,4 @@
+import { pathBounds, translatePath, type VectorPath } from "../path/path";
 import { createId } from "../ids";
 import { checkDimensions } from "./limits";
 import { walkLayers } from "./tree";
@@ -119,6 +120,33 @@ export function createShapeLayer(params: {
       scaleX: params.scaleX ?? 1,
       scaleY: params.scaleY ?? 1,
     },
+  };
+}
+
+/**
+ * A path shape layer from a document-space path: the layer box is the path's bounds, and the
+ * path is stored relative to it so the transform moves and scales it like other shapes.
+ */
+export function createPathShapeLayer(params: {
+  path: VectorPath;
+  fill: string | null;
+  stroke: StrokeStyle | null;
+  name: string;
+}): ShapeLayer | null {
+  const b = pathBounds(params.path);
+  if (!b) return null;
+  return {
+    ...createShapeLayer({
+      shape: "path",
+      x: b.x,
+      y: b.y,
+      width: Math.max(1, b.width),
+      height: Math.max(1, b.height),
+      fill: params.fill,
+      stroke: params.stroke,
+      name: params.name,
+    }),
+    path: translatePath(params.path, -b.x, -b.y),
   };
 }
 
