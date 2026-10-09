@@ -37,7 +37,9 @@ src/lib/          SEO, consent (vendor registry), ads (AdSense), sponsorships
 src/editor/       Framework-independent engine — no React/Next imports (lint-enforced)
   core/           document model, commands, history, store, viewport, shortcuts
   controller/     use cases: open, import, save, restore, autosave, export; tool routing
-  tools/          move/transform, crop, brush/eraser, shape, text (framework-free)
+  tools/          move/transform, crop, brush/eraser, shape, text, guides (framework-free)
+  filters/        filter catalogue and pure pixel filters (run in the worker)
+  adjustments/    adjustment catalogue, pixel operations, Levels/Curves
   rendering/      Renderer interface, Canvas 2D renderer, compositor
   assets/         immutable binary assets
   formats/        untrusted-input parsing (raster headers), raster export

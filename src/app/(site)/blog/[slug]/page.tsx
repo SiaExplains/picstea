@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
 import { AdSlot } from "@/components/site/AdSlot";
 import { ContentPage } from "@/components/site/ContentPage";
 import { postBySlug, publishedPosts } from "@/content/blog";
@@ -31,7 +32,16 @@ export async function generateMetadata({ params }: PageProps<"/blog/[slug]">): P
   };
 }
 
-export default async function BlogPost({ params }: PageProps<"/blog/[slug]">) {
+/** The URL is read inside Suspense so the route's shared shell doesn't depend on it. */
+export default function BlogPost({ params }: PageProps<"/blog/[slug]">) {
+  return (
+    <Suspense>
+      <Post params={params} />
+    </Suspense>
+  );
+}
+
+async function Post({ params }: Pick<PageProps<"/blog/[slug]">, "params">) {
   const post = postBySlug((await params).slug);
   if (!post) notFound();
   const path = `/blog/${post.slug}`;

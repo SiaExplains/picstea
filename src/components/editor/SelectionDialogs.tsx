@@ -6,7 +6,8 @@ import { MAX_MODIFY_RADIUS } from "@/editor/selection/modify";
 import { useController, useEditorState } from "./editor-context";
 import styles from "./editor.module.css";
 
-function useModal(open: boolean) {
+/** Show a native modal <dialog> while `open`. */
+export function useModal(open: boolean) {
   const ref = useRef<HTMLDialogElement>(null);
   useEffect(() => {
     const dialog = ref.current;

@@ -1,4 +1,4 @@
-import type { EditorDocument } from "../core/document/types";
+import type { EditorDocument, Guide } from "../core/document/types";
 import type { Size, Viewport } from "../core/viewport/viewport";
 import type { ContentSizer } from "../core/geometry/layer-geometry";
 import type { AssetResolver, CompositePreview } from "./compositing/compositor";
@@ -26,6 +26,10 @@ export interface RenderScene {
   readonly selection?: SelectionMask;
   /** Dash offset in CSS pixels; advancing it animates the ants. */
   readonly antsPhase?: number;
+  /** Guides to draw (never exported); omit to hide them. */
+  readonly guides?: readonly Guide[];
+  /** Grid spacing in document pixels; omit for no grid. */
+  readonly grid?: number;
 }
 
 export interface Renderer {

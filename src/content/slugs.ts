@@ -7,6 +7,8 @@ export const DOC_SLUGS: readonly string[] = [
   "layers-groups-and-masks",
   "selections",
   "painting-and-fills",
+  "guides-grid-and-snapping",
+  "filters",
   "file-formats",
   "keyboard-shortcuts",
   "privacy-and-storage",
@@ -17,4 +19,5 @@ export const POST_SLUGS: Readonly<Record<string, "draft" | "published">> = {
   "edit-psd-online-without-uploading": "draft",
   "png-vs-jpeg-vs-webp": "draft",
   "layers-and-masks-explained": "draft",
+  "levels-and-curves-explained": "draft",
 };

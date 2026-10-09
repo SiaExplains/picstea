@@ -1,6 +1,12 @@
 import type { AssetStore } from "../assets/asset-store";
 import type { EditorStore } from "../core/editor-store";
 import type { ContentSizer } from "../core/geometry/layer-geometry";
+import {
+  SNAP_DISTANCE_PX,
+  snapPoint,
+  type SnapLine,
+  type SnapTargets,
+} from "../core/geometry/snapping";
 import type { Point, Viewport } from "../core/viewport/viewport";
 import type { SurfaceFactory } from "../rendering/canvas/canvas2d-renderer";
 import type { CompositePreview } from "../rendering/compositing/compositor";
@@ -50,6 +56,25 @@ export interface ToolContext {
   pixelsCommitted(): void;
   /** Open the on-canvas text editor. */
   beginTextEdit(request: TextEditRequest): void;
+  /**
+   * What drags can snap to in the active document (ADR-0014), or null when snapping is off.
+   * Layers being moved are excluded so they don't snap to themselves.
+   */
+  snapTargets(excludeLayerIds?: readonly string[]): SnapTargets | null;
+}
+
+/**
+ * Snap targets for a drag, or null when snapping is off or temporarily disabled by holding
+ * Cmd/Ctrl, with the snap distance in document units at the current zoom.
+ */
+export function dragSnapping(
+  ctx: ToolContext,
+  pointer: ToolPointer,
+  excludeLayerIds?: readonly string[],
+): { targets: SnapTargets; threshold: number } | null {
+  if (pointer.modKey) return null;
+  const targets = ctx.snapTargets(excludeLayerIds);
+  return targets && { targets, threshold: SNAP_DISTANCE_PX / ctx.viewport().zoom };
 }
 
 export type TextEditRequest =
@@ -77,6 +102,17 @@ export interface Tool {
    * transforming the outline). `undefined` = no override, `null` = hide the outline.
    */
   selectionPreview?(ctx: ToolContext): SelectionMask | null | undefined;
+}
+
+/** The pointer's document position snapped (when snapping is on), with the lines it hit. */
+export function snappedPointer(
+  ctx: ToolContext,
+  pointer: ToolPointer,
+): { point: Point; lines: readonly SnapLine[] } {
+  const snapping = dragSnapping(ctx, pointer);
+  if (!snapping) return { point: pointer.doc, lines: [] };
+  const snap = snapPoint(pointer.doc, snapping.targets, snapping.threshold);
+  return { point: { x: pointer.doc.x + snap.dx, y: pointer.doc.y + snap.dy }, lines: snap.lines };
 }
 
 /** Screen-space hit radius for handles, in CSS pixels. */

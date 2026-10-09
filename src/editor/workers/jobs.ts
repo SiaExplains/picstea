@@ -4,6 +4,10 @@ import type { PsdFile } from "../formats/psd/psd-model";
 import { readPsd, type PsdReadResult } from "../formats/psd/psd-read";
 import { writePsd } from "../formats/psd/psd-write";
 import { writePdf } from "../formats/pdf/pdf-write";
+import { blendByCoverage } from "../filters/kernels";
+import { runFilter } from "../filters/registry";
+import { histogram } from "../adjustments/tone";
+import type { ToneChannel } from "../core/document/types";
 import { colorRange, floodRegion, type Rgba, type RgbaPixels } from "../selection/flood";
 import type { SelectionMask } from "../selection/mask";
 
@@ -32,6 +36,25 @@ export interface JobTypes {
     input: { pixels: RgbaPixels; color: Rgba; fuzziness: number };
     output: SelectionMask;
   };
+  /**
+   * Run a filter (ADR-0014). With `coverage` (one byte per pixel) the result is mixed into the
+   * original by that amount, so only the selected area changes.
+   */
+  filter: {
+    input: {
+      pixels: RgbaPixels;
+      filterId: string;
+      values: unknown;
+      seed: number;
+      coverage: Uint8Array | null;
+    };
+    output: RgbaPixels;
+  };
+  /** 256-bin histogram of pixels (Levels/Curves panel). */
+  histogram: {
+    input: { pixels: RgbaPixels; channel: ToneChannel };
+    output: Uint32Array;
+  };
 }
 
 export type JobName = keyof JobTypes;
@@ -50,6 +73,13 @@ export const JOBS: {
   flood: ({ pixels, x, y, tolerance, contiguous }) =>
     floodRegion(pixels, x, y, tolerance, contiguous),
   colorRange: ({ pixels, color, fuzziness }) => colorRange(pixels, color, fuzziness),
+  filter: ({ pixels, filterId, values, seed, coverage }) => {
+    const out = runFilter(filterId, pixels, values, { seed });
+    if (!coverage) return out;
+    if (coverage.length !== pixels.width * pixels.height) throw new Error("Invalid selection.");
+    return { ...out, data: blendByCoverage(pixels.data, out.data, coverage) };
+  },
+  histogram: ({ pixels, channel }) => histogram(pixels.data, channel),
 };
 
 /** Buffers in a job's output to transfer back instead of copying. */
@@ -63,6 +93,10 @@ export function outputTransfer(name: JobName, output: unknown): Transferable[] {
     case "floodBitmap":
     case "colorRange":
       return [(output as SelectionMask).data.buffer];
+    case "filter":
+      return [(output as RgbaPixels).data.buffer];
+    case "histogram":
+      return [(output as Uint32Array).buffer];
     case "psdRead": {
       const result = output as PsdReadResult;
       const buffers: Transferable[] = [];

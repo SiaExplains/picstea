@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
 import { ADJUSTMENTS } from "@/editor/adjustments/registry";
+import { FILTERS } from "@/editor/filters/registry";
 import { DEFAULT_KEYMAP, formatBinding } from "@/editor/core/shortcuts/shortcuts";
 import { useIsMac } from "./editor-context";
 import styles from "./editor.module.css";
@@ -63,10 +64,27 @@ const MENUS: { label: string; items: MenuEntry[] }[] = [
       "-",
       "layer.flipH",
       "layer.flipV",
+      "-",
+      "align.left",
+      "align.center-x",
+      "align.right",
+      "align.top",
+      "align.center-y",
+      "align.bottom",
     ],
   },
   // Each item adds a non-destructive adjustment layer.
   { label: "Adjustments", items: ADJUSTMENTS.map((a) => `adjust.${a.type}` as const) },
+  // Filters change the active pixel layer; a separator between groups (Blur, Sharpen…).
+  {
+    label: "Filter",
+    items: [
+      "filter.last",
+      ...FILTERS.flatMap((f, i): MenuEntry[] =>
+        i === 0 || FILTERS[i - 1].group !== f.group ? ["-", `filter.${f.id}`] : [`filter.${f.id}`],
+      ),
+    ],
+  },
   {
     label: "Select",
     items: [
@@ -84,7 +102,26 @@ const MENUS: { label: string; items: MenuEntry[] }[] = [
       "select.transform",
     ],
   },
-  { label: "View", items: ["view.zoomIn", "view.zoomOut", "-", "view.fit", "view.actualPixels"] },
+  {
+    label: "View",
+    items: [
+      "view.zoomIn",
+      "view.zoomOut",
+      "-",
+      "view.fit",
+      "view.actualPixels",
+      "-",
+      "view.rulers",
+      "view.guides",
+      "view.grid",
+      "view.snap",
+      "-",
+      "view.newGuide",
+      "view.lockGuides",
+      "view.clearGuides",
+      "view.gridSettings",
+    ],
+  },
   { label: "Help", items: ["help.welcome", "-", "help.docs", "help.blog"] },
 ];
 
@@ -220,7 +257,10 @@ export function MenuBar({ actions }: { actions: Record<UiActionId, UiAction> }) 
                       <button
                         key={entry}
                         type="button"
-                        role="menuitem"
+                        role={
+                          actions[entry].checked === undefined ? "menuitem" : "menuitemcheckbox"
+                        }
+                        aria-checked={actions[entry].checked}
                         className={styles.menuItem}
                         disabled={!actions[entry].enabled}
                         aria-label={actions[entry].label}
@@ -230,7 +270,14 @@ export function MenuBar({ actions }: { actions: Record<UiActionId, UiAction> }) 
                           actions[entry].run();
                         }}
                       >
-                        <span>{actions[entry].label}</span>
+                        <span>
+                          {actions[entry].checked !== undefined && (
+                            <span className={styles.menuCheck} aria-hidden>
+                              {actions[entry].checked ? "✓" : ""}
+                            </span>
+                          )}
+                          {actions[entry].label}
+                        </span>
                         <span className={styles.shortcut}>{shortcutFor(entry, isMac)}</span>
                       </button>
                     ),

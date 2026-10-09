@@ -3,6 +3,7 @@ import { checkDimensions, MAX_DIMENSION } from "../core/document/limits";
 import { walkLayers } from "../core/document/tree";
 import { checkEffect } from "../core/commands/effect-commands";
 import { parseAdjustment } from "../adjustments/registry";
+import { MAX_GUIDES } from "../core/commands/guide-commands";
 import {
   BLEND_MODES,
   FONT_FAMILIES,
@@ -30,7 +31,6 @@ export class ValidationError extends Error {
 type Obj = Record<string, unknown>;
 
 const MAX_LAYERS = 10_000;
-const MAX_GUIDES = 1_000;
 const MAX_TEXT = 1_000;
 const MAX_COORDINATE = 1e7;
 

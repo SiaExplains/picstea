@@ -1,6 +1,7 @@
 import { moveSelection, setSelection } from "../../core/commands/selection-commands";
 import { activeLayer } from "../../core/document/queries";
 import type { EditorDocument } from "../../core/document/types";
+import type { SnapLine } from "../../core/geometry/snapping";
 import type { Point } from "../../core/viewport/viewport";
 import { renderBitmap } from "../../formats/layer-render";
 import type { Overlay } from "../../rendering/overlay";
@@ -19,6 +20,7 @@ import {
 } from "../../selection/shapes";
 import {
   HANDLE_HIT_PX,
+  snappedPointer,
   type Tool,
   type ToolContext,
   type ToolKey,
@@ -150,6 +152,8 @@ interface MarqueeDrag {
   /** Modifiers held at the press choose the mode; held later they constrain / centre. */
   readonly modifiersAtStart: boolean;
   current: Point;
+  /** Smart guides the drag snapped to. */
+  lines: readonly SnapLine[];
   constrain: boolean;
   fromCenter: boolean;
 }
@@ -163,9 +167,11 @@ export class MarqueeTool extends SelectionToolBase {
     sealNudges();
     if (this.beginMove(ctx, pointer)) return;
     const settings = ctx.store.getState().toolSettings.marquee;
+    const start = snappedPointer(ctx, pointer);
     this.drag = {
-      start: pointer.doc,
-      current: pointer.doc,
+      start: start.point,
+      current: start.point,
+      lines: start.lines,
       mode: modeFromModifiers(settings.mode, pointer.shiftKey, pointer.altKey),
       modifiersAtStart: pointer.shiftKey || pointer.altKey,
       constrain: false,
@@ -177,7 +183,9 @@ export class MarqueeTool extends SelectionToolBase {
     if (this.moving) return this.updateMove(ctx, pointer);
     const drag = this.drag;
     if (!drag) return;
-    drag.current = pointer.doc;
+    const snapped = snappedPointer(ctx, pointer);
+    drag.current = snapped.point;
+    drag.lines = snapped.lines;
     drag.constrain = !drag.modifiersAtStart && pointer.shiftKey;
     drag.fromCenter = !drag.modifiersAtStart && pointer.altKey;
     ctx.invalidate();
@@ -253,7 +261,10 @@ export class MarqueeTool extends SelectionToolBase {
             { x: r.x, y: r.y + r.height },
           ]
         : ellipsePoints(r);
-    return [{ kind: "path", points, closed: true }];
+    return [
+      { kind: "snap", lines: drag.lines },
+      { kind: "path", points, closed: true },
+    ];
   }
 }
 

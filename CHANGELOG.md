@@ -3,6 +3,30 @@
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.8.0] — 2026-10-09
+
+### Added
+
+- **Rulers, guides and grid** (View menu). Drag a guide out of a ruler, move it with the Move
+  tool, drag it back onto the ruler to delete it, or place one exactly with View → New Guide….
+  Guides are saved with the project and never exported.
+- **Snapping with smart guides**: moving and resizing layers, drawing selections and shapes,
+  the crop box and guides snap to guides, the grid, the canvas edges and centre, and other
+  layers. Pink lines show what snapped. Hold Cmd/Ctrl while dragging to place freely, or turn
+  it off with View → Snap.
+- **Layer → Align**: line the active layer up with the canvas, or with the selection.
+- **Filter menu**: Gaussian Blur, Box Blur, Motion Blur, Unsharp Mask, Add Noise, Pixelate,
+  Emboss and Find Edges, with a live preview on the canvas. With a selection, only the selected
+  area changes. Filter → Last Filter repeats the previous one. Filters run in the background.
+- **Levels and Curves** adjustment layers, per channel, with a histogram of the image beneath.
+  Curve points can be dragged, typed or moved with the arrow keys.
+- Docs: "Rulers, guides, grid and snapping" and "Filters".
+
+### Changed
+
+- New keyboard shortcuts: Cmd/Ctrl+R rulers, Cmd/Ctrl+; guides, Cmd/Ctrl+' grid,
+  Cmd/Ctrl+Shift+; snap, Cmd/Ctrl+Option/Alt+F last filter.
+
 ## [0.7.0] — 2026-10-09
 
 ### Added

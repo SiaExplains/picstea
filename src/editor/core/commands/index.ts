@@ -7,3 +7,4 @@ export * from "./mask-commands";
 export * from "./effect-commands";
 export * from "./adjustment-commands";
 export * from "./selection-commands";
+export * from "./guide-commands";

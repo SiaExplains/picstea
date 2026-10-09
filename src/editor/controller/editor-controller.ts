@@ -20,10 +20,22 @@ import {
   setMaskEnabled,
   ungroup,
   updateTextLayer,
+  CommandError,
+  requireUnlocked,
+  addGuide,
+  clearGuides,
+  translateLayer,
   type Command,
 } from "../core/commands";
+import { alignDelta, type AlignEdge } from "../core/geometry/snapping";
 import { adjustmentDefinition } from "../adjustments/registry";
-import type { AdjustmentType, EditorDocument, Layer } from "../core/document/types";
+import type {
+  AdjustmentType,
+  EditorDocument,
+  Guide,
+  Layer,
+  ToneChannel,
+} from "../core/document/types";
 import { EditorStore, isDirty, type DocumentSession } from "../core/editor-store";
 import {
   createDocument,
@@ -40,7 +52,10 @@ import {
 import type { Transform } from "../core/document/types";
 import { activeLayer, findLayer } from "../core/document/queries";
 import {
+  boundsOf,
+  isMovable,
   isTransformable,
+  layerCorners,
   layerLocalSize,
   type ContentSizer,
 } from "../core/geometry/layer-geometry";
@@ -48,6 +63,7 @@ import { flipAboutCenter } from "../core/geometry/transform-handles";
 import { referencedAssetIds } from "../core/document/queries";
 import { createId } from "../core/ids";
 import { Observable } from "../core/observable";
+import { DEFAULT_VIEW_SETTINGS, type ViewSettings } from "../core/view-settings";
 import {
   actualPixels,
   fitToScreen,
@@ -78,6 +94,9 @@ import type { RasterLayer } from "../core/document/types";
 import {
   context2d,
   copySelectedPixels,
+  layerSelectionCoverage,
+  readLayerPixels,
+  readPixelsBelow,
   paintRasterLayer,
   readPixels,
   releaseSurface,
@@ -88,6 +107,12 @@ import {
 import { colorRange, type RgbaPixels } from "../selection/flood";
 import { selectionBytes, type SelectionMask } from "../selection/mask";
 import { mainThreadRunner, type JobRunner } from "../workers/job-runner";
+import {
+  filterById,
+  scaleFilterValues,
+  type FilterId,
+  type FilterValues,
+} from "../filters/registry";
 import { ToolManager } from "./tool-manager";
 import { MemoryProjectStorage } from "../persistence/memory/memory-project-storage";
 import {
@@ -164,6 +189,29 @@ export function pixelBudgetFor(deviceMemoryGb: number | undefined): number {
   return Math.round(Math.min(1536 * MB, Math.max(256 * MB, (deviceMemoryGb * 1024 * MB) / 4)));
 }
 
+export const ALIGN_LABELS: Record<AlignEdge, string> = {
+  left: "Align Left Edges",
+  "center-x": "Align Horizontal Centers",
+  right: "Align Right Edges",
+  top: "Align Top Edges",
+  "center-y": "Align Vertical Centers",
+  bottom: "Align Bottom Edges",
+};
+
+/** Filter previews run on at most this many pixels (larger layers are previewed reduced). */
+const FILTER_PREVIEW_PIXELS = 2_000_000;
+
+interface FilterSession {
+  readonly documentId: string;
+  readonly layer: RasterLayer;
+  /** Preview resolution relative to the layer. */
+  readonly scale: number;
+  readonly pixels: RgbaPixels;
+  readonly coverage: Uint8Array | null;
+  readonly seed: number;
+  surface: Surface | null;
+}
+
 /** Documents above this many pixels get a short "large image" note when opened. */
 export const LARGE_DOCUMENT_PIXELS = 16_000_000;
 
@@ -190,6 +238,8 @@ export class EditorController {
   readonly busy = new Observable<string | null>(null);
   /** True while the canvas shows a quick, lower-resolution render that will be sharpened. */
   readonly refining = new Observable(false);
+  /** Rulers, guides, grid and snapping preferences (the UI persists them). */
+  readonly view = new Observable<ViewSettings>(DEFAULT_VIEW_SETTINGS);
   readonly sizer: ContentSizer;
   readonly createSurface: SurfaceFactory;
 
@@ -230,6 +280,8 @@ export class EditorController {
       notify: (kind, message) => this.notify(kind, message),
       pixelsCommitted: () => this.enforcePixelBudget(),
       beginTextEdit: (request) => this.beginTextEdit(request),
+      view: () => this.view.get(),
+      screenSize: () => this.viewportSize.get(),
     });
     let lastTool = this.store.getState().activeTool;
     let lastDocument = this.store.getState().activeDocumentId;
@@ -482,6 +534,203 @@ export class EditorController {
     const bounds = this.store.getSession()?.document.selection?.bounds;
     if (!bounds) return;
     this.execute(cropDocument(bounds));
+  }
+
+  /**
+   * Histogram of what an adjustment layer receives (the image beneath it), computed on a
+   * reduced copy in the worker. Null while images are loading.
+   */
+  async adjustmentHistogram(layerId: string, channel: ToneChannel): Promise<Uint32Array | null> {
+    const doc = this.store.getSession()?.document;
+    if (!doc) return null;
+    const pixels = readPixelsBelow(this, doc, layerId);
+    if (!pixels) return null;
+    return this.jobs.run("histogram", { pixels, channel }, [pixels.data.buffer]);
+  }
+
+  // ---------------------------------------------------------------- view, guides, align
+
+  setView(patch: Partial<ViewSettings>): void {
+    this.view.update((v) => ({ ...v, ...patch }));
+  }
+
+  /** View → New Guide…: position in document pixels. */
+  addGuide(orientation: Guide["orientation"], position: number): boolean {
+    // A new guide should be visible.
+    if (!this.view.get().guides) this.setView({ guides: true });
+    return this.execute(addGuide(orientation, position));
+  }
+
+  clearGuides(): void {
+    this.execute(clearGuides());
+  }
+
+  /**
+   * Layer → Align: line the active layer up with the selection (when there is one) or the canvas.
+   */
+  alignActiveLayer(edge: AlignEdge): void {
+    const doc = this.store.getSession()?.document;
+    const layer = doc ? activeLayer(doc) : undefined;
+    if (!doc || !layer) return;
+    if (!isMovable(layer)) {
+      this.notify("error", "This layer covers the whole canvas and cannot be aligned.");
+      return;
+    }
+    const box = boundsOf(layerCorners(layer, doc, this.sizer));
+    const target = doc.selection?.bounds ?? { x: 0, y: 0, width: doc.width, height: doc.height };
+    const delta = alignDelta(box, target, edge);
+    const round = (v: number) => Math.round(v * 1000) / 1000;
+    this.execute(
+      translateLayer(layer.id, round(delta.x), round(delta.y), { label: ALIGN_LABELS[edge] }),
+    );
+  }
+
+  // ---------------------------------------------------------------- filters (ADR-0014)
+
+  /** The filter applied last, for Filter → Last Filter. */
+  readonly lastFilter = new Observable<{ id: FilterId; values: FilterValues } | null>(null);
+  private filterSession: FilterSession | null = null;
+  private filterSeq = 0;
+
+  /** The active layer when a filter can run on it; otherwise a notice and null. */
+  private filterableLayer(): RasterLayer | null {
+    const doc = this.store.getSession()?.document;
+    const layer = doc ? activeLayer(doc) : undefined;
+    if (!doc || !layer) {
+      this.notify("error", "Select a layer first.");
+      return null;
+    }
+    if (layer.kind !== "raster") {
+      this.notify("error", "Filters work on pixel layers. Select a pixel layer and try again.");
+      return null;
+    }
+    try {
+      requireUnlocked(layer, doc);
+    } catch (error) {
+      if (!(error instanceof CommandError)) throw error;
+      this.notify("error", error.message);
+      return null;
+    }
+    if (!layer.assetId) {
+      this.notify("info", "This layer is empty. Paint or place an image on it first.");
+      return null;
+    }
+    if (!this.assets.getBitmap(layer.assetId)) {
+      this.notify("info", "This layer is still loading. Try again in a moment.");
+      return null;
+    }
+    return layer;
+  }
+
+  /** Start a filter dialog on the active layer (prepares a reduced preview). */
+  beginFilter(): boolean {
+    this.endFilter();
+    const layer = this.filterableLayer();
+    const doc = this.store.getSession()?.document;
+    if (!layer || !doc) return false;
+    const scale = Math.min(1, Math.sqrt(FILTER_PREVIEW_PIXELS / (layer.width * layer.height)));
+    const pixels = readLayerPixels(this, layer, scale);
+    if (!pixels) return false;
+    this.filterSession = {
+      documentId: doc.id,
+      layer,
+      scale,
+      pixels,
+      coverage: doc.selection ? layerSelectionCoverage(this, layer, doc.selection, scale) : null,
+      seed: Math.floor(Math.random() * 2 ** 31),
+      surface: null,
+    };
+    return true;
+  }
+
+  /** Show the filter's result on the canvas (debounce in the caller; stale results are dropped). */
+  async previewFilter(id: FilterId, values: FilterValues): Promise<void> {
+    const session = this.filterSession;
+    const filter = filterById(id);
+    if (!session || !filter) return;
+    const seq = ++this.filterSeq;
+    try {
+      const out = await this.jobs.run("filter", {
+        pixels: session.pixels,
+        filterId: id,
+        values: scaleFilterValues(filter, values, session.scale),
+        seed: session.seed,
+        coverage: session.coverage,
+      });
+      if (seq !== this.filterSeq || this.filterSession !== session) return;
+      const surface = rgbaToSurface(this, out.data, out.width, out.height);
+      releaseSurface(session.surface);
+      session.surface = surface;
+      this.tools.previewLayerPixels(session.layer.id, surface);
+    } catch (error) {
+      this.logger.warn("filter preview failed", describeError(error));
+    }
+  }
+
+  /** The dialog's Preview box was unticked: show the layer's own pixels until it is ticked. */
+  hideFilterPreview(): void {
+    this.filterSeq++;
+    this.tools.previewLayerPixels(null);
+  }
+
+  /** Close the filter dialog without applying: the layer shows its own pixels again. */
+  endFilter(): void {
+    const session = this.filterSession;
+    this.filterSession = null;
+    this.filterSeq++;
+    if (session) {
+      this.tools.previewLayerPixels(null);
+      releaseSurface(session.surface);
+    }
+  }
+
+  /**
+   * Apply a filter to the active pixel layer at full resolution (in the worker), limited to the
+   * selection when there is one. One undo step.
+   */
+  async applyFilter(id: FilterId, values: FilterValues): Promise<boolean> {
+    const seed = this.filterSession?.seed ?? Math.floor(Math.random() * 2 ** 31);
+    this.endFilter();
+    const filter = filterById(id);
+    const layer = this.filterableLayer();
+    const doc = this.store.getSession()?.document;
+    if (!filter || !layer || !doc) return false;
+    const pixels = readLayerPixels(this, layer);
+    if (!pixels) return false;
+    const coverage = doc.selection ? layerSelectionCoverage(this, layer, doc.selection) : null;
+    try {
+      const out = await this.withBusy(`Applying ${filter.name}…`, () =>
+        this.jobs.run(
+          "filter",
+          { pixels, filterId: id, values, seed, coverage },
+          coverage ? [pixels.data.buffer, coverage.buffer] : [pixels.data.buffer],
+        ),
+      );
+      // The document may have changed while the filter ran.
+      const now = this.store.getSession()?.document;
+      const current = now && findLayer(now, layer.id);
+      if (now?.id !== doc.id || current?.kind !== "raster" || current.assetId !== layer.assetId) {
+        this.notify("info", `${filter.name} was not applied because the layer changed.`);
+        return false;
+      }
+      const surface = rgbaToSurface(this, out.data, out.width, out.height);
+      const asset = this.assets.addBitmap(surface, out.width, out.height);
+      const changed = this.execute(setRasterContent(layer.id, asset.id, filter.name));
+      this.enforcePixelBudget();
+      this.lastFilter.set({ id, values });
+      return changed;
+    } catch (error) {
+      this.logger.warn("filter failed", describeError(error));
+      this.notify("error", `${filter.name} could not be applied. Try a smaller setting.`);
+      return false;
+    }
+  }
+
+  /** Filter → Last Filter: run the previous filter again with the same settings. */
+  repeatLastFilter(): Promise<boolean> {
+    const last = this.lastFilter.get();
+    if (!last) return Promise.resolve(false);
+    return this.applyFilter(last.id, last.values);
   }
 
   /** The active pixel layer, or a notice explaining why the edit is not possible. */

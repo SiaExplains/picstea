@@ -4,6 +4,11 @@ import { Component, useEffect, useSyncExternalStore, type ReactNode } from "reac
 import { createLogger, describeError } from "@/lib/logging/logger";
 import { EditorController, pixelBudgetFor } from "@/editor/controller/editor-controller";
 import {
+  DEFAULT_VIEW_SETTINGS,
+  parseViewSettings,
+  type ViewSettings,
+} from "@/editor/core/view-settings";
+import {
   IndexedDbProjectStorage,
   isIndexedDbAvailable,
 } from "@/editor/persistence/indexeddb/indexeddb-project-storage";
@@ -85,7 +90,29 @@ function getBrowserController(): EditorController {
     ),
     logger,
   });
+  browserController.view.set(loadViewSettings());
+  browserController.view.subscribe(() => saveViewSettings(browserController!.view.get()));
   return browserController;
+}
+
+/** View preferences (rulers, guides, grid, snap) are per browser; storage may be unavailable. */
+const VIEW_SETTINGS_KEY = "mylper.view";
+
+function loadViewSettings(): ViewSettings {
+  try {
+    const raw = window.localStorage.getItem(VIEW_SETTINGS_KEY);
+    return parseViewSettings(raw ? JSON.parse(raw) : null);
+  } catch {
+    return DEFAULT_VIEW_SETTINGS;
+  }
+}
+
+function saveViewSettings(settings: ViewSettings): void {
+  try {
+    window.localStorage.setItem(VIEW_SETTINGS_KEY, JSON.stringify(settings));
+  } catch {
+    // Private mode or blocked storage: the settings just aren't remembered.
+  }
 }
 
 const subscribeNoop = () => () => {};

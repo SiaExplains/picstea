@@ -35,6 +35,9 @@ test("marquee + Fill, then Delete clears only the selection and undo restores it
 }) => {
   const errors = trackErrors(page);
   await newDocument(page, "Marquee");
+  // This test measures exact drag sizes; snapping would pull the edge onto the canvas centre.
+  await page.getByRole("menuitem", { name: "View", exact: true }).click();
+  await page.getByRole("menuitemcheckbox", { name: "Snap", exact: true }).click();
   await newPixelLayer(page);
   await page.keyboard.press("m");
   await drag(page, [100, 100], [300, 200]);

@@ -16,6 +16,9 @@ export interface Canvas2DTheme {
   overlay: string;
   overlayShadow: string;
   cropShade: string;
+  guide: string;
+  grid: string;
+  smartGuide: string;
 }
 
 export const DEFAULT_THEME: Canvas2DTheme = {
@@ -26,7 +29,13 @@ export const DEFAULT_THEME: Canvas2DTheme = {
   overlay: "#4c8dff",
   overlayShadow: "rgba(0, 0, 0, 0.55)",
   cropShade: "rgba(0, 0, 0, 0.55)",
+  guide: "#00c2ff",
+  grid: "rgba(128, 128, 128, 0.45)",
+  smartGuide: "#ff3dd0",
 };
+
+/** Grid lines closer than this on screen are thinned out (every 2nd, 4th… line is drawn). */
+const MIN_GRID_SPACING_PX = 8;
 
 /** Creates an offscreen surface. Injected so the renderer is testable and OffscreenCanvas-aware. */
 export type SurfaceFactory = (width: number, height: number) => HTMLCanvasElement | OffscreenCanvas;
@@ -129,8 +138,78 @@ export class Canvas2DRenderer implements Renderer {
     ctx.lineWidth = 1;
     ctx.strokeRect(Math.round(x) - 0.5, Math.round(y) - 0.5, Math.round(w) + 1, Math.round(h) + 1);
 
+    if (scene.grid) this.drawGrid(ctx, scene.grid, doc, viewport);
+    if (scene.guides?.length) {
+      for (const guide of scene.guides) {
+        this.drawLine(
+          ctx,
+          guide.orientation === "vertical" ? "x" : "y",
+          guide.position,
+          viewport,
+          screen,
+          this.theme.guide,
+        );
+      }
+    }
     if (scene.selection) this.drawAnts(ctx, scene.selection, viewport, scene.antsPhase ?? 0);
     for (const overlay of scene.overlays ?? []) this.drawOverlay(ctx, overlay, viewport, screen);
+  }
+
+  /** Grid over the canvas area only, one CSS pixel thick at any zoom. */
+  private drawGrid(
+    ctx: CanvasRenderingContext2D,
+    size: number,
+    doc: EditorDocument,
+    viewport: Viewport,
+  ): void {
+    let step = size;
+    while (step * viewport.zoom < MIN_GRID_SPACING_PX) step *= 2;
+    const x0 = Math.round(viewport.panX);
+    const y0 = Math.round(viewport.panY);
+    const x1 = Math.round(viewport.panX + doc.width * viewport.zoom);
+    const y1 = Math.round(viewport.panY + doc.height * viewport.zoom);
+    ctx.save();
+    ctx.beginPath();
+    for (let v = step; v < doc.width; v += step) {
+      const x = Math.round(viewport.panX + v * viewport.zoom) + 0.5;
+      ctx.moveTo(x, y0);
+      ctx.lineTo(x, y1);
+    }
+    for (let v = step; v < doc.height; v += step) {
+      const y = Math.round(viewport.panY + v * viewport.zoom) + 0.5;
+      ctx.moveTo(x0, y);
+      ctx.lineTo(x1, y);
+    }
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = this.theme.grid;
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  /** A full-length vertical (`x`) or horizontal (`y`) line at a document position. */
+  private drawLine(
+    ctx: CanvasRenderingContext2D,
+    axis: "x" | "y",
+    value: number,
+    viewport: Viewport,
+    screen: { width: number; height: number },
+    color: string,
+  ): void {
+    ctx.save();
+    ctx.beginPath();
+    if (axis === "x") {
+      const x = Math.round(viewport.panX + value * viewport.zoom) + 0.5;
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, screen.height);
+    } else {
+      const y = Math.round(viewport.panY + value * viewport.zoom) + 0.5;
+      ctx.moveTo(0, y);
+      ctx.lineTo(screen.width, y);
+    }
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = color;
+    ctx.stroke();
+    ctx.restore();
   }
 
   /** Marching ants: a white line under a dashed black one, offset by `phase` to animate. */
@@ -229,6 +308,21 @@ export class Canvas2DRenderer implements Renderer {
         ctx.stroke();
         break;
       }
+      case "snap":
+        for (const line of overlay.lines) {
+          this.drawLine(ctx, line.axis, line.value, viewport, screen, this.theme.smartGuide);
+        }
+        break;
+      case "guide":
+        this.drawLine(
+          ctx,
+          overlay.orientation === "vertical" ? "x" : "y",
+          overlay.position,
+          viewport,
+          screen,
+          this.theme.guide,
+        );
+        break;
       case "brush": {
         const c = toScreen(overlay.center);
         const r = Math.max(1, overlay.radius * viewport.zoom);

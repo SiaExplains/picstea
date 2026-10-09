@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
 import { ContentPage } from "@/components/site/ContentPage";
 import { DOCS, docBySlug } from "@/content/docs";
 
@@ -19,7 +20,19 @@ export async function generateMetadata({ params }: PageProps<"/docs/[slug]">): P
   };
 }
 
-export default async function DocPage({ params }: PageProps<"/docs/[slug]">) {
+/**
+ * The URL is read inside Suspense so the route's shared shell doesn't depend on it (instant
+ * navigation). Every slug is prerendered, so the static HTML still contains the full page.
+ */
+export default function DocPage({ params }: PageProps<"/docs/[slug]">) {
+  return (
+    <Suspense>
+      <Doc params={params} />
+    </Suspense>
+  );
+}
+
+async function Doc({ params }: Pick<PageProps<"/docs/[slug]">, "params">) {
   const doc = docBySlug((await params).slug);
   if (!doc) notFound();
   return (

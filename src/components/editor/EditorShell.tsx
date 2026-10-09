@@ -17,6 +17,9 @@ import { NewDocumentDialog } from "./NewDocumentDialog";
 import { BusyOverlay, Notices } from "./Notices";
 import { PropertiesPanel } from "./PropertiesPanel";
 import { ColorRangeDialog, ModifySelectionDialog } from "./SelectionDialogs";
+import { FilterDialog } from "./FilterDialog";
+import { GridDialog, GuideDialog } from "./ViewDialogs";
+import type { FilterId } from "@/editor/filters/registry";
 import { StartScreen } from "./StartScreen";
 import { useEditorActions, type ActionHosts } from "./use-editor-actions";
 
@@ -34,6 +37,9 @@ export function EditorShell() {
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const [modifyKind, setModifyKind] = useState<SelectionModification | null>(null);
   const [colorRangeOpen, setColorRangeOpen] = useState(false);
+  const [filterId, setFilterId] = useState<FilterId | null>(null);
+  const [guideDialogOpen, setGuideDialogOpen] = useState(false);
+  const [gridDialogOpen, setGridDialogOpen] = useState(false);
   const [dragging, setDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const pickModeRef = useRef<"open" | "place">("open");
@@ -44,12 +50,18 @@ export function EditorShell() {
       openExportDialog: () => setExportDialogOpen(true),
       openModifySelectionDialog: (kind) => setModifyKind(kind),
       openColorRangeDialog: () => setColorRangeOpen(true),
+      // The dialog only opens when the active layer can be filtered (otherwise a notice says why).
+      openFilterDialog: (id) => {
+        if (controller.beginFilter()) setFilterId(id);
+      },
+      openGuideDialog: () => setGuideDialogOpen(true),
+      openGridDialog: () => setGridDialogOpen(true),
       pickImage: (mode) => {
         pickModeRef.current = mode;
         fileInputRef.current?.click();
       },
     }),
-    [],
+    [controller],
   );
   const actions = useEditorActions(hosts);
 
@@ -171,6 +183,11 @@ export function EditorShell() {
       <ExportDialog open={exportDialogOpen} onClose={() => setExportDialogOpen(false)} />
       <ModifySelectionDialog kind={modifyKind} onClose={() => setModifyKind(null)} />
       {colorRangeOpen && <ColorRangeDialog open onClose={() => setColorRangeOpen(false)} />}
+      {filterId && (
+        <FilterDialog key={filterId} filterId={filterId} onClose={() => setFilterId(null)} />
+      )}
+      {guideDialogOpen && <GuideDialog onClose={() => setGuideDialogOpen(false)} />}
+      {gridDialogOpen && <GridDialog onClose={() => setGridDialogOpen(false)} />}
       <Notices />
       <BusyOverlay />
       <input

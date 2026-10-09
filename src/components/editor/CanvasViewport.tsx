@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useSyncExternalStore } from "react";
 import {
   panBy,
   screenToDocument,
@@ -14,6 +14,7 @@ import { useController, useIsMac } from "./editor-context";
 import styles from "./editor.module.css";
 import { isTypingTarget } from "./typing-target";
 import { TextEditorOverlay } from "./TextEditorOverlay";
+import { Rulers } from "./Rulers";
 
 type Gesture =
   | { kind: "pan"; pointerId: number; last: Point }
@@ -29,6 +30,11 @@ export function CanvasViewport() {
   const isMac = useIsMac();
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const rulers = useSyncExternalStore(
+    controller.view.subscribe,
+    () => controller.view.get().rulers,
+    () => false,
+  );
 
   // Measure the viewport.
   useEffect(() => {
@@ -56,6 +62,7 @@ export function CanvasViewport() {
       const screen = controller.viewportSize.get();
       if (!session || screen.width === 0 || screen.height === 0) return;
       const textEdit = controller.textEdit.get();
+      const view = controller.view.get();
       const toolPreview = controller.tools.preview();
       const editingLayer =
         textEdit && textEdit.documentId === session.document.id ? textEdit.layerId : null;
@@ -74,6 +81,8 @@ export function CanvasViewport() {
         overlays: textEdit ? [] : controller.tools.overlays(),
         selection: controller.tools.selection(),
         antsPhase,
+        guides: controller.tools.visibleGuides(),
+        grid: view.grid ? view.gridSize : undefined,
       });
       // A fast, lower-resolution frame was shown during interaction: sharpen it once idle.
       controller.refining.set(renderer.needsRefine);
@@ -94,6 +103,7 @@ export function CanvasViewport() {
       controller.viewportSize.subscribe(schedule),
       controller.tools.revision.subscribe(schedule),
       controller.textEdit.subscribe(schedule),
+      controller.view.subscribe(schedule),
     ];
     const dprQuery = window.matchMedia(`(resolution: ${window.devicePixelRatio || 1}dppx)`);
     dprQuery.addEventListener("change", schedule);
@@ -335,9 +345,12 @@ export function CanvasViewport() {
   }, [controller, isMac]);
 
   return (
-    <div ref={containerRef} className={styles.viewport} data-testid="canvas-viewport">
-      <canvas ref={canvasRef} className={styles.canvas} role="img" aria-label="Document canvas" />
-      <TextEditorOverlay />
+    <div className={styles.viewportFrame}>
+      {rulers && <Rulers viewportRef={containerRef} />}
+      <div ref={containerRef} className={styles.viewport} data-testid="canvas-viewport">
+        <canvas ref={canvasRef} className={styles.canvas} role="img" aria-label="Document canvas" />
+        <TextEditorOverlay />
+      </div>
     </div>
   );
 }

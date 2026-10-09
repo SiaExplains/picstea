@@ -15,10 +15,11 @@ import type {
   LayerEffects,
 } from "@/editor/core/document/types";
 import { useController } from "./editor-context";
+import { CurvesEditor, LevelsEditor } from "./ToneEditors";
 import styles from "./editor.module.css";
 
 /** A labelled slider that merges a drag into one undo step and seals on release. */
-function Slider({
+export function Slider({
   label,
   value,
   min,
@@ -58,6 +59,9 @@ function Slider({
 
 export function AdjustmentSection({ layer }: { layer: AdjustmentLayer }) {
   const controller = useController();
+  const { adjustment } = layer;
+  if (adjustment.type === "levels") return <LevelsEditor layer={{ ...layer, adjustment }} />;
+  if (adjustment.type === "curves") return <CurvesEditor layer={{ ...layer, adjustment }} />;
   const def = adjustmentDefinition(layer.adjustment.type);
   const values = layer.adjustment as unknown as Record<string, number>;
   return (
