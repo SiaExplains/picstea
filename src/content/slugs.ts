@@ -24,4 +24,5 @@ export const POST_SLUGS: Readonly<Record<string, "draft" | "published">> = {
   "levels-and-curves-explained": "draft",
   "how-to-use-the-pen-tool": "draft",
   "smart-objects-explained": "draft",
+  "open-psd-files-with-editable-text-and-adjustments": "draft",
 };

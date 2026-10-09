@@ -87,6 +87,20 @@ export class ByteReader {
     return v;
   }
 
+  f32(): number {
+    this.need(4);
+    const v = this.view.getFloat32(this.offset, this.littleEndian);
+    this.offset += 4;
+    return v;
+  }
+
+  f64(): number {
+    this.need(8);
+    const v = this.view.getFloat64(this.offset, this.littleEndian);
+    this.offset += 8;
+    return v;
+  }
+
   /** A view (not a copy) of the next `n` bytes. */
   bytesView(n: number): Uint8Array {
     this.need(n);
@@ -169,6 +183,20 @@ export class ByteWriter {
     this.ensure(4);
     this.view.setInt32(this.length, v, this.littleEndian);
     this.length += 4;
+    return this;
+  }
+
+  f32(v: number): this {
+    this.ensure(4);
+    this.view.setFloat32(this.length, v, this.littleEndian);
+    this.length += 4;
+    return this;
+  }
+
+  f64(v: number): this {
+    this.ensure(8);
+    this.view.setFloat64(this.length, v, this.littleEndian);
+    this.length += 8;
     return this;
   }
 

@@ -424,6 +424,63 @@ export const POSTS: readonly BlogPost[] = [
       </>
     ),
   },
+  {
+    slug: "open-psd-files-with-editable-text-and-adjustments",
+    title: "Open PSD files with editable text, adjustment layers and smart objects",
+    description:
+      "MYLPER now opens Photoshop files with much more of their structure intact: editable text, adjustment layers, shapes, smart objects, vector masks and layer styles.",
+    published: "2026-10-09",
+    draft: true,
+    body: () => (
+      <>
+        <p>
+          A PSD is more than its pixels. The value is in the structure: text you can still change,
+          adjustments you can still tweak, shapes that stay sharp. MYLPER now keeps much more of
+          that structure when it opens a Photoshop file — still entirely in your browser.
+        </p>
+        <h2>What opens editable</h2>
+        <ul>
+          <li>
+            <strong>Text layers</strong> open as text you can edit, with their size, colour, bold
+            and italic, alignment and spacing. Fonts are matched to common fonts, so give the layout
+            a quick check.
+          </li>
+          <li>
+            <strong>Adjustment layers</strong> — Levels, Curves, Brightness/Contrast,
+            Hue/Saturation, Exposure, Invert, Posterize, Threshold and Black &amp; White.
+          </li>
+          <li>
+            <strong>Shape and fill layers</strong> become path shapes and colour fills.
+          </li>
+          <li>
+            <strong>Smart objects</strong> with embedded images or PSDs open as smart objects —
+            double-click to edit their contents.
+          </li>
+          <li>
+            <strong>Vector masks and clipping masks</strong> stay masks.
+          </li>
+          <li>
+            <strong>Layer styles</strong>: drop shadow, outer glow, stroke and colour overlay.
+          </li>
+        </ul>
+        <h2>And back again</h2>
+        <p>
+          Exported PSDs now keep adjustment layers, vector masks and clipping masks, so a file can
+          go back to Photoshop without being flattened.
+        </p>
+        <h2>What still changes</h2>
+        <p>
+          Some Photoshop features don&apos;t have a MYLPER equivalent yet — for example Vibrance,
+          bevels or warped text. Those layers keep their look as pixels, and MYLPER lists exactly
+          what changed when the file opens.
+        </p>
+        <p>
+          <EditorLink>Open a PSD in MYLPER</EditorLink> — no account, no upload. Details are in{" "}
+          <Link href="/docs/file-formats">file formats</Link>.
+        </p>
+      </>
+    ),
+  },
 ];
 
 const showDrafts = process.env.NODE_ENV !== "production";

@@ -2,6 +2,9 @@ import { checkDimensions, MAX_DIMENSION, MAX_PIXELS } from "../../core/document/
 import { ByteReader, FormatError } from "../binary/bytes";
 import { inflate } from "../binary/compression";
 import { unpackBits } from "./packbits";
+import { decodeExtras, EXTRA_KEYS } from "./psd-extras";
+import { readUnicodeString, readVersionedDescriptor } from "./descriptor";
+import { readImageHeader } from "../raster/image-header";
 import {
   rectHeight,
   rectWidth,
@@ -9,6 +12,7 @@ import {
   type PsdGroup,
   type PsdMask,
   type PsdNode,
+  type PsdLinkedFile,
   type PsdPixelLayer,
   type PsdRect,
 } from "./psd-model";
@@ -58,6 +62,10 @@ interface RawRecord {
   readonly mask?: { rect: PsdRect; defaultColor: number; disabled: boolean };
   readonly section?: { type: number; blendKey?: string };
   readonly source?: PsdPixelLayer["source"];
+  /** Bodies of the tagged blocks `decodeExtras` understands (ADR-0017). */
+  readonly blocks: Map<string, Uint8Array>;
+  /** The layer mask was rendered from a vector mask (flag bit 3). */
+  readonly maskFromVector: boolean;
 }
 
 function readRect(r: ByteReader): PsdRect {
@@ -82,7 +90,7 @@ function pascal(r: ByteReader, padTo: number): string {
   return name;
 }
 
-function readRecord(r: ByteReader, warnings: Set<string>): RawRecord {
+function readRecord(r: ByteReader): RawRecord {
   const rect = readRect(r);
   const channelCount = r.u16();
   if (channelCount > 56) throw new FormatError("A layer has too many channels.");
@@ -97,6 +105,8 @@ function readRecord(r: ByteReader, warnings: Set<string>): RawRecord {
 
   const extra = r.sub(r.u32());
   let mask: RawRecord["mask"];
+  let maskFromVector = false;
+  const blocks = new Map<string, Uint8Array>();
   const maskLength = extra.u32();
   if (maskLength > 0) {
     const m = extra.sub(maskLength);
@@ -104,7 +114,7 @@ function readRecord(r: ByteReader, warnings: Set<string>): RawRecord {
     const defaultColor = m.u8() >= 128 ? 255 : 0;
     const maskFlags = m.u8();
     mask = { rect: maskRect, defaultColor, disabled: (maskFlags & 2) !== 0 };
-    if (maskFlags & 8) warnings.add("Vector masks were imported as pixel masks or skipped.");
+    maskFromVector = (maskFlags & 8) !== 0;
   }
   extra.skip(extra.u32()); // blending ranges
   let name = pascal(extra, 4);
@@ -114,7 +124,9 @@ function readRecord(r: ByteReader, warnings: Set<string>): RawRecord {
     const signature = extra.ascii(4);
     if (signature !== "8BIM" && signature !== "8B64") break;
     const key = extra.ascii(4);
-    const body = extra.sub(Math.min(extra.u32(), extra.remaining));
+    const raw = extra.bytesView(Math.min(extra.u32(), extra.remaining));
+    const body = new ByteReader(raw);
+    if (EXTRA_KEYS.has(key) && !blocks.has(key)) blocks.set(key, raw.slice());
     switch (key) {
       case "luni": {
         const count = body.u32();
@@ -136,13 +148,11 @@ function readRecord(r: ByteReader, warnings: Set<string>): RawRecord {
       case "TySh":
       case "tySh":
         source = "text";
-        warnings.add("Text layers were imported as pixels (their text is not editable).");
         break;
       case "SoLd":
       case "SoLE":
       case "PlLd":
         source = "smart-object";
-        warnings.add("Smart objects were imported as pixels.");
         break;
       case "SoCo":
       case "GdFl":
@@ -167,11 +177,9 @@ function readRecord(r: ByteReader, warnings: Set<string>): RawRecord {
       case "grdm":
       case "selc":
         source = "adjustment";
-        warnings.add("Photoshop adjustment layers are not imported.");
         break;
-      case "lfx2":
       case "lrFX":
-        warnings.add("Layer styles (effects) were not imported.");
+        // Old-style effects; files with them also carry lfx2, which is what MYLPER reads.
         break;
       default:
         break;
@@ -188,6 +196,8 @@ function readRecord(r: ByteReader, warnings: Set<string>): RawRecord {
     mask,
     section,
     source,
+    blocks,
+    maskFromVector,
   };
 }
 
@@ -277,16 +287,30 @@ function toRgba(planes: Map<number, Uint8Array>, count: number, gray: boolean): 
   return out;
 }
 
+/** PSD files embedded in smart objects are read this many levels deep. */
+const MAX_EMBED_DEPTH = 2;
+
 export async function readPsd(bytes: Uint8Array): Promise<PsdReadResult> {
+  const budget = { left: MAX_PSD_DECODED_BYTES };
+  const warnings = new Set<string>();
+  const file = await readPsdFile(bytes, 0, budget, warnings);
+  return { file, warnings: [...warnings] };
+}
+
+async function readPsdFile(
+  bytes: Uint8Array,
+  depth: number,
+  budget: { left: number },
+  warnings: Set<string>,
+): Promise<PsdFile> {
   const r = new ByteReader(bytes);
   const header = checkHeader(r);
   const gray = header.mode === GRAYSCALE;
-  const warnings = new Set<string>();
-  let budget = MAX_PSD_DECODED_BYTES;
   const spend = (n: number) => {
-    budget -= n;
-    if (budget < 0) throw new FormatError("This file is too large to open in the browser.");
+    budget.left -= n;
+    if (budget.left < 0) throw new FormatError("This file is too large to open in the browser.");
   };
+  let globalAngle = 30;
 
   r.skip(r.u32()); // colour mode data
 
@@ -300,6 +324,10 @@ export async function readPsd(bytes: Uint8Array): Promise<PsdReadResult> {
     const size = resources.u32();
     const body = resources.sub(Math.min(size, resources.remaining));
     if (size % 2 === 1 && resources.remaining > 0) resources.skip(1);
+    if (id === 1037 && body.remaining >= 4) {
+      const angle = body.i32();
+      if (Math.abs(angle) <= 360) globalAngle = angle;
+    }
     if (id === 1005 && body.remaining >= 4) {
       const ppi = body.u32() / 65536;
       if (ppi >= 1 && ppi <= 10_000) resolution = Math.round(ppi * 100) / 100;
@@ -315,10 +343,13 @@ export async function readPsd(bytes: Uint8Array): Promise<PsdReadResult> {
       const count = Math.abs(info.i16());
       if (count > MAX_PSD_LAYERS) throw new FormatError("This file has too many layers.");
       const records: RawRecord[] = [];
-      for (let i = 0; i < count; i++) records.push(readRecord(info, warnings));
+      for (let i = 0; i < count; i++) records.push(readRecord(info));
 
       const decoded: (PsdNode | Divider)[] = [];
+      const ctx = { width: header.width, height: header.height, globalAngle };
       for (const rec of records) {
+        const extras = rec.blocks.size > 0 ? decodeExtras(rec.blocks, ctx, warnings) : undefined;
+        const hasExtras = !!extras && Object.keys(extras).length > 0;
         const w = rectWidth(rec.rect);
         const h = rectHeight(rec.rect);
         const planes = new Map<number, Uint8Array>();
@@ -339,8 +370,11 @@ export async function readPsd(bytes: Uint8Array): Promise<PsdReadResult> {
           }
           // Other channels (real user masks -3, spot channels) are skipped by length.
         }
+        // A layer mask rendered from a vector mask is replaced by the vector mask itself.
         const mask: PsdMask | undefined =
-          rec.mask && maskData ? { ...rec.mask, data: maskData } : undefined;
+          rec.mask && maskData && !(rec.maskFromVector && extras?.vectorMask)
+            ? { ...rec.mask, data: maskData }
+            : undefined;
         const base = {
           name: rec.name,
           opacity: rec.opacity,
@@ -362,17 +396,38 @@ export async function readPsd(bytes: Uint8Array): Promise<PsdReadResult> {
           } satisfies PsdGroup);
           continue;
         }
-        if (rec.source === "adjustment") continue;
-        spend(w * h * 4);
+        if (rec.source === "adjustment" && !extras?.adjustment) continue;
+        const pixels = !extras?.adjustment && w * h > 0;
+        if (pixels) spend(w * h * 4);
         decoded.push({
           ...base,
           kind: "pixels",
           rect: rec.rect,
-          rgba: w * h > 0 ? toRgba(planes, w * h, gray) : null,
+          rgba: pixels ? toRgba(planes, w * h, gray) : null,
           source: rec.source,
+          ...(hasExtras ? { extras } : {}),
         } satisfies PsdPixelLayer);
       }
       nodes.push(...assembleGroups(decoded, warnings));
+    }
+  }
+  // Global layer information: files embedded for smart objects.
+  let linked: PsdLinkedFile[] = [];
+  if (layerSection.remaining >= 4) {
+    layerSection.skip(Math.min(layerSection.u32(), layerSection.remaining)); // global mask info
+    while (layerSection.remaining >= 12) {
+      const signature = layerSection.ascii(4);
+      if (signature !== "8BIM" && signature !== "8B64") break;
+      const key = layerSection.ascii(4);
+      const body = layerSection.sub(Math.min(layerSection.u32(), layerSection.remaining));
+      if (key === "lnk2" || key === "lnkD" || key === "lnk3") {
+        try {
+          linked = linked.concat(await readLinkedFiles(body, depth, budget, warnings));
+        } catch (error) {
+          if (!(error instanceof FormatError)) throw error;
+          warnings.add("Some smart object contents could not be read and were imported as pixels.");
+        }
+      }
     }
   }
 
@@ -406,9 +461,83 @@ export async function readPsd(bytes: Uint8Array): Promise<PsdReadResult> {
   }
 
   return {
-    file: { width: header.width, height: header.height, resolution, layers: nodes, composite },
-    warnings: [...warnings],
+    width: header.width,
+    height: header.height,
+    resolution,
+    layers: nodes,
+    composite,
+    ...(linked.length ? { linked } : {}),
   };
+}
+
+/**
+ * Files embedded for smart objects. Each entry: length (64-bit), type (`liFD` embedded data),
+ * version, id, name, file type, creator, data length (64-bit), open descriptor flag, then data.
+ * Embedded PSDs are read recursively; images are passed on to be decoded by the browser.
+ */
+async function readLinkedFiles(
+  r: ByteReader,
+  depth: number,
+  budget: { left: number },
+  warnings: Set<string>,
+): Promise<PsdLinkedFile[]> {
+  const out: PsdLinkedFile[] = [];
+  while (r.remaining >= 8) {
+    const high = r.u32();
+    const length = r.u32();
+    if (high !== 0 || length > r.remaining) throw new FormatError("Smart object data is damaged.");
+    const entry = r.sub(length);
+    // Entries are padded to a multiple of 4.
+    r.skip(Math.min((4 - (length % 4)) % 4, r.remaining));
+    const type = entry.ascii(4);
+    entry.u32(); // version
+    const id = entry.ascii(entry.u8());
+    readUnicodeString(entry); // original file name
+    entry.ascii(4); // file type
+    entry.ascii(4); // creator
+    const dataHigh = entry.u32();
+    const dataLength = entry.u32();
+    if (type !== "liFD") {
+      out.push({ id, kind: "unsupported" });
+      warnings.add("Linked (external) smart objects were imported as pixels.");
+      continue;
+    }
+    // The optional "file open" descriptor is skipped by reading it.
+    if (entry.u8() !== 0) readVersionedDescriptor(entry);
+    if (dataHigh !== 0 || dataLength > entry.remaining)
+      throw new FormatError("Smart object data is damaged.");
+    const data = entry.bytesView(dataLength);
+    const image = readImageHeader(data);
+    if (image && !checkDimensions(image.width, image.height).ok) {
+      out.push({ id, kind: "unsupported" });
+      warnings.add("A smart object's image is too large and was imported as pixels.");
+    } else if (image) {
+      out.push({
+        id,
+        kind: "raster",
+        bytes: data.slice(),
+        mime: image.mime,
+        width: image.width,
+        height: image.height,
+      });
+    } else if (
+      data.length >= 4 &&
+      String.fromCharCode(...data.subarray(0, 4)) === "8BPS" &&
+      depth < MAX_EMBED_DEPTH
+    ) {
+      try {
+        out.push({ id, kind: "psd", file: await readPsdFile(data, depth + 1, budget, warnings) });
+      } catch (error) {
+        if (!(error instanceof FormatError)) throw error;
+        out.push({ id, kind: "unsupported" });
+        warnings.add(`A smart object's PSD contents could not be opened (${error.message}).`);
+      }
+    } else {
+      out.push({ id, kind: "unsupported" });
+      warnings.add("Smart objects containing PDF, vector or other files were imported as pixels.");
+    }
+  }
+  return out;
 }
 
 /** The record that marks the bottom of a group ("</Layer group>"). */

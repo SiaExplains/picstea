@@ -460,8 +460,8 @@ export const DOCS: readonly DocPage[] = [
         <h2>Limitations</h2>
         <ul>
           <li>
-            Photoshop paths, vector masks and shape layers are not imported from PSD yet; exported
-            PSDs contain them as pixels.
+            Photoshop vector masks and shape layers open as vector masks and path shapes; exported
+            PSDs keep vector masks, but shapes become pixels.
           </li>
           <li>Only one work path is kept per document (there is no Paths panel yet).</li>
         </ul>
@@ -519,8 +519,9 @@ export const DOCS: readonly DocPage[] = [
             cut off there. Convert a slightly larger area (or add transparent space) if needed.
           </li>
           <li>
-            Smart objects are exported to PSD as pixels, and Photoshop smart objects open as pixels
-            for now.
+            Photoshop smart objects with embedded images or PSDs open as smart objects (warped ones
+            and those with Photoshop smart filters open as pixels). Exported PSDs contain smart
+            objects as pixels.
           </li>
           <li>Linked (external) smart objects are not supported; contents are always embedded.</li>
         </ul>
@@ -543,8 +544,12 @@ export const DOCS: readonly DocPage[] = [
           </li>
           <li>
             <strong>PSD</strong> — 8-bit RGB and greyscale files open with their layers, groups,
-            names, opacity, visibility, blend modes and layer masks. Text and smart objects open as
-            pixels. Anything that cannot be kept is listed when the file opens.
+            names, opacity, visibility, blend modes, layer masks, vector masks and clipping masks.
+            Text opens as editable text (check the fonts), adjustment layers (Levels, Curves,
+            Brightness/Contrast, Hue/Saturation, Exposure, Invert, Posterize, Threshold, Black &amp;
+            White) as adjustment layers, shape and fill layers as shapes and fills, embedded smart
+            objects as smart objects, and drop shadows, outer glows, strokes and colour overlays as
+            effects. Anything that cannot be kept is listed when the file opens.
           </li>
           <li>
             <strong>SVG</strong> opens as an image (pixels). Scripts in SVG files never run.
@@ -561,8 +566,9 @@ export const DOCS: readonly DocPage[] = [
             without transparency. <strong>WebP</strong> — small files with transparency.
           </li>
           <li>
-            <strong>PSD</strong> — layers, groups, masks, opacity and blend modes. Shapes and text
-            become pixels; adjustment layers are included in the flattened image only.
+            <strong>PSD</strong> — layers, groups, masks, vector masks, clipping masks, opacity,
+            blend modes and adjustment layers (except Temperature/Tint and Black &amp; White, which
+            are in the flattened image only). Shapes, text, smart objects and effects become pixels.
           </li>
           <li>
             <strong>SVG</strong> — shapes and text stay vectors; other layers are embedded as

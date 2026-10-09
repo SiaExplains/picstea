@@ -99,17 +99,25 @@ export function outputTransfer(name: JobName, output: unknown): Transferable[] {
       return [(output as Uint32Array).buffer];
     case "psdRead": {
       const result = output as PsdReadResult;
-      const buffers: Transferable[] = [];
-      const visit = (nodes: PsdFile["layers"]) => {
-        for (const node of nodes) {
-          if (node.mask) buffers.push(node.mask.data.buffer);
-          if (node.kind === "group") visit(node.children);
-          else if (node.rgba) buffers.push(node.rgba.buffer);
+      // A Set: an ArrayBuffer may only be listed once.
+      const buffers = new Set<ArrayBufferLike>();
+      const visitFile = (file: PsdFile) => {
+        const visit = (nodes: PsdFile["layers"]) => {
+          for (const node of nodes) {
+            if (node.mask) buffers.add(node.mask.data.buffer);
+            if (node.kind === "group") visit(node.children);
+            else if (node.rgba) buffers.add(node.rgba.buffer);
+          }
+        };
+        visit(file.layers);
+        if (file.composite) buffers.add(file.composite.buffer);
+        for (const linked of file.linked ?? []) {
+          if (linked.kind === "raster") buffers.add(linked.bytes.buffer);
+          if (linked.kind === "psd") visitFile(linked.file);
         }
       };
-      visit(result.file.layers);
-      if (result.file.composite) buffers.push(result.file.composite.buffer);
-      return buffers;
+      visitFile(result.file);
+      return [...buffers] as Transferable[];
     }
   }
 }

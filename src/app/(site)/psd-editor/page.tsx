@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 const FAQS: Faq[] = [
   {
     q: "Can I open a PSD without Photoshop?",
-    a: "Yes. MYLPER opens 8-bit RGB and greyscale PSD files in the browser, with their layers, groups, names, opacity, visibility, blend modes and layer masks.",
+    a: "Yes. MYLPER opens 8-bit RGB and greyscale PSD files in the browser, with their layers, groups, masks, blend modes, editable text, adjustment layers, shape layers, smart objects and common layer styles.",
   },
   {
     q: "Is my PSD uploaded to a server?",
@@ -25,11 +25,11 @@ const FAQS: Faq[] = [
   },
   {
     q: "Can I save as PSD again?",
-    a: "Yes. File → Export As… → PSD writes a layered PSD with groups, masks, opacity and blend modes.",
+    a: "Yes. File → Export As… → PSD writes a layered PSD with groups, masks, vector masks, clipping masks, adjustment layers, opacity and blend modes.",
   },
   {
     q: "What doesn't come across?",
-    a: "Text layers and smart objects open as pixels, and Photoshop adjustment layers, layer styles and clipping masks are not imported. MYLPER lists what changed when the file opens.",
+    a: "Some Photoshop features have no MYLPER equivalent yet: adjustments such as Vibrance or Color Balance, bevel and inner shadow styles, warped text and smart filters keep their look as pixels or are left out. Text may need a font check. MYLPER lists what changed when the file opens.",
   },
 ];
 
@@ -52,12 +52,25 @@ export default function PsdEditor() {
       <ul>
         <li>8-bit RGB and greyscale PSD files up to 12,000 pixels per side.</li>
         <li>Pixel layers, groups, layer names, opacity, visibility and blend modes.</li>
-        <li>Layer masks, including masks on groups.</li>
+        <li>Layer masks, including masks on groups; vector masks and clipping masks.</li>
+        <li>Editable text layers (first style of each layer; fonts mapped to common fonts).</li>
+        <li>
+          Adjustment layers: Levels, Curves, Brightness/Contrast, Hue/Saturation, Exposure, Invert,
+          Posterize, Threshold, Black &amp; White.
+        </li>
+        <li>Shape and solid colour fill layers, embedded smart objects.</li>
+        <li>Layer styles: drop shadow, outer glow, stroke and colour overlay.</li>
       </ul>
       <h2>Not supported yet</h2>
       <ul>
         <li>PSB (large document) files, 16/32-bit colour and CMYK.</li>
-        <li>Editable text from Photoshop (text opens as pixels), smart objects, layer styles.</li>
+        <li>
+          Vibrance, Color Balance and other adjustments; bevel, inner shadow, gradient and pattern
+          styles; warped text; Photoshop smart filters and linked smart objects.
+        </li>
+        <li>
+          Saving text, shapes, smart objects and styles back to PSD keeps their look as pixels.
+        </li>
       </ul>
       <p>
         More detail in <Link href="/docs/file-formats">file formats</Link>.

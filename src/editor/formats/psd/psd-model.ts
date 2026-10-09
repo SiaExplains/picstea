@@ -1,3 +1,5 @@
+import type { PsdExtras } from "./psd-extras";
+
 /**
  * A plain model of the subset of PSD that MYLPER reads and writes (ADR-0011): 8-bit RGB pixel
  * layers, groups, names, opacity, visibility, blend modes and user masks. No canvas here; the
@@ -42,7 +44,29 @@ export interface PsdPixelLayer extends PsdNodeBase {
   readonly rgba: Uint8ClampedArray | null;
   /** What the layer was in Photoshop when it is more than pixels (we import its preview). */
   readonly source?: "text" | "smart-object" | "adjustment" | "fill";
+  /** Structure beyond the pixels (adjustment, styles, vector data, text, placement). */
+  readonly extras?: PsdExtras;
+  /** Extra tagged blocks to write on export (adjustment and vector mask data). */
+  readonly blocks?: readonly PsdBlock[];
 }
+
+export interface PsdBlock {
+  readonly key: string;
+  readonly data: Uint8Array;
+}
+
+/** A file embedded in the PSD for its smart objects (`lnk2`/`lnkD`/`lnk3`). */
+export type PsdLinkedFile =
+  | { readonly id: string; readonly kind: "psd"; readonly file: PsdFile }
+  | {
+      readonly id: string;
+      readonly kind: "raster";
+      readonly bytes: Uint8Array;
+      readonly mime: string;
+      readonly width: number;
+      readonly height: number;
+    }
+  | { readonly id: string; readonly kind: "unsupported" };
 
 export interface PsdGroup extends PsdNodeBase {
   readonly kind: "group";
@@ -62,4 +86,8 @@ export interface PsdFile {
   readonly layers: readonly PsdNode[];
   /** Flattened image (RGBA), always written; read when present. */
   readonly composite: Uint8ClampedArray | null;
+  /** Files embedded for smart objects, by id. */
+  readonly linked?: readonly PsdLinkedFile[];
+  /** Global tagged blocks to write (e.g. embedded smart object files `lnk2`). */
+  readonly globalBlocks?: readonly PsdBlock[];
 }
