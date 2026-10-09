@@ -28,8 +28,14 @@ import {
   setClipped,
   setVectorMask,
   setWorkPath,
+  convertToSmartObject,
+  rasterizeLayer,
+  replaceSmartContent,
+  setSmartFilters,
   type Command,
 } from "../core/commands";
+import { compositeDocument, type CompositeContext } from "../rendering/compositing/compositor";
+import { checkDimensions } from "../core/document/limits";
 import { pathToSelection, selectionToPath } from "../core/path/trace";
 import type { VectorPath } from "../core/path/path";
 import { locateLayer } from "../core/document/tree";
@@ -41,6 +47,8 @@ import type {
   EditorDocument,
   Guide,
   Layer,
+  SmartFilter,
+  SmartObjectLayer,
   ToneChannel,
 } from "../core/document/types";
 import { EditorStore, isDirty, type DocumentSession } from "../core/editor-store";
@@ -52,6 +60,7 @@ import {
   createRasterLayer,
   createTextLayer,
   createPathShapeLayer,
+  IDENTITY_TRANSFORM,
   DocumentError,
   nextLayerName,
   type NewDocumentOptions,
@@ -554,6 +563,280 @@ export class EditorController {
     const pixels = readPixelsBelow(this, doc, layerId);
     if (!pixels) return null;
     return this.jobs.run("histogram", { pixels, channel }, [pixels.data.buffer]);
+  }
+
+  // ---------------------------------------------------------------- smart objects (ADR-0016)
+
+  /**
+   * Open Edit Contents tabs: child document id → the smart object it edits. These tabs are never
+   * stored as projects; saving one (Mod+S, autosave, closing it) applies it to the parent layer.
+   */
+  private readonly smartChildren = new Map<
+    string,
+    { parentId: string; layerId: string; contentId: string; contentName: string; mergeKey: string }
+  >();
+
+  /** Is this tab an Edit Contents tab (for the UI)? */
+  isSmartChild(documentId: string): boolean {
+    return this.smartChildren.has(documentId);
+  }
+
+  /** Layer → Convert to Smart Object. */
+  convertToSmartObject(): void {
+    const doc = this.store.getSession()?.document;
+    const layer = doc ? activeLayer(doc) : undefined;
+    if (!doc || !layer) return;
+    if (layer.kind === "fill" || layer.kind === "adjustment") {
+      this.notify("error", "Fill and adjustment layers can't become smart objects.");
+      return;
+    }
+    this.execute(convertToSmartObject(layer.id, boundsOf(layerCorners(layer, doc, this.sizer))));
+  }
+
+  /** Layer → Edit Contents: open the smart object's document in its own tab. */
+  editSmartContents(layerId?: string): void {
+    const session = this.store.getSession();
+    const doc = session?.document;
+    const layer = doc ? (layerId ? findLayer(doc, layerId) : activeLayer(doc)) : undefined;
+    if (!session || !doc || layer?.kind !== "smart") {
+      this.notify("info", "Select a smart object to edit its contents.");
+      return;
+    }
+    for (const [childId, link] of this.smartChildren) {
+      if (link.parentId === doc.id && link.layerId === layer.id) {
+        this.store.setActiveDocument(childId);
+        return;
+      }
+    }
+    const child: EditorDocument = {
+      ...layer.content,
+      id: createId("document"),
+      name: `${layer.name} (Smart Object)`,
+    };
+    this.smartChildren.set(child.id, {
+      parentId: doc.id,
+      layerId: layer.id,
+      contentId: layer.content.id,
+      contentName: layer.content.name,
+      mergeKey: `smart:${child.id}`,
+    });
+    this.store.openDocument(child, { saved: true });
+  }
+
+  /** Apply an Edit Contents tab to its smart object (the child's "save"). */
+  private applySmartChild(childId: string): Result {
+    const link = this.smartChildren.get(childId);
+    const child = this.store.getSession(childId);
+    if (!link || !child) return { ok: true };
+    const parent = this.store.getSession(link.parentId);
+    const layer = parent && findLayer(parent.document, link.layerId);
+    if (!parent || layer?.kind !== "smart") {
+      return this.fail(
+        "The smart object this tab belongs to no longer exists. Use File → Save Project As… to keep these contents.",
+      );
+    }
+    const content: EditorDocument = {
+      ...child.document,
+      id: link.contentId,
+      name: link.contentName,
+    };
+    const result = this.store.dispatch(
+      replaceSmartContent(link.layerId, content, { mergeKey: link.mergeKey }),
+      link.parentId,
+    );
+    if (!result.ok) return this.fail(result.error);
+    this.store.markSaved(childId, child.revision);
+    this.scheduleAutosave();
+    return { ok: true };
+  }
+
+  /** Layer → Rasterize Layer: a smart object, shape or text becomes pixels that look the same. */
+  rasterizeActiveLayer(): void {
+    const doc = this.store.getSession()?.document;
+    const layer = doc ? activeLayer(doc) : undefined;
+    if (!doc || !layer) return;
+    if (layer.kind !== "smart" && layer.kind !== "shape" && layer.kind !== "text") {
+      this.notify("info", "Only smart objects, shapes and text need rasterizing.");
+      return;
+    }
+    const b = boundsOf(layerCorners(layer, doc, this.sizer));
+    const x = Math.floor(b.x);
+    const y = Math.floor(b.y);
+    const width = Math.max(1, Math.ceil(b.x + b.width) - x);
+    const height = Math.max(1, Math.ceil(b.y + b.height) - y);
+    if (!checkDimensions(width, height).ok) {
+      this.notify("error", "This layer is too large to rasterize.");
+      return;
+    }
+    const plain = {
+      ...layer,
+      opacity: 1,
+      blendMode: "normal",
+      visible: true,
+      mask: undefined,
+      vectorMask: undefined,
+      effects: undefined,
+      clipped: undefined,
+    } as Layer;
+    const surface = this.createSurface(width, height);
+    const result = compositeDocument(
+      context2d(surface) as CompositeContext,
+      { ...doc, layers: [plain] },
+      this.assets,
+      {
+        sizer: this.sizer,
+        createSurface: this.createSurface,
+        assetVersion: this.assets.getVersion(),
+        space: { x, y, width, height, scale: 1 },
+      },
+    );
+    if (result.pendingAssetIds.length > 0) {
+      releaseSurface(surface);
+      this.notify("info", "This layer is still loading. Try again in a moment.");
+      return;
+    }
+    const asset = this.assets.addBitmap(surface, width, height);
+    this.execute(rasterizeLayer(layer.id, { assetId: asset.id, x, y, width, height }));
+    this.enforcePixelBudget();
+  }
+
+  /** File → Place Embedded…: an image, SVG, PSD or project as a smart object, centred. */
+  placeEmbedded(file: Blob, filename: string): Promise<Result> {
+    return this.withBusy("Placing…", () => this.placeEmbeddedNow(file, filename));
+  }
+
+  private async placeEmbeddedNow(file: Blob, filename: string): Promise<Result> {
+    const session = this.store.getSession();
+    if (!session) return this.openFile(file, filename);
+    const documentId = session.document.id;
+    if (file.size > MAX_IMPORT_FILE_BYTES) return this.fail("This file is too large to place.");
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    const kind = detectFileKind(bytes);
+    const name = baseName(filename);
+    try {
+      let content: EditorDocument;
+      const single = (layer: Layer, width: number, height: number) => {
+        const doc = createDocument({ name, width, height, background: { kind: "transparent" } });
+        return { ...doc, layers: [layer], activeLayerId: layer.id };
+      };
+      switch (kind.kind) {
+        case "unsupported":
+          return this.fail(kind.message);
+        case "raster": {
+          const result = await importRasterFile(file, this.decode);
+          if (!result.ok) return this.fail(result.error);
+          const { image } = result;
+          const asset = this.assets.add(
+            { mime: image.mime, width: image.width, height: image.height, blob: image.blob },
+            image.bitmap,
+          );
+          const layer = createRasterLayer({
+            assetId: asset.id,
+            width: image.width,
+            height: image.height,
+            name,
+          });
+          content = single(layer, image.width, image.height);
+          break;
+        }
+        case "svg": {
+          const layer = await this.svgLayer(bytes, name);
+          content = single(layer, layer.width, layer.height);
+          break;
+        }
+        case "psd": {
+          const { file: psd, warnings } = await this.jobs.run("psdRead", bytes, [bytes.buffer]);
+          const imported = psdToDocument(this, psd, name, warnings);
+          this.reportWarnings("Placed with changes", imported.warnings);
+          content = imported.document;
+          break;
+        }
+        case "project": {
+          const project = await readProjectFile(bytes, (k) =>
+            createId(k === "document" ? "doc" : "asset"),
+          );
+          for (const asset of project.assets) this.assets.add(asset);
+          content = project.document;
+          break;
+        }
+      }
+      const current = this.store.getSession(documentId);
+      if (!current) return this.fail("The document was closed before the file finished loading.");
+      const smart: SmartObjectLayer = {
+        id: createId("layer"),
+        kind: "smart",
+        name,
+        visible: true,
+        locked: false,
+        opacity: 1,
+        blendMode: "normal",
+        transform: {
+          ...IDENTITY_TRANSFORM,
+          x: Math.round((current.document.width - content.width) / 2),
+          y: Math.round((current.document.height - content.height) / 2),
+        },
+        content,
+      };
+      const dispatched = this.store.dispatch(addLayer(smart, "Place Embedded"), documentId);
+      this.enforcePixelBudget();
+      return dispatched.ok ? { ok: true } : this.fail(dispatched.error);
+    } catch (error) {
+      this.logger.warn("placing embedded file failed", describeError(error));
+      return this.fail(
+        error instanceof FormatError ? error.message : "The file could not be placed.",
+      );
+    }
+  }
+
+  /** Add a smart filter to the active smart object (the Filter menu on smart objects). */
+  addSmartFilter(filterId: FilterId, values: FilterValues, mergeKey?: string): string | null {
+    const layer = this.activeLayerOrNull();
+    if (layer?.kind !== "smart") return null;
+    const entry: SmartFilter = {
+      id: createId("filter"),
+      filterId,
+      values,
+      enabled: true,
+      seed: Math.floor(Math.random() * 2 ** 31),
+    };
+    const ok = this.execute(
+      setSmartFilters(layer.id, [...(layer.filters ?? []), entry], {
+        label: `Smart Filter: ${filterById(filterId)?.name ?? filterId}`,
+        mergeKey,
+      }),
+    );
+    return ok ? entry.id : null;
+  }
+
+  /** Change one smart filter (settings, visibility), or remove it with null. */
+  updateSmartFilter(
+    layerId: string,
+    filterId: string,
+    patch: Partial<Pick<SmartFilter, "values" | "enabled">> | null,
+    options: { label?: string; mergeKey?: string } = {},
+  ): boolean {
+    const doc = this.store.getSession()?.document;
+    const layer = doc && findLayer(doc, layerId);
+    if (layer?.kind !== "smart") return false;
+    const filters = layer.filters ?? [];
+    const next =
+      patch === null
+        ? filters.filter((f) => f.id !== filterId)
+        : filters.map((f) => (f.id === filterId ? { ...f, ...patch } : f));
+    return this.execute(setSmartFilters(layer.id, next, options));
+  }
+
+  /** Move a smart filter one step up (applied later) or down (applied earlier). */
+  moveSmartFilter(layerId: string, filterId: string, direction: 1 | -1): void {
+    const doc = this.store.getSession()?.document;
+    const layer = doc && findLayer(doc, layerId);
+    if (layer?.kind !== "smart") return;
+    const filters = [...(layer.filters ?? [])];
+    const i = filters.findIndex((f) => f.id === filterId);
+    const j = i + direction;
+    if (i < 0 || j < 0 || j >= filters.length) return;
+    [filters[i], filters[j]] = [filters[j], filters[i]];
+    this.execute(setSmartFilters(layer.id, filters, { label: "Reorder Smart Filters" }));
   }
 
   // ---------------------------------------------------------------- paths & masks (ADR-0015)
@@ -1373,6 +1656,10 @@ export class EditorController {
   private async saveNow(documentId: string): Promise<Result> {
     const session = this.store.getSession(documentId);
     if (!session) return { ok: false, error: "The document is no longer open." };
+    // Edit Contents tabs are saved into their smart object, never as projects.
+    if (this.smartChildren.has(documentId)) {
+      return isDirty(session) ? this.applySmartChild(documentId) : { ok: true };
+    }
     if (!isDirty(session) && session.savedRevision !== null) return { ok: true };
 
     const { document, revision } = session;
@@ -1397,6 +1684,11 @@ export class EditorController {
   }
 
   async saveAllDirty(): Promise<void> {
+    // Edit Contents tabs first: applying them makes their parent documents dirty.
+    for (const childId of this.smartChildren.keys()) {
+      const child = this.store.getSession(childId);
+      if (child && isDirty(child)) this.applySmartChild(childId);
+    }
     const dirty = this.store.getState().sessions.filter(isDirty);
     await Promise.all(dirty.map((s) => this.save(s.document.id)));
   }
@@ -1449,11 +1741,18 @@ export class EditorController {
   async closeDocument(documentId: string): Promise<Result> {
     const session = this.store.getSession(documentId);
     if (!session) return { ok: true };
+    // Edit Contents tabs of this document are applied and closed first.
+    for (const [childId, link] of [...this.smartChildren]) {
+      if (link.parentId !== documentId) continue;
+      const closed = await this.closeDocument(childId);
+      if (!closed.ok) return closed;
+    }
     if (isDirty(session)) {
       const saved = await this.save(documentId);
       if (!saved.ok) return saved;
     }
     this.store.closeDocument(documentId);
+    this.smartChildren.delete(documentId);
     this.collectUnusedAssets();
     return { ok: true };
   }

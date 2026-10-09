@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
+import { createId } from "@/editor/core/ids";
 import {
   defaultFilterValues,
   filterById,
@@ -14,21 +15,63 @@ import { useModal } from "./SelectionDialogs";
 /** Wait this long after the last change before re-running the preview. */
 const PREVIEW_DEBOUNCE_MS = 120;
 
+/** A smart filter being added to (no `entryId`) or edited on a smart object (ADR-0016). */
+export interface SmartFilterTarget {
+  readonly layerId: string;
+  readonly entryId?: string;
+  readonly values?: FilterValues;
+}
+
 /**
  * Filter settings with a live canvas preview (ADR-0014). Mounted only while open, after the
  * controller has prepared the filter session; closing without OK restores the layer.
+ *
+ * On a smart object the filter is a smart filter: the preview updates the smart object's filter
+ * list as one merged undo step, and Cancel undoes it.
  */
-export function FilterDialog({ filterId, onClose }: { filterId: FilterId; onClose: () => void }) {
+export function FilterDialog({
+  filterId,
+  smart,
+  onClose,
+}: {
+  filterId: FilterId;
+  smart?: SmartFilterTarget;
+  onClose: () => void;
+}) {
   const controller = useController();
   const filter = filterById(filterId)!;
   const ref = useModal(true);
   const [values, setValues] = useState<FilterValues>(() => {
+    if (smart?.values) return smart.values;
     const last = controller.lastFilter.get();
     return last?.id === filterId ? last.values : defaultFilterValues(filter);
   });
   const [preview, setPreview] = useState(true);
+  const [mergeKey] = useState(() => createId("smart-filter"));
+  const entry = useRef<string | null>(smart?.entryId ?? null);
+  const changed = useRef(false);
+  const initial = useRef(JSON.stringify(values));
+
+  /** Show the current settings on the smart object (adding the filter the first time). */
+  const pushSmart = useCallback(
+    (next: FilterValues) => {
+      if (!smart) return;
+      if (!changed.current && entry.current && JSON.stringify(next) === initial.current) return;
+      if (entry.current === null) {
+        entry.current = controller.addSmartFilter(filterId, next, mergeKey);
+      } else {
+        controller.updateSmartFilter(smart.layerId, entry.current, { values: next }, { mergeKey });
+      }
+      changed.current = true;
+    },
+    [controller, smart, filterId, mergeKey],
+  );
 
   useEffect(() => {
+    if (smart) {
+      const timer = setTimeout(() => pushSmart(values), PREVIEW_DEBOUNCE_MS);
+      return () => clearTimeout(timer);
+    }
     if (!preview) {
       controller.hideFilterPreview();
       return;
@@ -38,16 +81,25 @@ export function FilterDialog({ filterId, onClose }: { filterId: FilterId; onClos
       PREVIEW_DEBOUNCE_MS,
     );
     return () => clearTimeout(timer);
-  }, [controller, filterId, values, preview]);
+  }, [controller, filterId, values, preview, smart, pushSmart]);
 
   const cancel = () => {
-    controller.endFilter();
+    if (smart) {
+      if (changed.current) controller.undo();
+    } else {
+      controller.endFilter();
+    }
     onClose();
   };
 
   const submit = (event: FormEvent) => {
     event.preventDefault();
     onClose();
+    if (smart) {
+      pushSmart(values);
+      controller.store.sealHistory();
+      return;
+    }
     void controller.applyFilter(filterId, values);
   };
 
@@ -105,10 +157,18 @@ export function FilterDialog({ filterId, onClose }: { filterId: FilterId; onClos
             </div>
           ),
         )}
-        <label className={styles.optionGroup}>
-          <input type="checkbox" checked={preview} onChange={(e) => setPreview(e.target.checked)} />
-          Preview
-        </label>
+        {smart ? (
+          <p className={styles.muted}>Smart filter: you can change or remove it later.</p>
+        ) : (
+          <label className={styles.optionGroup}>
+            <input
+              type="checkbox"
+              checked={preview}
+              onChange={(e) => setPreview(e.target.checked)}
+            />
+            Preview
+          </label>
+        )}
         <div className={styles.dialogActions}>
           <button type="button" className={styles.button} onClick={cancel}>
             Cancel

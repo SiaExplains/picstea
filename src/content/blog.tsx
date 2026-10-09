@@ -376,6 +376,54 @@ export const POSTS: readonly BlogPost[] = [
       </>
     ),
   },
+  {
+    slug: "smart-objects-explained",
+    title: "Smart objects: scale and filter without losing quality",
+    description:
+      "Why resizing pixels loses detail, how smart objects avoid it, and how smart filters let you change your mind later.",
+    published: "2026-10-09",
+    draft: true,
+    body: () => (
+      <>
+        <p>
+          Shrink a photo to place it in a layout, then decide it should be bigger after all — and it
+          comes back blurry. That&apos;s because resizing pixels throws detail away. Smart objects
+          solve this.
+        </p>
+        <h2>What a smart object is</h2>
+        <p>
+          A smart object is a layer that keeps its original contents inside it. When you scale,
+          rotate or flip it, the editor draws it again from that original at the new size, instead
+          of stretching pixels that were already resized. You can scale it down to 10% and back to
+          100% and it looks exactly like it did.
+        </p>
+        <h2>Smart filters: effects you can undo any time</h2>
+        <p>
+          Filters normally change pixels for good. On a smart object, a filter becomes a smart
+          filter: it sits on top of the contents. You can switch it off to compare, change its
+          settings later, reorder several filters or delete one — the original is never touched.
+        </p>
+        <h2>Edit the contents</h2>
+        <p>
+          Double-click a smart object to open its contents in their own tab. Change anything, save,
+          and every place that smart object appears updates.
+        </p>
+        <h2>Try it</h2>
+        <ol>
+          <li>
+            In <EditorLink>MYLPER</EditorLink>, choose File → Place Embedded… and pick a photo.
+          </li>
+          <li>Scale it down with the Move tool, then scale it back up — it stays sharp.</li>
+          <li>Add Filter → Gaussian Blur, then hide or change it in the Properties panel.</li>
+        </ol>
+        <p>
+          More in{" "}
+          <Link href="/docs/smart-objects-and-smart-filters">Smart objects and smart filters</Link>.
+          As always, nothing leaves your device.
+        </p>
+      </>
+    ),
+  },
 ];
 
 const showDrafts = process.env.NODE_ENV !== "production";

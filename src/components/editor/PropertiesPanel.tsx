@@ -3,7 +3,13 @@
 import { setFillColor, setLayerBlendMode, setLayerOpacity } from "@/editor/core/commands";
 import { activeLayer } from "@/editor/core/document/queries";
 import { countLayers } from "@/editor/core/document/tree";
-import { BLEND_MODES, type BlendMode, type GroupBlendMode } from "@/editor/core/document/types";
+import {
+  BLEND_MODES,
+  type BlendMode,
+  type GroupBlendMode,
+  type SmartFilter,
+} from "@/editor/core/document/types";
+import { SmartObjectSection } from "./SmartFilterSection";
 import { useActiveSession, useController } from "./editor-context";
 import styles from "./editor.module.css";
 import { ShapeSection, TextSection, TransformSection } from "./LayerSections";
@@ -28,7 +34,11 @@ const BLEND_LABELS: Record<BlendMode, string> = {
   luminosity: "Luminosity",
 };
 
-export function PropertiesPanel() {
+export function PropertiesPanel({
+  onEditSmartFilter,
+}: {
+  onEditSmartFilter: (layerId: string, filter: SmartFilter) => void;
+}) {
   const controller = useController();
   const session = useActiveSession();
   const doc = session?.document;
@@ -144,7 +154,17 @@ export function PropertiesPanel() {
             {layer.kind === "adjustment" && (
               <AdjustmentSection key={`adj-${layer.id}`} layer={layer} />
             )}
-            {(layer.kind === "raster" || layer.kind === "shape" || layer.kind === "text") &&
+            {layer.kind === "smart" && (
+              <SmartObjectSection
+                key={`smart-${layer.id}`}
+                layer={layer}
+                onEditFilter={onEditSmartFilter}
+              />
+            )}
+            {(layer.kind === "raster" ||
+              layer.kind === "shape" ||
+              layer.kind === "text" ||
+              layer.kind === "smart") &&
               doc && <TransformSection key={`transform-${layer.id}`} layer={layer} doc={doc} />}
             <MaskSection key={`mask-${layer.id}`} layer={layer} />
             {layer.kind !== "adjustment" && <EffectsSection key={`fx-${layer.id}`} layer={layer} />}

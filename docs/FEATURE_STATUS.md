@@ -1,6 +1,6 @@
 # Feature status
 
-Last updated: 2026-10-09 · version 0.9.0 · current gate: **9b (Professional Parity: paths, vector & clipping masks) — awaiting review**
+Last updated: 2026-10-09 · version 0.10.0 · current gate: **9c (Professional Parity: smart objects & smart filters) — awaiting review**
 
 Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ deferred
 
@@ -139,9 +139,10 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 | Slice | Contents | Status |
 |---|---|---|
 | 9a | Rulers, guides, grid, snapping, align; filters; Levels and Curves | ✅ |
-| 9b | Pen tool, paths, path ↔ selection, vector masks, clipping masks | 🚧 awaiting review |
-| 9c | Smart objects (embedded documents), advanced PSD (text, clipping, adjustment layers, effects) | 📋 |
-| 9d | Automation (record/play actions, batch), swatches and colour picker, history panel | 📋 |
+| 9b | Pen tool, paths, path ↔ selection, vector masks, clipping masks | ✅ |
+| 9c | Smart objects (embedded documents), smart filters, rasterize, place embedded | 🚧 awaiting review |
+| 9d | Advanced PSD: descriptor parser; text, adjustment layers, effects, vector masks, shapes and smart objects | 📋 |
+| 9e | Automation (record/play actions, batch), swatches and colour picker, history panel | 📋 |
 
 ### 9a
 
@@ -168,6 +169,18 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 | Work path ↔ selection (even-odd, holes; trace with tolerance) | ✅ | One work path per document; Paths panel 📋 |
 | Vector masks (linked, enable/disable, edit) | ✅ | Rasterised into layer pixels in PSD export; `vmsk` 📋 (9c) |
 | Clipping masks (incl. clipped adjustments), PSD clipping flag read/write | ✅ | Semi-transparent bases differ slightly from Photoshop |
+
+### 9c
+
+| Feature | Status | Notes |
+|---|---|---|
+| Smart object layers (embedded documents, nested ≤ 4), schema v5 | ✅ | ADR-0016 |
+| Re-rendered from source at the displayed scale (power-of-two levels, cached) | ✅ | Quality kept through any scale/rotate |
+| Convert to Smart Object, Edit Contents tab (applies on save/autosave/close, one undo step) | ✅ | Edit tabs are never stored as separate projects |
+| Smart filters (any filter; hide, edit, reorder, delete) | ✅ | Run on the main thread at render scale, cached |
+| Place Embedded (image, SVG, PSD with layers, .mylper) | ✅ | Place keeps creating pixel layers |
+| Rasterize Layer (smart objects, shapes, text) | ✅ | Keeps opacity, blend, masks, effects, clipping |
+| Linked smart objects, PSD smart object import/export | 📋 | PSD part in 9d |
 
 ## Later gates (summary)
 

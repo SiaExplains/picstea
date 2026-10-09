@@ -4,6 +4,7 @@ import { walkLayers } from "../core/document/tree";
 import { checkEffect } from "../core/commands/effect-commands";
 import { parseAdjustment } from "../adjustments/registry";
 import { MAX_GUIDES } from "../core/commands/guide-commands";
+import { filterById, parseFilterValues } from "../filters/registry";
 import { anchorCount, parsePath, type VectorPath } from "../core/path/path";
 import {
   BLEND_MODES,
@@ -17,6 +18,7 @@ import {
   type LayerEffects,
   type LayerMask,
   type Transform,
+  type SmartFilter,
 } from "../core/document/types";
 
 /**
@@ -95,6 +97,8 @@ export const MAX_GROUP_DEPTH = 32;
 
 interface Budget {
   count: number;
+  /** Smart objects nested around the layers being validated. */
+  smartDepth: number;
   /** Path anchors across the whole document. */
   anchors: number;
 }
@@ -208,6 +212,21 @@ function layer(value: unknown, path: string, depth: number, budget: Budget): Lay
         height,
       };
     }
+    case "smart": {
+      if (budget.smartDepth >= MAX_SMART_DEPTH) {
+        fail(path, `smart objects nested at most ${MAX_SMART_DEPTH} deep`);
+      }
+      budget.smartDepth++;
+      const content = documentAt(o.content, `${path}.content`, budget);
+      budget.smartDepth--;
+      if (o.filters !== undefined && (!Array.isArray(o.filters) || o.filters.length > 32)) {
+        fail(`${path}.filters`, "at most 32 filters");
+      }
+      const filters = Array.isArray(o.filters)
+        ? o.filters.map((f, i) => smartFilter(f, `${path}.filters[${i}]`))
+        : undefined;
+      return { ...base, kind: "smart", content, ...(filters ? { filters } : {}) };
+    }
     case "fill": {
       return { ...base, kind: "fill", color: hexColor(o.color, `${path}.color`) };
     }
@@ -284,48 +303,69 @@ function guide(value: unknown, path: string): Guide {
 }
 
 export function validateDocument(value: unknown): EditorDocument {
-  const o = obj(value, "document");
-  const width = int(o.width, "document.width", 1, 1e6);
-  const height = int(o.height, "document.height", 1, 1e6);
-  const dims = checkDimensions(width, height);
-  if (!dims.ok) throw new ValidationError(`document: ${dims.reason}`);
+  return documentAt(value, "document", { count: 0, anchors: 0, smartDepth: 0 });
+}
 
-  if (!Array.isArray(o.layers) || o.layers.length > MAX_LAYERS) fail("document.layers", "array");
-  const budget: Budget = { count: 0, anchors: 0 };
-  const layers = o.layers.map((l, i) => layer(l, `document.layers[${i}]`, 0, budget));
+/** Smart objects inside smart objects, at most this deep. */
+export const MAX_SMART_DEPTH = 4;
+
+function smartFilter(value: unknown, path: string): SmartFilter {
+  const o = obj(value, path);
+  const filter = filterById(str(o.filterId, `${path}.filterId`, 64));
+  if (!filter) fail(`${path}.filterId`, "known filter");
+  const values = parseFilterValues(filter, o.values);
+  if (!values) fail(`${path}.values`, "filter settings within range");
+  return {
+    id: str(o.id, `${path}.id`, 128),
+    filterId: filter.id,
+    values,
+    enabled: bool(o.enabled, `${path}.enabled`),
+    seed: int(o.seed, `${path}.seed`, 0, 2 ** 31),
+  };
+}
+
+function documentAt(value: unknown, at: string, budget: Budget): EditorDocument {
+  const o = obj(value, at);
+  const width = int(o.width, `${at}.width`, 1, 1e6);
+  const height = int(o.height, `${at}.height`, 1, 1e6);
+  const dims = checkDimensions(width, height);
+  if (!dims.ok) throw new ValidationError(`${at}: ${dims.reason}`);
+
+  if (!Array.isArray(o.layers) || o.layers.length > MAX_LAYERS) fail(`${at}.layers`, "array");
+  const layers = o.layers.map((l, i) => layer(l, `${at}.layers[${i}]`, 0, budget));
   const ids = new Set<string>();
   walkLayers(layers, (l) => {
-    if (ids.has(l.id)) throw new ValidationError("document.layers: duplicate layer ids");
+    if (ids.has(l.id)) throw new ValidationError(`${at}.layers: duplicate layer ids`);
     ids.add(l.id);
   });
 
   let activeLayerId: string | null = null;
   if (o.activeLayerId !== null && o.activeLayerId !== undefined) {
-    activeLayerId = str(o.activeLayerId, "document.activeLayerId", 128);
+    activeLayerId = str(o.activeLayerId, `${at}.activeLayerId`, 128);
     // A dangling selection is harmless; repair it rather than rejecting the whole document.
     if (!ids.has(activeLayerId)) activeLayerId = layers.at(-1)?.id ?? null;
   }
 
-  if (!Array.isArray(o.guides) || o.guides.length > MAX_GUIDES) fail("document.guides", "array");
-  if (o.colorSpace !== "srgb") fail("document.colorSpace", "srgb");
-  const metadata = obj(o.metadata, "document.metadata");
+  if (!Array.isArray(o.guides) || o.guides.length > MAX_GUIDES) fail(`${at}.guides`, "array");
+  if (o.colorSpace !== "srgb") fail(`${at}.colorSpace`, "srgb");
+  const metadata = obj(o.metadata, `${at}.metadata`);
 
   return {
-    id: str(o.id, "document.id", 128),
-    name: str(o.name, "document.name", 255),
+    id: str(o.id, `${at}.id`, 128),
+    name: str(o.name, `${at}.name`, 255),
     width,
     height,
-    resolution: num(o.resolution, "document.resolution", 1, 100_000),
+    resolution: num(o.resolution, `${at}.resolution`, 1, 100_000),
     colorSpace: "srgb",
     layers,
     activeLayerId,
-    guides: o.guides.map((g, i) => guide(g, `document.guides[${i}]`)),
+    guides: o.guides.map((g, i) => guide(g, `${at}.guides[${i}]`)),
     ...(o.workPath !== undefined && o.workPath !== null
-      ? { workPath: vectorPath(o.workPath, "document.workPath", budget) }
+      ? { workPath: vectorPath(o.workPath, `${at}.workPath`, budget) }
       : {}),
     metadata: {
-      createdAt: isoDate(metadata.createdAt, "document.metadata.createdAt"),
-      modifiedAt: isoDate(metadata.modifiedAt, "document.metadata.modifiedAt"),
+      createdAt: isoDate(metadata.createdAt, `${at}.metadata.createdAt`),
+      modifiedAt: isoDate(metadata.modifiedAt, `${at}.metadata.modifiedAt`),
     },
   };
 }
