@@ -336,6 +336,19 @@ export class Canvas2DRenderer implements Renderer {
         });
         break;
       }
+      case "source": {
+        const c = toScreen(overlay.center);
+        this.strokeOutline(ctx, () => {
+          ctx.beginPath();
+          ctx.moveTo(c.x - 8, c.y);
+          ctx.lineTo(c.x + 8, c.y);
+          ctx.moveTo(c.x, c.y - 8);
+          ctx.lineTo(c.x, c.y + 8);
+          ctx.moveTo(c.x + 4, c.y);
+          ctx.arc(c.x, c.y, 4, 0, Math.PI * 2);
+        });
+        break;
+      }
     }
     ctx.restore();
   }

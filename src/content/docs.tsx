@@ -272,6 +272,79 @@ export const DOCS: readonly DocPage[] = [
     ),
   },
   {
+    slug: "retouching",
+    title: "Retouching: clone, heal, dodge, burn and more",
+    description:
+      "Remove blemishes and distractions with the Clone Stamp and Healing Brush in MYLPER, and lighten, darken, saturate, blur, sharpen or smudge areas with a brush.",
+    updated: "2026-10-09",
+    body: () => (
+      <>
+        <p>
+          The retouching tools paint changes onto the active pixel layer. Each stroke is one step in
+          the history, so Undo takes back the last stroke. Size, hardness and the other options are
+          in the options bar; [ and ] change the size. With a selection, only the selected area
+          changes.
+        </p>
+        <h2>Clone Stamp (S)</h2>
+        <p>
+          Alt-click (Option-click on a Mac) where you want to copy from, then paint where the copy
+          should go. A crosshair shows where the tool is copying from.
+        </p>
+        <ul>
+          <li>
+            <strong>Aligned</strong> (on by default) keeps the same distance between source and
+            brush for every stroke. Turn it off to start from the original source point each time.
+          </li>
+          <li>
+            <strong>Sample: All layers</strong> copies what you see. Use it on a new, empty layer to
+            keep your retouching separate from the original photo.
+          </li>
+        </ul>
+        <h2>Healing Brush (J)</h2>
+        <p>
+          Works like the Clone Stamp, but when you release the mouse the copied area takes on the
+          colour and brightness of its new surroundings while keeping its texture. It is the
+          quickest way to remove spots, dust and blemishes: Alt-click on clean skin or background
+          nearby, then paint over the blemish.
+        </p>
+        <h2>Dodge, Burn and Sponge (O)</h2>
+        <ul>
+          <li>
+            <strong>Dodge</strong> lightens and <strong>Burn</strong> darkens. Range chooses whether
+            shadows, midtones or highlights are affected most; Exposure sets the strength.
+          </li>
+          <li>
+            <strong>Sponge</strong> increases or decreases colour saturation; Flow sets the
+            strength.
+          </li>
+        </ul>
+        <h2>Blur, Sharpen and Smudge (R)</h2>
+        <ul>
+          <li>
+            <strong>Blur</strong> softens details, <strong>Sharpen</strong> makes edges crisper.
+          </li>
+          <li>
+            <strong>Smudge</strong> drags colour in the direction you paint, like a finger in wet
+            paint.
+          </li>
+        </ul>
+        <p>
+          Within one stroke the effect never goes beyond the strength you set; paint another stroke
+          to build it up.
+        </p>
+        <h2>Limitations</h2>
+        <ul>
+          <li>
+            The tools work on pixel layers. To retouch a smart object, shape or text, rasterize it
+            first (Layer → Rasterize Layer), or clone onto an empty layer with Sample: All layers.
+          </li>
+          <li>There is no Spot Healing Brush or content-aware fill yet.</li>
+          <li>Retouching strokes are not recorded in actions.</li>
+        </ul>
+      </>
+    ),
+  },
+  {
     slug: "guides-grid-and-snapping",
     title: "Rulers, guides, grid and snapping",
     description:

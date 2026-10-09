@@ -1,6 +1,6 @@
 # Feature status
 
-Last updated: 2026-10-09 · version 0.12.0 · current gate: **9e (Professional Parity: automation, colours, history) — awaiting review**
+Last updated: 2026-10-09 · version 0.13.0 · current gate: **9f (Professional Parity: retouching tools) — awaiting review**
 
 Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ deferred
 
@@ -62,7 +62,7 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 | Shapes: rectangle (rounded), ellipse, line | ✅ | Polygon 📋 |
 | Text: on-canvas editing, font, size, bold/italic, colour, align, line height, spacing | ✅ | Wrapping/rich text 📋 |
 | Export PNG / JPEG / WebP | ✅ | File System Access save dialog where supported |
-| Foreground/background colours | ✅ | Eyedropper ✅ (Gate 5), swatches 📋 |
+| Foreground/background colours | ✅ | Eyedropper ✅ (Gate 5), colour picker and swatches ✅ (9e) |
 
 ## Gate 4 — Professional layer workflow
 
@@ -142,7 +142,8 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 | 9b | Pen tool, paths, path ↔ selection, vector masks, clipping masks | ✅ |
 | 9c | Smart objects (embedded documents), smart filters, rasterize, place embedded | ✅ |
 | 9d | Advanced PSD: descriptor parser; text, adjustment layers, effects, vector masks, shapes and smart objects | ✅ |
-| 9e | Automation (record/play actions, batch), swatches and colour picker, history panel | 🚧 awaiting review |
+| 9e | Automation (record/play actions, batch), swatches and colour picker, history panel | ✅ |
+| 9f | Retouching: clone stamp, healing brush, dodge/burn/sponge, blur/sharpen/smudge | 🚧 awaiting review |
 
 ### 9a
 
@@ -167,7 +168,7 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 | Path shape layers (fill, stroke, transform, effects; SVG `<path>`) | ✅ | Rasterised in PSD export |
 | Direct Selection: anchors, handles, corner/smooth, delete, nudge | ✅ | Edits the active path shape, its vector mask and the work path |
 | Work path ↔ selection (even-odd, holes; trace with tolerance) | ✅ | One work path per document; Paths panel 📋 |
-| Vector masks (linked, enable/disable, edit) | ✅ | Rasterised into layer pixels in PSD export; `vmsk` 📋 (9c) |
+| Vector masks (linked, enable/disable, edit) | ✅ | Exported to PSD as `vmsk` (9d) |
 | Clipping masks (incl. clipped adjustments), PSD clipping flag read/write | ✅ | Semi-transparent bases differ slightly from Photoshop |
 
 ### 9c
@@ -180,7 +181,7 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 | Smart filters (any filter; hide, edit, reorder, delete) | ✅ | Run on the main thread at render scale, cached |
 | Place Embedded (image, SVG, PSD with layers, .mylper) | ✅ | Place keeps creating pixel layers |
 | Rasterize Layer (smart objects, shapes, text) | ✅ | Keeps opacity, blend, masks, effects, clipping |
-| Linked smart objects, PSD smart object import/export | 🚧 | PSD import ✅ (9d); linked files and PSD export 📋 |
+| Linked smart objects, PSD smart object import/export | 🟡 | PSD import ✅ (9d); linked files and PSD export 📋 |
 
 ### 9d
 
@@ -205,6 +206,17 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 | Batch: action over up to 200 files → one ZIP (PNG/JPEG/WebP) | ✅ | Transient documents, never stored; 1 GB output limit |
 | Colour picker (HSB field, hue, Hex/RGB/HSB) for foreground/background | ✅ | Properties-panel colour fields stay native |
 | Swatches panel (default palette, add, delete, reset) | ✅ | `mylper.swatches`; ASE/GPL import 📋 |
+
+### 9f
+
+| Feature | Status | Notes |
+|---|---|---|
+| Retouch engine (pure pixel strokes, dirty-rect preview, one undo step per stroke) | ✅ | ADR-0019 |
+| Clone Stamp (Alt-click source, aligned, opacity, current/all layers) | ✅ | Clone onto an empty layer with "All layers" |
+| Healing Brush (source texture, destination tone via push–pull fill) | ✅ | Spot Healing / content-aware 📋 |
+| Dodge, Burn (shadows/midtones/highlights, exposure), Sponge (saturate/desaturate, flow) | ✅ | |
+| Blur, Sharpen (strength), Smudge (strength) | ✅ | Finger painting 📋 |
+| Retouching masks or non-pixel layers | 📋 | Pixel layers only (as filters) |
 
 ## Later gates (summary)
 

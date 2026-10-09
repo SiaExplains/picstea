@@ -7,6 +7,7 @@ export const DOC_SLUGS: readonly string[] = [
   "layers-groups-and-masks",
   "selections",
   "painting-and-fills",
+  "retouching",
   "guides-grid-and-snapping",
   "filters",
   "paths-and-the-pen-tool",
@@ -27,4 +28,5 @@ export const POST_SLUGS: Readonly<Record<string, "draft" | "published">> = {
   "smart-objects-explained": "draft",
   "open-psd-files-with-editable-text-and-adjustments": "draft",
   "record-actions-and-batch-process-images": "draft",
+  "remove-blemishes-and-retouch-photos-in-your-browser": "draft",
 };

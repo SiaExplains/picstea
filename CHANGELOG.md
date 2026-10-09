@@ -3,6 +3,23 @@
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.13.0] — 2026-10-09
+
+### Added
+
+- **Clone Stamp** (S): Alt-click a source, then paint to copy it. Aligned or fixed source; sample
+  the current layer or everything visible (great on an empty layer).
+- **Healing Brush** (J): paint over spots and blemishes; the patch takes on the surrounding
+  colour and brightness while keeping the copied texture.
+- **Dodge, Burn and Sponge** (O): lighten or darken shadows, midtones or highlights, or change
+  saturation, with a brush.
+- **Blur, Sharpen and Smudge** (R): soften, crisp up or push pixels with a brush.
+- Docs: "Retouching".
+
+### Fixed
+
+- The feature status listed swatches and PSD vector mask export as planned; both had shipped.
+
 ## [0.12.0] — 2026-10-09
 
 ### Added

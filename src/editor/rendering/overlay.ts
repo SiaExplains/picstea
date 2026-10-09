@@ -17,6 +17,8 @@ export type Overlay =
     }
   | { readonly kind: "crop"; readonly rect: Rect }
   | { readonly kind: "brush"; readonly center: Point; readonly radius: number }
+  /** Clone/heal source position: a crosshair. */
+  | { readonly kind: "source"; readonly center: Point }
   /** A selection being drawn (marquee, lasso), shown as a dashed path. */
   | { readonly kind: "path"; readonly points: readonly Point[]; readonly closed: boolean }
   /** Smart guides: the lines a drag snapped to, across the whole canvas. */
