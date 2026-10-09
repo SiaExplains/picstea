@@ -16,7 +16,7 @@ import { MenuBar } from "./MenuBar";
 import { NewDocumentDialog } from "./NewDocumentDialog";
 import { BusyOverlay, Notices } from "./Notices";
 import { PropertiesPanel } from "./PropertiesPanel";
-import { ColorRangeDialog, ModifySelectionDialog } from "./SelectionDialogs";
+import { ColorRangeDialog, ModifySelectionDialog, WorkPathDialog } from "./SelectionDialogs";
 import { FilterDialog } from "./FilterDialog";
 import { GridDialog, GuideDialog } from "./ViewDialogs";
 import type { FilterId } from "@/editor/filters/registry";
@@ -40,6 +40,7 @@ export function EditorShell() {
   const [filterId, setFilterId] = useState<FilterId | null>(null);
   const [guideDialogOpen, setGuideDialogOpen] = useState(false);
   const [gridDialogOpen, setGridDialogOpen] = useState(false);
+  const [workPathDialogOpen, setWorkPathDialogOpen] = useState(false);
   const [dragging, setDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const pickModeRef = useRef<"open" | "place">("open");
@@ -56,6 +57,7 @@ export function EditorShell() {
       },
       openGuideDialog: () => setGuideDialogOpen(true),
       openGridDialog: () => setGridDialogOpen(true),
+      openWorkPathDialog: () => setWorkPathDialogOpen(true),
       pickImage: (mode) => {
         pickModeRef.current = mode;
         fileInputRef.current?.click();
@@ -188,6 +190,7 @@ export function EditorShell() {
       )}
       {guideDialogOpen && <GuideDialog onClose={() => setGuideDialogOpen(false)} />}
       {gridDialogOpen && <GridDialog onClose={() => setGridDialogOpen(false)} />}
+      {workPathDialogOpen && <WorkPathDialog onClose={() => setWorkPathDialogOpen(false)} />}
       <Notices />
       <BusyOverlay />
       <input

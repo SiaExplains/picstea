@@ -25,8 +25,15 @@ import {
   addGuide,
   clearGuides,
   translateLayer,
+  setClipped,
+  setVectorMask,
+  setWorkPath,
   type Command,
 } from "../core/commands";
+import { pathToSelection, selectionToPath } from "../core/path/trace";
+import type { VectorPath } from "../core/path/path";
+import { locateLayer } from "../core/document/tree";
+import { pathTargets } from "../tools/pen/path-targets";
 import { alignDelta, type AlignEdge } from "../core/geometry/snapping";
 import { adjustmentDefinition } from "../adjustments/registry";
 import type {
@@ -44,6 +51,7 @@ import {
   createEmptyRasterLayer,
   createRasterLayer,
   createTextLayer,
+  createPathShapeLayer,
   DocumentError,
   nextLayerName,
   type NewDocumentOptions,
@@ -546,6 +554,121 @@ export class EditorController {
     const pixels = readPixelsBelow(this, doc, layerId);
     if (!pixels) return null;
     return this.jobs.run("histogram", { pixels, channel }, [pixels.data.buffer]);
+  }
+
+  // ---------------------------------------------------------------- paths & masks (ADR-0015)
+
+  /** The path that path commands use: the work path, else the active path shape (document space). */
+  activePath(): VectorPath | null {
+    this.tools.finishPen();
+    const doc = this.store.getSession()?.document;
+    if (!doc) return null;
+    const targets = pathTargets(doc);
+    return (
+      (targets.find((t) => t.key === "work") ?? targets.find((t) => t.key === "shape"))?.path ??
+      null
+    );
+  }
+
+  /** Select → Make Selection from Path (Mod+Enter): replaces the selection. */
+  selectionFromPath(): void {
+    // A path still being drawn with the Pen tool is finished first.
+    this.tools.finishPen();
+    const doc = this.store.getSession()?.document;
+    const path = this.activePath();
+    if (!doc || !path) {
+      this.notify("info", "Draw a path with the Pen tool first.");
+      return;
+    }
+    const mask = pathToSelection(path, doc.width, doc.height);
+    this.applySelection(mask.bounds ? mask : null, "Make Selection");
+  }
+
+  /** Select → Make Work Path from Selection. */
+  workPathFromSelection(tolerance = 1): Result {
+    const doc = this.store.getSession()?.document;
+    if (!doc?.selection) return this.fail("Make a selection first.");
+    const traced = selectionToPath(doc.selection, tolerance);
+    if (!traced.ok) {
+      return this.fail(
+        traced.reason === "empty"
+          ? "The selection is too small to make a path."
+          : "The selection is too detailed for a path. Try a larger tolerance.",
+      );
+    }
+    this.execute(setWorkPath(traced.path, { label: "Make Work Path" }));
+    return { ok: true };
+  }
+
+  deleteWorkPath(): void {
+    this.execute(setWorkPath(null));
+  }
+
+  /** A path shape layer from the work path, with the Shape tool's fill and stroke. */
+  shapeFromWorkPath(): void {
+    this.tools.finishPen();
+    const doc = this.store.getSession()?.document;
+    if (!doc?.workPath) return;
+    const shape = this.store.getState().toolSettings.shape;
+    const layer = createPathShapeLayer({
+      path: doc.workPath,
+      fill: shape.fillEnabled ? shape.fill : null,
+      stroke:
+        shape.strokeEnabled || !shape.fillEnabled
+          ? { color: shape.stroke, width: shape.strokeWidth }
+          : null,
+      name: nextLayerName(doc, "Shape"),
+    });
+    if (layer) this.execute(addLayer(layer, "New Shape"));
+  }
+
+  /** Layer → Vector Mask → From Path: the active layer shows only inside the work path. */
+  vectorMaskFromPath(): void {
+    this.tools.finishPen();
+    const doc = this.store.getSession()?.document;
+    const layer = doc ? activeLayer(doc) : undefined;
+    const path = doc?.workPath ?? null;
+    if (!layer || !path) {
+      this.notify("info", "Draw a work path with the Pen tool (Path mode) first.");
+      return;
+    }
+    this.execute(
+      setVectorMask(layer.id, { path, enabled: true, linked: true }, { label: "Add Vector Mask" }),
+    );
+  }
+
+  deleteVectorMask(): void {
+    const layer = this.activeLayerOrNull();
+    if (layer?.vectorMask) this.execute(setVectorMask(layer.id, null));
+  }
+
+  toggleVectorMask(): void {
+    const layer = this.activeLayerOrNull();
+    if (!layer?.vectorMask) return;
+    this.execute(
+      setVectorMask(
+        layer.id,
+        { ...layer.vectorMask, enabled: !layer.vectorMask.enabled },
+        { label: layer.vectorMask.enabled ? "Disable Vector Mask" : "Enable Vector Mask" },
+      ),
+    );
+  }
+
+  /** Layer → Create / Release Clipping Mask (Mod+Alt+G). */
+  toggleClipping(): void {
+    const doc = this.store.getSession()?.document;
+    const layer = this.activeLayerOrNull();
+    if (!doc || !layer) return;
+    if (!layer.clipped && locateLayer(doc.layers, layer.id)?.index === 0) {
+      this.notify("info", "A clipping mask needs a layer below it in the same group.");
+      return;
+    }
+    this.execute(setClipped(layer.id, !layer.clipped));
+  }
+
+  private activeLayerOrNull(): Layer | null {
+    const doc = this.store.getSession()?.document;
+    return (doc && activeLayer(doc)) ?? null;
   }
 
   // ---------------------------------------------------------------- view, guides, align

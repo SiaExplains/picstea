@@ -1,3 +1,4 @@
+import { translatePath } from "../path/path";
 import { withoutSelection } from "./selection-commands";
 import { isHexColor } from "../document/factory";
 import { checkDimensions } from "../document/limits";
@@ -73,10 +74,18 @@ export function setLayerTransform(
               y: layer.mask.y + transform.y - t.y,
             }
           : layer.mask;
+      const vectorMask =
+        layer.vectorMask && layer.vectorMask.linked && moved
+          ? {
+              ...layer.vectorMask,
+              path: translatePath(layer.vectorMask.path, transform.x - t.x, transform.y - t.y),
+            }
+          : layer.vectorMask;
       return replaceLayer(doc, {
         ...layer,
         transform: { ...transform },
         ...(mask ? { mask } : {}),
+        ...(vectorMask ? { vectorMask } : {}),
       } as Layer);
     },
   };
@@ -240,7 +249,15 @@ export function cropDocument(rect: {
         ...g,
         position: g.position - (g.orientation === "vertical" ? x : y),
       }));
-      return { ...withoutSelection(doc), width, height, layers, guides };
+      const workPath = doc.workPath && translatePath(doc.workPath, -x, -y);
+      return {
+        ...withoutSelection(doc),
+        width,
+        height,
+        layers,
+        guides,
+        ...(workPath ? { workPath } : {}),
+      };
     },
   };
 }

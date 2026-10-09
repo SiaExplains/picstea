@@ -21,6 +21,8 @@ import { TransformSelectionTool } from "../tools/selection/transform-selection-t
 import { CropTool } from "../tools/crop/crop-tool";
 import { GuideDrag } from "../tools/guide/guide-drag";
 import { MoveTool } from "../tools/move/move-tool";
+import { DirectSelectTool } from "../tools/pen/direct-select-tool";
+import { PenTool } from "../tools/pen/pen-tool";
 import { ShapeTool } from "../tools/shape/shape-tool";
 import { TextTool } from "../tools/text/text-tool";
 import type { TextEditRequest, Tool, ToolContext, ToolKey, ToolPointer } from "../tools/tool";
@@ -48,6 +50,7 @@ export class ToolManager {
   /** Bumped whenever tool feedback changes and the canvas should be redrawn. */
   readonly revision = new Observable(0);
   readonly crop = new CropTool();
+  readonly pen = new PenTool();
   /** Select → Transform Selection: overrides the active tool until applied or cancelled. */
   readonly selectionTransform = new TransformSelectionTool();
   /** Moving guides with the Move tool and creating them from the rulers. */
@@ -78,6 +81,8 @@ export class ToolManager {
       bucket: new BucketTool(),
       gradient: new GradientTool(),
       shape: new ShapeTool(),
+      pen: this.pen,
+      "path-select": new DirectSelectTool(),
       text: new TextTool(),
     };
     this.context = {
@@ -193,6 +198,11 @@ export class ToolManager {
     if (this.guides.active) this.guides.end(this.context);
     else this.active()?.pointerUp(this.context, pointer);
     this.context.invalidate();
+  }
+
+  /** Commit a path still being drawn with the Pen tool (before a path command uses it). */
+  finishPen(): void {
+    if (this.pen.active) this.pen.finish(this.context, false);
   }
 
   /** Start dragging a new guide out of a ruler. */

@@ -76,6 +76,7 @@ interface Record {
   readonly opacity: number;
   readonly visible: boolean;
   readonly blendKey: string;
+  readonly clipping?: boolean;
   readonly channels: readonly Channel[];
   readonly mask?: PsdMask;
   /** lsct type: 1 open folder, 2 closed folder, 3 bounding divider. */
@@ -126,6 +127,7 @@ function records(nodes: readonly PsdNode[], out: Record[] = []): Record[] {
       name: node.name,
       rect: EMPTY_RECT,
       opacity: node.opacity,
+      clipping: node.clipping,
       visible: node.visible,
       blendKey: node.blendKey,
       channels: withMask(emptyChannels(), node.mask),
@@ -143,7 +145,7 @@ function writeRecord(w: ByteWriter, r: Record): void {
   // A group's own record carries "pass" in its section divider; the record itself uses norm.
   const recordBlend = r.section && r.blendKey === "pass" ? "norm" : r.blendKey;
   w.ascii("8BIM").ascii(recordBlend);
-  w.u8(Math.round(r.opacity)).u8(0);
+  w.u8(Math.round(r.opacity)).u8(r.clipping ? 1 : 0);
   // Flags: bit 1 = hidden, bit 3 = bit 4 is meaningful.
   w.u8((r.visible ? 0 : 2) | 8).u8(0);
 

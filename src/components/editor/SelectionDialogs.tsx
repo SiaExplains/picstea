@@ -194,3 +194,73 @@ export function ColorRangeDialog({ open, onClose }: { open: boolean; onClose: ()
     </dialog>
   );
 }
+
+/** Select → Make Work Path from Selection: trace the selection with a tolerance. Mounted while open. */
+export function WorkPathDialog({ onClose }: { onClose: () => void }) {
+  const controller = useController();
+  const ref = useModal(true);
+  const [tolerance, setTolerance] = useState("1");
+  const [error, setError] = useState<string | null>(null);
+
+  const submit = (event: FormEvent) => {
+    event.preventDefault();
+    const value = Number(tolerance);
+    if (!Number.isFinite(value) || value < 0.5 || value > 10) {
+      setError("Enter a tolerance between 0.5 and 10 pixels.");
+      return;
+    }
+    const result = controller.workPathFromSelection(value);
+    if (!result.ok) {
+      setError(result.error);
+      return;
+    }
+    onClose();
+  };
+
+  return (
+    <dialog
+      ref={ref}
+      className={styles.dialog}
+      aria-labelledby="work-path-title"
+      onClose={(event) => {
+        if (!event.currentTarget.open) onClose();
+      }}
+    >
+      <form className={styles.dialogForm} onSubmit={submit} noValidate>
+        <h2 id="work-path-title" className={styles.dialogTitle}>
+          Make Work Path
+        </h2>
+        <div className={styles.field}>
+          <label className={styles.fieldLabel} htmlFor="work-path-tolerance">
+            Tolerance (px)
+          </label>
+          <input
+            id="work-path-tolerance"
+            className={styles.input}
+            type="number"
+            inputMode="decimal"
+            min={0.5}
+            max={10}
+            step={0.5}
+            value={tolerance}
+            onChange={(e) => setTolerance(e.target.value)}
+          />
+        </div>
+        <p className={styles.muted}>Lower values follow the selection more closely.</p>
+        {error && (
+          <p className={styles.error} role="alert">
+            {error}
+          </p>
+        )}
+        <div className={styles.dialogActions}>
+          <button type="button" className={styles.button} onClick={onClose}>
+            Cancel
+          </button>
+          <button type="submit" className={`${styles.button} ${styles.primary}`}>
+            OK
+          </button>
+        </div>
+      </form>
+    </dialog>
+  );
+}

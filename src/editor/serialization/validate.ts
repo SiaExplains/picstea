@@ -4,6 +4,7 @@ import { walkLayers } from "../core/document/tree";
 import { checkEffect } from "../core/commands/effect-commands";
 import { parseAdjustment } from "../adjustments/registry";
 import { MAX_GUIDES } from "../core/commands/guide-commands";
+import { anchorCount, parsePath, type VectorPath } from "../core/path/path";
 import {
   BLEND_MODES,
   FONT_FAMILIES,
@@ -94,6 +95,20 @@ export const MAX_GROUP_DEPTH = 32;
 
 interface Budget {
   count: number;
+  /** Path anchors across the whole document. */
+  anchors: number;
+}
+
+/** Anchors a whole document may hold across all its paths. */
+const MAX_DOCUMENT_ANCHORS = 100_000;
+
+function vectorPath(value: unknown, path: string, budget: Budget): VectorPath {
+  const parsed = parsePath(value);
+  if (!parsed) fail(path, "valid path");
+  budget.anchors += anchorCount(parsed);
+  if (budget.anchors > MAX_DOCUMENT_ANCHORS)
+    fail(path, `at most ${MAX_DOCUMENT_ANCHORS} path points`);
+  return parsed;
 }
 
 function mask(value: unknown, path: string): LayerMask {
@@ -149,6 +164,19 @@ function layer(value: unknown, path: string, depth: number, budget: Budget): Lay
     transform: transform(o.transform, `${path}.transform`),
     ...(o.mask !== undefined ? { mask: mask(o.mask, `${path}.mask`) } : {}),
     ...(o.effects !== undefined ? { effects: effects(o.effects, `${path}.effects`) } : {}),
+    ...(o.vectorMask !== undefined
+      ? (() => {
+          const v = obj(o.vectorMask, `${path}.vectorMask`);
+          return {
+            vectorMask: {
+              path: vectorPath(v.path, `${path}.vectorMask.path`, budget),
+              enabled: bool(v.enabled, `${path}.vectorMask.enabled`),
+              linked: bool(v.linked, `${path}.vectorMask.linked`),
+            },
+          };
+        })()
+      : {}),
+    ...(o.clipped !== undefined ? { clipped: bool(o.clipped, `${path}.clipped`) } : {}),
   };
   if (isGroupLayer) {
     if (!Array.isArray(o.children)) fail(`${path}.children`, "array");
@@ -184,10 +212,11 @@ function layer(value: unknown, path: string, depth: number, budget: Budget): Lay
       return { ...base, kind: "fill", color: hexColor(o.color, `${path}.color`) };
     }
     case "shape": {
-      if (o.shape !== "rect" && o.shape !== "ellipse" && o.shape !== "line") {
-        fail(`${path}.shape`, "rect|ellipse|line");
+      if (o.shape !== "rect" && o.shape !== "ellipse" && o.shape !== "line" && o.shape !== "path") {
+        fail(`${path}.shape`, "rect|ellipse|line|path");
       }
       return {
+        ...(o.shape === "path" ? { path: vectorPath(o.path, `${path}.path`, budget) } : {}),
         ...base,
         kind: "shape",
         shape: o.shape,
@@ -262,7 +291,7 @@ export function validateDocument(value: unknown): EditorDocument {
   if (!dims.ok) throw new ValidationError(`document: ${dims.reason}`);
 
   if (!Array.isArray(o.layers) || o.layers.length > MAX_LAYERS) fail("document.layers", "array");
-  const budget: Budget = { count: 0 };
+  const budget: Budget = { count: 0, anchors: 0 };
   const layers = o.layers.map((l, i) => layer(l, `document.layers[${i}]`, 0, budget));
   const ids = new Set<string>();
   walkLayers(layers, (l) => {
@@ -291,6 +320,9 @@ export function validateDocument(value: unknown): EditorDocument {
     layers,
     activeLayerId,
     guides: o.guides.map((g, i) => guide(g, `document.guides[${i}]`)),
+    ...(o.workPath !== undefined && o.workPath !== null
+      ? { workPath: vectorPath(o.workPath, "document.workPath", budget) }
+      : {}),
     metadata: {
       createdAt: isoDate(metadata.createdAt, "document.metadata.createdAt"),
       modifiedAt: isoDate(metadata.modifiedAt, "document.metadata.modifiedAt"),

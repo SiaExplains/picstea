@@ -9,6 +9,7 @@ export const DOC_SLUGS: readonly string[] = [
   "painting-and-fills",
   "guides-grid-and-snapping",
   "filters",
+  "paths-and-the-pen-tool",
   "file-formats",
   "keyboard-shortcuts",
   "privacy-and-storage",
@@ -20,4 +21,5 @@ export const POST_SLUGS: Readonly<Record<string, "draft" | "published">> = {
   "png-vs-jpeg-vs-webp": "draft",
   "layers-and-masks-explained": "draft",
   "levels-and-curves-explained": "draft",
+  "how-to-use-the-pen-tool": "draft",
 };

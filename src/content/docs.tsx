@@ -146,6 +146,22 @@ export const DOCS: readonly DocPage[] = [
           Shift-click the thumbnail to turn the mask off temporarily. With a selection active, the
           new mask reveals only the selection.
         </p>
+        <h2>Clipping masks</h2>
+        <p>
+          Layer → Create Clipping Mask (Cmd/Ctrl+Alt+G) shows a layer only where the layer directly
+          below it has pixels — for example a photo inside a text or shape. Clipped layers are
+          indented with ↳ in the Layers panel and the layer they clip to is underlined. Several
+          layers can clip to the same base, and a clipped adjustment layer changes only that base.
+        </p>
+        <h2>Vector masks</h2>
+        <p>
+          A vector mask hides a layer outside a path, with perfectly smooth edges at any size. Draw
+          a path with the Pen tool in Path mode, then choose Layer → Add Vector Mask from Path (or
+          the Mask button in the Pen options). Edit its points with the Direct Selection tool (A);
+          Shift-click the mask badge in the Layers panel to turn it off. A layer can have both a
+          pixel mask and a vector mask. See{" "}
+          <Link href="/docs/paths-and-the-pen-tool">paths and the Pen tool</Link>.
+        </p>
         <h2>Effects</h2>
         <p>
           Drop shadow, outer glow, outer stroke and colour overlay are in the Properties panel.
@@ -155,7 +171,10 @@ export const DOCS: readonly DocPage[] = [
         <ul>
           <li>Masks follow a layer when it moves, but not when it is scaled or rotated.</li>
           <li>Groups can be moved but not yet scaled or rotated as a whole.</li>
-          <li>Clipping masks and vector masks are not available yet.</li>
+          <li>
+            Clipped layers are limited to the base layer&apos;s pixels; on semi-transparent base
+            pixels the result can differ slightly from Photoshop.
+          </li>
         </ul>
       </>
     ),
@@ -374,6 +393,77 @@ export const DOCS: readonly DocPage[] = [
             its pixels, use an adjustment layer (Levels, Curves and others) instead.
           </li>
           <li>Shape and text layers can&apos;t be filtered yet; filters work on pixel layers.</li>
+        </ul>
+      </>
+    ),
+  },
+  {
+    slug: "paths-and-the-pen-tool",
+    title: "Paths and the Pen tool",
+    description:
+      "Draw precise shapes and selections in MYLPER with the Pen tool: anchor points, curves, editing with Direct Selection, paths to selections and back, and vector masks.",
+    updated: "2026-10-09",
+    body: () => (
+      <>
+        <p>
+          The Pen tool (P) draws paths made of anchor points joined by straight lines or smooth
+          curves. A path can become a shape layer, a selection or a vector mask, and stays editable.
+        </p>
+        <h2>Drawing with the Pen tool</h2>
+        <ul>
+          <li>Click to place a corner point.</li>
+          <li>Click and drag to place a smooth point; the drag pulls out its curve handles.</li>
+          <li>
+            Click the first point to close the path. Press Enter or Esc to finish an open path.
+          </li>
+          <li>Backspace removes the last point while you draw.</li>
+          <li>Points snap to guides, the grid and other layers when snapping is on.</li>
+        </ul>
+        <h2>Shape or path</h2>
+        <p>
+          In the options bar, <strong>Shape</strong> mode turns each finished path into a shape
+          layer, filled (and optionally stroked) with the Shape tool&apos;s colours.{" "}
+          <strong>Path</strong> mode adds it to the work path instead: an outline that isn&apos;t a
+          layer, saved with the project, that you can turn into a selection, a mask or a shape
+          later.
+        </p>
+        <h2>Editing points</h2>
+        <p>
+          The Direct Selection tool (A) edits the active path shape, its vector mask and the work
+          path:
+        </p>
+        <ul>
+          <li>
+            Drag a point to move it, or drag a curve handle; Alt-drag a handle to move it on its
+            own.
+          </li>
+          <li>Alt-click a point to switch it between corner and smooth.</li>
+          <li>Drag a line between points to move that whole part of the path.</li>
+          <li>Delete removes the selected point; the arrow keys nudge it (Shift: 10 px).</li>
+        </ul>
+        <h2>Paths and selections</h2>
+        <ul>
+          <li>
+            Select → Make Selection from Path (Cmd/Ctrl+Enter) turns the work path into a smooth
+            selection. Overlapping parts of a path cut holes.
+          </li>
+          <li>
+            Select → Make Work Path from Selection… traces a selection into a path. A lower
+            tolerance follows the selection more closely.
+          </li>
+        </ul>
+        <h2>Vector masks</h2>
+        <p>
+          With a work path, Layer → Add Vector Mask from Path hides the active layer outside the
+          path. The mask moves with the layer and can be edited with Direct Selection.
+        </p>
+        <h2>Limitations</h2>
+        <ul>
+          <li>
+            Photoshop paths, vector masks and shape layers are not imported from PSD yet; exported
+            PSDs contain them as pixels.
+          </li>
+          <li>Only one work path is kept per document (there is no Paths panel yet).</li>
         </ul>
       </>
     ),

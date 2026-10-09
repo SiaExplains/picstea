@@ -17,6 +17,8 @@ export type ToolId =
   | "bucket"
   | "gradient"
   | "shape"
+  | "pen"
+  | "path-select"
   | "text"
   | "hand"
   | "zoom";
@@ -31,13 +33,19 @@ export interface BrushSettings {
 }
 
 export interface ShapeSettings {
-  readonly kind: ShapeKind;
+  /** Paths come from the Pen tool, not the Shape tool. */
+  readonly kind: Exclude<ShapeKind, "path">;
   readonly fillEnabled: boolean;
   readonly fill: string;
   readonly strokeEnabled: boolean;
   readonly stroke: string;
   readonly strokeWidth: number;
   readonly cornerRadius: number;
+}
+
+export interface PenSettings {
+  /** Shape: the finished path becomes a shape layer (Shape tool fill/stroke). Path: the work path. */
+  readonly mode: "shape" | "path";
 }
 
 export interface MarqueeSettings {
@@ -87,6 +95,7 @@ export interface ToolSettings {
   readonly bucket: FloodSettings;
   readonly gradient: GradientSettings;
   readonly shape: ShapeSettings;
+  readonly pen: PenSettings;
   /** Text colour comes from the foreground colour. */
   readonly text: Omit<TextStyle, "color">;
 }
@@ -121,6 +130,7 @@ export const DEFAULT_TOOL_SETTINGS: ToolSettings = {
     strokeWidth: 4,
     cornerRadius: 0,
   },
+  pen: { mode: "shape" },
   text: {
     fontFamily: DEFAULT_TEXT_STYLE.fontFamily,
     fontSize: DEFAULT_TEXT_STYLE.fontSize,

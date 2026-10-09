@@ -7,7 +7,7 @@ import { ValidationError, validateDocument } from "./validate";
  * To change the stored shape: bump CURRENT_SCHEMA_VERSION, add a migration from the previous
  * version, and update the validator. Never edit a released migration.
  */
-export const CURRENT_SCHEMA_VERSION = 3;
+export const CURRENT_SCHEMA_VERSION = 4;
 
 export interface SerializedProject {
   readonly schemaVersion: number;
@@ -28,6 +28,11 @@ export const MIGRATIONS: Readonly<Record<number, Migration>> = {
    * and the "pass-through" group blend mode. Every v2 document is a valid v3 document.
    */
   2: (document) => document,
+  /*
+   * v4 (0.9.0) added vector paths: path shape layers, the work path, vector masks and clipping
+   * masks (ADR-0015). Every v3 document is a valid v4 document.
+   */
+  3: (document) => document,
 };
 
 export function serializeDocument(doc: EditorDocument): SerializedProject {

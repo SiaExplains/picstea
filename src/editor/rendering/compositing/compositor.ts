@@ -10,6 +10,7 @@ import type {
   TextLayer,
 } from "../../core/document/types";
 import { insertLayerAt, locateLayer } from "../../core/document/tree";
+import type { Anchor, VectorPath } from "../../core/path/path";
 import { hasActiveEffects, renderWithEffects } from "./effects";
 import type { ContentSizer } from "../../core/geometry/layer-geometry";
 import { applyTextStyle, lineAdvance, textLines } from "../text/text-layout";
@@ -65,6 +66,8 @@ export type CompositeContext = Pick<
   | "font"
   | "textAlign"
   | "textBaseline"
+  | "bezierCurveTo"
+  | "closePath"
 > & {
   roundRect?: CanvasRenderingContext2D["roundRect"];
   letterSpacing?: string;
@@ -192,10 +195,29 @@ export interface CompositeResult {
   readonly pendingAssetIds: readonly string[];
 }
 
+/** Add a vector path's subpaths to the current canvas path. */
+export function tracePath(ctx: CompositeContext, path: VectorPath): void {
+  for (const sub of path.subpaths) {
+    const a = sub.anchors;
+    if (a.length === 0) continue;
+    ctx.moveTo(a[0].x, a[0].y);
+    const segment = (from: Anchor, to: Anchor) =>
+      ctx.bezierCurveTo(from.out.x, from.out.y, to.in.x, to.in.y, to.x, to.y);
+    for (let i = 1; i < a.length; i++) segment(a[i - 1], a[i]);
+    if (sub.closed && a.length > 1) {
+      segment(a[a.length - 1], a[0]);
+      ctx.closePath();
+    }
+  }
+}
+
 function shapePath(ctx: CompositeContext, layer: ShapeLayer): void {
   const { width: w, height: h } = layer;
   ctx.beginPath();
   switch (layer.shape) {
+    case "path":
+      if (layer.path) tracePath(ctx, layer.path);
+      return;
     case "rect": {
       const r = Math.min(layer.cornerRadius, w / 2, h / 2);
       if (r > 0 && ctx.roundRect) ctx.roundRect(0, 0, w, h, r);
@@ -216,7 +238,9 @@ export function drawShape(ctx: CompositeContext, layer: ShapeLayer): void {
   shapePath(ctx, layer);
   if (layer.fill && layer.shape !== "line") {
     ctx.fillStyle = layer.fill;
-    ctx.fill();
+    // Paths cut holes where their subpaths overlap (even-odd), as in SVG export and selections.
+    if (layer.shape === "path") ctx.fill("evenodd");
+    else ctx.fill();
   }
   if (layer.stroke) {
     ctx.strokeStyle = layer.stroke.color;
@@ -374,6 +398,36 @@ function applyMask(ctx: CompositeContext, layerId: string, mask: LayerMask, env:
   release(m);
 }
 
+const vectorMaskIsActive = (layer: Layer) =>
+  !!layer.vectorMask?.enabled && layer.vectorMask.path.subpaths.length > 0;
+
+/** Raster or vector mask in effect: the layer must be composited in isolation. */
+const hasMask = (layer: Layer, env: Env) =>
+  maskIsActive(layer.mask, layer.id, env) || vectorMaskIsActive(layer);
+
+/** Clip `ctx` (a render-space surface) to the filled vector mask path (even-odd, anti-aliased). */
+function applyVectorMask(ctx: CompositeContext, layer: Layer, env: Env): void {
+  const path = layer.vectorMask!.path;
+  const { surface: m, ctx: mctx } = spaceSurface(env);
+  mctx.fillStyle = "#ffffff";
+  mctx.beginPath();
+  tracePath(mctx, path);
+  mctx.fill("evenodd");
+  inSurfacePixels(ctx, env, () => {
+    ctx.save();
+    ctx.globalCompositeOperation = "destination-in";
+    ctx.drawImage(m, 0, 0);
+    ctx.restore();
+  });
+  release(m);
+}
+
+/** Apply every active mask of a layer to its isolated surface. */
+function applyMasks(ctx: CompositeContext, layer: Layer, env: Env): void {
+  if (maskIsActive(layer.mask, layer.id, env)) applyMask(ctx, layer.id, layer.mask, env);
+  if (vectorMaskIsActive(layer)) applyVectorMask(ctx, layer, env);
+}
+
 /** Draw an isolated surface onto the target with the layer's opacity and blend mode. */
 function drawIsolated(target: CompositeContext, surface: Surface, layer: Layer, env: Env): void {
   inSurfacePixels(target, env, () => {
@@ -385,10 +439,15 @@ function drawIsolated(target: CompositeContext, surface: Surface, layer: Layer, 
   });
 }
 
-/** Finish an isolated layer surface: mask, then effects, then draw onto the target. */
-function finishIsolated(target: CompositeContext, surface: Surface, layer: Layer, env: Env): void {
-  if (maskIsActive(layer.mask, layer.id, env))
-    applyMask(context2d(surface), layer.id, layer.mask, env);
+/** Finish an isolated layer surface: masks, then effects, then draw onto the target. */
+function finishIsolated(
+  target: CompositeContext,
+  surface: Surface,
+  layer: Layer,
+  env: Env,
+  masked = false,
+): void {
+  if (!masked) applyMasks(context2d(surface), layer, env);
   if (hasActiveEffects(layer.effects)) {
     const withEffects = renderWithEffects(
       surface,
@@ -426,13 +485,13 @@ function compositeAdjustment(
 
   // Per-pixel amount: layer opacity × mask (if any).
   let maskAlpha: Uint8ClampedArray | null = null;
-  if (maskIsActive(layer.mask, layer.id, env)) {
+  if (hasMask(layer, env)) {
     const { surface: m, ctx: mctx } = spaceSurface(env, true);
     inSurfacePixels(mctx, env, () => {
       mctx.fillStyle = "#000000";
       mctx.fillRect(0, 0, width, height);
     });
-    applyMask(mctx, layer.id, layer.mask, env);
+    applyMasks(mctx, layer, env);
     maskAlpha = mctx.getImageData!(0, 0, width, height).data;
     release(m);
   }
@@ -477,53 +536,134 @@ function compositeList(
   env: Env,
   drawn: Layer[],
 ): void {
-  const { preview, createSurface } = env.options;
-  for (const layer of layers) {
-    if (!layer.visible || layer.opacity <= 0) continue;
-    if (preview?.hiddenLayerIds?.has(layer.id)) continue;
-
-    if (layer.kind === "group") {
-      const passThrough =
-        layer.blendMode === "pass-through" &&
-        layer.opacity === 1 &&
-        !maskIsActive(layer.mask, layer.id, env) &&
-        !hasActiveEffects(layer.effects);
-      if (passThrough || !createSurface) {
-        compositeList(target, layer.children, env, drawn);
-      } else {
-        const { surface, ctx } = spaceSurface(env, true);
-        compositeList(ctx, layer.children, env, []);
-        finishIsolated(target, surface, layer, env);
-        release(surface);
-      }
-      drawn.push(layer);
+  const { createSurface } = env.options;
+  for (let i = 0; i < layers.length; i++) {
+    const layer = layers[i];
+    // Clipping masks (ADR-0015): this layer is the base of the clipped layers right above it.
+    let end = i + 1;
+    while (end < layers.length && layers[end].clipped) end++;
+    if (end > i + 1 && createSurface && layer.kind !== "adjustment") {
+      if (isShown(layer, env)) compositeClippingGroup(target, layer, layers.slice(i + 1, end), env);
+      drawn.push(...layers.slice(i, end));
+      i = end - 1;
       continue;
     }
+    compositeOne(target, layer, env, drawn);
+  }
+}
 
-    if (layer.kind === "adjustment") {
-      compositeAdjustment(target, layer, env, drawn);
-      drawn.push(layer);
-      continue;
-    }
+function isShown(layer: Layer, env: Env): boolean {
+  return layer.visible && layer.opacity > 0 && !env.options.preview?.hiddenLayerIds?.has(layer.id);
+}
 
-    const isolated =
-      createSurface && (maskIsActive(layer.mask, layer.id, env) || hasActiveEffects(layer.effects));
-    if (isolated) {
-      const { surface, ctx: sctx } = spaceSurface(env);
-      sctx.save();
-      drawLayer(sctx, env.doc, layer, env.assets, env.options, env.pending);
-      sctx.restore();
+/** Composite one layer (not part of a clipping group) into `target`. */
+function compositeOne(target: CompositeContext, layer: Layer, env: Env, drawn: Layer[]): void {
+  const { createSurface } = env.options;
+  if (!isShown(layer, env)) return;
+
+  if (layer.kind === "group") {
+    const passThrough =
+      layer.blendMode === "pass-through" &&
+      layer.opacity === 1 &&
+      !hasMask(layer, env) &&
+      !hasActiveEffects(layer.effects);
+    if (passThrough || !createSurface) {
+      compositeList(target, layer.children, env, drawn);
+    } else {
+      const { surface, ctx } = spaceSurface(env, true);
+      compositeList(ctx, layer.children, env, []);
       finishIsolated(target, surface, layer, env);
       release(surface);
-    } else {
-      target.save();
-      target.globalAlpha = layer.opacity;
-      target.globalCompositeOperation = compositeOperation(layer.blendMode);
-      drawLayer(target, env.doc, layer, env.assets, env.options, env.pending);
-      target.restore();
     }
     drawn.push(layer);
+    return;
   }
+
+  if (layer.kind === "adjustment") {
+    compositeAdjustment(target, layer, env, drawn);
+    drawn.push(layer);
+    return;
+  }
+
+  const isolated = createSurface && (hasMask(layer, env) || hasActiveEffects(layer.effects));
+  if (isolated) {
+    const { surface, ctx: sctx } = spaceSurface(env);
+    sctx.save();
+    drawLayer(sctx, env.doc, layer, env.assets, env.options, env.pending);
+    sctx.restore();
+    finishIsolated(target, surface, layer, env);
+    release(surface);
+  } else {
+    target.save();
+    target.globalAlpha = layer.opacity;
+    target.globalCompositeOperation = compositeOperation(layer.blendMode);
+    drawLayer(target, env.doc, layer, env.assets, env.options, env.pending);
+    target.restore();
+  }
+  drawn.push(layer);
+}
+
+/** A layer's own content (with its masks, without opacity/effects) on a new render-space surface. */
+function isolatedContent(layer: Layer, env: Env): Surface {
+  const { surface, ctx } = spaceSurface(env, true);
+  if (layer.kind === "group") {
+    compositeList(ctx, layer.children, env, []);
+  } else {
+    ctx.save();
+    drawLayer(ctx, env.doc, layer, env.assets, env.options, env.pending);
+    ctx.restore();
+  }
+  applyMasks(ctx, layer, env);
+  return surface;
+}
+
+/**
+ * A base layer and the layers clipped to it: each clipped layer is limited to the base's pixels
+ * and blended onto it with its own opacity and blend mode (clipped adjustments change only the
+ * base); then the result is drawn with the base's opacity, blend mode and effects.
+ */
+function compositeClippingGroup(
+  target: CompositeContext,
+  base: Layer,
+  clipped: readonly Layer[],
+  env: Env,
+): void {
+  const baseSurface = isolatedContent(base, env);
+  const bctx = context2d(baseSurface, true);
+  const noCache: Env = { ...env, options: { ...env.options, cache: undefined } };
+  const below: Layer[] = [base];
+  for (const layer of clipped) {
+    if (!isShown(layer, env)) continue;
+    if (layer.kind === "adjustment") {
+      compositeAdjustment(bctx, layer, noCache, below);
+    } else {
+      const surface = isolatedContent(layer, env);
+      const ctx = context2d(surface);
+      // Keep only what lies over the base: multiply by the base's alpha.
+      inSurfacePixels(ctx, env, () => {
+        ctx.save();
+        ctx.globalCompositeOperation = "destination-in";
+        ctx.drawImage(baseSurface, 0, 0);
+        ctx.restore();
+      });
+      if (hasActiveEffects(layer.effects)) {
+        const withEffects = renderWithEffects(
+          surface,
+          layer.effects!,
+          env.options.createSurface!,
+          env.space.scale,
+        );
+        drawIsolated(bctx, withEffects, layer, env);
+        release(withEffects);
+      } else {
+        drawIsolated(bctx, surface, layer, env);
+      }
+      release(surface);
+    }
+    below.push(layer);
+  }
+  finishIsolated(target, baseSurface, base, env, true);
+  release(baseSurface);
 }
 
 /**
@@ -630,6 +770,8 @@ export function compositeDocument(
     let stable = prefix.firstChange(roots);
     const touched = roots.findIndex((l) => previewTouches(l, options.preview));
     if (touched !== -1) stable = Math.min(stable, touched);
+    // Never split a base from the layers clipped to it.
+    while (stable > 0 && roots[stable]?.clipped) stable--;
     let start = prefix.lookup(roots, space, version);
     if (start > stable) start = 0;
     const drawn: Layer[] = [...roots.slice(0, start)];

@@ -3,6 +3,27 @@
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.9.0] — 2026-10-09
+
+### Added
+
+- **Pen tool** (P): click for corners, drag for curves, click the first point to close. In Shape
+  mode it creates a shape layer; in Path mode it draws the work path.
+- **Direct Selection tool** (A): move points and curve handles, switch points between corner
+  and smooth, delete points, nudge with the arrow keys.
+- **Paths and selections**: Make Selection from Path (Cmd/Ctrl+Enter) and Make Work Path from
+  Selection.
+- **Vector masks**: hide a layer outside a path with smooth edges (Layer → Add Vector Mask from
+  Path). They move with the layer and stay editable.
+- **Clipping masks** (Cmd/Ctrl+Alt+G): show a layer only where the layer below has pixels.
+  Clipping is also read from and written to PSD files.
+- Docs: "Paths and the Pen tool"; clipping and vector masks in the layers guide.
+
+### Changed
+
+- The project format moved to version 4. Older projects open as before; projects saved with
+  this version need this version or later.
+
 ## [0.8.0] — 2026-10-09
 
 ### Added

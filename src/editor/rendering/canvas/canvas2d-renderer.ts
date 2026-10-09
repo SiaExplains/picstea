@@ -3,6 +3,7 @@ import { CompositeCache, compositeDocument, PrefixCache } from "../compositing/c
 import { covers, renderScale, spaceFor, viewRegion, type RenderSpace } from "../render-space";
 import { documentToScreen, type Viewport } from "../../core/viewport/viewport";
 import { rectHandles } from "../../core/geometry/rect";
+import { mapPath, pathToSvgD } from "../../core/path/path";
 import type { SelectionMask } from "../../selection/mask";
 import { selectionOutline } from "../../selection/outline";
 import { HANDLE_SIZE_PX, type Overlay } from "../overlay";
@@ -308,6 +309,9 @@ export class Canvas2DRenderer implements Renderer {
         ctx.stroke();
         break;
       }
+      case "vector-path":
+        this.drawVectorPath(ctx, overlay, viewport);
+        break;
       case "snap":
         for (const line of overlay.lines) {
           this.drawLine(ctx, line.axis, line.value, viewport, screen, this.theme.smartGuide);
@@ -334,6 +338,56 @@ export class Canvas2DRenderer implements Renderer {
       }
     }
     ctx.restore();
+  }
+
+  /** Path outline (one CSS px), anchors as squares and handles as dots on stems. */
+  private drawVectorPath(
+    ctx: CanvasRenderingContext2D,
+    overlay: Extract<Overlay, { kind: "vector-path" }>,
+    viewport: Viewport,
+  ): void {
+    const toScreen = (p: { x: number; y: number }) => documentToScreen(viewport, p);
+    const screenPath = mapPath(overlay.path, toScreen);
+    const d = pathToSvgD(screenPath);
+    if (d) this.strokeOutline(ctx, () => ctx.stroke(new Path2D(d)));
+    if (overlay.rubberBand) {
+      const a = toScreen(overlay.rubberBand.from);
+      const b = toScreen(overlay.rubberBand.to);
+      ctx.save();
+      ctx.setLineDash([4, 3]);
+      ctx.strokeStyle = this.theme.overlay;
+      ctx.beginPath();
+      ctx.moveTo(a.x, a.y);
+      ctx.lineTo(b.x, b.y);
+      ctx.stroke();
+      ctx.restore();
+    }
+    if (!overlay.anchors) return;
+    const size = 6;
+    screenPath.subpaths.forEach((sub, si) => {
+      sub.anchors.forEach((anchor, ai) => {
+        const selected = overlay.selected?.subpath === si && overlay.selected.anchor === ai;
+        for (const h of [anchor.in, anchor.out]) {
+          if (h.x === anchor.x && h.y === anchor.y) continue;
+          ctx.strokeStyle = this.theme.overlay;
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(anchor.x, anchor.y);
+          ctx.lineTo(h.x, h.y);
+          ctx.stroke();
+          ctx.fillStyle = this.theme.overlay;
+          ctx.beginPath();
+          ctx.arc(h.x, h.y, 3, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.fillStyle = selected ? this.theme.overlay : "#ffffff";
+        ctx.strokeStyle = this.theme.overlay;
+        const x = Math.round(anchor.x - size / 2) + 0.5;
+        const y = Math.round(anchor.y - size / 2) + 0.5;
+        ctx.fillRect(x, y, size, size);
+        ctx.strokeRect(x, y, size, size);
+      });
+    });
   }
 
   /** A light line over a dark one, visible on any image. */
