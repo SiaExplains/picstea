@@ -1,6 +1,6 @@
 # Feature status
 
-Last updated: 2026-10-09 · version 0.14.0 · current gate: **9g (Professional Parity: multi-layer selection) — awaiting review**
+Last updated: 2026-10-09 · version 0.15.0 · current gate: **9h (Professional Parity: adjustments and layer styles) — awaiting review**
 
 Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ deferred
 
@@ -73,7 +73,7 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 | Blend modes & opacity (layers and groups) | ✅ | |
 | Raster layer masks (paint grey levels, enable/disable, linked) | ✅ | Vector & clipping masks ✅ (Gate 9b); masks don't follow scale/rotate |
 | Adjustment layers: Brightness/Contrast, Hue/Saturation, Exposure, Temperature/Tint, Black & White, Invert, Posterize, Threshold | ✅ | Levels/Curves ✅ (Gate 9a) |
-| Layer effects: drop shadow, outer glow, outer stroke, colour overlay | ✅ | Inner shadow, bevel 📋 |
+| Layer effects: drop shadow, outer glow, outer stroke, colour overlay | ✅ | Inner shadow, bevel, gradient overlay ✅ (9h) |
 
 ## Gate 5 — Selection & advanced tools
 
@@ -144,7 +144,8 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 | 9d | Advanced PSD: descriptor parser; text, adjustment layers, effects, vector masks, shapes and smart objects | ✅ |
 | 9e | Automation (record/play actions, batch), swatches and colour picker, history panel | ✅ |
 | 9f | Retouching: clone stamp, healing brush, dodge/burn/sponge, blur/sharpen/smudge | ✅ |
-| 9g | Multi-layer selection: move/scale/rotate together, group transforms, align/distribute, group/duplicate/delete | 🚧 awaiting review |
+| 9g | Multi-layer selection: move/scale/rotate together, group transforms, align/distribute, group/duplicate/delete | ✅ |
+| 9h | Vibrance, Color Balance, Photo Filter, Channel Mixer, Gradient Map; inner shadow, bevel, gradient overlay | 🚧 awaiting review |
 
 ### 9a
 
@@ -228,6 +229,16 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 | Flip, Group, Duplicate, Delete on the selection | ✅ | |
 | Align to each other or the selection; Distribute centres or spacing (3+) | ✅ | Recordable in actions |
 | Opacity/blend/visibility for several layers at once | 📋 | Properties panel edits the active layer |
+
+### 9h
+
+| Feature | Status | Notes |
+|---|---|---|
+| Vibrance, Color Balance, Photo Filter, Channel Mixer, Gradient Map adjustment layers | ✅ | ADR-0021; schema v6 |
+| Inner shadow, bevel (inner), gradient overlay effects | ✅ | Bevel is an approximation; overlay spans the layer box |
+| PSD import of the above (`vibA`, `blnc`, `phfl`, `mixr`, `grdm`, `IrSh`, `ebbl`, `GrFl`) | ✅ | Noise gradients, other bevel styles noted |
+| PSD export of Vibrance, Color Balance, Channel Mixer | ✅ | Photo Filter, Gradient Map flattened; Photoshop check pending |
+| Selective Color, Color Lookup; inner glow, satin, pattern overlay | 📋 | |
 
 ## Later gates (summary)
 

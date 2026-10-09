@@ -30,4 +30,5 @@ export const POST_SLUGS: Readonly<Record<string, "draft" | "published">> = {
   "record-actions-and-batch-process-images": "draft",
   "remove-blemishes-and-retouch-photos-in-your-browser": "draft",
   "select-align-and-distribute-several-layers": "draft",
+  "vibrance-color-balance-gradient-map-and-more": "draft",
 };

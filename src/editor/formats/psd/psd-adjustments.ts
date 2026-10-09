@@ -1,8 +1,19 @@
 import { parseAdjustment } from "../../adjustments/registry";
 import { NEUTRAL_CURVE, NEUTRAL_LEVELS, MAX_CURVE_POINTS } from "../../adjustments/tone";
-import type { Adjustment, CurvePoint, LevelsChannel, ToneChannel } from "../../core/document/types";
+import type {
+  Adjustment,
+  CurvePoint,
+  LevelsChannel,
+  MixerRow,
+  ToneChannel,
+} from "../../core/document/types";
 import { ByteReader, ByteWriter } from "../binary/bytes";
-import { getNumber, readVersionedDescriptor } from "./descriptor";
+import {
+  getNumber,
+  readUnicodeString,
+  readVersionedDescriptor,
+  writeVersionedDescriptor,
+} from "./descriptor";
 
 /**
  * Photoshop adjustment layers ↔ MYLPER adjustments (ADR-0017). Layouts follow Adobe's PSD file
@@ -22,21 +33,23 @@ export const ADJUSTMENT_KEYS = [
   "post",
   "thrs",
   "blwh",
+  "vibA",
+  "blnc",
+  "phfl",
+  "mixr",
+  "grdm",
 ] as const;
 
 /** Photoshop adjustments MYLPER doesn't have, by block key, for the warning. */
 export const UNSUPPORTED_ADJUSTMENTS: Record<string, string> = {
-  vibA: "Vibrance",
-  blnc: "Color Balance",
-  phfl: "Photo Filter",
-  mixr: "Channel Mixer",
   selc: "Selective Color",
-  grdm: "Gradient Map",
   clrL: "Color Lookup",
   "hue ": "Hue/Saturation (old format)",
 };
 
-const clamp = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v));
+/** Clamp; NaN and infinities from damaged files become the in-range value nearest 0. */
+const clamp = (v: number, min: number, max: number) =>
+  Math.min(max, Math.max(min, Number.isFinite(v) ? v : 0));
 const TONE_ORDER: ToneChannel[] = ["rgb", "red", "green", "blue"];
 
 function levelsChannel(r: ByteReader): LevelsChannel {
@@ -179,6 +192,89 @@ export function decodeAdjustment(
       notes.push("Black & White colour mix settings were not imported.");
       value = { type: "black-white" };
       break;
+    case "vibA": {
+      const d = readVersionedDescriptor(r);
+      value = {
+        type: "vibrance",
+        vibrance: clamp(getNumber(d, "vibrance") ?? 0, -100, 100),
+        saturation: clamp(getNumber(d, "Strt") ?? 0, -100, 100),
+      };
+      break;
+    }
+    case "blnc": {
+      const range = () => ({
+        cyanRed: clamp(r.i16(), -100, 100),
+        magentaGreen: clamp(r.i16(), -100, 100),
+        yellowBlue: clamp(r.i16(), -100, 100),
+      });
+      const shadows = range();
+      const midtones = range();
+      const highlights = range();
+      const preserveLuminosity = r.remaining > 0 ? r.u8() !== 0 : true;
+      value = { type: "color-balance", shadows, midtones, highlights, preserveLuminosity };
+      break;
+    }
+    case "phfl": {
+      const version = r.u16();
+      let color: string;
+      if (version === 3) {
+        // Lab, hundredths.
+        color = labToHex(r.i32() / 100, r.i32() / 100, r.i32() / 100);
+        notes.push("Photo Filter colours may differ slightly from Photoshop.");
+      } else if (version === 2) {
+        color = readColor(r) ?? "#ec8a00";
+      } else {
+        return null;
+      }
+      const density = clamp(r.u32(), 1, 100);
+      const preserveLuminosity = r.remaining > 0 ? r.u8() !== 0 : true;
+      value = { type: "photo-filter", color, density, preserveLuminosity };
+      break;
+    }
+    case "mixr": {
+      r.u16(); // version
+      const monochrome = r.u16() !== 0;
+      const row = () => {
+        const red = clamp(r.i16(), -200, 200);
+        const green = clamp(r.i16(), -200, 200);
+        const blue = clamp(r.i16(), -200, 200);
+        r.skip(2); // CMYK only
+        const constant = clamp(r.i16(), -200, 200);
+        return { red, green, blue, constant };
+      };
+      const red = row();
+      const green = row();
+      const blue = row();
+      // Monochrome mixes use a separate grey row when present.
+      const gray = monochrome && r.remaining >= 10 ? row() : red;
+      value = { type: "channel-mixer", red: monochrome ? gray : red, green, blue, monochrome };
+      break;
+    }
+    case "grdm": {
+      r.u16(); // version
+      const reverse = r.u8() !== 0;
+      r.u8(); // dither
+      readUnicodeString(r); // name
+      const count = r.u16();
+      if (count < 2 || count > 1024) return null;
+      const stops: { position: number; color: string }[] = [];
+      for (let i = 0; i < count; i++) {
+        const location = r.u32();
+        r.u32(); // midpoint
+        const color = readColor(r) ?? "#000000";
+        r.skip(2);
+        stops.push({ position: clamp(location / 4096, 0, 1), color });
+      }
+      stops.sort((a, b) => a.position - b.position);
+      if (stops.length > 16) {
+        // Keep both ends; drop stops from the middle.
+        notes.push("Gradient Map gradients were limited to 16 colours.");
+        stops.splice(15, stops.length - 16);
+      }
+      notes.push("Gradient Map transparency and smoothness settings were not imported.");
+      value = { type: "gradient-map", stops, reverse };
+      break;
+    }
     default:
       return null;
   }
@@ -258,8 +354,81 @@ export function encodeAdjustment(a: Adjustment): { key: string; data: Uint8Array
     case "threshold":
       w.u16(Math.round(a.level)).u16(0);
       return { key: "thrs", data: w.toBytes() };
+    case "vibrance":
+      writeVersionedDescriptor(w, {
+        classId: "null",
+        items: [
+          ["vibrance", { type: "long", value: Math.round(a.vibrance) }],
+          ["Strt", { type: "long", value: Math.round(a.saturation) }],
+        ],
+      });
+      return { key: "vibA", data: w.toBytes() };
+    case "color-balance":
+      for (const range of [a.shadows, a.midtones, a.highlights]) {
+        w.i16(Math.round(range.cyanRed))
+          .i16(Math.round(range.magentaGreen))
+          .i16(Math.round(range.yellowBlue));
+      }
+      w.u8(a.preserveLuminosity ? 1 : 0).u8(0);
+      return { key: "blnc", data: w.toBytes() };
+    case "channel-mixer": {
+      w.u16(1).u16(a.monochrome ? 1 : 0);
+      const row = (m: MixerRow) =>
+        w
+          .i16(Math.round(m.red))
+          .i16(Math.round(m.green))
+          .i16(Math.round(m.blue))
+          .i16(0)
+          .i16(Math.round(m.constant));
+      row(a.red);
+      row(a.green);
+      row(a.blue);
+      row(a.red); // grey (monochrome)
+      return { key: "mixr", data: w.toBytes() };
+    }
     case "temperature-tint":
     case "black-white":
+    case "photo-filter":
+    case "gradient-map":
       return null;
   }
+}
+
+/** A PSD colour record (colour space + four 16-bit values); RGB only, else undefined. */
+function readColor(r: ByteReader): string | undefined {
+  const space = r.u16();
+  const values = [r.u16(), r.u16(), r.u16(), r.u16()];
+  if (space !== 0) return undefined;
+  const hex = (v: number) =>
+    Math.round(clamp(v / 257, 0, 255))
+      .toString(16)
+      .padStart(2, "0");
+  return `#${hex(values[0])}${hex(values[1])}${hex(values[2])}`;
+}
+
+/** CIE Lab (D50, as Photoshop) → sRGB hex. */
+export function labToHex(l: number, a: number, b: number): string {
+  const fy = (clamp(l, 0, 100) + 16) / 116;
+  const fx = fy + clamp(a, -128, 127) / 500;
+  const fz = fy - clamp(b, -128, 127) / 200;
+  const inv = (t: number) => (t ** 3 > 0.008856 ? t ** 3 : (t - 16 / 116) / 7.787);
+  // D50 white.
+  const X = 0.9642 * inv(fx);
+  const Y = inv(fy);
+  const Z = 0.8251 * inv(fz);
+  // Bradford-adapted D50 → linear sRGB.
+  const lin = [
+    3.1338561 * X - 1.6168667 * Y - 0.4906146 * Z,
+    -0.9787684 * X + 1.9161415 * Y + 0.033454 * Z,
+    0.0719453 * X - 0.2289914 * Y + 1.4052427 * Z,
+  ];
+  const gamma = (c: number) =>
+    clamp(c <= 0.0031308 ? 12.92 * c : 1.055 * c ** (1 / 2.4) - 0.055, 0, 1);
+  return `#${lin
+    .map((c) =>
+      Math.round(gamma(c) * 255)
+        .toString(16)
+        .padStart(2, "0"),
+    )
+    .join("")}`;
 }

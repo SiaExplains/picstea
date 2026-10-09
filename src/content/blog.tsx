@@ -610,6 +610,59 @@ export const POSTS: readonly BlogPost[] = [
       </>
     ),
   },
+  {
+    slug: "vibrance-color-balance-gradient-map-and-more",
+    title: "Vibrance, Color Balance, Gradient Map and more",
+    description:
+      "MYLPER adds five adjustment layers — Vibrance, Color Balance, Photo Filter, Channel Mixer and Gradient Map — and inner shadow, bevel and gradient overlay effects.",
+    published: "2026-10-09",
+    draft: true,
+    body: () => (
+      <>
+        <p>
+          Colour is where a photo gets its mood. MYLPER now has the adjustment layers photographers
+          and designers reach for most often after Levels and Curves — all non-destructive, all
+          running in your browser.
+        </p>
+        <h2>Five new adjustments</h2>
+        <ul>
+          <li>
+            <strong>Vibrance</strong> lifts muted colours while leaving already vivid ones (and
+            skin) mostly alone.
+          </li>
+          <li>
+            <strong>Color Balance</strong> shifts shadows, midtones and highlights separately — cool
+            shadows and warm highlights in a few clicks.
+          </li>
+          <li>
+            <strong>Photo Filter</strong> works like a coloured lens filter, warming or cooling the
+            whole image.
+          </li>
+          <li>
+            <strong>Channel Mixer</strong> rebuilds each colour channel from the others, and makes
+            precise black-and-white conversions.
+          </li>
+          <li>
+            <strong>Gradient Map</strong> maps the image&apos;s tones onto any gradient — duotones,
+            colour grades and glow effects.
+          </li>
+        </ul>
+        <h2>Three new layer styles</h2>
+        <p>
+          Inner shadow, bevel and gradient overlay join drop shadow, glow, stroke and colour overlay
+          in the Properties panel.
+        </p>
+        <h2>Better PSD round trips</h2>
+        <p>
+          Photoshop files that use these adjustments and styles now open with them editable instead
+          of baked into the pixels.
+        </p>
+        <p>
+          <EditorLink>Try them in MYLPER</EditorLink> — free, no account, nothing uploaded.
+        </p>
+      </>
+    ),
+  },
 ];
 
 const showDrafts = process.env.NODE_ENV !== "production";

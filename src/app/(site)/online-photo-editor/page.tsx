@@ -72,7 +72,10 @@ export default function OnlinePhotoEditor() {
         <li>
           Retouching: Clone Stamp, Healing Brush, Dodge, Burn, Sponge, Blur, Sharpen and Smudge.
         </li>
-        <li>Drop shadows, glows, outlines and colour overlays.</li>
+        <li>Vibrance, Color Balance, Channel Mixer, Gradient Map and Photo Filter adjustments.</li>
+        <li>
+          Drop shadows, glows, inner shadows, bevels, outlines and gradient or colour overlays.
+        </li>
         <li>Open and save layered PSD files; export PNG, JPEG, WebP, SVG and PDF.</li>
         <li>Record actions and replay them, or batch-process many photos into one ZIP download.</li>
         <li>A colour picker with Hex, RGB and HSB values, and your own swatches.</li>

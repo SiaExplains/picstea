@@ -109,7 +109,7 @@ export async function documentToPsdDraft(
         layer.kind === "adjustment" ? encodeAdjustment(layer.adjustment) : null;
       if (layer.kind === "adjustment" && !adjustmentBlock) {
         warnings.add(
-          "Temperature/Tint and Black & White adjustments are included in the flattened image only.",
+          "Temperature/Tint, Black & White, Photo Filter and Gradient Map adjustments are included in the flattened image only.",
         );
         continue;
       }

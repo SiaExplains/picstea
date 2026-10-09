@@ -13,7 +13,7 @@ import { insertLayerAt, locateLayer } from "../../core/document/tree";
 import type { Anchor, VectorPath } from "../../core/path/path";
 import { hasActiveEffects, renderWithEffects } from "./effects";
 import { renderSmartObject, smartLevel } from "./smart-render";
-import type { ContentSizer } from "../../core/geometry/layer-geometry";
+import { boundsOf, layerCorners, type ContentSizer } from "../../core/geometry/layer-geometry";
 import { applyTextStyle, lineAdvance, textLines } from "../text/text-layout";
 import {
   identitySpace,
@@ -450,6 +450,18 @@ function drawIsolated(target: CompositeContext, surface: Surface, layer: Layer, 
   });
 }
 
+/** The layer's bounding box on the render-space surface (for gradient overlays). */
+function layerBoxInSpace(layer: Layer, env: Env) {
+  const b = boundsOf(layerCorners(layer, env.doc, env.options.sizer));
+  const { x, y, scale } = env.space;
+  return {
+    x: (b.x - x) * scale,
+    y: (b.y - y) * scale,
+    width: b.width * scale,
+    height: b.height * scale,
+  };
+}
+
 /** Finish an isolated layer surface: masks, then effects, then draw onto the target. */
 function finishIsolated(
   target: CompositeContext,
@@ -465,6 +477,7 @@ function finishIsolated(
       layer.effects!,
       env.options.createSurface!,
       env.space.scale,
+      layer.effects!.gradientOverlay?.enabled ? layerBoxInSpace(layer, env) : undefined,
     );
     drawIsolated(target, withEffects, layer, env);
     release(withEffects);

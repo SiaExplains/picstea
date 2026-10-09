@@ -1,6 +1,10 @@
 import { isHexColor } from "../document/factory";
+import { parseGradientStops } from "../../adjustments/gradient";
 import type {
+  BevelEffect,
   ColorOverlayEffect,
+  GradientOverlayEffect,
+  InnerShadowEffect,
   DropShadowEffect,
   EffectKind,
   Layer,
@@ -13,9 +17,33 @@ import { CommandError, replaceLayer, requireLayer, requireUnlocked, type Command
 export const DEFAULT_EFFECTS: {
   dropShadow: DropShadowEffect;
   outerGlow: OuterGlowEffect;
+  innerShadow: InnerShadowEffect;
+  bevel: BevelEffect;
+  gradientOverlay: GradientOverlayEffect;
   stroke: StrokeEffect;
   colorOverlay: ColorOverlayEffect;
 } = {
+  innerShadow: { enabled: true, color: "#000000", opacity: 0.6, angle: 120, distance: 5, blur: 8 },
+  bevel: {
+    enabled: true,
+    color: "#ffffff",
+    opacity: 0.75,
+    shadowColor: "#000000",
+    shadowOpacity: 0.6,
+    angle: 120,
+    size: 6,
+    direction: "up",
+  },
+  gradientOverlay: {
+    enabled: true,
+    opacity: 1,
+    angle: 90,
+    stops: [
+      { position: 0, color: "#000000" },
+      { position: 1, color: "#ffffff" },
+    ],
+    reverse: false,
+  },
   dropShadow: { enabled: true, color: "#000000", opacity: 0.6, angle: 120, distance: 10, blur: 12 },
   outerGlow: { enabled: true, color: "#ffe680", opacity: 0.8, size: 16 },
   stroke: { enabled: true, color: "#000000", opacity: 1, size: 3 },
@@ -35,13 +63,16 @@ const inRange = (v: unknown, [min, max]: readonly [number, number]) =>
   typeof v === "number" && Number.isFinite(v) && v >= min && v <= max;
 
 /** Validate one effect's settings; returns an error message or null. */
-export function checkEffect(kind: EffectKind, effect: Record<string, unknown>): string | null {
+export function checkEffect(kind: EffectKind, input: Record<string, unknown>): string | null {
+  // Own properties only: inherited values never count as settings.
+  const effect: Record<string, unknown> = Object.fromEntries(Object.entries(input));
   if (typeof effect.enabled !== "boolean") return "Effect must be on or off.";
-  if (typeof effect.color !== "string" || !isHexColor(effect.color))
+  if (kind !== "gradientOverlay" && (typeof effect.color !== "string" || !isHexColor(effect.color)))
     return "Effect colour must be a hex value.";
   if (!inRange(effect.opacity, EFFECT_LIMITS.opacity))
     return "Effect opacity must be between 0 and 100%.";
   switch (kind) {
+    case "innerShadow":
     case "dropShadow":
       if (!inRange(effect.angle, EFFECT_LIMITS.angle)) return "Angle is out of range.";
       if (!inRange(effect.distance, EFFECT_LIMITS.distance)) return "Distance is out of range.";
@@ -52,7 +83,60 @@ export function checkEffect(kind: EffectKind, effect: Record<string, unknown>): 
       return inRange(effect.size, EFFECT_LIMITS.size) ? null : "Size is out of range.";
     case "colorOverlay":
       return null;
+    case "bevel":
+      if (typeof effect.shadowColor !== "string" || !isHexColor(effect.shadowColor))
+        return "Effect colour must be a hex value.";
+      if (!inRange(effect.shadowOpacity, EFFECT_LIMITS.opacity))
+        return "Effect opacity must be between 0 and 100%.";
+      if (!inRange(effect.angle, EFFECT_LIMITS.angle)) return "Angle is out of range.";
+      if (!inRange(effect.size, EFFECT_LIMITS.size)) return "Size is out of range.";
+      if (effect.direction !== "up" && effect.direction !== "down") return "Direction is invalid.";
+      return null;
+    case "gradientOverlay":
+      if (!inRange(effect.angle, EFFECT_LIMITS.angle)) return "Angle is out of range.";
+      if (typeof effect.reverse !== "boolean") return "Reverse must be on or off.";
+      return parseGradientStops(effect.stops) ? null : "The gradient needs 2–16 valid stops.";
   }
+}
+
+/**
+ * An effect rebuilt from known fields only, colours lower-cased and gradient stops sorted.
+ * Call after `checkEffect` succeeded (shared by the command and the project validator).
+ */
+export function normalizeEffect<K extends EffectKind>(
+  kind: K,
+  e: Record<string, unknown>,
+): NonNullable<LayerEffects[K]> {
+  const color = () => (e.color as string).toLowerCase();
+  const base = { enabled: e.enabled, opacity: e.opacity };
+  let out: Record<string, unknown>;
+  switch (kind) {
+    case "dropShadow":
+    case "innerShadow":
+      out = { ...base, color: color(), angle: e.angle, distance: e.distance, blur: e.blur };
+      break;
+    case "outerGlow":
+    case "stroke":
+      out = { ...base, color: color(), size: e.size };
+      break;
+    case "colorOverlay":
+      out = { ...base, color: color() };
+      break;
+    case "bevel":
+      out = {
+        ...base,
+        color: color(),
+        shadowColor: (e.shadowColor as string).toLowerCase(),
+        shadowOpacity: e.shadowOpacity,
+        angle: e.angle,
+        size: e.size,
+        direction: e.direction,
+      };
+      break;
+    default:
+      out = { ...base, angle: e.angle, reverse: e.reverse, stops: parseGradientStops(e.stops) };
+  }
+  return out as unknown as NonNullable<LayerEffects[K]>;
 }
 
 /**
@@ -78,8 +162,7 @@ export function setLayerEffect<K extends EffectKind>(
       }
       const current = layer.effects ?? {};
       const next: Record<string, unknown> = { ...current };
-      if (effect)
-        next[kind] = { ...effect, color: (effect as { color: string }).color.toLowerCase() };
+      if (effect) next[kind] = normalizeEffect(kind, effect as unknown as Record<string, unknown>);
       else delete next[kind];
       const same = JSON.stringify(current[kind] ?? null) === JSON.stringify(next[kind] ?? null);
       if (same) return doc;

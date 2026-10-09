@@ -1,8 +1,9 @@
-import { EFFECT_LIMITS } from "../../core/commands/effect-commands";
+import { checkEffect, EFFECT_LIMITS, normalizeEffect } from "../../core/commands/effect-commands";
 import {
   FONT_FAMILIES,
   type Adjustment,
   type FontFamily,
+  type EffectKind,
   type LayerEffects,
   type TextAlign,
 } from "../../core/document/types";
@@ -146,20 +147,79 @@ function decodeEffects(
       opacity: opacity(overlay),
     };
   }
-  const others = [
-    "IrSh",
-    "IrGl",
-    "ebbl",
-    "ChFX",
-    "GrFl",
-    "patternFill",
-    "innerShadowMulti",
-    "gradientFillMulti",
-  ];
+  const inner = effect(fx, "IrSh", "innerShadowMulti");
+  if (inner) {
+    const angle = getBool(inner, "uglg") ? globalAngle : (getNumber(inner, "lagl") ?? globalAngle);
+    out.innerShadow = {
+      enabled: getBool(inner, "enab") ?? true,
+      color: getColor(inner) ?? "#000000",
+      opacity: opacity(inner),
+      angle: clamp(angle, ...EFFECT_LIMITS.angle),
+      distance: clamp(getNumber(inner, "Dstn") ?? 5, ...EFFECT_LIMITS.distance),
+      blur: clamp(getNumber(inner, "blur") ?? 5, ...EFFECT_LIMITS.blur),
+    };
+  }
+  const bevel = getDescriptor(fx, "ebbl");
+  if (bevel) {
+    const style = getEnum(bevel, "bvlS");
+    if (style && style !== "InrB") {
+      notes.add("Outer bevels and embossing were imported as inner bevels.");
+    }
+    const angle = getBool(bevel, "uglg") ? globalAngle : (getNumber(bevel, "lagl") ?? globalAngle);
+    out.bevel = {
+      enabled: getBool(bevel, "enab") ?? true,
+      color: getColor(bevel, "hglC") ?? "#ffffff",
+      opacity: clamp((getNumber(bevel, "hglO") ?? 75) / 100, 0, 1),
+      shadowColor: getColor(bevel, "sdwC") ?? "#000000",
+      shadowOpacity: clamp((getNumber(bevel, "sdwO") ?? 75) / 100, 0, 1),
+      angle: clamp(angle, ...EFFECT_LIMITS.angle),
+      size: clamp(getNumber(bevel, "blur") ?? 5, ...EFFECT_LIMITS.size),
+      direction: getEnum(bevel, "bvlD") === "Out " ? "down" : "up",
+    };
+  }
+  const fill = effect(fx, "GrFl", "gradientFillMulti");
+  if (fill) {
+    const gradient = getDescriptor(fill, "Grad");
+    const stops = (getList(gradient, "Clrs") ?? [])
+      .filter((v): v is Descriptor => !!v && typeof v === "object" && !Array.isArray(v))
+      .map((stop) => ({
+        position: clamp((getNumber(stop, "Lctn") ?? 0) / 4096, 0, 1),
+        color: getColor(stop) ?? "#000000",
+      }))
+      .sort((a, b) => a.position - b.position);
+    if (stops.length > 16) {
+      // Keep both ends; drop stops from the middle.
+      stops.splice(15, stops.length - 16);
+      notes.add("Gradient overlays were limited to 16 colours.");
+    }
+    const type = getEnum(fill, "Type");
+    if (type && type !== "Lnr ")
+      notes.add("Radial and other gradient overlays were imported as linear.");
+    if (getEnum(gradient, "GrdF") === "ClNs" || stops.length < 2) {
+      notes.add("Noise gradient overlays were not imported.");
+    } else {
+      out.gradientOverlay = {
+        enabled: getBool(fill, "enab") ?? true,
+        opacity: opacity(fill),
+        angle: clamp(getNumber(fill, "Angl") ?? 90, ...EFFECT_LIMITS.angle),
+        stops,
+        reverse: getBool(fill, "Rvrs") ?? false,
+      };
+    }
+  }
+  // Everything goes through the same checks as edits and saved projects.
+  for (const kind of Object.keys(out) as EffectKind[]) {
+    const value = out[kind] as unknown as Record<string, unknown>;
+    if (checkEffect(kind, value)) {
+      delete out[kind];
+      notes.add("Some layer styles could not be read and were left out.");
+    } else {
+      (out as Record<string, unknown>)[kind] = normalizeEffect(kind, value);
+    }
+  }
+  const others = ["IrGl", "ChFX", "patternFill"];
   if (others.some((k) => fx[k] !== undefined && fx[k] !== null)) {
-    notes.add(
-      "Some layer styles (bevel, inner shadow, satin, gradient or pattern) were not imported.",
-    );
+    notes.add("Some layer styles (inner glow, satin or pattern) were not imported.");
   }
   return Object.keys(out).length ? out : undefined;
 }
@@ -349,6 +409,8 @@ export function decodeExtras(
       if (decoded) {
         out.adjustment = decoded.adjustment;
         decoded.notes.forEach((n) => warnings.add(n));
+      } else {
+        warnings.add("Some adjustment layers could not be read and were left out.");
       }
     });
   }

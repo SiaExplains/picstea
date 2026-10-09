@@ -114,8 +114,11 @@ export const DOCS: readonly DocPage[] = [
           </li>
           <li>
             <strong>Adjustment layers</strong> — Levels, Curves, Brightness/Contrast,
-            Hue/Saturation, Exposure, Temperature/Tint, Black &amp; White, Invert, Posterize and
-            Threshold. They change everything below them without touching the pixels.
+            Hue/Saturation, Vibrance, Color Balance, Photo Filter, Channel Mixer, Gradient Map,
+            Exposure, Temperature/Tint, Black &amp; White, Invert, Posterize and Threshold. They
+            change everything below them without touching the pixels. A new Gradient Map runs from
+            the foreground to the background colour; add up to 16 colour stops in the Properties
+            panel.
           </li>
         </ul>
         <h2>Levels and Curves</h2>
@@ -191,8 +194,10 @@ export const DOCS: readonly DocPage[] = [
         </p>
         <h2>Effects</h2>
         <p>
-          Drop shadow, outer glow, outer stroke and colour overlay are in the Properties panel.
-          Layers with effects show an <em>fx</em> badge.
+          Drop shadow, outer glow, inner shadow, bevel, gradient overlay, outer stroke and colour
+          overlay are in the Properties panel. Layers with effects show an <em>fx</em> badge. The
+          gradient overlay spans the layer&apos;s box (a new pixel layer is as big as the canvas);
+          the bevel is a soft inner bevel made from a highlight and a shadow along the edges.
         </p>
         <h2>Limitations</h2>
         <ul>
@@ -723,10 +728,12 @@ export const DOCS: readonly DocPage[] = [
             <strong>PSD</strong> — 8-bit RGB and greyscale files open with their layers, groups,
             names, opacity, visibility, blend modes, layer masks, vector masks and clipping masks.
             Text opens as editable text (check the fonts), adjustment layers (Levels, Curves,
-            Brightness/Contrast, Hue/Saturation, Exposure, Invert, Posterize, Threshold, Black &amp;
-            White) as adjustment layers, shape and fill layers as shapes and fills, embedded smart
-            objects as smart objects, and drop shadows, outer glows, strokes and colour overlays as
-            effects. Anything that cannot be kept is listed when the file opens.
+            Brightness/Contrast, Hue/Saturation, Vibrance, Color Balance, Photo Filter, Channel
+            Mixer, Gradient Map, Exposure, Invert, Posterize, Threshold, Black &amp; White) as
+            adjustment layers, shape and fill layers as shapes and fills, embedded smart objects as
+            smart objects, and drop shadows, outer glows, inner shadows, inner bevels, gradient
+            overlays, strokes and colour overlays as effects. Anything that cannot be kept is listed
+            when the file opens.
           </li>
           <li>
             <strong>SVG</strong> opens as an image (pixels). Scripts in SVG files never run.
@@ -744,8 +751,9 @@ export const DOCS: readonly DocPage[] = [
           </li>
           <li>
             <strong>PSD</strong> — layers, groups, masks, vector masks, clipping masks, opacity,
-            blend modes and adjustment layers (except Temperature/Tint and Black &amp; White, which
-            are in the flattened image only). Shapes, text, smart objects and effects become pixels.
+            blend modes and adjustment layers (except Temperature/Tint, Black &amp; White, Photo
+            Filter and Gradient Map, which are in the flattened image only). Shapes, text, smart
+            objects and effects become pixels.
           </li>
           <li>
             <strong>SVG</strong> — shapes and text stay vectors; other layers are embedded as
