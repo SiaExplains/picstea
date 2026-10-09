@@ -7,7 +7,7 @@ import { ValidationError, validateDocument } from "./validate";
  * To change the stored shape: bump CURRENT_SCHEMA_VERSION, add a migration from the previous
  * version, and update the validator. Never edit a released migration.
  */
-export const CURRENT_SCHEMA_VERSION = 4;
+export const CURRENT_SCHEMA_VERSION = 5;
 
 export interface SerializedProject {
   readonly schemaVersion: number;
@@ -33,6 +33,11 @@ export const MIGRATIONS: Readonly<Record<number, Migration>> = {
    * masks (ADR-0015). Every v3 document is a valid v4 document.
    */
   3: (document) => document,
+  /*
+   * v5 (0.10.0) added smart objects with embedded documents and smart filters (ADR-0016).
+   * Every v4 document is a valid v5 document.
+   */
+  4: (document) => document,
 };
 
 export function serializeDocument(doc: EditorDocument): SerializedProject {

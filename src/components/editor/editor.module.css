@@ -1223,3 +1223,53 @@
   text-decoration: underline;
   text-underline-offset: 2px;
 }
+
+/* Smart filters */
+.smartFilters {
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 0;
+}
+
+.smartFilterRow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 0;
+}
+
+.smartFilterRow .linkButton {
+  flex: 1;
+  text-align: left;
+}
+
+.linkButton {
+  border: 0;
+  background: none;
+  color: var(--ed-text);
+  padding: 2px 4px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.linkButton:hover,
+.linkButton:focus-visible {
+  background: var(--ed-chrome-2);
+}
+
+/* Smart object thumbnails carry a corner badge. */
+.thumbSmart {
+  position: relative;
+}
+
+.thumbSmart::after {
+  content: "";
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  background: var(--ed-accent);
+  border: 1px solid var(--ed-panel);
+}

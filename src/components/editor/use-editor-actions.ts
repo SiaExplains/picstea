@@ -9,7 +9,7 @@ import { ADJUSTMENTS } from "@/editor/adjustments/registry";
 import { activeLayer } from "@/editor/core/document/queries";
 import { flattenTopFirst, locateLayer } from "@/editor/core/document/tree";
 import type { SelectionModification } from "@/editor/core/commands";
-import type { AdjustmentType } from "@/editor/core/document/types";
+import type { AdjustmentType, SmartFilter } from "@/editor/core/document/types";
 import { isTransformable } from "@/editor/core/geometry/layer-geometry";
 import { createId } from "@/editor/core/ids";
 import type { ActionId } from "@/editor/core/shortcuts/shortcuts";
@@ -34,6 +34,10 @@ export type UiActionId =
   | "path.delete"
   | "path.fromSelection"
   | "layer.deleteVectorMask"
+  | "layer.toSmartObject"
+  | "layer.editContents"
+  | "layer.rasterize"
+  | "file.placeEmbedded"
   | "layer.toggleVectorMask"
   | "layer.newGroup"
   | "layer.addMask"
@@ -71,11 +75,12 @@ export interface ActionHosts {
   openExportDialog: () => void;
   openModifySelectionDialog: (kind: SelectionModification) => void;
   openColorRangeDialog: () => void;
-  pickImage: (mode: "open" | "place") => void;
+  pickImage: (mode: "open" | "place" | "placeEmbedded") => void;
   openFilterDialog: (id: FilterId) => void;
   openGuideDialog: () => void;
   openGridDialog: () => void;
   openWorkPathDialog: () => void;
+  openSmartFilterDialog: (layerId: string, filter: SmartFilter) => void;
 }
 
 /** Download the active document as a portable `.mylper` file (File → Save Project As…). */
@@ -142,6 +147,11 @@ export function useEditorActions(hosts: ActionHosts): Record<UiActionId, UiActio
         label: "Place Image as Layer…",
         enabled: hasDoc,
         run: () => hosts.pickImage("place"),
+      },
+      "file.placeEmbedded": {
+        label: "Place Embedded…",
+        enabled: hasDoc,
+        run: () => hosts.pickImage("placeEmbedded"),
       },
       "file.save": {
         label: "Save to Browser",
@@ -309,6 +319,24 @@ export function useEditorActions(hosts: ActionHosts): Record<UiActionId, UiActio
         enabled: !!layer?.mask,
         run: () => controller.toggleActiveMask(),
       },
+      "layer.toSmartObject": {
+        label: "Convert to Smart Object",
+        enabled: !!layer && !layer.locked && layer.kind !== "fill" && layer.kind !== "adjustment",
+        run: () => controller.convertToSmartObject(),
+      },
+      "layer.editContents": {
+        label: "Edit Contents",
+        enabled: layer?.kind === "smart",
+        run: () => controller.editSmartContents(),
+      },
+      "layer.rasterize": {
+        label: "Rasterize Layer",
+        enabled:
+          !!layer &&
+          !layer.locked &&
+          (layer.kind === "smart" || layer.kind === "shape" || layer.kind === "text"),
+        run: () => controller.rasterizeActiveLayer(),
+      },
       "layer.clip": {
         label: layer?.clipped ? "Release Clipping Mask" : "Create Clipping Mask",
         enabled: !!layer && !layer.locked && (!!layer.clipped || (location?.index ?? 0) > 0),
@@ -443,11 +471,13 @@ export function useEditorActions(hosts: ActionHosts): Record<UiActionId, UiActio
           `filter.${f.id}`,
           {
             label: f.parameters.length ? `${f.name}…` : f.name,
-            enabled: layer?.kind === "raster" && !layer.locked,
+            enabled: (layer?.kind === "raster" || layer?.kind === "smart") && !layer.locked,
             run: () =>
               f.parameters.length
                 ? hosts.openFilterDialog(f.id)
-                : void controller.applyFilter(f.id, {}),
+                : layer?.kind === "smart"
+                  ? void controller.addSmartFilter(f.id, {})
+                  : void controller.applyFilter(f.id, {}),
           },
         ]),
       ) as Record<`filter.${FilterId}`, UiAction>),

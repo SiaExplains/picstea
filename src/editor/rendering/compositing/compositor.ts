@@ -12,6 +12,7 @@ import type {
 import { insertLayerAt, locateLayer } from "../../core/document/tree";
 import type { Anchor, VectorPath } from "../../core/path/path";
 import { hasActiveEffects, renderWithEffects } from "./effects";
+import { renderSmartObject, smartLevel } from "./smart-render";
 import type { ContentSizer } from "../../core/geometry/layer-geometry";
 import { applyTextStyle, lineAdvance, textLines } from "../text/text-layout";
 import {
@@ -306,6 +307,16 @@ function drawLayer(
     case "text":
       drawText(ctx, layer, options.sizer);
       return;
+    case "smart": {
+      // Pixels per content pixel on the target: render space scale × layer scale.
+      const scale =
+        (options.space?.scale ?? 1) *
+        Math.max(Math.abs(layer.transform.scaleX), Math.abs(layer.transform.scaleY));
+      const level = smartLevel(layer.content, scale);
+      const surface = renderSmartObject(layer, level, assets, options, pending, compositeDocument);
+      if (surface) ctx.drawImage(surface, 0, 0, layer.content.width, layer.content.height);
+      return;
+    }
   }
 }
 

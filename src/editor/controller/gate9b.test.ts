@@ -11,7 +11,11 @@ import { findLayer } from "../core/document/queries";
 import { corner, type VectorPath } from "../core/path/path";
 import { MemoryProjectStorage } from "../persistence/memory/memory-project-storage";
 import { rectSelection } from "../selection/shapes";
-import { deserializeProject, serializeDocument } from "../serialization/serialization";
+import {
+  CURRENT_SCHEMA_VERSION,
+  deserializeProject,
+  serializeDocument,
+} from "../serialization/serialization";
 import { fakeDecoder } from "../test-utils/image-bytes";
 import { EditorController } from "./editor-controller";
 
@@ -116,7 +120,7 @@ describe("Gate 9b in the controller", () => {
     expect(edited.path!.subpaths[0].anchors[0]).toMatchObject({ x: 0, y: 0 });
   });
 
-  it("projects keep the work path, path shapes, vector masks and clipping (schema v4)", () => {
+  it("projects keep the work path, path shapes, vector masks and clipping (schema v4+)", () => {
     const c = setup();
     const id = addBox(c);
     c.execute(setWorkPath(triangle));
@@ -130,7 +134,7 @@ describe("Gate 9b in the controller", () => {
     })!;
     c.execute(addLayer(shape, "Add"));
     const saved = JSON.parse(JSON.stringify(serializeDocument(doc(c))));
-    expect(saved.schemaVersion).toBe(4);
+    expect(saved.schemaVersion).toBe(CURRENT_SCHEMA_VERSION);
     const restored = deserializeProject(saved);
     if (!restored.ok) throw new Error(restored.error);
     expect(restored.document.workPath).toEqual(doc(c).workPath);

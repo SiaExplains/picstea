@@ -111,6 +111,7 @@ export async function documentToPsdDraft(
       }
       if (layer.vectorMask?.enabled)
         warnings.add("Vector masks were merged into the layer pixels.");
+      if (layer.kind === "smart") warnings.add("Smart objects were converted to pixels.");
       // The layer's own look, without its opacity, blend mode or mask (stored separately).
       const plain = {
         ...layer,

@@ -83,6 +83,20 @@ export function mapLayers(layers: readonly Layer[], fn: (layer: Layer) => Layer)
   });
 }
 
+/** Like `mapLayers`, but also through the embedded documents of smart objects (ADR-0016). */
+export function mapLayersDeep(layers: readonly Layer[], fn: (layer: Layer) => Layer): Layer[] {
+  return mapLayers(layers, (layer) =>
+    fn(
+      layer.kind === "smart"
+        ? {
+            ...layer,
+            content: { ...layer.content, layers: mapLayersDeep(layer.content.layers, fn) },
+          }
+        : layer,
+    ),
+  );
+}
+
 /** Replace the list identified by `parentId` (root when null). Returns the same array if missing. */
 export function updateChildren(
   layers: readonly Layer[],

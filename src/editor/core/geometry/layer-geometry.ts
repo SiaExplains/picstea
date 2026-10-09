@@ -33,6 +33,8 @@ export function layerLocalSize(layer: Layer, doc: EditorDocument, sizer: Content
       return { width: layer.width, height: layer.height };
     case "text":
       return sizer.measureText(layer);
+    case "smart":
+      return { width: layer.content.width, height: layer.content.height };
   }
 }
 

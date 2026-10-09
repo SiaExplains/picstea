@@ -260,12 +260,40 @@ export interface AdjustmentLayer extends BaseLayer {
   readonly adjustment: Adjustment;
 }
 
-/*
- * Extension point: SmartObjectLayer joins this union in Gate 9. Adding a kind requires a
- * renderer case, a validator case, geometry sizing and — if it changes stored data — a schema
- * migration.
+/** A non-destructive filter on a smart object (ADR-0016), from the filter catalogue. */
+export interface SmartFilter {
+  readonly id: string;
+  /** Id in the filter registry (`src/editor/filters/registry.ts`). */
+  readonly filterId: string;
+  readonly values: Readonly<Record<string, number | boolean>>;
+  readonly enabled: boolean;
+  /** Seed for filters with randomness, so every render looks the same. */
+  readonly seed: number;
+}
+
+/**
+ * Smart object (ADR-0016): an embedded document drawn through the layer transform. It is
+ * re-rendered from its contents at the size it appears, so scaling never loses quality, and
+ * smart filters apply on top without changing the contents.
  */
-export type Layer = RasterLayer | FillLayer | ShapeLayer | TextLayer | GroupLayer | AdjustmentLayer;
+export interface SmartObjectLayer extends BaseLayer {
+  readonly kind: "smart";
+  readonly content: EditorDocument;
+  readonly filters?: readonly SmartFilter[];
+}
+
+/*
+ * Adding a kind requires a renderer case, a validator case, geometry sizing and — if it changes
+ * stored data — a schema migration.
+ */
+export type Layer =
+  | RasterLayer
+  | FillLayer
+  | ShapeLayer
+  | TextLayer
+  | GroupLayer
+  | AdjustmentLayer
+  | SmartObjectLayer;
 export type LayerKind = Layer["kind"];
 
 export interface Guide {

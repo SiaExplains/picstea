@@ -1,7 +1,7 @@
 import type { RasterMime } from "../../assets/asset-store";
 import { checkDimensions, MAX_IMPORT_FILE_BYTES } from "../../core/document/limits";
 import { referencedAssetIds } from "../../core/document/queries";
-import { mapLayers } from "../../core/document/tree";
+import { mapLayersDeep } from "../../core/document/tree";
 import type { EditorDocument, Layer } from "../../core/document/types";
 import type { StoredAsset } from "../../persistence/project-storage";
 import { deserializeProject, serializeDocument } from "../../serialization/serialization";
@@ -123,7 +123,7 @@ export async function readProjectFile(
   if (missing.length > 0) throw new FormatError("The project file is missing some of its images.");
 
   const remap = (id: string | null) => (id === null ? null : (idMap.get(id) ?? null));
-  const layers = mapLayers(doc.layers, (layer): Layer => {
+  const layers = mapLayersDeep(doc.layers, (layer): Layer => {
     let next = layer;
     if (next.kind === "raster") next = { ...next, assetId: remap(next.assetId) };
     if (next.mask) next = { ...next, mask: { ...next.mask, assetId: remap(next.mask.assetId) } };

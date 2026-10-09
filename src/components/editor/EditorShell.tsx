@@ -17,13 +17,16 @@ import { NewDocumentDialog } from "./NewDocumentDialog";
 import { BusyOverlay, Notices } from "./Notices";
 import { PropertiesPanel } from "./PropertiesPanel";
 import { ColorRangeDialog, ModifySelectionDialog, WorkPathDialog } from "./SelectionDialogs";
-import { FilterDialog } from "./FilterDialog";
+import { FilterDialog, type SmartFilterTarget } from "./FilterDialog";
 import { GridDialog, GuideDialog } from "./ViewDialogs";
 import type { FilterId } from "@/editor/filters/registry";
+import { activeLayer } from "@/editor/core/document/queries";
 import { StartScreen } from "./StartScreen";
 import { useEditorActions, type ActionHosts } from "./use-editor-actions";
 
 const matchShortcut = createShortcutMatcher();
+
+type PickMode = "open" | "place" | "placeEmbedded";
 
 function imageFiles(list: FileList | null | undefined): File[] {
   return [...(list ?? [])].filter((file) => file.type.startsWith("image/") || file.type === "");
@@ -38,12 +41,13 @@ export function EditorShell() {
   const [modifyKind, setModifyKind] = useState<SelectionModification | null>(null);
   const [colorRangeOpen, setColorRangeOpen] = useState(false);
   const [filterId, setFilterId] = useState<FilterId | null>(null);
+  const [smartTarget, setSmartTarget] = useState<SmartFilterTarget | undefined>(undefined);
   const [guideDialogOpen, setGuideDialogOpen] = useState(false);
   const [gridDialogOpen, setGridDialogOpen] = useState(false);
   const [workPathDialogOpen, setWorkPathDialogOpen] = useState(false);
   const [dragging, setDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const pickModeRef = useRef<"open" | "place">("open");
+  const pickModeRef = useRef<PickMode>("open");
 
   const hosts = useMemo<ActionHosts>(
     () => ({
@@ -53,7 +57,20 @@ export function EditorShell() {
       openColorRangeDialog: () => setColorRangeOpen(true),
       // The dialog only opens when the active layer can be filtered (otherwise a notice says why).
       openFilterDialog: (id) => {
+        // On a smart object the filter becomes a smart filter (no pixel session needed).
+        const doc = controller.store.getSession()?.document;
+        const active = doc ? activeLayer(doc) : undefined;
+        if (active?.kind === "smart") {
+          setSmartTarget({ layerId: active.id });
+          setFilterId(id);
+          return;
+        }
+        setSmartTarget(undefined);
         if (controller.beginFilter()) setFilterId(id);
+      },
+      openSmartFilterDialog: (layerId, entry) => {
+        setSmartTarget({ layerId, entryId: entry.id, values: entry.values });
+        setFilterId(entry.filterId as FilterId);
       },
       openGuideDialog: () => setGuideDialogOpen(true),
       openGridDialog: () => setGridDialogOpen(true),
@@ -68,9 +85,10 @@ export function EditorShell() {
   const actions = useEditorActions(hosts);
 
   const importFiles = useCallback(
-    async (files: File[], mode: "open" | "place") => {
+    async (files: File[], mode: PickMode) => {
       for (const file of files) {
         if (mode === "place") await controller.placeFile(file, file.name);
+        else if (mode === "placeEmbedded") await controller.placeEmbedded(file, file.name);
         else await controller.openFile(file, file.name);
       }
     },
@@ -177,7 +195,7 @@ export function EditorShell() {
         {dragging && <div className={styles.dropOverlay}>Drop an image to open it</div>}
       </main>
       <aside className={styles.panels} aria-label="Panels">
-        <PropertiesPanel />
+        <PropertiesPanel onEditSmartFilter={hosts.openSmartFilterDialog} />
         <LayersPanel actions={actions} />
       </aside>
       <StatusBar />
@@ -186,7 +204,12 @@ export function EditorShell() {
       <ModifySelectionDialog kind={modifyKind} onClose={() => setModifyKind(null)} />
       {colorRangeOpen && <ColorRangeDialog open onClose={() => setColorRangeOpen(false)} />}
       {filterId && (
-        <FilterDialog key={filterId} filterId={filterId} onClose={() => setFilterId(null)} />
+        <FilterDialog
+          key={filterId}
+          filterId={filterId}
+          smart={smartTarget}
+          onClose={() => setFilterId(null)}
+        />
       )}
       {guideDialogOpen && <GuideDialog onClose={() => setGuideDialogOpen(false)} />}
       {gridDialogOpen && <GridDialog onClose={() => setGridDialogOpen(false)} />}

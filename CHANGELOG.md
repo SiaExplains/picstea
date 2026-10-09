@@ -3,6 +3,25 @@
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.10.0] — 2026-10-09
+
+### Added
+
+- **Smart objects**: Layer → Convert to Smart Object keeps a layer's original inside it, so
+  scaling and rotating never lose quality. Double-click the thumbnail (or Layer → Edit
+  Contents) to edit the contents in their own tab; saving or closing it updates the smart
+  object as one undo step.
+- **File → Place Embedded…** adds an image, SVG, PSD (with its layers) or MYLPER project as a
+  smart object.
+- **Smart filters**: filters on a smart object can be hidden, edited, reordered or deleted later
+  in the Properties panel.
+- **Layer → Rasterize Layer** for smart objects, shapes and text.
+- Docs: "Smart objects and smart filters".
+
+### Changed
+
+- The project format moved to version 5. Older projects open as before.
+
 ## [0.9.0] — 2026-10-09
 
 ### Added

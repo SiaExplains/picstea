@@ -469,6 +469,65 @@ export const DOCS: readonly DocPage[] = [
     ),
   },
   {
+    slug: "smart-objects-and-smart-filters",
+    title: "Smart objects and smart filters",
+    description:
+      "Use smart objects in MYLPER to scale and transform without losing quality, edit embedded contents in their own tab, and apply filters you can change or remove later.",
+    updated: "2026-10-09",
+    body: () => (
+      <>
+        <p>
+          A smart object is a layer that contains a whole document of its own. MYLPER redraws it
+          from that original at whatever size it appears, so you can scale it down and back up — or
+          rotate it many times — without losing sharpness.
+        </p>
+        <h2>Creating smart objects</h2>
+        <ul>
+          <li>
+            Layer → Convert to Smart Object turns the active layer (or group) into a smart object.
+          </li>
+          <li>
+            File → Place Embedded… adds an image, SVG, PSD or <code>.mylper</code> project as a
+            smart object. PSD files keep their layers inside it.
+          </li>
+        </ul>
+        <h2>Editing the contents</h2>
+        <p>
+          Double-click the smart object&apos;s thumbnail in the Layers panel (or choose Layer → Edit
+          Contents). Its contents open in a new tab, with all their layers. Save (Cmd/Ctrl+S) or
+          close the tab to update the smart object; changes are also applied automatically after a
+          short pause. Each editing session is one step in the original document&apos;s undo
+          history.
+        </p>
+        <h2>Smart filters</h2>
+        <p>
+          With a smart object selected, any filter from the Filter menu becomes a smart filter: it
+          is applied on top of the contents without changing them. Smart filters are listed in the
+          Properties panel, where you can hide one, click its name to change its settings, change
+          the order or delete it.
+        </p>
+        <h2>Rasterizing</h2>
+        <p>
+          Layer → Rasterize Layer turns a smart object (or a shape or text layer) into ordinary
+          pixels, for example to paint on it. Its opacity, blend mode, masks and effects stay.
+        </p>
+        <h2>Limitations</h2>
+        <ul>
+          <li>Smart objects can be nested up to 4 levels deep.</li>
+          <li>
+            Smart filter effects stay inside the smart object&apos;s box: a blur near the edge is
+            cut off there. Convert a slightly larger area (or add transparent space) if needed.
+          </li>
+          <li>
+            Smart objects are exported to PSD as pixels, and Photoshop smart objects open as pixels
+            for now.
+          </li>
+          <li>Linked (external) smart objects are not supported; contents are always embedded.</li>
+        </ul>
+      </>
+    ),
+  },
+  {
     slug: "file-formats",
     title: "File formats: PSD, PNG, JPEG, WebP, SVG, PDF and .mylper",
     description:

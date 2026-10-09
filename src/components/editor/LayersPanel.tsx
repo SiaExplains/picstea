@@ -73,6 +73,12 @@ function LayerThumb({ layer, targeted }: { layer: Layer; targeted: boolean }) {
           {layer.assetId && <ImageIcon size={12} />}
         </span>
       );
+    case "smart":
+      return (
+        <span className={`${className} ${styles.thumbSmart}`} aria-hidden>
+          <ImageIcon size={12} />
+        </span>
+      );
   }
 }
 
@@ -176,6 +182,14 @@ function LayerRow({
         className={styles.thumbButton}
         aria-label={`Edit ${layer.name} content`}
         aria-pressed={active && !maskTargeted}
+        title={
+          layer.kind === "smart" ? "Smart object · double-click to edit its contents" : undefined
+        }
+        onDoubleClick={(e) => {
+          if (layer.kind !== "smart") return;
+          e.stopPropagation();
+          controller.editSmartContents(layer.id);
+        }}
         onClick={(e) => {
           e.stopPropagation();
           controller.store.selectLayer(layer.id);
