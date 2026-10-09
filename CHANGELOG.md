@@ -3,6 +3,25 @@
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.12.0] — 2026-10-09
+
+### Added
+
+- **Actions**: record a series of edits (filters, adjustment layers, selections, fills, new
+  layers, flips, alignment, crop) in the Actions panel and play them on any document. A played
+  action is one undo step. Export and import actions as a file.
+- **File → Batch…**: play an action on up to 200 images at once and save the results as one ZIP
+  (PNG, JPEG or WebP). Everything happens on your device.
+- **History panel**: see every step and jump back or forward to any of them.
+- **Colour picker** for the foreground and background colours, with exact Hex, RGB and HSB
+  values.
+- **Swatches panel**: click to use a colour, Alt-click for the background, add your own.
+- Docs: "Actions, batch processing, colours and history".
+
+### Changed
+
+- History, Swatches and Actions share a new tabbed panel between Properties and Layers.
+
 ## [0.11.0] — 2026-10-09
 
 ### Added

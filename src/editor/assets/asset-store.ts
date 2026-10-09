@@ -132,6 +132,14 @@ export class AssetStore {
     return undefined;
   }
 
+  /** Wait until the given assets are decoded (or have failed to decode). */
+  async whenDecoded(ids: Iterable<string>): Promise<void> {
+    for (const id of ids) {
+      this.getBitmap(id);
+      await this.pending.get(id);
+    }
+  }
+
   /** Drop assets no longer referenced by any open document, releasing their bitmaps. */
   retainOnly(ids: Iterable<string>): void {
     const keep = new Set(ids);

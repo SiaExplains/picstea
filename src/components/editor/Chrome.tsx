@@ -61,7 +61,13 @@ const TOOLS: { id: ToolId; label: string; action: ActionId; icon: React.ReactNod
 ];
 
 /** Only implemented tools are shown — no placeholder buttons (docs/15 rule 6). */
-export function Toolbar({ actions }: { actions: Record<UiActionId, UiAction> }) {
+export function Toolbar({
+  actions,
+  onEditColor,
+}: {
+  actions: Record<UiActionId, UiAction>;
+  onEditColor: (which: "foreground" | "background") => void;
+}) {
   const controller = useController();
   const activeTool = useEditorState((s) => s.activeTool);
   const colors = useEditorState((s) => s.colors);
@@ -87,30 +93,18 @@ export function Toolbar({ actions }: { actions: Record<UiActionId, UiAction> }) 
       })}
       <div className={styles.toolSeparator} role="separator" />
       <div className={styles.swatches}>
-        <label
-          className={`${styles.swatch} ${styles.swatchForeground}`}
-          style={{ background: colors.foreground }}
-          title="Foreground colour"
-        >
-          <input
-            type="color"
-            aria-label="Foreground colour"
-            value={colors.foreground}
-            onChange={(e) => controller.store.setColors({ foreground: e.target.value })}
+        {(["foreground", "background"] as const).map((which) => (
+          <button
+            key={which}
+            type="button"
+            className={`${styles.swatch} ${which === "foreground" ? styles.swatchForeground : styles.swatchBackground}`}
+            style={{ background: colors[which] }}
+            aria-label={which === "foreground" ? "Foreground colour" : "Background colour"}
+            title={`${which === "foreground" ? "Foreground" : "Background"} colour ${colors[which]}`}
+            data-color={colors[which]}
+            onClick={() => onEditColor(which)}
           />
-        </label>
-        <label
-          className={`${styles.swatch} ${styles.swatchBackground}`}
-          style={{ background: colors.background }}
-          title="Background colour"
-        >
-          <input
-            type="color"
-            aria-label="Background colour"
-            value={colors.background}
-            onChange={(e) => controller.store.setColors({ background: e.target.value })}
-          />
-        </label>
+        ))}
       </div>
       <button
         type="button"

@@ -14,6 +14,7 @@ import {
   type SelectionModification,
   deleteLayer,
   deleteLayerMask,
+  duplicateLayer,
   groupLayer,
   nextGroupName,
   setLayerTransform,
@@ -38,11 +39,25 @@ import { compositeDocument, type CompositeContext } from "../rendering/compositi
 import { checkDimensions } from "../core/document/limits";
 import { pathToSelection, selectionToPath } from "../core/path/trace";
 import type { VectorPath } from "../core/path/path";
-import { locateLayer } from "../core/document/tree";
+import { findLayerDeep, locateLayer } from "../core/document/tree";
 import { pathTargets } from "../tools/pen/path-targets";
-import { alignDelta, type AlignEdge } from "../core/geometry/snapping";
+import { ALIGN_LABELS, alignDelta, type AlignEdge } from "../core/geometry/snapping";
+import {
+  MAX_ACTION_STEPS,
+  MAX_ACTIONS,
+  normalizeActionName,
+  parseActionsFile,
+  ActionsFormatError,
+  type Action,
+} from "../automation/actions";
+import { stepLabel, type ActionStep } from "../automation/steps";
+import { MAX_BATCH_FILES, MAX_BATCH_OUTPUT_BYTES, uniqueEntryName } from "../automation/batch";
+import { writeZip, type ZipInput } from "../formats/zip/zip";
+import { EXPORT_FORMATS } from "../formats/export/raster-export";
+import { DEFAULT_SWATCHES, type Swatch } from "../core/swatches";
 import { adjustmentDefinition } from "../adjustments/registry";
 import type {
+  Adjustment,
   AdjustmentType,
   EditorDocument,
   Guide,
@@ -206,14 +221,7 @@ export function pixelBudgetFor(deviceMemoryGb: number | undefined): number {
   return Math.round(Math.min(1536 * MB, Math.max(256 * MB, (deviceMemoryGb * 1024 * MB) / 4)));
 }
 
-export const ALIGN_LABELS: Record<AlignEdge, string> = {
-  left: "Align Left Edges",
-  "center-x": "Align Horizontal Centers",
-  right: "Align Right Edges",
-  top: "Align Top Edges",
-  "center-y": "Align Vertical Centers",
-  bottom: "Align Bottom Edges",
-};
+export { ALIGN_LABELS };
 
 /** Filter previews run on at most this many pixels (larger layers are previewed reduced). */
 const FILTER_PREVIEW_PIXELS = 2_000_000;
@@ -257,6 +265,14 @@ export class EditorController {
   readonly refining = new Observable(false);
   /** Rulers, guides, grid and snapping preferences (the UI persists them). */
   readonly view = new Observable<ViewSettings>(DEFAULT_VIEW_SETTINGS);
+  /** Colour swatches (the UI persists them). */
+  readonly swatches = new Observable<readonly Swatch[]>(DEFAULT_SWATCHES);
+  /** Recorded actions (the UI persists them, ADR-0018). */
+  readonly actions = new Observable<readonly Action[]>([]);
+  /** The action being recorded into. */
+  readonly recording = new Observable<string | null>(null);
+  /** The action being played. */
+  readonly playing = new Observable<string | null>(null);
   readonly sizer: ContentSizer;
   readonly createSurface: SurfaceFactory;
 
@@ -326,6 +342,7 @@ export class EditorController {
   // ---------------------------------------------------------------- notices
 
   notify(kind: NoticeKind, message: string): void {
+    if (kind === "error") this.errorCount++;
     const notice: Notice = { id: createId("notice"), kind, message };
     this.status.update((s) => ({ ...s, notices: [...s.notices, notice].slice(-MAX_NOTICES) }));
   }
@@ -337,7 +354,12 @@ export class EditorController {
   // ---------------------------------------------------------------- editing
 
   /** Open a document in a new tab, with a note when it is very large. */
-  private openSession(doc: EditorDocument, options: { saved?: boolean } = {}): void {
+  private openSession(
+    doc: EditorDocument,
+    options: { saved?: boolean; transient?: boolean } = {},
+  ): void {
+    // Batch documents: processed and closed, never autosaved or stored.
+    if (options.transient) this.transientDocuments.add(doc.id);
     this.store.openDocument(doc, options);
     const megapixels = (doc.width * doc.height) / 1_000_000;
     if (doc.width * doc.height > LARGE_DOCUMENT_PIXELS) {
@@ -392,7 +414,7 @@ export class EditorController {
     const session = this.store.getSession();
     if (!session) return;
     const layer = createEmptyRasterLayer(session.document, nextLayerName(session.document));
-    this.execute(addLayer(layer, "New Layer"));
+    if (this.execute(addLayer(layer, "New Layer"))) this.record({ type: "newLayer" });
   }
 
   // ---------------------------------------------------------------- groups, masks, adjustments
@@ -453,12 +475,17 @@ export class EditorController {
   }
 
   /** Add an adjustment layer (with a reveal-all mask) above the active layer. */
-  addAdjustmentLayer(type: AdjustmentType): void {
+  addAdjustmentLayer(type: AdjustmentType, settings?: Adjustment): void {
     const session = this.store.getSession();
     if (!session) return;
     const def = adjustmentDefinition(type);
-    const layer = createAdjustmentLayer(session.document, def.defaults, def.label);
-    this.execute(addLayer(layer, `New ${def.label}`));
+    const adjustment = settings?.type === type ? settings : def.defaults;
+    const layer = createAdjustmentLayer(session.document, adjustment, def.label);
+    if (!this.execute(addLayer(layer, `New ${def.label}`))) return;
+    // The step takes the layer's final settings when recording stops.
+    const step: ActionStep = { type: "adjustment", adjustment };
+    this.adjustmentSources.set(step, { documentId: session.document.id, layerId: layer.id });
+    this.record(step);
   }
 
   // ---------------------------------------------------------------- selection (ADR-0010)
@@ -467,7 +494,7 @@ export class EditorController {
   private readonly lastSelection = new Map<string, SelectionMask>();
 
   selectAll(): void {
-    this.execute(selectAllCommand());
+    this.recordIfOk({ type: "select", op: "all" }, () => this.execute(selectAllCommand()));
   }
 
   deselect(): void {
@@ -475,7 +502,7 @@ export class EditorController {
     const selection = session?.document.selection;
     if (!session || !selection) return;
     this.lastSelection.set(session.document.id, selection);
-    this.execute(deselect());
+    if (this.execute(deselect())) this.record({ type: "select", op: "deselect" });
   }
 
   reselect(): void {
@@ -493,12 +520,15 @@ export class EditorController {
   }
 
   invertSelection(): void {
-    this.execute(invertSelectionCommand());
+    this.recordIfOk({ type: "select", op: "inverse" }, () =>
+      this.execute(invertSelectionCommand()),
+    );
   }
 
   modifySelection(kind: SelectionModification, radius: number): Result {
     const result = this.store.dispatch(modifySelection(kind, radius));
     if (!result.ok) return { ok: false, error: result.error };
+    this.record({ type: "modifySelection", kind, radius });
     if (result.changed && !this.store.getSession()?.document.selection) {
       this.notify("info", "Nothing is left selected.");
     }
@@ -549,8 +579,11 @@ export class EditorController {
 
   cropToSelection(): void {
     const bounds = this.store.getSession()?.document.selection?.bounds;
-    if (!bounds) return;
-    this.execute(cropDocument(bounds));
+    if (!bounds) {
+      if (this.playing.get()) this.notify("error", "Make a selection first.");
+      return;
+    }
+    this.recordIfOk({ type: "cropToSelection" }, () => this.execute(cropDocument(bounds)));
   }
 
   /**
@@ -986,8 +1019,10 @@ export class EditorController {
     const target = doc.selection?.bounds ?? { x: 0, y: 0, width: doc.width, height: doc.height };
     const delta = alignDelta(box, target, edge);
     const round = (v: number) => Math.round(v * 1000) / 1000;
-    this.execute(
-      translateLayer(layer.id, round(delta.x), round(delta.y), { label: ALIGN_LABELS[edge] }),
+    this.recordIfOk({ type: "align", edge }, () =>
+      this.execute(
+        translateLayer(layer.id, round(delta.x), round(delta.y), { label: ALIGN_LABELS[edge] }),
+      ),
     );
   }
 
@@ -1124,6 +1159,7 @@ export class EditorController {
       const changed = this.execute(setRasterContent(layer.id, asset.id, filter.name));
       this.enforcePixelBudget();
       this.lastFilter.set({ id, values });
+      this.record({ type: "filter", filterId: id, values });
       return changed;
     } catch (error) {
       this.logger.warn("filter failed", describeError(error));
@@ -1182,7 +1218,10 @@ export class EditorController {
     if (!doc?.selection || !layer) return false;
     const paint = this.createSurface(doc.width, doc.height);
     context2d(paint).drawImage(selectionSurface(this, doc.selection), 0, 0);
-    return this.paintSelection(layer, paint, "destination-out", label);
+    const errors = this.errorCount;
+    const changed = this.paintSelection(layer, paint, "destination-out", label);
+    if (label === "Clear" && this.errorCount === errors) this.record({ type: "clear" });
+    return changed;
   }
 
   /** Fill the selection on the active pixel layer (Edit → Fill). */
@@ -1190,7 +1229,9 @@ export class EditorController {
     const doc = this.store.getSession()?.document;
     const layer = this.selectedPixelLayer("Fill");
     if (!doc || !layer) return;
-    this.paintSelection(layer, selectionFill(this, doc, color), "source-over", "Fill");
+    this.recordIfOk({ type: "fill", color }, () =>
+      this.paintSelection(layer, selectionFill(this, doc, color), "source-over", "Fill"),
+    );
   }
 
   /** Pixels last copied in MYLPER (the system clipboard may hold something else). */
@@ -1321,10 +1362,25 @@ export class EditorController {
       return;
     }
     const size = layerLocalSize(layer, session.document, this.sizer);
-    this.execute(
-      setLayerTransform(layer.id, flipAboutCenter(layer.transform, size, axis), {
-        label: axis === "horizontal" ? "Flip Horizontal" : "Flip Vertical",
-      }),
+    this.recordIfOk({ type: "flip", axis }, () =>
+      this.execute(
+        setLayerTransform(layer.id, flipAboutCenter(layer.transform, size, axis), {
+          label: axis === "horizontal" ? "Flip Horizontal" : "Flip Vertical",
+        }),
+      ),
+    );
+  }
+
+  /** Duplicate the active layer (Layer → Duplicate Layer). */
+  duplicateActiveLayer(): void {
+    const session = this.store.getSession();
+    const layer = session ? activeLayer(session.document) : undefined;
+    if (!layer) {
+      if (this.playing.get()) this.notify("error", "Select a layer first.");
+      return;
+    }
+    this.recordIfOk({ type: "duplicateLayer" }, () =>
+      this.execute(duplicateLayer(layer.id, createId("layer"))),
     );
   }
 
@@ -1332,7 +1388,7 @@ export class EditorController {
     const session = this.store.getSession();
     if (!session) return;
     const layer = createFillLayer(color, nextLayerName(session.document));
-    this.execute(addLayer(layer, "New Fill Layer"));
+    if (this.execute(addLayer(layer, "New Fill Layer"))) this.record({ type: "fillLayer", color });
   }
 
   // ---------------------------------------------------------------- files (ADR-0011)
@@ -1342,7 +1398,7 @@ export class EditorController {
     return this.withBusy("Opening…", () => this.openFileNow(file, filename));
   }
 
-  private async openFileNow(file: Blob, filename: string): Promise<Result> {
+  private async openFileNow(file: Blob, filename: string, transient = false): Promise<Result> {
     if (file.size > MAX_IMPORT_FILE_BYTES) {
       return this.fail(
         `The file is larger than ${Math.round(MAX_IMPORT_FILE_BYTES / 2 ** 20)} MB.`,
@@ -1353,7 +1409,7 @@ export class EditorController {
     try {
       switch (kind.kind) {
         case "raster":
-          return await this.openImageFile(file, filename);
+          return await this.openImageFile(file, filename, transient);
         case "svg": {
           const layer = await this.svgLayer(bytes, baseName(filename));
           const doc = createDocument({
@@ -1362,13 +1418,13 @@ export class EditorController {
             height: layer.height,
             background: { kind: "transparent" },
           });
-          this.openSession({ ...doc, layers: [layer], activeLayerId: layer.id });
+          this.openSession({ ...doc, layers: [layer], activeLayerId: layer.id }, { transient });
           return { ok: true };
         }
         case "psd": {
           const { file: psd, warnings } = await this.jobs.run("psdRead", bytes, [bytes.buffer]);
           const imported = psdToDocument(this, psd, baseName(filename), warnings);
-          this.openSession(imported.document);
+          this.openSession(imported.document, { transient });
           this.reportWarnings("Opened with changes", imported.warnings);
           this.enforcePixelBudget();
           return { ok: true };
@@ -1378,7 +1434,7 @@ export class EditorController {
             createId(k === "document" ? "doc" : "asset"),
           );
           for (const asset of project.assets) this.assets.add(asset);
-          this.openSession(project.document);
+          this.openSession(project.document, { transient });
           return { ok: true };
         }
         case "unsupported":
@@ -1513,7 +1569,7 @@ export class EditorController {
   }
 
   /** Open a local image file as a new document. */
-  async openImageFile(file: Blob, filename: string): Promise<Result> {
+  async openImageFile(file: Blob, filename: string, transient = false): Promise<Result> {
     const result = await importRasterFile(file, this.decode);
     if (!result.ok) return this.fail(result.error);
     const { image } = result;
@@ -1534,7 +1590,7 @@ export class EditorController {
       height: image.height,
       name,
     });
-    this.openSession({ ...doc, layers: [layer], activeLayerId: layer.id });
+    this.openSession({ ...doc, layers: [layer], activeLayerId: layer.id }, { transient });
     return { ok: true };
   }
 
@@ -1660,6 +1716,8 @@ export class EditorController {
     if (this.smartChildren.has(documentId)) {
       return isDirty(session) ? this.applySmartChild(documentId) : { ok: true };
     }
+    // Batch documents are processed and closed, never stored.
+    if (this.transientDocuments.has(documentId)) return { ok: true };
     if (!isDirty(session) && session.savedRevision !== null) return { ok: true };
 
     const { document, revision } = session;
@@ -1845,6 +1903,299 @@ export class EditorController {
     this.tools.revision.update((n) => n + 1);
   }
 
+  // ---------------------------------------------------------------- actions (ADR-0018)
+
+  /** Error notices so far: playback stops at a step that raised one. */
+  private errorCount = 0;
+  /** Adjustment layers recorded steps were made from, to read their final settings. */
+  private readonly adjustmentSources = new WeakMap<
+    ActionStep,
+    { documentId: string; layerId: string }
+  >();
+
+  createAction(name: string): string | null {
+    const normalized = normalizeActionName(name);
+    if (!normalized) return null;
+    if (this.actions.get().length >= MAX_ACTIONS) {
+      this.notify("error", `You can keep up to ${MAX_ACTIONS} actions. Delete some first.`);
+      return null;
+    }
+    const action: Action = { id: createId("action"), name: normalized, steps: [] };
+    this.actions.update((list) => [...list, action]);
+    return action.id;
+  }
+
+  renameAction(id: string, name: string): void {
+    const normalized = normalizeActionName(name);
+    if (normalized) this.updateAction(id, (a) => ({ ...a, name: normalized }));
+  }
+
+  deleteAction(id: string): void {
+    if (this.recording.get() === id) this.stopRecording();
+    this.actions.update((list) => list.filter((a) => a.id !== id));
+  }
+
+  deleteActionStep(id: string, index: number): void {
+    this.updateAction(id, (a) => ({ ...a, steps: a.steps.filter((_, i) => i !== index) }));
+  }
+
+  /** Add the actions from an exported file; returns how many were added. */
+  importActions(text: string): { ok: true; count: number } | { ok: false; error: string } {
+    try {
+      const imported = parseActionsFile(text, () => createId("action"));
+      if (this.actions.get().length + imported.length > MAX_ACTIONS) {
+        return this.fail(`You can keep up to ${MAX_ACTIONS} actions. Delete some first.`);
+      }
+      this.actions.update((list) => [...list, ...imported]);
+      return { ok: true, count: imported.length };
+    } catch (error) {
+      if (error instanceof ActionsFormatError) return this.fail(error.message);
+      throw error;
+    }
+  }
+
+  startRecording(id: string): void {
+    if (this.playing.get() || !this.actions.get().some((a) => a.id === id)) return;
+    if (this.recording.get()) this.stopRecording();
+    this.recording.set(id);
+  }
+
+  /** Stop recording; adjustment steps take the settings their layers ended up with. */
+  stopRecording(): void {
+    const id = this.recording.get();
+    if (!id) return;
+    this.recording.set(null);
+    this.updateAction(id, (a) => ({
+      ...a,
+      steps: a.steps.map((step) => {
+        const source = this.adjustmentSources.get(step);
+        if (step.type !== "adjustment" || !source) return step;
+        const doc = this.store.getSession(source.documentId)?.document;
+        const layer = doc && findLayerDeep(doc.layers, source.layerId);
+        return layer?.kind === "adjustment" && layer.adjustment.type === step.adjustment.type
+          ? { type: "adjustment", adjustment: layer.adjustment }
+          : step;
+      }),
+    }));
+  }
+
+  private updateAction(id: string, fn: (action: Action) => Action): void {
+    this.actions.update((list) => list.map((a) => (a.id === id ? fn(a) : a)));
+  }
+
+  /** Append a step to the action being recorded (never while an action plays). */
+  private record(step: ActionStep): void {
+    const id = this.recording.get();
+    if (!id || this.playing.get()) return;
+    const action = this.actions.get().find((a) => a.id === id);
+    if (!action) {
+      this.recording.set(null);
+      return;
+    }
+    if (action.steps.length >= MAX_ACTION_STEPS) {
+      this.notify("info", `An action can have up to ${MAX_ACTION_STEPS} steps.`);
+      this.stopRecording();
+      return;
+    }
+    this.updateAction(id, (a) => ({ ...a, steps: [...a.steps, step] }));
+  }
+
+  /** Run `operation`, recording `step` unless it reported an error. */
+  private recordIfOk(step: ActionStep, operation: () => unknown): void {
+    const errors = this.errorCount;
+    operation();
+    if (this.errorCount === errors && this.store.getSession()) this.record(step);
+  }
+
+  /**
+   * Play an action on the active document. Steps run in order; playback stops at the first
+   * step that reports an error. The whole run is one undo step.
+   */
+  playAction(id: string): Promise<Result> {
+    const action = this.actions.get().find((a) => a.id === id);
+    if (!action) return Promise.resolve(this.fail("That action no longer exists."));
+    return this.withBusy(`Playing ${action.name}…`, () => this.playActionNow(action));
+  }
+
+  private async playActionNow(action: Action): Promise<Result> {
+    if (this.recording.get()) return this.fail("Stop recording before playing an action.");
+    if (this.playing.get()) return this.fail("An action is already playing.");
+    if (this.textEdit.get()) this.commitTextEdit();
+    const session = this.store.getSession();
+    if (!session) return this.fail("Open a document first.");
+    const documentId = session.document.id;
+    this.store.sealHistory(documentId);
+    const start = this.store.getSession(documentId)!.document;
+    this.playing.set(action.id);
+    try {
+      for (const [index, step] of action.steps.entries()) {
+        const current = this.store.getSession();
+        if (current?.document.id !== documentId) {
+          return this.fail(`"${action.name}" stopped because the document changed.`);
+        }
+        await this.assets.whenDecoded(referencedAssetIds(current.document));
+        const errors = this.errorCount;
+        await this.runStep(step);
+        if (this.errorCount !== errors) {
+          return this.fail(`"${action.name}" stopped at step ${index + 1} (${stepLabel(step)}).`);
+        }
+      }
+      return { ok: true };
+    } finally {
+      this.store.collapseHistory(start, `Action: ${action.name}`, documentId);
+      this.playing.set(null);
+    }
+  }
+
+  private async runStep(step: ActionStep): Promise<void> {
+    switch (step.type) {
+      case "filter":
+        await this.applyFilter(step.filterId, step.values);
+        return;
+      case "adjustment":
+        this.addAdjustmentLayer(step.adjustment.type, step.adjustment);
+        return;
+      case "flip":
+        this.flipActiveLayer(step.axis);
+        return;
+      case "align":
+        this.alignActiveLayer(step.edge);
+        return;
+      case "select":
+        if (step.op === "all") this.selectAll();
+        else if (step.op === "deselect") this.deselect();
+        else this.invertSelection();
+        return;
+      case "modifySelection": {
+        const result = this.modifySelection(step.kind, step.radius);
+        if (!result.ok) this.notify("error", result.error);
+        return;
+      }
+      case "fill":
+        this.fillSelection(step.color);
+        return;
+      case "clear":
+        this.clearSelection();
+        return;
+      case "newLayer":
+        this.addPixelLayer();
+        return;
+      case "duplicateLayer":
+        this.duplicateActiveLayer();
+        return;
+      case "fillLayer":
+        this.addFillLayer(step.color);
+        return;
+      case "cropToSelection":
+        this.cropToSelection();
+        return;
+    }
+  }
+
+  // ---------------------------------------------------------------- batch (ADR-0018)
+
+  /** Documents opened by a batch: never saved to browser storage. */
+  private readonly transientDocuments = new Set<string>();
+
+  /**
+   * File → Batch: open each file, play the action, export it, close it. The results are
+   * collected into one ZIP, built locally. Files that fail are skipped and named.
+   */
+  runBatch(options: {
+    actionId: string;
+    files: readonly { blob: Blob; name: string }[];
+    export: ExportRequest;
+    onProgress?: (done: number, total: number) => void;
+    signal?: AbortSignal;
+  }): Promise<
+    | { ok: true; blob: Blob; processed: number; failed: readonly string[]; cancelled: boolean }
+    | { ok: false; error: string }
+  > {
+    return this.runBatchNow(options);
+  }
+
+  private async runBatchNow({
+    actionId,
+    files,
+    export: request,
+    onProgress,
+    signal,
+  }: Parameters<EditorController["runBatch"]>[0]): ReturnType<EditorController["runBatch"]> {
+    const action = this.actions.get().find((a) => a.id === actionId);
+    if (!action) return this.fail("That action no longer exists.");
+    if (files.length === 0) return this.fail("Choose at least one file.");
+    if (files.length > MAX_BATCH_FILES) {
+      return this.fail(`A batch can process up to ${MAX_BATCH_FILES} files at a time.`);
+    }
+    if (this.recording.get()) return this.fail("Stop recording before running a batch.");
+    if (this.textEdit.get()) this.commitTextEdit();
+    const previous = this.store.getState().activeDocumentId;
+    const extension = EXPORT_FORMATS[request.format].extension;
+    const entries: ZipInput[] = [];
+    const names = new Set<string>();
+    const failed: string[] = [];
+    let total = 0;
+    let cancelled = false;
+    for (const [index, file] of files.entries()) {
+      if (signal?.aborted) {
+        cancelled = true;
+        break;
+      }
+      onProgress?.(index, files.length);
+      let documentId: string | null = null;
+      try {
+        const opened = await this.openFileNow(file.blob, file.name, true);
+        documentId = opened.ok ? this.store.getState().activeDocumentId : null;
+        if (!documentId || !this.transientDocuments.has(documentId)) {
+          failed.push(file.name);
+          continue;
+        }
+        const played = await this.playActionNow(action);
+        if (!played.ok) {
+          failed.push(file.name);
+          continue;
+        }
+        const doc = this.store.getSession(documentId)!.document;
+        await this.assets.whenDecoded(referencedAssetIds(doc));
+        const { blob } = await exportAs(this, doc, request, this.jobs);
+        if (total + blob.size > MAX_BATCH_OUTPUT_BYTES) {
+          this.notify("error", "The batch output reached 1 GB. The remaining files were skipped.");
+          cancelled = true;
+          break;
+        }
+        total += blob.size;
+        entries.push({
+          name: uniqueEntryName(doc.name, extension, names),
+          data: new Uint8Array(await blob.arrayBuffer()),
+        });
+      } catch (error) {
+        this.logger.warn("batch file failed", describeError(error));
+        failed.push(file.name);
+      } finally {
+        if (documentId && this.transientDocuments.has(documentId)) {
+          this.store.closeDocument(documentId);
+          this.transientDocuments.delete(documentId);
+          this.collectUnusedAssets();
+        }
+      }
+    }
+    onProgress?.(entries.length + failed.length, files.length);
+    if (previous && this.store.getSession(previous)) this.store.setActiveDocument(previous);
+    if (failed.length > 0) {
+      const list = failed.slice(0, 5).join(", ") + (failed.length > 5 ? ", …" : "");
+      this.notify("error", `${failed.length} file(s) could not be processed: ${list}`);
+    }
+    if (entries.length === 0) return { ok: false, error: "No files were processed." };
+    const zip = await writeZip(entries);
+    return {
+      ok: true,
+      blob: new Blob([zip as BlobPart], { type: "application/zip" }),
+      processed: entries.length,
+      failed,
+      cancelled,
+    };
+  }
+
   // ---------------------------------------------------------------- export
 
   /** Flatten the active document into an image file. Nothing leaves the browser. */
@@ -1902,7 +2253,9 @@ export class EditorController {
 
   private scheduleAutosave(): void {
     if (this.autosaveDelayMs <= 0) return;
-    const anyDirty = this.store.getState().sessions.some(isDirty);
+    const anyDirty = this.store
+      .getState()
+      .sessions.some((s) => isDirty(s) && !this.transientDocuments.has(s.document.id));
     if (!anyDirty) return;
     if (this.autosaveTimer) clearTimeout(this.autosaveTimer);
     this.autosaveTimer = setTimeout(() => {

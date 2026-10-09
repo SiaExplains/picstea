@@ -18,7 +18,7 @@ import {
   type ToolSettings,
 } from "./tool-settings";
 import { DEFAULT_VIEWPORT, type Viewport } from "./viewport/viewport";
-import { dropOldest } from "./history/history";
+import { collapseSince, dropOldest, jumpTo } from "./history/history";
 import { findLayerDeep } from "./document/tree";
 import { setGroupExpanded } from "./commands/group-commands";
 
@@ -220,6 +220,32 @@ export class EditorStore {
       revision: session.revision + 1,
     });
     return step.label;
+  }
+
+  /** Undo or redo until `pastLength` steps remain (History panel). */
+  goToHistory(pastLength: number, documentId = this.state.activeDocumentId): string | null {
+    const session = this.getSession(documentId);
+    if (!session) return null;
+    const step = jumpTo(session.history, pastLength);
+    if (!step) return null;
+    this.updateSession(session.document.id, {
+      document: step.document,
+      history: step.state,
+      revision: session.revision + 1,
+    });
+    return step.label;
+  }
+
+  /** Fold the steps made since the document was `before` into one undo step. */
+  collapseHistory(
+    before: EditorDocument,
+    label: string,
+    documentId = this.state.activeDocumentId,
+  ): void {
+    const session = this.getSession(documentId);
+    if (!session) return;
+    const history = collapseSince(session.history, before, label);
+    if (history !== session.history) this.updateSession(session.document.id, { history });
   }
 
   /**

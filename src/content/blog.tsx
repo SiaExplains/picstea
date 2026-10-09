@@ -481,6 +481,57 @@ export const POSTS: readonly BlogPost[] = [
       </>
     ),
   },
+  {
+    slug: "record-actions-and-batch-process-images",
+    title: "Record actions and batch-process images in your browser",
+    description:
+      "MYLPER can now record a sequence of edits and replay it on any image — or on a whole folder of photos at once — without uploading anything.",
+    published: "2026-10-09",
+    draft: true,
+    body: () => (
+      <>
+        <p>
+          Resizing a product shot, adding the same adjustment, blurring the same corner: some edits
+          are the same every time. MYLPER can now record them once and replay them — on one image or
+          on a hundred.
+        </p>
+        <h2>Record once</h2>
+        <p>
+          Open the Actions panel, choose New… and start editing. Filters, adjustment layers,
+          selections, fills, new layers, flips, alignment and crops are recorded with their
+          settings. Choose Stop when you&apos;re done; you can see every step and remove the ones
+          you don&apos;t want.
+        </p>
+        <h2>Play anywhere</h2>
+        <p>
+          Select the action and choose Play. The whole action is a single step in the History panel,
+          so one Undo takes it back.
+        </p>
+        <h2>Batch a whole folder</h2>
+        <p>
+          File → Batch… applies an action to many files at once and saves the results as one ZIP
+          file — PNG, JPEG or WebP. Everything happens in your browser tab: the photos are not
+          uploaded and not stored.
+        </p>
+        <h2>Also new</h2>
+        <ul>
+          <li>
+            A colour picker with a saturation/brightness field, a hue slider and exact Hex, RGB and
+            HSB values.
+          </li>
+          <li>A Swatches panel for your own colours.</li>
+          <li>A History panel to jump back to any step — and forward again.</li>
+        </ul>
+        <p>
+          <EditorLink>Try it in MYLPER</EditorLink> — no account needed. The details are in{" "}
+          <Link href="/docs/actions-batch-colours-and-history">
+            Actions, batch processing, colours and history
+          </Link>
+          .
+        </p>
+      </>
+    ),
+  },
 ];
 
 const showDrafts = process.env.NODE_ENV !== "production";

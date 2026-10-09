@@ -4,14 +4,13 @@ import { useMemo, useSyncExternalStore } from "react";
 import { FILTERS, type FilterId } from "@/editor/filters/registry";
 import type { AlignEdge } from "@/editor/core/geometry/snapping";
 import { ALIGN_LABELS } from "@/editor/controller/editor-controller";
-import { deleteLayer, duplicateLayer, shiftLayer } from "@/editor/core/commands";
+import { deleteLayer, shiftLayer } from "@/editor/core/commands";
 import { ADJUSTMENTS } from "@/editor/adjustments/registry";
 import { activeLayer } from "@/editor/core/document/queries";
 import { flattenTopFirst, locateLayer } from "@/editor/core/document/tree";
 import type { SelectionModification } from "@/editor/core/commands";
 import type { AdjustmentType, SmartFilter } from "@/editor/core/document/types";
 import { isTransformable } from "@/editor/core/geometry/layer-geometry";
-import { createId } from "@/editor/core/ids";
 import type { ActionId } from "@/editor/core/shortcuts/shortcuts";
 import { DEFAULT_COLORS } from "@/editor/core/tool-settings";
 import { openWelcome } from "@/components/welcome/welcome";
@@ -38,6 +37,7 @@ export type UiActionId =
   | "layer.editContents"
   | "layer.rasterize"
   | "file.placeEmbedded"
+  | "file.batch"
   | "layer.toggleVectorMask"
   | "layer.newGroup"
   | "layer.addMask"
@@ -80,6 +80,7 @@ export interface ActionHosts {
   openGuideDialog: () => void;
   openGridDialog: () => void;
   openWorkPathDialog: () => void;
+  openBatchDialog: () => void;
   openSmartFilterDialog: (layerId: string, filter: SmartFilter) => void;
 }
 
@@ -164,6 +165,7 @@ export function useEditorActions(hosts: ActionHosts): Record<UiActionId, UiActio
         run: () => void saveProjectFile(controller),
       },
       "file.export": { label: "Export As…", enabled: hasDoc, run: hosts.openExportDialog },
+      "file.batch": { label: "Batch…", enabled: true, run: hosts.openBatchDialog },
       "file.close": {
         label: "Close",
         enabled: hasDoc,
@@ -269,10 +271,7 @@ export function useEditorActions(hosts: ActionHosts): Record<UiActionId, UiActio
       "layer.duplicate": {
         label: hasSelection ? "Layer via Copy" : "Duplicate Layer",
         enabled: !!activeId,
-        run: () =>
-          hasSelection
-            ? controller.layerViaCopy()
-            : activeId && controller.execute(duplicateLayer(activeId, createId("layer"))),
+        run: () => (hasSelection ? controller.layerViaCopy() : controller.duplicateActiveLayer()),
       },
       // With a selection, Delete/Backspace clears the selected pixels instead of the layer.
       "layer.delete": {

@@ -22,6 +22,9 @@ import { GridDialog, GuideDialog } from "./ViewDialogs";
 import type { FilterId } from "@/editor/filters/registry";
 import { activeLayer } from "@/editor/core/document/queries";
 import { StartScreen } from "./StartScreen";
+import { ColorPickerDialog, type ColorTarget } from "./ColorPickerDialog";
+import { BatchDialog } from "./BatchDialog";
+import { PanelTabs } from "./PanelTabs";
 import { useEditorActions, type ActionHosts } from "./use-editor-actions";
 
 const matchShortcut = createShortcutMatcher();
@@ -45,6 +48,8 @@ export function EditorShell() {
   const [guideDialogOpen, setGuideDialogOpen] = useState(false);
   const [gridDialogOpen, setGridDialogOpen] = useState(false);
   const [workPathDialogOpen, setWorkPathDialogOpen] = useState(false);
+  const [colorTarget, setColorTarget] = useState<ColorTarget | null>(null);
+  const [batchOpen, setBatchOpen] = useState(false);
   const [dragging, setDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const pickModeRef = useRef<PickMode>("open");
@@ -75,6 +80,7 @@ export function EditorShell() {
       openGuideDialog: () => setGuideDialogOpen(true),
       openGridDialog: () => setGridDialogOpen(true),
       openWorkPathDialog: () => setWorkPathDialogOpen(true),
+      openBatchDialog: () => setBatchOpen(true),
       pickImage: (mode) => {
         pickModeRef.current = mode;
         fileInputRef.current?.click();
@@ -188,7 +194,7 @@ export function EditorShell() {
     >
       <MenuBar actions={actions} />
       <OptionsBar actions={actions} />
-      <Toolbar actions={actions} />
+      <Toolbar actions={actions} onEditColor={setColorTarget} />
       <main className={styles.main} aria-label="Workspace">
         <DocumentTabs />
         {session ? <CanvasViewport /> : <StartScreen actions={actions} />}
@@ -196,6 +202,7 @@ export function EditorShell() {
       </main>
       <aside className={styles.panels} aria-label="Panels">
         <PropertiesPanel onEditSmartFilter={hosts.openSmartFilterDialog} />
+        <PanelTabs />
         <LayersPanel actions={actions} />
       </aside>
       <StatusBar />
@@ -214,6 +221,10 @@ export function EditorShell() {
       {guideDialogOpen && <GuideDialog onClose={() => setGuideDialogOpen(false)} />}
       {gridDialogOpen && <GridDialog onClose={() => setGridDialogOpen(false)} />}
       {workPathDialogOpen && <WorkPathDialog onClose={() => setWorkPathDialogOpen(false)} />}
+      {colorTarget && (
+        <ColorPickerDialog target={colorTarget} onClose={() => setColorTarget(null)} />
+      )}
+      {batchOpen && <BatchDialog onClose={() => setBatchOpen(false)} />}
       <Notices />
       <BusyOverlay />
       <input

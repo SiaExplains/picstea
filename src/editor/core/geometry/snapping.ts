@@ -156,6 +156,15 @@ export const SNAP_DISTANCE_PX = 6;
 
 export type AlignEdge = "left" | "center-x" | "right" | "top" | "center-y" | "bottom";
 
+export const ALIGN_LABELS: Record<AlignEdge, string> = {
+  left: "Align Left Edges",
+  "center-x": "Align Horizontal Centers",
+  right: "Align Right Edges",
+  top: "Align Top Edges",
+  "center-y": "Align Vertical Centers",
+  bottom: "Align Bottom Edges",
+};
+
 /** How far to move `box` so the given edge (or centre) lines up with the same edge of `target`. */
 export function alignDelta(box: Rect, target: Rect, edge: AlignEdge): Point {
   switch (edge) {

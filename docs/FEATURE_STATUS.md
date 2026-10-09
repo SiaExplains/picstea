@@ -1,6 +1,6 @@
 # Feature status
 
-Last updated: 2026-10-09 · version 0.11.0 · current gate: **9d (Professional Parity: advanced PSD) — awaiting review**
+Last updated: 2026-10-09 · version 0.12.0 · current gate: **9e (Professional Parity: automation, colours, history) — awaiting review**
 
 Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ deferred
 
@@ -141,8 +141,8 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 | 9a | Rulers, guides, grid, snapping, align; filters; Levels and Curves | ✅ |
 | 9b | Pen tool, paths, path ↔ selection, vector masks, clipping masks | ✅ |
 | 9c | Smart objects (embedded documents), smart filters, rasterize, place embedded | ✅ |
-| 9d | Advanced PSD: descriptor parser; text, adjustment layers, effects, vector masks, shapes and smart objects | 🚧 awaiting review |
-| 9e | Automation (record/play actions, batch), swatches and colour picker, history panel | 📋 |
+| 9d | Advanced PSD: descriptor parser; text, adjustment layers, effects, vector masks, shapes and smart objects | ✅ |
+| 9e | Automation (record/play actions, batch), swatches and colour picker, history panel | 🚧 awaiting review |
 
 ### 9a
 
@@ -194,6 +194,17 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 | Import: smart objects with embedded PNG/JPEG/WebP/GIF/PSD | ✅ | Warped, perspective, smart-filtered and linked ones open as pixels |
 | Export: adjustment layers (8 kinds) and vector masks | ✅ | Temperature/Tint, Black & White in the flattened image only |
 | Export: text, shapes, smart objects, effects as editable Photoshop data | 📋 | Rasterised with a notice |
+
+### 9e
+
+| Feature | Status | Notes |
+|---|---|---|
+| History panel (jump to any step, keyboard listbox) | ✅ | Snapshots 📋 |
+| Actions: record, play (one undo step), rename, delete steps | ✅ | ADR-0018; brush strokes, transforms, text not recordable 📋 |
+| Actions export/import (`mylper-actions.json`, validated) | ✅ | Stored in `mylper.actions` |
+| Batch: action over up to 200 files → one ZIP (PNG/JPEG/WebP) | ✅ | Transient documents, never stored; 1 GB output limit |
+| Colour picker (HSB field, hue, Hex/RGB/HSB) for foreground/background | ✅ | Properties-panel colour fields stay native |
+| Swatches panel (default palette, add, delete, reset) | ✅ | `mylper.swatches`; ASE/GPL import 📋 |
 
 ## Later gates (summary)
 
