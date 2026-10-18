@@ -33,3 +33,10 @@ Vercel outside the codebase.
 - Anyone who used the editor on `mylper.com` starts with empty local storage on `picstea.com`
   (storage is per origin anyway, so a domain change alone would have had the same effect).
 - `CHANGELOG.md` entries before 0.17.0 keep the old name; they are history.
+
+## Update — teal identity (v0.20.0)
+
+The approved artwork changed from blue to teal (icon background `#4da297`, wordmark background
+`#008080`). Icons, wordmark and the menu-bar icon were replaced with the new supplied files, and
+the accent followed: `#4da297` for lines and highlights, `#007a7a` for fills and text that need
+WCAG 1.4.3 contrast on white, `#5cc0b2` for links on dark pages.

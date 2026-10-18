@@ -3,6 +3,14 @@
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.20.0] — 2026-10-18
+
+### Changed
+
+- **New teal look.** A new Picstea logo — a steaming cup with a tea leaf — on the website, in the
+  editor, as the browser icon and on phone home screens. Buttons, links and highlights are teal
+  to match.
+
 ## [0.19.1] — 2026-10-18
 
 ### Fixed
