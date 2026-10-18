@@ -47,6 +47,9 @@ export default function SiteLayout({ children }: LayoutProps<"/">) {
             <nav aria-label="Footer" className={styles.footerNav}>
               <Link href="/online-photo-editor">Online photo editor</Link>
               <Link href="/psd-editor">PSD editor</Link>
+              <Link href="/photoshop-alternative">Photoshop alternative</Link>
+              <Link href="/photopea-alternative">Photopea alternative</Link>
+              <Link href="/faq">FAQ</Link>
               <Link href="/docs">Documentation</Link>
               <Link href="/blog">Blog</Link>
               <Link href="/privacy">Privacy</Link>

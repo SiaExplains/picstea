@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { pageOpenGraph } from "@/lib/seo/root-metadata";
 import Link from "next/link";
 import { LandingPage, type Faq } from "@/components/site/LandingPage";
 
@@ -11,7 +12,7 @@ export const metadata: Metadata = {
   title: TITLE,
   description: DESCRIPTION,
   alternates: { canonical: PATH },
-  openGraph: { url: PATH, title: TITLE, description: DESCRIPTION },
+  openGraph: pageOpenGraph({ url: PATH, title: TITLE, description: DESCRIPTION }),
 };
 
 const FAQS: Faq[] = [

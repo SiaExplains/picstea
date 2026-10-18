@@ -113,6 +113,24 @@ export function WelcomeDialog() {
           </a>
           .
         </p>
+        {/* The home page is the editor; these links also let search engines find the website. */}
+        <nav aria-label="Learn more" className={styles.links}>
+          <a href="/docs" target="_blank" rel="noopener">
+            Documentation
+          </a>
+          <a href="/blog" target="_blank" rel="noopener">
+            Guides
+          </a>
+          <a href="/faq" target="_blank" rel="noopener">
+            FAQ
+          </a>
+          <a href="/photoshop-alternative" target="_blank" rel="noopener">
+            Photoshop alternative
+          </a>
+          <a href="/psd-editor" target="_blank" rel="noopener">
+            PSD editor
+          </a>
+        </nav>
         <div className={styles.actions}>
           <button type="submit" className={styles.primary} autoFocus>
             Start editing
