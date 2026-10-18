@@ -25,6 +25,7 @@ import { StartScreen } from "./StartScreen";
 import { ColorPickerDialog, type ColorTarget } from "./ColorPickerDialog";
 import { BatchDialog } from "./BatchDialog";
 import { PanelTabs } from "./PanelTabs";
+import { SideColumn } from "./SideColumn";
 import { useEditorActions, type ActionHosts } from "./use-editor-actions";
 
 const matchShortcut = createShortcutMatcher();
@@ -205,6 +206,7 @@ export function EditorShell() {
         <PanelTabs />
         <LayersPanel actions={actions} />
       </aside>
+      <SideColumn onPrivacySettings={actions["help.privacy"].run} />
       <StatusBar />
       <NewDocumentDialog open={newDialogOpen} onClose={() => setNewDialogOpen(false)} />
       <ExportDialog open={exportDialogOpen} onClose={() => setExportDialogOpen(false)} />

@@ -119,8 +119,8 @@ test("the editor stays free of third-party code even with ads configured", async
     ),
   );
   await openEditor(page);
-  // …the editor shows only Picstea's own sponsorship on its start screen.
-  const sponsor = page.getByTestId("sponsor-card");
+  // …the editor shows only Picstea's own sponsorship, in its side column on wide screens.
+  const sponsor = page.getByTestId("editor-side").getByTestId("sponsor-card");
   await expect(sponsor).toBeVisible();
   await expect(sponsor.getByText("Sponsored")).toBeVisible();
   await expect(page.getByRole("region", { name: "Privacy choices" })).toHaveCount(0);
@@ -129,7 +129,8 @@ test("the editor stays free of third-party code even with ads configured", async
     .getByRole("dialog", { name: "New document" })
     .getByRole("button", { name: "Create" })
     .click();
-  await expect(page.getByTestId("sponsor-card")).toHaveCount(0);
+  // The column stays beside the canvas; still no third-party code.
+  await expect(sponsor).toBeVisible();
   expect(google).toEqual([]);
   expect(external).toEqual([]);
 

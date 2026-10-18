@@ -78,6 +78,37 @@
 }
 
 /* The square app icon: the wordmark was too small to read in the 30px menu bar. */
+/* Website links on the right of the menu bar (hidden when the bar is too narrow). */
+.menubarLinks {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.menubarLinks a,
+.menubarLinks button {
+  padding: 4px 9px;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--ed-text-dim);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.menubarLinks a:hover,
+.menubarLinks button:hover {
+  background: var(--ed-chrome-2);
+  color: var(--ed-text);
+}
+
+@media (max-width: 1023px) {
+  .menubarLinks {
+    display: none;
+  }
+}
+
 .brandLogo {
   border-radius: 5px;
 }
@@ -941,6 +972,90 @@
   text-align: center;
   grid-column: 1 / -1;
   grid-row: 1 / -1;
+}
+
+/* ---------- wide screens: sponsorship and privacy column (ADR-0025) ---------- */
+
+.side {
+  display: none;
+}
+
+@media (min-width: 1280px) {
+  .root {
+    grid-template-columns: 44px minmax(0, 1fr) 280px 300px;
+    grid-template-areas:
+      "menu menu menu menu"
+      "options options options options"
+      "tools main panels side"
+      "status status status status";
+  }
+
+  .side {
+    grid-area: side;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 0;
+    padding: 10px;
+    background: var(--ed-panel);
+    border-left: 1px solid var(--ed-border);
+  }
+
+  /* The column carries the editor's sponsorship; the start screen doesn't repeat it. */
+  .root .sponsor {
+    display: none;
+  }
+}
+
+/* A fixed 280 × 250 box (IAB medium rectangle proportions): nothing shifts when it fills. */
+.sideSlot {
+  height: 250px;
+  flex: none;
+}
+
+.sideSponsor {
+  box-sizing: border-box;
+  height: 100%;
+  padding: 14px;
+  border: 1px solid var(--ed-border);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+}
+
+.sideSponsor a {
+  color: var(--ed-text);
+  text-decoration: none;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.sideSponsor a:hover .sponsorTitle {
+  text-decoration: underline;
+}
+
+.sideLink {
+  align-self: flex-end;
+  font-size: 12px;
+  color: var(--ed-text-dim);
+}
+
+.sideButton {
+  margin-top: auto;
+  align-self: flex-start;
+  padding: 5px 10px;
+  border: 1px solid var(--ed-border);
+  border-radius: 4px;
+  background: var(--ed-chrome-2);
+  cursor: pointer;
+}
+
+.sideButton:hover {
+  border-color: var(--ed-text-dim);
 }
 
 /* ---------- small screens: panels move under the canvas ---------- */

@@ -19,6 +19,10 @@ export interface StoredConsent {
 }
 
 export const CONSENT_VERSION = 1;
+
+/** Opening the cookie policy with this hash opens the preferences (used by the editor). */
+export const PRIVACY_SETTINGS_HASH = "#privacy-settings";
+export const PRIVACY_SETTINGS_URL = `/cookies${PRIVACY_SETTINGS_HASH}`;
 export const CONSENT_STORAGE_KEY = "picstea.consent";
 
 export const NONE: ConsentChoices = { analytics: false, advertising: false };

@@ -3,6 +3,16 @@
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.21.0] — 2026-10-19
+
+### Added
+
+- **A side column in the editor** on wide screens, with a sponsorship space and a Privacy
+  settings button. Like everything in the editor it runs no third-party code.
+- **Website links in the menu bar:** About, Learn, Shortcuts and Blog on the right. They open in a
+  new tab, so your work stays where it is.
+- Help → Keyboard Shortcuts and Help → Privacy Settings….
+
 ## [0.20.0] — 2026-10-18
 
 ### Changed

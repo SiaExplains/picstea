@@ -133,6 +133,7 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 | Per-route CSP: strict editor, ad origins only on website pages | ✅ | ADR-0013 |
 | Legal pages: Privacy, Cookies, Terms, Imprint, Sponsorship | 🟡 | Drafts with [TO COMPLETE] fields; need operator details and legal review |
 | Google-certified CMP (IAB TCF) for personalised EU ads | ✅ | `NEXT_PUBLIC_ADSENSE_CMP=google` (ADR-0024); default stays own banner |
+| Editor side column: own sponsorship, Privacy settings, website links (≥ 1280 px) | ✅ | ADR-0025; Google ads in the editor 📋 (needs a new ADR) |
 | ads.txt + AdSense verification meta tag | ✅ | Generated from `NEXT_PUBLIC_ADSENSE_CLIENT`; off without it |
 | Analytics | ⏸ | None by decision; category ready |
 
