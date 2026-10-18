@@ -111,9 +111,10 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 | Progressive rendering (lower resolution while interacting, sharp when idle) | ✅ | |
 | Brush/pencil/eraser dirty-rectangle previews | ✅ | |
 | Web Worker jobs: PSD read/encode, PDF encode, flood fill (wand, bucket) | ✅ | Main-thread fallback |
+| Exports, wand, bucket and Color Range draw the document in the worker | ✅ | 9j, ADR-0022; page fallback |
 | Device-aware memory budget, large-document note, busy overlay | ✅ | |
 | Profiling harness (`pnpm profile`) | ✅ | `scripts/profile-large.mjs` |
-| Full-resolution adjustments in export/wand composites still on the main thread | 📋 | One-off actions; PSD export of a 24 MP document with three adjustments blocks ~2.4 s (audit 2026-10) |
+| Live canvas: layers under adjustment layers/styles redraw those on the main thread | 📋 | ~130 ms on the first frame of an edit under three adjustments at 24 MP (9j) |
 | Tiled rendering beyond 36 MP, tile-based undo | 📋 | Limits unchanged |
 
 ## Gate 8 — Website, SEO/AEO & monetization
@@ -147,6 +148,7 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 | 9g | Multi-layer selection: move/scale/rotate together, group transforms, align/distribute, group/duplicate/delete | ✅ |
 | 9h | Vibrance, Color Balance, Photo Filter, Channel Mixer, Gradient Map; inner shadow, bevel, gradient overlay | ✅ |
 | 9i | New-document size presets: Social, Print, Photo, Screen, Mobile, Ads, Icons; units and resolution; search; recent sizes | ✅ |
+| 9j | Performance: exports, wand, bucket and Color Range draw in the worker; retouch strokes read pixels on demand | ✅ |
 
 ### 9a
 
@@ -251,6 +253,16 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 | Starter design templates (text/shape/photo layouts) | 📋 | Needs content and image licensing |
 | Colour modes other than RGB 8-bit, artboards | 📋 | Not in the engine |
 
+### 9j
+
+| Feature | Status | Notes |
+|---|---|---|
+| Export (all formats), magic wand, paint bucket and Color Range draw the document in the worker | ✅ | ADR-0022; identical pixels to the page path (E2E); page fallback |
+| Color Range draws once per dialog; slider steps only re-test colours | ✅ | |
+| Retouch strokes read the layer (and the "all layers" source) tile by tile | ✅ | Byte-identical to reading everything first (unit tests) |
+| Selection under a layer moved by whole pixels copied, not drawn | ✅ | |
+| Live canvas redraw of adjustment layers/styles above an edited layer | 📋 | Next candidate |
+
 ## Launch readiness (2026-10)
 
 | Check | Status | Notes |
@@ -274,7 +286,7 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 - Scaling a shape also scales its stroke width.
 - Text is point text (manual line breaks, no wrapping). Fonts are limited to common system fonts.
 - Masks follow moves but not scale/rotate of their layer.
-- Exporting, the magic wand and Color Range still draw the full-resolution image on the main thread, so very large documents with several adjustment layers can pause for a few seconds while exporting.
+- Editing a layer that has several adjustment layers or layer styles above it can pause briefly (about 0.1 s on a 24 MP image) when the edit starts, while the canvas redraws them.
 - Starting a retouching stroke on a very large layer (20+ MP) takes a noticeable moment while the layer is read.
 - Fill, gradient and the paint bucket edit inside a pixel layer's own box; they do not grow the layer.
 - Documents are capped at 12,000 px per side and 36 MP (full-resolution export and pixel tools still need one canvas of the whole image).

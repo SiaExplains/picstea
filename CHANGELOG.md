@@ -3,6 +3,17 @@
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.16.1] — 2026-10-18
+
+### Changed
+
+- Large images no longer freeze the page while you export, use the Magic Wand or Paint Bucket,
+  or move the Color Range slider. The work now happens in the background, and the result is
+  exactly the same as before. On a 24-megapixel image, exporting a PSD used to stop the page for
+  about two seconds; now the page stays responsive.
+- Retouching tools (Clone Stamp, Healing Brush, Dodge, Burn, Sponge, Blur, Sharpen and Smudge)
+  start instantly on large layers, because they read only the part of the image you paint over.
+
 ## [0.16.0] — 2026-10-17
 
 ### Added

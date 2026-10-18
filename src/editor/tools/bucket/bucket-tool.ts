@@ -2,7 +2,7 @@ import { setRasterContent } from "../../core/commands";
 import { combineSelections } from "../../selection/ops";
 import { findLayer } from "../../core/document/queries";
 import type { SelectionMask } from "../../selection/mask";
-import { renderBitmap } from "../../formats/layer-render";
+import { floodDocument } from "../../workers/offthread";
 import { paintRasterLayer, releaseSurface, selectionFill } from "../../pixels/layer-pixels";
 import { editablePixelLayer } from "../pixel-target";
 import type { Tool, ToolContext, ToolPointer } from "../tool";
@@ -29,20 +29,12 @@ export class BucketTool implements Tool {
     const documentId = doc.id;
     const fill = colors.foreground;
     const sampled = settings.sampleAll ? doc.layers : [{ ...layer, visible: true }];
-    void renderBitmap(ctx, doc, sampled)
-      .then((bitmap) =>
-        ctx.jobs.run(
-          "floodBitmap",
-          {
-            bitmap,
-            x: pointer.doc.x,
-            y: pointer.doc.y,
-            tolerance: settings.tolerance,
-            contiguous: settings.contiguous,
-          },
-          [bitmap],
-        ),
-      )
+    void floodDocument(ctx, doc, sampled, {
+      x: pointer.doc.x,
+      y: pointer.doc.y,
+      tolerance: settings.tolerance,
+      contiguous: settings.contiguous,
+    })
       .then((flooded) => this.fill(ctx, documentId, layer.id, flooded, fill))
       .catch(() => ctx.notify("error", "The fill did not work. Try again."));
   }

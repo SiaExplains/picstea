@@ -94,6 +94,11 @@ The legal pages are not in the sitemap by design. Draft blog posts return 404 in
 1. Move full-resolution adjustment compositing for export, the wand and Color Range into the worker (already listed in FEATURE_STATUS).
 2. Read retouch strokes lazily in tiles around the brush instead of the whole layer.
 
+**Update 2026-10-18 (Gate 9j, ADR-0022):** both are done.
+- PSD export and the magic wand: no long tasks.
+- Color Range: from 6 long tasks (worst 1.0 s) to one of 71 ms.
+- Healing: the stroke start no longer stalls. One 127 ms frame remains: the canvas redraws the adjustment layers above the healed layer, which is a separate live-rendering item.
+
 ## Security hardening
 
 | # | Area | Result |

@@ -153,6 +153,19 @@ await page.mouse.click(cx - 300, cy - 200);
 await frame();
 await stats("magic wand click", t);
 await page.keyboard.press(`${mod}+d`);
+// Color Range (Gate 9j): open, three slider steps, cancel.
+await page.getByRole("menuitem", { name: "Select", exact: true }).click();
+t = Date.now();
+await reset();
+await page.getByRole("menuitem", { name: "Color Range…" }).click();
+const range = page.getByRole("dialog", { name: "Color Range" });
+await range.getByText(/px area|Nothing matches/).waitFor();
+for (const value of ["20", "80", "140"]) {
+  await range.getByLabel(/Fuzziness/).fill(value);
+  await range.getByText(/px area|Nothing matches/).waitFor();
+}
+await stats("Color Range open + 3 steps", t);
+await range.getByRole("button", { name: "Cancel" }).click();
 // Post-9b workload (launch-readiness pass): 9h styles and adjustments, retouching,
 // multi-layer and smart object transforms.
 await page.keyboard.press("v");

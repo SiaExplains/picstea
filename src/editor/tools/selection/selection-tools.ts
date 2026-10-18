@@ -3,7 +3,7 @@ import { activeLayer } from "../../core/document/queries";
 import type { EditorDocument } from "../../core/document/types";
 import type { SnapLine } from "../../core/geometry/snapping";
 import type { Point } from "../../core/viewport/viewport";
-import { renderBitmap } from "../../formats/layer-render";
+import { floodDocument } from "../../workers/offthread";
 import type { Overlay } from "../../rendering/overlay";
 import { coverageAt, type SelectionMask } from "../../selection/mask";
 import {
@@ -386,21 +386,13 @@ export class MagicWandTool extends SelectionToolBase {
     const layer = settings.sampleAll ? undefined : activeLayer(doc);
     const documentId = doc.id;
     const sampled = layer ? [{ ...layer, visible: true }] : doc.layers;
-    // Draw here (GPU); read the pixels back and flood fill in the worker (ADR-0012).
-    void renderBitmap(ctx, doc, sampled)
-      .then((bitmap) =>
-        ctx.jobs.run(
-          "floodBitmap",
-          {
-            bitmap,
-            x: pointer.doc.x,
-            y: pointer.doc.y,
-            tolerance: settings.tolerance,
-            contiguous: settings.contiguous,
-          },
-          [bitmap],
-        ),
-      )
+    // Drawn and flood filled in the worker when it can (ADR-0022).
+    void floodDocument(ctx, doc, sampled, {
+      x: pointer.doc.x,
+      y: pointer.doc.y,
+      tolerance: settings.tolerance,
+      contiguous: settings.contiguous,
+    })
       .then((region) => {
         // Ignore the result if another document is active by now.
         if (this.document(ctx)?.id !== documentId) return;

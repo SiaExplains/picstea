@@ -2,6 +2,8 @@ import { cloneEffect } from "./effects";
 import {
   CoverageStroke,
   isEmptyRect,
+  shiftRect,
+  type PixelPrepare,
   type PixelEffect,
   type PixelRect,
   type StrokeOptions,
@@ -96,8 +98,13 @@ export class HealStroke extends CoverageStroke {
     private readonly dx: number,
     private readonly dy: number,
     private readonly inside: Uint8Array | null = null,
+    /** For a lazily read `source` (and `inside`). */
+    private readonly prepareSource?: PixelPrepare,
   ) {
-    super(options, cloneEffect(source, options.width, options.height, dx, dy, inside));
+    super(
+      options,
+      cloneEffect(source, options.width, options.height, dx, dy, inside, prepareSource),
+    );
   }
 
   private sourceOk(sx: number, sy: number): boolean {
@@ -118,6 +125,8 @@ export class HealStroke extends CoverageStroke {
       y1: Math.min(height, touched.y1 + HEAL_MARGIN),
     };
     if (isEmptyRect(rect)) return null;
+    this.options.prepare?.(rect);
+    this.prepareSource?.(shiftRect(rect, this.dx, this.dy));
     const rw = rect.x1 - rect.x0;
     const rh = rect.y1 - rect.y0;
     const correction = new Float32Array(rw * rh * 4);

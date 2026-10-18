@@ -23,8 +23,20 @@ export class SmudgeStroke implements PixelStroke {
   constructor(private readonly options: StrokeOptions) {
     const { width, height, base } = options;
     if (base.length !== width * height * 4) throw new RangeError("Pixel data does not match.");
-    this.out = new Uint8ClampedArray(base);
+    this.out = options.prepare ? new Uint8ClampedArray(base.length) : new Uint8ClampedArray(base);
     this.reach = Math.max(1, Math.ceil(options.radius));
+  }
+
+  /** Smudge reads what it has already written: areas are copied from `base` as they load. */
+  private load(rect: PixelRect): void {
+    const { prepare, base, width } = this.options;
+    if (!prepare) return;
+    for (const r of prepare(rect)) {
+      for (let y = r.y0; y < r.y1; y++) {
+        const from = (y * width + r.x0) * 4;
+        this.out.set(base.subarray(from, (y * width + r.x1) * 4), from);
+      }
+    }
   }
 
   dab(p: Point): void {
@@ -34,6 +46,8 @@ export class SmudgeStroke implements PixelStroke {
     const cx = Math.round(p.x - 0.5);
     const cy = Math.round(p.y - 0.5);
     const out = this.out;
+    // The area reported as changed (dab bounds) covers every pixel the dab reads or writes.
+    this.load(dabBounds(p, R, width, height));
     if (!this.carried) {
       // Pick up the colour under the tip where the stroke starts.
       this.carried = new Float32Array(side * side * 4);

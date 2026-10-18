@@ -1,4 +1,8 @@
+import type { EditorDocument, Layer } from "../core/document/types";
 import { FormatError } from "../formats/binary/bytes";
+import { exportAs, type ExportRequest } from "../formats/export/document-export";
+import { ExportError } from "../formats/export/raster-export";
+import { renderRgba } from "../formats/layer-render";
 import { bitmapPixels, resolveDraft, type PsdDraft } from "../formats/psd/psd-draft";
 import type { PsdFile } from "../formats/psd/psd-model";
 import { readPsd, type PsdReadResult } from "../formats/psd/psd-read";
@@ -10,6 +14,7 @@ import { histogram } from "../adjustments/tone";
 import type { ToneChannel } from "../core/document/types";
 import { colorRange, floodRegion, type Rgba, type RgbaPixels } from "../selection/flood";
 import type { SelectionMask } from "../selection/mask";
+import { workerPixelEnv, type JobBitmaps } from "./render-env";
 
 /**
  * CPU-heavy, pure jobs that can run in a Web Worker (ADR-0012). Inputs and outputs are plain
@@ -55,6 +60,60 @@ export interface JobTypes {
     input: { pixels: RgbaPixels; channel: ToneChannel };
     output: Uint32Array;
   };
+  /** Export the document in any format, drawing it here (ADR-0022). */
+  exportDocument: {
+    input: { doc: EditorDocument; request: ExportRequest; bitmaps: JobBitmaps };
+    output: { bytes: Uint8Array; mime: string; warnings: readonly string[] };
+  };
+  /** Flood fill (magic wand, paint bucket) on `layers` drawn as the document, drawn here. */
+  floodDocument: {
+    input: {
+      doc: EditorDocument;
+      layers: readonly Layer[];
+      bitmaps: JobBitmaps;
+      x: number;
+      y: number;
+      tolerance: number;
+      contiguous: boolean;
+    };
+    output: SelectionMask;
+  };
+  /**
+   * Color Range on the drawn document. The drawing is kept under `key`, so later calls with the
+   * same key (slider steps) send only the colour and fuzziness.
+   */
+  colorRangeDocument: {
+    input: {
+      key: string;
+      source: { doc: EditorDocument; layers: readonly Layer[]; bitmaps: JobBitmaps } | null;
+      color: Rgba;
+      fuzziness: number;
+    };
+    output: SelectionMask;
+  };
+  /** Forget the drawing Color Range kept. */
+  colorRangeRelease: { input: null; output: null };
+}
+
+/** Raised when Color Range's kept drawing is gone (another key, or a new worker). */
+export class CacheMissError extends Error {
+  override name = "CacheMissError";
+}
+
+let colorRangeSource: { key: string; pixels: RgbaPixels } | null = null;
+
+/** The document (or `layers` in its place) flattened in this thread. */
+function drawDocument(
+  doc: EditorDocument,
+  layers: readonly Layer[],
+  bitmaps: JobBitmaps,
+): RgbaPixels {
+  const env = workerPixelEnv(doc, bitmaps);
+  try {
+    return { width: doc.width, height: doc.height, data: renderRgba(env, doc, layers) };
+  } finally {
+    env.dispose();
+  }
 }
 
 export type JobName = keyof JobTypes;
@@ -80,6 +139,29 @@ export const JOBS: {
     return { ...out, data: blendByCoverage(pixels.data, out.data, coverage) };
   },
   histogram: ({ pixels, channel }) => histogram(pixels.data, channel),
+  exportDocument: async ({ doc, request, bitmaps }) => {
+    const env = workerPixelEnv(doc, bitmaps);
+    try {
+      const { blob, warnings } = await exportAs(env, doc, request);
+      return { bytes: new Uint8Array(await blob.arrayBuffer()), mime: blob.type, warnings };
+    } finally {
+      env.dispose();
+    }
+  },
+  floodDocument: ({ doc, layers, bitmaps, x, y, tolerance, contiguous }) =>
+    floodRegion(drawDocument(doc, layers, bitmaps), x, y, tolerance, contiguous),
+  colorRangeDocument: ({ key, source, color, fuzziness }) => {
+    if (source) {
+      colorRangeSource = { key, pixels: drawDocument(source.doc, source.layers, source.bitmaps) };
+    } else if (colorRangeSource?.key !== key) {
+      throw new CacheMissError("Color Range needs the image again.");
+    }
+    return colorRange(colorRangeSource.pixels, color, fuzziness);
+  },
+  colorRangeRelease: () => {
+    colorRangeSource = null;
+    return null;
+  },
 };
 
 /** Buffers in a job's output to transfer back instead of copying. */
@@ -92,7 +174,13 @@ export function outputTransfer(name: JobName, output: unknown): Transferable[] {
     case "flood":
     case "floodBitmap":
     case "colorRange":
+    case "floodDocument":
+    case "colorRangeDocument":
       return [(output as SelectionMask).data.buffer];
+    case "exportDocument":
+      return [(output as JobOutput<"exportDocument">).bytes.buffer];
+    case "colorRangeRelease":
+      return [];
     case "filter":
       return [(output as RgbaPixels).data.buffer];
     case "histogram":
@@ -135,6 +223,7 @@ export const toJobError = (error: unknown): JobError => ({
 
 export function fromJobError(error: JobError): Error {
   if (error.name === "FormatError") return new FormatError(error.message);
+  if (error.name === "ExportError") return new ExportError(error.message);
   const e = new Error(error.message);
   e.name = error.name;
   return e;

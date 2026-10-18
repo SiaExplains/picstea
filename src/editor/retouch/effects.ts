@@ -1,4 +1,4 @@
-import type { PixelEffect } from "./stroke";
+import { shiftRect, type PixelEffect, type PixelPrepare } from "./stroke";
 
 /** Rec. 601 lightness of straight RGB bytes, 0…1. */
 const lightness = (r: number, g: number, b: number) => (0.299 * r + 0.587 * g + 0.114 * b) / 255;
@@ -71,6 +71,8 @@ export class BlurTiles {
     private readonly width: number,
     private readonly height: number,
     readonly boxRadius: number,
+    /** For lazily read `base`. */
+    private readonly prepare?: PixelPrepare,
   ) {
     this.tilesX = Math.ceil(width / TILE);
   }
@@ -99,6 +101,7 @@ export class BlurTiles {
     const y0 = Math.max(0, ty * TILE - margin);
     const x1 = Math.min(width, (tx + 1) * TILE + margin);
     const y1 = Math.min(height, (ty + 1) * TILE + margin);
+    this.prepare?.({ x0, y0, x1, y1 });
     const w = x1 - x0;
     const h = y1 - y0;
     const a = new Float32Array(w * h * 4);
@@ -206,8 +209,11 @@ export function cloneEffect(
   dx: number,
   dy: number,
   inside: Uint8Array | null = null,
+  /** For a lazily read `source` (and `inside`). */
+  prepareSource?: PixelPrepare,
 ): PixelEffect {
   return {
+    prepare: prepareSource ? (rect) => void prepareSource(shiftRect(rect, dx, dy)) : undefined,
     target(x, y, t) {
       const sx = x + dx;
       const sy = y + dy;

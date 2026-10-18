@@ -17,10 +17,13 @@ export interface JobRunner {
     transfer?: Transferable[],
   ): Promise<JobOutput<K>>;
   dispose(): void;
+  /** True while jobs run in a worker, so drawing jobs (ADR-0022) are worth sending there. */
+  readonly offThread?: boolean;
 }
 
 /** Runs jobs inline. Used in tests and when workers are unavailable. */
 export const mainThreadRunner: JobRunner = {
+  offThread: false,
   async run(name, input) {
     return (await JOBS[name](input as never)) as never;
   },
@@ -79,6 +82,9 @@ export function workerRunner(create: () => WorkerLike): JobRunner {
   };
 
   return {
+    get offThread() {
+      return !broken;
+    },
     run(name, input, transfer = []) {
       const w = ensure();
       if (!w) return mainThreadRunner.run(name, input);

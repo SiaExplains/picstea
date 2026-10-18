@@ -257,6 +257,19 @@ export function layerSelectionCoverage(
 ): Uint8Array {
   const width = Math.max(1, Math.round(layer.width * scale));
   const height = Math.max(1, Math.round(layer.height * scale));
+  const t = layer.transform;
+  if (
+    scale === 1 &&
+    t.rotation === 0 &&
+    t.scaleX === 1 &&
+    t.scaleY === 1 &&
+    Number.isInteger(t.x) &&
+    Number.isInteger(t.y)
+  ) {
+    // A layer that is only moved by whole pixels: copy the rows instead of drawing (same result,
+    // without reading a full-size canvas back).
+    return translatedCoverage(selection, width, height, t.x, t.y);
+  }
   const toLocal = invertMatrix(fromTransform(layer.transform));
   const coverage = new Uint8Array(width * height);
   if (!toLocal) return coverage;
@@ -272,6 +285,25 @@ export function layerSelectionCoverage(
   } finally {
     releaseSurface(surface);
   }
+}
+
+/** The selection under a `width × height` layer placed at whole-pixel offset (x, y). */
+export function translatedCoverage(
+  selection: SelectionMask,
+  width: number,
+  height: number,
+  x: number,
+  y: number,
+): Uint8Array {
+  const coverage = new Uint8Array(width * height);
+  const x0 = Math.max(0, -x);
+  const x1 = Math.min(width, selection.width - x);
+  if (x1 <= x0) return coverage;
+  for (let ly = Math.max(0, -y); ly < Math.min(height, selection.height - y); ly++) {
+    const from = (ly + y) * selection.width + x;
+    coverage.set(selection.data.subarray(from + x0, from + x1), ly * width + x0);
+  }
+  return coverage;
 }
 
 /**
@@ -320,45 +352,5 @@ export function readPixelsBelow(
     return { width, height, data: ctx.getImageData(0, 0, width, height).data };
   } finally {
     releaseSurface(surface);
-  }
-}
-
-/**
- * The visible document resampled into a pixel layer's own space (`layer.width × layer.height`),
- * so tools working on the layer can sample "all layers", with `inside` (0…255) saying which
- * layer pixels fall on the canvas at all. Null while a bitmap is still decoding.
- */
-export function readCompositeInLayerSpace(
-  env: PixelEnv,
-  doc: EditorDocument,
-  layer: RasterLayer,
-): { pixels: RgbaPixels; inside: Uint8Array } | null {
-  const toLocal = invertMatrix(fromTransform(layer.transform));
-  if (!toLocal) return null;
-  const composite = env.createSurface(doc.width, doc.height);
-  const local = env.createSurface(layer.width, layer.height);
-  try {
-    const result = compositeDocument(context2d(composite) as CompositeContext, doc, env.assets, {
-      sizer: env.sizer,
-      createSurface: env.createSurface,
-    });
-    if (result.pendingAssetIds.length > 0) return null;
-    const ctx = context2d(local, true);
-    ctx.setTransform(...toLocal);
-    ctx.fillStyle = "#000";
-    ctx.fillRect(0, 0, doc.width, doc.height);
-    const canvasArea = ctx.getImageData(0, 0, layer.width, layer.height).data;
-    const inside = new Uint8Array(layer.width * layer.height);
-    for (let i = 0; i < inside.length; i++) inside[i] = canvasArea[i * 4 + 3];
-    ctx.save();
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.clearRect(0, 0, layer.width, layer.height);
-    ctx.restore();
-    ctx.drawImage(composite, 0, 0);
-    const image = ctx.getImageData(0, 0, layer.width, layer.height);
-    return { pixels: { width: layer.width, height: layer.height, data: image.data }, inside };
-  } finally {
-    releaseSurface(composite);
-    releaseSurface(local);
   }
 }
