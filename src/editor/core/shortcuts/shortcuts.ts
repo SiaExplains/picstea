@@ -53,6 +53,18 @@ export type ActionId =
   | "tool.tone"
   | "tool.focus"
   | "tool.bucket"
+  | "tool.next.marquee"
+  | "tool.next.lasso"
+  | "tool.next.eyedropper"
+  | "tool.next.heal"
+  | "tool.next.brush"
+  | "tool.next.eraser"
+  | "tool.next.gradient"
+  | "tool.next.focus"
+  | "tool.next.tone"
+  | "tool.next.pen"
+  | "tool.next.pathSelect"
+  | "tool.next.shape"
   | "tool.gradient"
   | "tool.shape"
   | "tool.pen"
@@ -125,7 +137,20 @@ export const DEFAULT_KEYMAP: Readonly<Record<ActionId, readonly string[]>> = {
   "tool.heal": ["J"],
   "tool.tone": ["O"],
   "tool.focus": ["R"],
-  "tool.bucket": ["Shift+G"],
+  // The bucket shares G with the gradient (ADR-0027): Shift+G cycles to it.
+  "tool.bucket": [],
+  "tool.next.marquee": ["Shift+M"],
+  "tool.next.lasso": ["Shift+L"],
+  "tool.next.eyedropper": ["Shift+I"],
+  "tool.next.heal": ["Shift+J"],
+  "tool.next.brush": ["Shift+B"],
+  "tool.next.eraser": ["Shift+E"],
+  "tool.next.gradient": ["Shift+G"],
+  "tool.next.focus": ["Shift+R"],
+  "tool.next.tone": ["Shift+O"],
+  "tool.next.pen": ["Shift+P"],
+  "tool.next.pathSelect": ["Shift+A"],
+  "tool.next.shape": ["Shift+U"],
   "tool.gradient": ["G"],
   "tool.shape": ["U"],
   "tool.pen": ["P"],

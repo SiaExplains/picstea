@@ -154,6 +154,7 @@ import {
   readPixelsBelow,
   paintRasterLayer,
   readPixels,
+  samplePixel,
   releaseSurface,
   selectionFill,
   selectionSurface,
@@ -864,6 +865,12 @@ export class EditorController {
     for (let i = 0; i < alpha.length; i++) alpha[i] = pixels.data[i * 4 + 3];
     const mask = createSelection(doc.width, doc.height, alpha);
     this.applySelection(mask.bounds ? mask : null, "Select Pixels");
+  }
+
+  /** The visible colour at a document point (Color Sampler); null while a layer is loading. */
+  sampleColor(x: number, y: number): readonly [number, number, number, number] | null {
+    const doc = this.store.getSession()?.document;
+    return doc ? samplePixel(this, doc, x, y) : null;
   }
 
   /** Colour-label the selected layers (null clears it). */

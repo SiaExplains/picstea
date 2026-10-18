@@ -17,10 +17,11 @@ import {
   type ToolId,
   type ToolSettings,
 } from "./tool-settings";
-import { DEFAULT_VIEWPORT, type Viewport } from "./viewport/viewport";
+import { DEFAULT_VIEWPORT, type Point, type Viewport } from "./viewport/viewport";
 import { collapseSince, dropOldest, jumpTo } from "./history/history";
 import { findLayerDeep, flattenTopFirst } from "./document/tree";
 import { setGroupExpanded } from "./commands/group-commands";
+import { groupOfTool } from "./tool-groups";
 
 export type { ToolId } from "./tool-settings";
 
@@ -51,7 +52,18 @@ export interface EditorState {
   readonly colors: Colors;
   /** Whether painting tools edit the active layer's pixels or its mask. */
   readonly editTarget: EditTarget;
+  /** Color Sampler points and the Ruler line (document space). UI state, never saved. */
+  readonly measure: Measure;
+  /** The last tool used in each toolbar group (ADR-0027), by group id. */
+  readonly toolMemory: Readonly<Record<string, ToolId>>;
 }
+
+export interface Measure {
+  readonly samplers: readonly Point[];
+  readonly ruler: { readonly from: Point; readonly to: Point } | null;
+}
+
+export const MAX_COLOR_SAMPLERS = 4;
 
 export type EditTarget = "content" | "mask";
 
@@ -90,6 +102,8 @@ export class EditorStore {
     toolSettings: DEFAULT_TOOL_SETTINGS,
     colors: DEFAULT_COLORS,
     editTarget: "content",
+    measure: { samplers: [], ruler: null },
+    toolMemory: {},
   };
   private readonly listeners = new Set<Listener>();
 
@@ -144,7 +158,12 @@ export class EditorStore {
   }
 
   setActiveTool(tool: ToolId): void {
-    if (this.state.activeTool !== tool) this.setState({ ...this.state, activeTool: tool });
+    if (this.state.activeTool === tool) return;
+    const group = groupOfTool(tool);
+    const toolMemory = group
+      ? { ...this.state.toolMemory, [group.id]: tool }
+      : this.state.toolMemory;
+    this.setState({ ...this.state, activeTool: tool, toolMemory });
   }
 
   updateToolSettings<K extends keyof ToolSettings>(tool: K, patch: Partial<ToolSettings[K]>): void {
@@ -365,6 +384,10 @@ export class EditorStore {
   }
 
   /** Paint on the active layer's content or on its mask. */
+  setMeasure(patch: Partial<Measure>): void {
+    this.setState({ ...this.state, measure: { ...this.state.measure, ...patch } });
+  }
+
   setEditTarget(target: EditTarget): void {
     if (this.state.editTarget !== target) this.setState({ ...this.state, editTarget: target });
   }

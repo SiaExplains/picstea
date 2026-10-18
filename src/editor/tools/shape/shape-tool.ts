@@ -1,5 +1,6 @@
 import { addLayer } from "../../core/commands";
-import { createShapeLayer, nextLayerName } from "../../core/document/factory";
+import { createPathShapeLayer, createShapeLayer, nextLayerName } from "../../core/document/factory";
+import { corner, type VectorPath } from "../../core/path/path";
 import type { ShapeKind, ShapeLayer } from "../../core/document/types";
 import { constrainDrag, rectFromPoints } from "../../core/geometry/rect";
 import type { ShapeSettings } from "../../core/tool-settings";
@@ -9,12 +10,28 @@ import type { SnapLine } from "../../core/geometry/snapping";
 import type { Overlay } from "../../rendering/overlay";
 import { snappedPointer, type Tool, type ToolContext, type ToolPointer } from "../tool";
 
-const SHAPE_NAMES: Record<ShapeKind, string> = {
+const SHAPE_NAMES: Record<ShapeKind | "polygon", string> = {
   rect: "Rectangle",
   ellipse: "Ellipse",
   line: "Line",
   path: "Shape",
+  polygon: "Polygon",
 };
+
+/** A regular polygon inscribed in a box (first corner at the top), as a closed path. */
+export function polygonPath(
+  box: { x: number; y: number; width: number; height: number },
+  sides: number,
+): VectorPath {
+  const n = Math.max(3, Math.min(64, Math.round(sides)));
+  const cx = box.x + box.width / 2;
+  const cy = box.y + box.height / 2;
+  const anchors = Array.from({ length: n }, (_, i) => {
+    const a = -Math.PI / 2 + (i * 2 * Math.PI) / n;
+    return corner(cx + (Math.cos(a) * box.width) / 2, cy + (Math.sin(a) * box.height) / 2);
+  });
+  return { subpaths: [{ closed: true, anchors }] };
+}
 
 /** Smallest drag (document px) that creates a shape; anything less counts as a click. */
 const MIN_DRAG = 2;
@@ -63,6 +80,9 @@ export function shapeFromDrag(
   const from = options.fromCenter ? { x: 2 * start.x - to.x, y: 2 * start.y - to.y } : start;
   const rect = rectFromPoints(from, to);
   if (rect.width < MIN_DRAG || rect.height < MIN_DRAG) return null;
+  if (kind === "polygon") {
+    return createPathShapeLayer({ path: polygonPath(rect, settings.sides), fill, stroke, name });
+  }
   return createShapeLayer({
     shape: kind,
     name,
@@ -76,7 +96,10 @@ export function shapeFromDrag(
   });
 }
 
-/** Rectangle / ellipse / line. Shift: square, circle or 45° line. Alt: draw from the centre. */
+/**
+ * Rectangle (rounded with a corner radius), ellipse, polygon and line. Shift: square, circle,
+ * even polygon or 45° line. Alt: draw from the centre.
+ */
 export class ShapeTool implements Tool {
   readonly id = "shape";
   private start: Point | null = null;
@@ -115,7 +138,8 @@ export class ShapeTool implements Tool {
     const session = ctx.store.getSession();
     if (!draft || !session) return;
     const shape = { ...draft, name: nextLayerName(session.document, draft.name) };
-    const result = ctx.store.dispatch(addLayer(shape, `New ${SHAPE_NAMES[shape.shape]}`));
+    const kind = ctx.store.getState().toolSettings.shape.kind;
+    const result = ctx.store.dispatch(addLayer(shape, `New ${SHAPE_NAMES[kind]}`));
     if (!result.ok) ctx.notify("error", result.error);
   }
 

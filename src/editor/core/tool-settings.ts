@@ -25,7 +25,19 @@ export type ToolId =
   | "path-select"
   | "text"
   | "hand"
-  | "zoom";
+  | "zoom"
+  // Photoshop-style group members (ADR-0027).
+  | "spot-heal"
+  | "red-eye"
+  | "bg-eraser"
+  | "magic-eraser"
+  | "color-replace"
+  | "color-sampler"
+  | "ruler"
+  | "path-move"
+  | "anchor-add"
+  | "anchor-delete"
+  | "anchor-convert";
 
 export interface BrushSettings {
   /** Diameter in document pixels. */
@@ -37,8 +49,10 @@ export interface BrushSettings {
 }
 
 export interface ShapeSettings {
-  /** Paths come from the Pen tool, not the Shape tool. */
-  readonly kind: Exclude<ShapeKind, "path">;
+  /** Paths come from the Pen tool; a polygon is drawn as an editable path shape. */
+  readonly kind: Exclude<ShapeKind, "path"> | "polygon";
+  /** Polygon corners, 3 … 64. */
+  readonly sides: number;
   readonly fillEnabled: boolean;
   readonly fill: string;
   readonly strokeEnabled: boolean;
@@ -116,6 +130,25 @@ export interface FocusSettings {
   readonly strength: number;
 }
 
+/** Spot Healing Brush: heals from the surroundings it picks itself. */
+export interface TipSettings {
+  readonly size: number;
+  readonly hardness: number;
+}
+
+/** Background Eraser and Color Replacement: act on colours like the one under the first dab. */
+export interface SampledBrushSettings extends TipSettings {
+  /** 0 … 255, largest per-channel difference from the sampled colour. */
+  readonly tolerance: number;
+}
+
+export interface RedEyeSettings {
+  /** Pupil brush size in document pixels. */
+  readonly size: number;
+  /** How dark the repaired pupil becomes, 0 … 1. */
+  readonly darken: number;
+}
+
 export interface EyedropperSettings {
   readonly sampleAll: boolean;
 }
@@ -140,6 +173,11 @@ export interface ToolSettings {
   readonly pen: PenSettings;
   /** Text colour comes from the foreground colour. */
   readonly text: Omit<TextStyle, "color">;
+  readonly "spot-heal": TipSettings;
+  readonly "red-eye": RedEyeSettings;
+  readonly "bg-eraser": SampledBrushSettings;
+  readonly "color-replace": SampledBrushSettings;
+  readonly "magic-eraser": FloodSettings;
 }
 
 export interface Colors {
@@ -183,6 +221,7 @@ export const DEFAULT_TOOL_SETTINGS: ToolSettings = {
     stroke: "#000000",
     strokeWidth: 4,
     cornerRadius: 0,
+    sides: 6,
   },
   pen: { mode: "shape" },
   text: {
@@ -194,6 +233,11 @@ export const DEFAULT_TOOL_SETTINGS: ToolSettings = {
     lineHeight: DEFAULT_TEXT_STYLE.lineHeight,
     letterSpacing: DEFAULT_TEXT_STYLE.letterSpacing,
   },
+  "spot-heal": { size: 30, hardness: 0.5 },
+  "red-eye": { size: 30, darken: 0.5 },
+  "bg-eraser": { size: 40, hardness: 0.8, tolerance: 40 },
+  "color-replace": { size: 30, hardness: 0.6, tolerance: 60 },
+  "magic-eraser": { tolerance: 32, contiguous: true, sampleAll: false },
 };
 
 /** Brush size steps for [ and ], growing faster at larger sizes like professional editors. */

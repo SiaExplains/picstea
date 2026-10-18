@@ -18,12 +18,17 @@ import type { CompositePreview } from "../../rendering/compositing/compositor";
 import type { Overlay } from "../../rendering/overlay";
 import {
   BlurTiles,
+  backgroundEraseEffect,
   blurRadiusFor,
   cloneEffect,
+  colorReplaceEffect,
   focusEffect,
+  redEyeEffect,
   spongeEffect,
   toneEffect,
 } from "../../retouch/effects";
+import { chooseSpotOffset } from "../../retouch/spot";
+import { hexToRgb } from "../../core/color";
 import { HealStroke } from "../../retouch/heal";
 import { SmudgeStroke } from "../../retouch/smudge";
 import {
@@ -37,13 +42,18 @@ import { StrokeInterpolator } from "../brush/stroke-interpolator";
 import { editablePixelLayer } from "../pixel-target";
 import type { Tool, ToolContext, ToolKey, ToolPointer } from "../tool";
 
-export type RetouchToolId = "clone" | "heal" | "tone" | "focus";
+export type RetouchToolId =
+  "clone" | "heal" | "tone" | "focus" | "spot-heal" | "red-eye" | "bg-eraser" | "color-replace";
 
 const TOOL_NAMES: Record<RetouchToolId, string> = {
   clone: "The Clone Stamp",
   heal: "The Healing Brush",
   tone: "The Dodge, Burn and Sponge tool",
   focus: "The Blur, Sharpen and Smudge tool",
+  "spot-heal": "The Spot Healing Brush",
+  "red-eye": "The Red Eye tool",
+  "bg-eraser": "The Background Eraser",
+  "color-replace": "The Color Replacement tool",
 };
 
 interface ActiveStroke {
@@ -119,6 +129,7 @@ export class RetouchTool implements Tool {
     const t = layer.transform;
     const scale = Math.sqrt(Math.abs(t.scaleX * t.scaleY)) || 1;
     const radius = Math.max(0.5, settings.size / 2 / scale);
+    const hardness = "hardness" in settings ? settings.hardness : 0.5;
     const { width, height } = layer;
     const pixels = lazy.pixels;
     const sources = [lazy];
@@ -128,7 +139,7 @@ export class RetouchTool implements Tool {
       base: pixels.data,
       prepare: lazy.prepare,
       radius,
-      hardness: settings.hardness,
+      hardness,
       strength: 1,
       selection: doc.selection ? layerSelectionCoverage(ctx, layer, doc.selection) : null,
     };
@@ -185,6 +196,48 @@ export class RetouchTool implements Tool {
             toneEffect(pixels.data, width, cfg.mode, cfg.range),
           );
           label = cfg.mode === "dodge" ? "Dodge" : "Burn";
+        }
+        break;
+      }
+      case "spot-heal": {
+        const at = applyMatrix(toLocal, pointer.doc);
+        const { dx, dy } = chooseSpotOffset(pixels.data, width, height, at, radius, lazy.prepare);
+        stroke = new HealStroke(options, pixels.data, dx, dy, lazy.inside, lazy.prepare);
+        label = "Spot Healing Brush";
+        break;
+      }
+      case "red-eye": {
+        const cfg = s["red-eye"];
+        stroke = new CoverageStroke(
+          { ...options, hardness: 0.6 },
+          redEyeEffect(pixels.data, width, cfg.darken),
+        );
+        label = "Red Eye";
+        break;
+      }
+      case "bg-eraser":
+      case "color-replace": {
+        const cfg = s[this.id];
+        // The colour under the first dab is what the stroke erases or replaces.
+        const at = applyMatrix(toLocal, pointer.doc);
+        const sx = Math.min(width - 1, Math.max(0, Math.floor(at.x)));
+        const sy = Math.min(height - 1, Math.max(0, Math.floor(at.y)));
+        lazy.prepare?.({ x0: sx, y0: sy, x1: sx + 1, y1: sy + 1 });
+        const i = (sy * width + sx) * 4;
+        const sample = [pixels.data[i], pixels.data[i + 1], pixels.data[i + 2]];
+        if (this.id === "bg-eraser") {
+          stroke = new CoverageStroke(
+            options,
+            backgroundEraseEffect(pixels.data, width, sample, cfg.tolerance),
+          );
+          label = "Background Eraser";
+        } else {
+          const fg = hexToRgb(ctx.store.getState().colors.foreground);
+          stroke = new CoverageStroke(
+            options,
+            colorReplaceEffect(pixels.data, width, sample, cfg.tolerance, fg),
+          );
+          label = "Color Replacement";
         }
         break;
       }

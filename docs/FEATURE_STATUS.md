@@ -137,6 +137,11 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 | Layers right-click menu (styles, select pixels, merge, flatten, rasterize style, colour labels) | ✅ | ADR-0026; Duplicate Into, Convert to Shape/Point Text 📋 |
 | Layer Style dialog (double-click a layer / Blending Options…) | ✅ | Live, one undo step; inner glow, satin, pattern overlay 📋 |
 | Drag layers onto trash / New Layer; resizable, remembered panels | ✅ | `picstea.panelSizes` |
+| Toolbar groups with flyouts (right-click / hold), Shift+key cycling, reset colours (D) button | ✅ | ADR-0027 |
+| Spot Healing, Red Eye, Background / Magic Eraser, Color Replacement | ✅ | ADR-0027 |
+| Color Sampler (4 points), Ruler | ✅ | UI state, not saved |
+| Path Selection, Add / Delete Anchor Point, Convert Point; Rounded Rectangle and Polygon shapes | ✅ | ADR-0027 |
+| Perspective Crop, Vertical Type, Quick/Object Selection, Magnetic Lasso, Content-Aware Move, Patch | 📋 | Later rounds |
 | ads.txt + AdSense verification meta tag | ✅ | Generated from `NEXT_PUBLIC_ADSENSE_CLIENT`; off without it |
 | Analytics | ⏸ | None by decision; category ready |
 

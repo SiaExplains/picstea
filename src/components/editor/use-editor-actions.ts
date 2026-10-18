@@ -15,6 +15,7 @@ import type { AdjustmentType, SmartFilter } from "@/editor/core/document/types";
 import { isTransformable } from "@/editor/core/geometry/layer-geometry";
 import type { ActionId } from "@/editor/core/shortcuts/shortcuts";
 import { DEFAULT_COLORS } from "@/editor/core/tool-settings";
+import { activateMember, nextMember, rememberedTool, TOOL_GROUPS } from "@/editor/core/tool-groups";
 import { openWelcome } from "@/components/welcome/welcome";
 import { PRIVACY_SETTINGS_URL } from "@/lib/consent/consent";
 import type { EditorController } from "@/editor/controller/editor-controller";
@@ -159,6 +160,27 @@ export function useEditorActions(hosts: ActionHosts): Record<UiActionId, UiActio
       enabled: true,
       run: () => controller.store.setActiveTool(id),
     });
+    // A toolbar group's key: the last tool used in it; Shift + key: the next one (ADR-0027).
+    const groupTool = (groupId: string, label: string) => {
+      const group = TOOL_GROUPS.find((g) => g.id === groupId)!;
+      return {
+        label,
+        enabled: true,
+        run: () =>
+          controller.store.setActiveTool(rememberedTool(group, controller.store.getState())),
+      };
+    };
+    const nextTool = (groupId: string, label: string) => {
+      const group = TOOL_GROUPS.find((g) => g.id === groupId)!;
+      return {
+        label,
+        enabled: true,
+        run: () => {
+          const state = controller.store.getState();
+          activateMember(controller.store, nextMember(group, state, rememberedTool(group, state)));
+        },
+      };
+    };
 
     return {
       "file.new": { label: "New…", enabled: true, run: hosts.openNewDocumentDialog },
@@ -590,26 +612,38 @@ export function useEditorActions(hosts: ActionHosts): Record<UiActionId, UiActio
       },
       "tool.move": tool("move", "Move Tool"),
       "tool.transform": { ...tool("move", "Free Transform"), enabled: canTransform },
-      "tool.marquee": tool("marquee", "Marquee Tool"),
-      "tool.lasso": tool("lasso", "Lasso Tool"),
+      "tool.marquee": groupTool("marquee", "Marquee Tool"),
+      "tool.lasso": groupTool("lasso", "Lasso Tool"),
       "tool.wand": tool("wand", "Magic Wand Tool"),
       "tool.crop": tool("crop", "Crop Tool"),
-      "tool.eyedropper": tool("eyedropper", "Eyedropper Tool"),
-      "tool.brush": tool("brush", "Brush Tool"),
+      "tool.eyedropper": groupTool("eyedropper", "Eyedropper Tool"),
+      "tool.brush": groupTool("brush", "Brush Tool"),
       "tool.pencil": tool("pencil", "Pencil Tool"),
-      "tool.eraser": tool("eraser", "Eraser Tool"),
+      "tool.eraser": groupTool("eraser", "Eraser Tool"),
       "tool.clone": tool("clone", "Clone Stamp Tool"),
-      "tool.heal": tool("heal", "Healing Brush Tool"),
-      "tool.tone": tool("tone", "Dodge, Burn and Sponge Tool"),
-      "tool.focus": tool("focus", "Blur, Sharpen and Smudge Tool"),
+      "tool.heal": groupTool("heal", "Healing Brush Tool"),
+      "tool.tone": groupTool("tone", "Dodge, Burn and Sponge Tool"),
+      "tool.focus": groupTool("focus", "Blur, Sharpen and Smudge Tool"),
       "tool.bucket": tool("bucket", "Paint Bucket Tool"),
-      "tool.gradient": tool("gradient", "Gradient Tool"),
-      "tool.shape": tool("shape", "Shape Tool"),
-      "tool.pen": tool("pen", "Pen Tool"),
-      "tool.pathSelect": tool("path-select", "Direct Selection Tool"),
+      "tool.gradient": groupTool("gradient", "Gradient Tool"),
+      "tool.shape": groupTool("shape", "Shape Tool"),
+      "tool.pen": groupTool("pen", "Pen Tool"),
+      "tool.pathSelect": groupTool("path-select", "Path and Direct Selection Tools"),
       "tool.text": tool("text", "Text Tool"),
       "tool.hand": tool("hand", "Hand Tool"),
       "tool.zoom": tool("zoom", "Zoom Tool"),
+      "tool.next.marquee": nextTool("marquee", "Next Marquee Tool"),
+      "tool.next.lasso": nextTool("lasso", "Next Lasso Tool"),
+      "tool.next.eyedropper": nextTool("eyedropper", "Next Eyedropper, Sampler or Ruler"),
+      "tool.next.heal": nextTool("heal", "Next Healing Tool"),
+      "tool.next.brush": nextTool("brush", "Next Brush Tool"),
+      "tool.next.eraser": nextTool("eraser", "Next Eraser Tool"),
+      "tool.next.gradient": nextTool("gradient", "Gradient or Paint Bucket"),
+      "tool.next.focus": nextTool("focus", "Next of Blur, Sharpen, Smudge"),
+      "tool.next.tone": nextTool("tone", "Next of Dodge, Burn, Sponge"),
+      "tool.next.pen": nextTool("pen", "Next Pen Tool"),
+      "tool.next.pathSelect": nextTool("path-select", "Path or Direct Selection"),
+      "tool.next.shape": nextTool("shape", "Next Shape Tool"),
       "colors.swap": {
         label: "Swap Colors",
         enabled: true,
