@@ -104,6 +104,13 @@ At minimum prepare:
 - Imprint / Impressum where applicable
 - Advertising/Sponsorship disclosure
 
+## Google-certified CMP (ADR-0024)
+
+Personalised Google ads in the EEA, UK and Switzerland require a Google-certified CMP using the
+IAB TCF. `NEXT_PUBLIC_ADSENSE_CMP=google` hands ad consent on website pages to Google's
+"Privacy & messaging" CMP; the default `own` keeps Picstea's banner and non-personalised ads.
+Switch only after the European regulations message is published in AdSense.
+
 The exact legal wording should be reviewed by a qualified legal/privacy professional.
 
 This handbook is an engineering specification, not legal advice.

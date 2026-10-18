@@ -3,6 +3,17 @@
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.19.0] — 2026-10-18
+
+### Added
+
+- **Ready for Google AdSense.** The site now serves `/ads.txt` and the AdSense verification tag as
+  soon as a publisher ID is configured, so Google can approve the site without ads running in the
+  editor.
+- **Optional Google consent message.** Setting `NEXT_PUBLIC_ADSENSE_CMP=google` switches ad
+  consent on website pages to Google's certified consent message, which allows personalised ads
+  in Europe. The default is unchanged: Picstea's own banner and non-personalised ads.
+
 ## [0.18.0] — 2026-10-18
 
 ### Added

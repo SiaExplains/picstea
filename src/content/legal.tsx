@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
+import { ADSENSE_CLIENT, ADSENSE_CMP } from "@/lib/ads/adsense";
 
 /**
  * Legal pages (docs/09 "Legal pages"). DRAFTS: they describe what Picstea actually does, but the
@@ -16,6 +17,19 @@ export interface LegalPage {
   readonly finalized: boolean;
   readonly body: () => ReactNode;
 }
+
+/** Ad consent is collected by Google's certified CMP instead of our banner (ADR-0024). */
+const GOOGLE_CMP = !!ADSENSE_CLIENT && ADSENSE_CMP === "google";
+
+const GoogleCmpNote = () =>
+  GOOGLE_CMP ? (
+    <p>
+      Where the law requires it, consent for advertising is collected with Google&apos;s consent
+      message, a Google-certified consent platform using the IAB Transparency and Consent Framework.
+      It lets you accept or refuse personalised ads and choose individual purposes and vendors.
+      &ldquo;Privacy settings&rdquo; at the bottom of every website page opens it again.
+    </p>
+  ) : null;
 
 /** Visible marker for details only the operator can provide. */
 function Todo({ children }: { children: ReactNode }) {
@@ -83,14 +97,16 @@ export const LEGAL: Record<"privacy" | "cookies" | "terms" | "imprint" | "sponso
             If you accept advertising, website pages load Google AdSense from Google Ireland
             Limited, Gordon House, Barrow Street, Dublin 4, Ireland. Google may set cookies or use
             similar technologies and process data such as your IP address to show and measure
-            non-personalised ads. Legal basis: your consent, Art. 6(1)(a) GDPR and § 25(1) TDDDG.
-            You can withdraw consent at any time with &ldquo;Privacy settings&rdquo; at the bottom
-            of every page. See Google&apos;s privacy policy:{" "}
+            {GOOGLE_CMP ? " ads (personalised only if you agree)" : " non-personalised ads"}. Legal
+            basis: your consent, Art. 6(1)(a) GDPR and § 25(1) TDDDG. You can withdraw consent at
+            any time with &ldquo;Privacy settings&rdquo; at the bottom of every page. See
+            Google&apos;s privacy policy:{" "}
             <a href="https://policies.google.com/privacy" rel="noopener noreferrer">
               policies.google.com/privacy
             </a>
             .
           </p>
+          <GoogleCmpNote />
           <h2>Sponsorships</h2>
           <p>
             Picstea&apos;s own sponsorships are plain images and links served from our site. They
@@ -195,14 +211,17 @@ export const LEGAL: Record<"privacy" | "cookies" | "terms" | "imprint" | "sponso
           <p>Picstea currently uses no analytics.</p>
           <h2>Advertising (only with consent)</h2>
           <p>
-            If you accept advertising, Google AdSense is loaded on website pages (never in the
-            editor). Google may set cookies such as <code>__gads</code>, <code>__gpi</code> or{" "}
+            {GOOGLE_CMP
+              ? "Google AdSense is loaded on website pages (never in the editor) to show its consent message, and uses advertising cookies only as your choice allows."
+              : "If you accept advertising, Google AdSense is loaded on website pages (never in the editor)."}{" "}
+            Google may set cookies such as <code>__gads</code>, <code>__gpi</code> or{" "}
             <code>IDE</code> to deliver and measure ads and prevent fraud. See{" "}
             <a href="https://policies.google.com/technologies/ads" rel="noopener noreferrer">
               how Google uses cookies in advertising
             </a>
             . <Todo>verify the current list of Google cookies and durations</Todo>
           </p>
+          <GoogleCmpNote />
         </>
       ),
     },

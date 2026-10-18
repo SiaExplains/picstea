@@ -1,6 +1,11 @@
 "use client";
 
-import { ADSENSE_CLIENT, adsenseVendor } from "../ads/adsense";
+import {
+  ADSENSE_CLIENT,
+  ADSENSE_CMP,
+  adsenseVendor,
+  showGoogleConsentMessage,
+} from "../ads/adsense";
 import { readConsent, writeConsent, type ConsentChoices, type StoredConsent } from "./consent";
 import { VendorLoader, type ConsentVendor } from "./vendors";
 
@@ -9,7 +14,13 @@ import { VendorLoader, type ConsentVendor } from "./vendors";
  * `useSyncExternalStore`; the footer's "Privacy settings" reopens the preferences.
  */
 
-const VENDORS: ConsentVendor[] = ADSENSE_CLIENT ? [adsenseVendor(ADSENSE_CLIENT)] : [];
+/** Google's CMP asks for ad consent itself, so AdSense is not one of our banner's vendors. */
+export const GOOGLE_CMP = !!ADSENSE_CLIENT && ADSENSE_CMP === "google";
+
+const VENDORS: ConsentVendor[] =
+  ADSENSE_CLIENT && !GOOGLE_CMP ? [adsenseVendor(ADSENSE_CLIENT)] : [];
+/** Google mode: the ad code (which carries the CMP) loads once per page, however often asked. */
+let googleAds: Promise<void> | undefined;
 
 export const OPEN_PRIVACY_SETTINGS = "picstea:privacy-settings";
 
@@ -41,6 +52,15 @@ export const consentRuntime = {
 
   /** Load what the stored decision allows (call once after the page hydrates). */
   async start(): Promise<void> {
+    if (GOOGLE_CMP && ADSENSE_CLIENT) {
+      // Google's CMP is delivered by the ad code: load it now; it asks and enforces consent.
+      googleAds ??= adsenseVendor(ADSENSE_CLIENT, "google")
+        .load()
+        .catch(() => {
+          // Blocked (e.g. by an ad blocker): the site keeps working without it.
+        });
+      return googleAds;
+    }
     await loader.apply(consentRuntime.get());
   },
 
@@ -53,6 +73,9 @@ export const consentRuntime = {
   },
 };
 
-export function openPrivacySettings(): void {
+/** Reopen the consent choices; false when Google's CMP owns them but its code is unavailable. */
+export function openPrivacySettings(): boolean {
+  if (GOOGLE_CMP) return showGoogleConsentMessage();
   window.dispatchEvent(new Event(OPEN_PRIVACY_SETTINGS));
+  return true;
 }

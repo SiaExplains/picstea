@@ -1,13 +1,23 @@
 import type { ConsentVendor } from "../consent/vendors";
 
 /**
- * Google AdSense as a consent vendor (docs/08, ADR-0013). Configured only through public build
- * variables; without a valid publisher ID nothing from Google is ever referenced. Ads are
- * requested as non-personalised: personalised ads in the EEA/UK need a Google-certified consent
- * platform (IAB TCF), which Picstea does not use yet.
+ * Google AdSense (docs/08, ADR-0013, ADR-0024). Configured only through public build variables;
+ * without a valid publisher ID nothing from Google is ever referenced.
+ *
+ * Two consent modes (`NEXT_PUBLIC_ADSENSE_CMP`):
+ * - `own` (default): AdSense is a vendor of Picstea's own consent banner, loaded only after
+ *   "Accept", and asks for non-personalised ads (personalised ads in the EEA/UK/CH need a
+ *   Google-certified IAB TCF platform).
+ * - `google`: Google's certified "Privacy & messaging" CMP, delivered by the AdSense code itself,
+ *   asks for consent on website pages; the ad code loads straight away and follows its TCF
+ *   signal. Only correct once the European regulations message is published in AdSense.
  */
 
 const CLIENT_PATTERN = /^ca-pub-\d{16}$/;
+/** Google's certification authority ID for its ads.txt entry (AdSense help: "ads.txt guide"). */
+const GOOGLE_ADS_TXT_CERT = "f08c47fec0942fa0";
+
+export type AdsenseCmp = "own" | "google";
 const SLOT_PATTERN = /^\d{5,20}$/;
 
 export function parseAdsenseClient(value: string | undefined): string | null {
@@ -20,7 +30,17 @@ export function parseAdsenseSlot(value: string | undefined): string | null {
   return v && SLOT_PATTERN.test(v) ? v : null;
 }
 
+export function parseAdsenseCmp(value: string | undefined): AdsenseCmp {
+  return value?.trim().toLowerCase() === "google" ? "google" : "own";
+}
+
+/** The ads.txt body authorising Google to sell this publisher's inventory. */
+export function adsTxt(client: string): string {
+  return `google.com, ${client.replace(/^ca-/, "")}, DIRECT, ${GOOGLE_ADS_TXT_CERT}\n`;
+}
+
 export const ADSENSE_CLIENT = parseAdsenseClient(process.env.NEXT_PUBLIC_ADSENSE_CLIENT);
+export const ADSENSE_CMP = parseAdsenseCmp(process.env.NEXT_PUBLIC_ADSENSE_CMP);
 /** A responsive display ad unit used by every website placement. */
 export const ADSENSE_SLOT = parseAdsenseSlot(process.env.NEXT_PUBLIC_ADSENSE_SLOT);
 
@@ -51,9 +71,25 @@ export const ADSENSE_CSP = {
   img: ["https:"],
 } as const;
 
-type AdsWindow = Window & { adsbygoogle?: unknown[] & { requestNonPersonalizedAds?: number } };
+type AdsWindow = Window & {
+  adsbygoogle?: unknown[] & { requestNonPersonalizedAds?: number };
+  googlefc?: { callbackQueue?: unknown[]; showRevocationMessage?: () => void };
+};
 
-export function adsenseVendor(client: string): ConsentVendor {
+/**
+ * Reopen Google's consent message (google mode). Returns false when Google's code is not
+ * available (blocked or not loaded), so the caller can fall back.
+ */
+export function showGoogleConsentMessage(): boolean {
+  const w = window as AdsWindow;
+  const fc = w.googlefc;
+  if (!fc?.callbackQueue) return false;
+  fc.callbackQueue.push(() => fc.showRevocationMessage?.());
+  return true;
+}
+
+/** In `google` mode personalisation follows Google's CMP; otherwise non-personalised only. */
+export function adsenseVendor(client: string, cmp: AdsenseCmp = "own"): ConsentVendor {
   return {
     id: "google-adsense",
     name: "Google AdSense",
@@ -62,7 +98,7 @@ export function adsenseVendor(client: string): ConsentVendor {
       new Promise<void>((resolve, reject) => {
         const w = window as AdsWindow;
         w.adsbygoogle = w.adsbygoogle ?? [];
-        w.adsbygoogle.requestNonPersonalizedAds = 1;
+        if (cmp === "own") w.adsbygoogle.requestNonPersonalizedAds = 1;
         const script = document.createElement("script");
         script.async = true;
         script.crossOrigin = "anonymous";

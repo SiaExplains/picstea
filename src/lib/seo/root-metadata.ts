@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { ADSENSE_CLIENT } from "../ads/adsense";
 import { SITE } from "./site";
 
 /**
@@ -19,6 +20,8 @@ export const rootMetadata: Metadata = {
     locale: "en_US",
   },
   twitter: { card: "summary" },
+  // AdSense site verification without loading any ad code (the editor home page stays ad-free).
+  ...(ADSENSE_CLIENT ? { other: { "google-adsense-account": ADSENSE_CLIENT } } : {}),
   icons: {
     icon: [
       { url: "/favicon.ico", sizes: "48x48" },
