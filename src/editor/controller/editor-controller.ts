@@ -60,6 +60,7 @@ import { MAX_BATCH_FILES, MAX_BATCH_OUTPUT_BYTES, uniqueEntryName } from "../aut
 import { writeZip, type ZipInput } from "../formats/zip/zip";
 import { EXPORT_FORMATS } from "../formats/export/raster-export";
 import { DEFAULT_SWATCHES, type Swatch } from "../core/swatches";
+import type { RecentSize } from "../core/document/presets";
 import { adjustmentDefinition } from "../adjustments/registry";
 import type {
   Adjustment,
@@ -283,6 +284,8 @@ export class EditorController {
   readonly swatches = new Observable<readonly Swatch[]>(DEFAULT_SWATCHES);
   /** Recorded actions (the UI persists them, ADR-0018). */
   readonly actions = new Observable<readonly Action[]>([]);
+  /** Sizes of recently created documents, most recent first (the UI persists them). */
+  readonly recentSizes = new Observable<readonly RecentSize[]>([]);
   /** The action being recorded into. */
   readonly recording = new Observable<string | null>(null);
   /** The action being played. */
