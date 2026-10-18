@@ -35,6 +35,8 @@ const placements = (ad: Advertisement): readonly Placement[] =>
 
 /** Only https links to other sites, or local paths; nothing else is ever rendered as a link. */
 export function isSafeTarget(url: string): boolean {
+  // Browsers read "/\\host" (and tabs or newlines inside it) as "//host": another site.
+  if (/[\\\s]/.test(url)) return false;
   if (url.startsWith("/") && !url.startsWith("//")) return true;
   try {
     return new URL(url).protocol === "https:";

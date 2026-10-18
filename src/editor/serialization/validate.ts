@@ -8,6 +8,8 @@ import { filterById, parseFilterValues } from "../filters/registry";
 import { anchorCount, parsePath, type VectorPath } from "../core/path/path";
 import {
   BLEND_MODES,
+  LAYER_LABELS,
+  type LayerLabel,
   FONT_FAMILIES,
   type FontFamily,
   type StrokeStyle,
@@ -73,6 +75,13 @@ function isoDate(value: unknown, path: string): string {
   const s = str(value, path, 64);
   if (Number.isNaN(Date.parse(s))) fail(path, "ISO date");
   return s;
+}
+
+function layerLabel(value: unknown, path: string): LayerLabel {
+  if (typeof value !== "string" || !(LAYER_LABELS as readonly string[]).includes(value)) {
+    fail(path, "layer colour label");
+  }
+  return value as LayerLabel;
 }
 
 function blendMode(value: unknown, path: string): BlendMode {
@@ -181,6 +190,7 @@ function layer(value: unknown, path: string, depth: number, budget: Budget): Lay
         })()
       : {}),
     ...(o.clipped !== undefined ? { clipped: bool(o.clipped, `${path}.clipped`) } : {}),
+    ...(o.label !== undefined ? { label: layerLabel(o.label, `${path}.label`) } : {}),
   };
   if (isGroupLayer) {
     if (!Array.isArray(o.children)) fail(`${path}.children`, "array");

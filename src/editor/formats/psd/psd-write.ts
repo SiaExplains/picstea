@@ -78,6 +78,7 @@ interface Record {
   readonly visible: boolean;
   readonly blendKey: string;
   readonly clipping?: boolean;
+  readonly colorLabel?: number;
   readonly channels: readonly Channel[];
   /** Extra tagged blocks (adjustment data, vector masks). */
   readonly blocks?: readonly PsdBlock[];
@@ -131,6 +132,7 @@ function records(nodes: readonly PsdNode[], out: Record[] = []): Record[] {
       rect: EMPTY_RECT,
       opacity: node.opacity,
       clipping: node.clipping,
+      colorLabel: node.colorLabel,
       visible: node.visible,
       blendKey: node.blendKey,
       channels: withMask(emptyChannels(), node.mask),
@@ -166,6 +168,8 @@ function writeRecord(w: ByteWriter, r: Record): void {
   extra.u32(0); // blending ranges
   pascalName(extra, r.name);
   block(extra, "luni", unicodeName(r.name));
+  // Layers-panel colour: a 2-byte index followed by 6 bytes of padding.
+  if (r.colorLabel) block(extra, "lclr", Uint8Array.of(0, r.colorLabel, 0, 0, 0, 0, 0, 0));
   for (const b of r.blocks ?? []) block(extra, b.key, b.data);
   if (r.section) {
     const s = new ByteWriter();

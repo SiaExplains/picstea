@@ -21,6 +21,7 @@ interface DraftBase {
   readonly blendKey: string;
   readonly mask?: DraftMask;
   readonly clipping?: boolean;
+  readonly colorLabel?: number;
   /** Photoshop tagged blocks written as they are (adjustment and vector mask data). */
   readonly blocks?: readonly PsdBlock[];
 }
@@ -100,6 +101,7 @@ export function resolveDraft(draft: PsdDraft): PsdFile {
         blendKey: node.blendKey,
         mask: toMask(node.mask),
         ...(node.clipping ? { clipping: true } : {}),
+        ...(node.colorLabel ? { colorLabel: node.colorLabel } : {}),
       };
       if (node.kind === "group") {
         return { ...base, kind: "group", open: node.open, children: convert(node.children) };

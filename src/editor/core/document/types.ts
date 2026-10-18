@@ -156,6 +156,11 @@ export interface VectorMask {
   readonly linked: boolean;
 }
 
+/** Colour tags for organising the Layers panel (Photoshop's layer colours). */
+export const LAYER_LABELS = ["red", "orange", "yellow", "green", "blue", "violet", "gray"] as const;
+
+export type LayerLabel = (typeof LAYER_LABELS)[number];
+
 export interface BaseLayer {
   readonly id: string;
   readonly name: string;
@@ -173,6 +178,8 @@ export interface BaseLayer {
    * list (the base) has pixels.
    */
   readonly clipped?: boolean;
+  /** Colour tag in the Layers panel; no effect on rendering. */
+  readonly label?: LayerLabel;
 }
 
 /** Bitmap content stored as an immutable asset. */

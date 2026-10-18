@@ -69,7 +69,8 @@ export const DOCS: readonly DocPage[] = [
           </li>
           <li>
             <strong>Properties and Layers</strong> (right) — settings of the active layer and the
-            layer stack.
+            layer stack. Drag the edges between the panels, or the column&apos;s left edge, to
+            resize them; Picstea remembers the sizes in this browser.
           </li>
         </ul>
         <h2>Save and export</h2>
@@ -198,10 +199,24 @@ export const DOCS: readonly DocPage[] = [
         <h2>Effects</h2>
         <p>
           Drop shadow, outer glow, inner shadow, bevel, gradient overlay, outer stroke and colour
-          overlay are in the Properties panel. Layers with effects show an <em>fx</em> badge. The
-          gradient overlay spans the layer&apos;s box (a new pixel layer is as big as the canvas);
-          the bevel is a soft inner bevel made from a highlight and a shadow along the edges.
+          overlay are in the Properties panel, and together in the <strong>Layer Style</strong>{" "}
+          dialog: double-click a layer row (not its name) or choose Layer → Blending Options…. The
+          dialog also sets the blend mode and opacity; OK keeps everything as one undo step, Cancel
+          puts the layer back. Layers with effects show an <em>fx</em> badge. The gradient overlay
+          spans the layer&apos;s box (a new pixel layer is as big as the canvas); the bevel is a
+          soft inner bevel made from a highlight and a shadow along the edges. Layer → Rasterize
+          Layer Style bakes the effects into the pixels.
         </p>
+        <h2>Right-click a layer</h2>
+        <p>
+          Right-click a layer for Blending Options, Select Pixels (a selection from the layer&apos;s
+          transparency), Duplicate, Delete, smart objects, Rasterize, clipping masks,{" "}
+          <strong>Merge Down</strong> (Cmd/Ctrl+E — the layer drawn onto the one below, which keeps
+          its name, opacity and blend mode), <strong>Flatten Image</strong> (every visible layer as
+          one) and a <strong>colour label</strong> to organise the panel. Labels are saved in
+          projects and PSD files.
+        </p>
+        <p>Drag layers onto the trash to delete them, or onto New Layer to duplicate them.</p>
         <h2>Limitations</h2>
         <ul>
           <li>Masks follow a layer when it moves, but not when it is scaled or rotated.</li>

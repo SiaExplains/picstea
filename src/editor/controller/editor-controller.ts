@@ -36,6 +36,12 @@ import {
   setWorkPath,
   convertToSmartObject,
   rasterizeLayer,
+  mergeDown,
+  mergeTarget,
+  flattenImage,
+  rasterizeLayerStyle,
+  setLayerLabel,
+  type BakedPixels,
   replaceSmartContent,
   setSmartFilters,
   type Command,
@@ -68,6 +74,7 @@ import type {
   EditorDocument,
   Guide,
   Layer,
+  LayerLabel,
   SmartFilter,
   SmartObjectLayer,
   ToneChannel,
@@ -153,7 +160,7 @@ import {
   type Surface,
 } from "../pixels/layer-pixels";
 import type { RgbaPixels } from "../selection/flood";
-import { selectionBytes, type SelectionMask } from "../selection/mask";
+import { createSelection, selectionBytes, type SelectionMask } from "../selection/mask";
 import { mainThreadRunner, type JobRunner } from "../workers/job-runner";
 import {
   filterById,
@@ -757,6 +764,112 @@ export class EditorController {
     const asset = this.assets.addBitmap(surface, width, height);
     this.execute(rasterizeLayer(layer.id, { assetId: asset.id, x, y, width, height }));
     this.enforcePixelBudget();
+  }
+
+  /**
+   * Render layers (bottom first) into a new pixel asset covering the document and the layers'
+   * own bounds. Null — with a notice — while a bitmap is still loading or when too large.
+   */
+  private bake(doc: EditorDocument, layers: readonly Layer[]): BakedPixels | null {
+    let x0 = 0;
+    let y0 = 0;
+    let x1 = doc.width;
+    let y1 = doc.height;
+    for (const layer of layers) {
+      if (layer.kind === "group" || layer.kind === "adjustment" || layer.kind === "fill") continue;
+      const b = boundsOf(layerCorners(layer, doc, this.sizer));
+      x0 = Math.min(x0, Math.floor(b.x));
+      y0 = Math.min(y0, Math.floor(b.y));
+      x1 = Math.max(x1, Math.ceil(b.x + b.width));
+      y1 = Math.max(y1, Math.ceil(b.y + b.height));
+    }
+    const width = Math.max(1, x1 - x0);
+    const height = Math.max(1, y1 - y0);
+    if (!checkDimensions(width, height).ok) {
+      this.notify("error", "The result would be too large.");
+      return null;
+    }
+    const surface = this.createSurface(width, height);
+    const result = compositeDocument(
+      context2d(surface) as CompositeContext,
+      { ...doc, layers },
+      this.assets,
+      {
+        sizer: this.sizer,
+        createSurface: this.createSurface,
+        assetVersion: this.assets.getVersion(),
+        space: { x: x0, y: y0, width, height, scale: 1 },
+      },
+    );
+    if (result.pendingAssetIds.length > 0) {
+      releaseSurface(surface);
+      this.notify("info", "A layer is still loading. Try again in a moment.");
+      return null;
+    }
+    const asset = this.assets.addBitmap(surface, width, height);
+    return { assetId: asset.id, x: x0, y: y0, width, height };
+  }
+
+  /** Layer → Merge Down: the active layer drawn onto the one below it. */
+  mergeActiveDown(): void {
+    const doc = this.store.getSession()?.document;
+    const upper = doc ? activeLayer(doc) : undefined;
+    const lower = doc && upper ? mergeTarget(doc, upper.id) : null;
+    if (!doc || !upper || !lower) {
+      this.notify("info", "Select a layer with a pixel, shape or text layer below it.");
+      return;
+    }
+    // The lower layer's own opacity and blend mode stay on the result (as in Photoshop).
+    const base = { ...lower, opacity: 1, blendMode: "normal", visible: true, clipped: undefined };
+    const pixels = this.bake(doc, [base as Layer, { ...upper, visible: upper.visible }]);
+    if (!pixels) return;
+    this.execute(mergeDown(upper.id, pixels));
+    this.enforcePixelBudget();
+  }
+
+  /** Layer → Flatten Image: every visible layer as one pixel layer; hidden layers are dropped. */
+  flattenImage(): void {
+    const doc = this.store.getSession()?.document;
+    if (!doc || doc.layers.length === 0) return;
+    const pixels = this.bake(doc, doc.layers);
+    if (!pixels) return;
+    this.execute(flattenImage(pixels, createId("layer")));
+    this.enforcePixelBudget();
+  }
+
+  /** Layer → Rasterize Layer Style: the active layer's effects baked into its pixels. */
+  rasterizeActiveLayerStyle(): void {
+    const doc = this.store.getSession()?.document;
+    const layer = doc ? activeLayer(doc) : undefined;
+    if (!doc || !layer?.effects) return;
+    const plain = { ...layer, opacity: 1, blendMode: "normal", visible: true, clipped: undefined };
+    const pixels = this.bake(doc, [plain as Layer]);
+    if (!pixels) return;
+    this.execute(rasterizeLayerStyle(layer.id, pixels));
+    this.enforcePixelBudget();
+  }
+
+  /** Select Pixels: a selection from the active layer's transparency (Cmd-click a thumbnail). */
+  selectLayerPixels(layerId?: string): void {
+    const doc = this.store.getSession()?.document;
+    const layer = doc ? (layerId ? findLayer(doc, layerId) : activeLayer(doc)) : undefined;
+    if (!doc || !layer) return;
+    const plain = { ...layer, opacity: 1, blendMode: "normal", effects: undefined } as Layer;
+    const pixels = readPixels(this, doc, plain);
+    if (!pixels) {
+      this.notify("info", "This layer is still loading. Try again in a moment.");
+      return;
+    }
+    const alpha = new Uint8Array(doc.width * doc.height);
+    for (let i = 0; i < alpha.length; i++) alpha[i] = pixels.data[i * 4 + 3];
+    const mask = createSelection(doc.width, doc.height, alpha);
+    this.applySelection(mask.bounds ? mask : null, "Select Pixels");
+  }
+
+  /** Colour-label the selected layers (null clears it). */
+  setSelectedLayersLabel(label: LayerLabel | null): void {
+    const ids = this.selectedLayers();
+    if (ids.length > 0) this.execute(setLayerLabel(ids, label));
   }
 
   /** File → Place Embedded…: an image, SVG, PSD or project as a smart object, centred. */

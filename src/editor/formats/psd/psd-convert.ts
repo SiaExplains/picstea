@@ -7,13 +7,14 @@ import {
   createRasterLayer,
   createTextLayer,
 } from "../../core/document/factory";
-import type {
-  EditorDocument,
-  GroupBlendMode,
-  Layer,
-  LayerMask,
-  SmartObjectLayer,
-  Transform,
+import {
+  LAYER_LABELS,
+  type EditorDocument,
+  type GroupBlendMode,
+  type Layer,
+  type LayerMask,
+  type SmartObjectLayer,
+  type Transform,
 } from "../../core/document/types";
 import { createId } from "../../core/ids";
 import type { RasterMime } from "../../assets/asset-store";
@@ -120,6 +121,7 @@ export async function documentToPsdDraft(
         blendKey: blendKey(layer.blendMode),
         mask: layer.mask ? await maskDraft(env, doc, layer.mask) : undefined,
         ...(layer.clipped ? { clipping: true } : {}),
+        ...(layer.label ? { colorLabel: LAYER_LABELS.indexOf(layer.label) + 1 } : {}),
       };
       if (adjustmentBlock) {
         out.push({
@@ -404,6 +406,8 @@ function convertPsdFile(
         opacity: Math.round((node.opacity / 255) * 100) / 100,
         visible: node.visible,
         ...(node.clipping ? { clipped: true } : {}),
+        // Photoshop's colours are numbered in the same order as LAYER_LABELS, from 1.
+        ...(node.colorLabel ? { label: LAYER_LABELS[node.colorLabel - 1] } : {}),
       };
       const mask = toMask(node.mask);
       if (node.kind === "group") {

@@ -19,7 +19,7 @@
   position: fixed;
   inset: 0;
   display: grid;
-  grid-template-columns: 44px minmax(0, 1fr) 280px;
+  grid-template-columns: 44px minmax(0, 1fr) var(--panels-width, 280px);
   grid-template-rows: auto auto minmax(0, 1fr) auto;
   grid-template-areas:
     "menu menu menu"
@@ -192,6 +192,73 @@
   height: 1px;
   margin: 4px 6px;
   background: var(--ed-border);
+}
+
+/* ---------- right-click menus (Layers panel) ---------- */
+
+.contextMenu {
+  position: fixed;
+  min-width: 220px;
+  max-height: calc(100vh - 8px);
+  overflow-y: auto;
+  padding: 4px;
+  background: var(--ed-chrome);
+  border: 1px solid var(--ed-border);
+  border-radius: 6px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  z-index: 60;
+}
+
+.contextMenu .menuItem[aria-expanded="true"] {
+  background: var(--ed-chrome-2);
+}
+
+.contextLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.labelSwatch {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+/* Layer colour labels (a tint on the row, as in Photoshop's Layers panel). */
+.layerRow[data-label] {
+  box-shadow: inset 4px 0 0 var(--layer-label);
+}
+
+.layerRow[data-label="red"] {
+  --layer-label: #d9534f;
+}
+.layerRow[data-label="orange"] {
+  --layer-label: #e8913a;
+}
+.layerRow[data-label="yellow"] {
+  --layer-label: #d8c53a;
+}
+.layerRow[data-label="green"] {
+  --layer-label: #4da26a;
+}
+.layerRow[data-label="blue"] {
+  --layer-label: #4a86d8;
+}
+.layerRow[data-label="violet"] {
+  --layer-label: #9a6ad8;
+}
+.layerRow[data-label="gray"] {
+  --layer-label: #8b8d94;
+}
+
+/* Bottom Layers buttons that take a dragged layer (trash deletes, New duplicates). */
+.dropTarget {
+  outline: 2px solid var(--ed-accent);
+  outline-offset: -2px;
+  background: var(--ed-accent-soft);
 }
 
 /* ---------- options bar ---------- */
@@ -541,6 +608,7 @@
 
 .panels {
   grid-area: panels;
+  position: relative;
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -557,6 +625,8 @@
 
 .panelGrow {
   flex: 1;
+  /* Layers always keeps room for a few rows, however the other panels are sized. */
+  min-height: 140px;
 }
 
 .panelHeader {
@@ -712,8 +782,11 @@
   color: #555;
 }
 
+/* The name is only as wide as its text: double-click it to rename; the free space after it
+   (pushed by the margin) is the row, where a double-click opens Layer Style. */
 .layerName {
-  flex: 1;
+  flex: 0 1 auto;
+  margin-right: auto;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -780,6 +853,81 @@
 .dialogTitle {
   margin: 0 0 14px;
   font-size: 16px;
+}
+
+/* ---------- Layer Style dialog ---------- */
+
+.layerStyleDialog {
+  width: min(720px, calc(100vw - 32px));
+}
+
+.layerStyleBody {
+  display: grid;
+  grid-template-columns: 210px minmax(0, 1fr);
+  gap: 14px;
+  min-height: 340px;
+}
+
+.layerStyleList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--ed-border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.layerStyleList > li {
+  border-bottom: 1px solid var(--ed-border);
+}
+
+.layerStyleList > li:last-child {
+  border-bottom: 0;
+}
+
+.layerStyleItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-left: 8px;
+}
+
+.layerStylePage {
+  flex: 1;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+}
+
+.layerStylePage:hover {
+  background: var(--ed-chrome-2);
+}
+
+.layerStylePage[aria-current="true"] {
+  background: var(--ed-accent-soft);
+}
+
+.layerStyleSettings {
+  min-width: 0;
+  padding: 4px 4px 4px 0;
+}
+
+.layerStyleDialog input[type="checkbox"],
+.layerStyleDialog input[type="range"] {
+  accent-color: var(--ed-accent);
+}
+
+.layerStyleSettings input[type="range"] {
+  width: 100%;
+}
+
+@media (max-width: 600px) {
+  .layerStyleBody {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* ---------- new document: size presets ---------- */
@@ -982,7 +1130,7 @@
 
 @media (min-width: 1280px) {
   .root {
-    grid-template-columns: 44px minmax(0, 1fr) 280px 300px;
+    grid-template-columns: 44px minmax(0, 1fr) var(--panels-width, 280px) 300px;
     grid-template-areas:
       "menu menu menu menu"
       "options options options options"
@@ -1076,6 +1224,11 @@
     border-left: 0;
     border-top: 1px solid var(--ed-border);
     overflow-y: auto;
+  }
+
+  .splitterRow,
+  .splitterColumn {
+    display: none;
   }
 }
 
@@ -1318,8 +1471,9 @@
 
 .panelScroll {
   flex: 0 1 auto;
-  /* Leave room for the tabbed panel and a usable layers list on short windows. */
-  max-height: 42%;
+  /* Resizable (PanelSplitter); by default leave room for a generous Layers list. */
+  height: var(--properties-height, auto);
+  max-height: var(--properties-height, 32%);
   overflow-y: auto;
 }
 
@@ -1544,8 +1698,39 @@
 
 .tabbedPanel {
   flex: 0 1 auto;
-  height: 180px;
-  min-height: 90px;
+  height: var(--tabs-height, 150px);
+  min-height: 60px;
+}
+
+/* ---------- panel resize handles ---------- */
+
+.splitterRow {
+  flex: none;
+  height: 5px;
+  margin: -2px 0;
+  position: relative;
+  z-index: 2;
+  cursor: row-resize;
+  touch-action: none;
+}
+
+.splitterColumn {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -3px;
+  width: 6px;
+  z-index: 3;
+  cursor: col-resize;
+  touch-action: none;
+}
+
+.splitterRow:hover,
+.splitterRow:focus-visible,
+.splitterColumn:hover,
+.splitterColumn:focus-visible {
+  background: var(--ed-accent);
+  outline: none;
 }
 
 .panelTabs {

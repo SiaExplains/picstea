@@ -3,6 +3,26 @@
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.22.0] — 2026-10-19
+
+### Added
+
+- **Right-click a layer** for Blending Options, Select Pixels, Duplicate, Delete, smart objects,
+  Rasterize, clipping masks, Merge Down, Flatten Image and colour labels.
+- **Merge Down** (Cmd/Ctrl+E), **Flatten Image** and **Rasterize Layer Style**, also in the Layer
+  menu.
+- **Colour labels** to organise the Layers panel. They are saved in projects and PSD files.
+- **Layer Style dialog:** double-click a layer (or Layer → Blending Options…) to set the blend
+  mode, opacity and every effect in one place. Cancel puts everything back; OK is one undo step.
+- **Drag layers onto the trash** to delete them, or onto New Layer to duplicate them.
+- **Resizable panels:** drag the edges between Properties, History and Layers, or the column's
+  edge. Picstea remembers the sizes. The Layers panel is bigger by default.
+
+### Fixed
+
+- Sponsorship links are checked more strictly, so a malformed link can never point to another
+  site.
+
 ## [0.21.0] — 2026-10-19
 
 ### Added

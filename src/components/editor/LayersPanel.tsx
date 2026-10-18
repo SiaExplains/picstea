@@ -1,6 +1,13 @@
 "use client";
 
-import { useRef, useState, type DragEvent, type KeyboardEvent, type MouseEvent } from "react";
+import {
+  useCallback,
+  useRef,
+  useState,
+  type DragEvent,
+  type KeyboardEvent,
+  type MouseEvent,
+} from "react";
 import { selectedLayerIds } from "@/editor/core/editor-store";
 import {
   moveLayerRelative,
@@ -12,7 +19,8 @@ import {
   setVectorMask,
 } from "@/editor/core/commands";
 import { flattenTopFirst } from "@/editor/core/document/tree";
-import type { Layer } from "@/editor/core/document/types";
+import { LAYER_LABELS, type Layer, type LayerLabel } from "@/editor/core/document/types";
+import { ContextMenu, type ContextMenuEntry } from "./ContextMenu";
 import { hasActiveEffects } from "@/editor/rendering/compositing/effects";
 import { useActiveSession, useController, useEditorState } from "./editor-context";
 import styles from "./editor.module.css";
@@ -38,6 +46,30 @@ import {
 import type { UiAction, UiActionId } from "./use-editor-actions";
 
 const DRAG_TYPE = "application/x-picstea-layer";
+
+/** Swatches for the colour-label menu; the row tints use the same colours (editor.module.css). */
+const LABEL_COLORS: Record<LayerLabel, string> = {
+  red: "#d9534f",
+  orange: "#e8913a",
+  yellow: "#d8c53a",
+  green: "#4da26a",
+  blue: "#4a86d8",
+  violet: "#9a6ad8",
+  gray: "#8b8d94",
+};
+
+const LABEL_NAMES: Record<LayerLabel, string> = {
+  red: "Red",
+  orange: "Orange",
+  yellow: "Yellow",
+  green: "Green",
+  blue: "Blue",
+  violet: "Violet",
+  gray: "Grey",
+};
+
+/** Layers that open the Layer Style dialog on double-click. */
+const hasLayerStyle = (layer: Layer) => layer.kind !== "group" && layer.kind !== "adjustment";
 
 function LayerThumb({ layer, targeted }: { layer: Layer; targeted: boolean }) {
   const className = `${styles.layerThumb} ${targeted ? styles.thumbTargeted : ""}`;
@@ -94,6 +126,8 @@ interface RowProps {
   drop: DropPosition | null;
   onDragOverRow: (event: DragEvent<HTMLLIElement>, layer: Layer) => void;
   onDropRow: (event: DragEvent<HTMLLIElement>, layer: Layer) => void;
+  onContextMenuRow: (event: MouseEvent<HTMLLIElement>, layer: Layer) => void;
+  onOpenStyle: (layer: Layer) => void;
 }
 
 function LayerRow({
@@ -106,6 +140,8 @@ function LayerRow({
   drop,
   onDragOverRow,
   onDropRow,
+  onContextMenuRow,
+  onOpenStyle,
 }: RowProps) {
   const controller = useController();
   const editTarget = useEditorState((s) => s.editTarget);
@@ -149,6 +185,7 @@ function LayerRow({
       data-depth={depth}
       data-clipped={layer.clipped ? "true" : undefined}
       data-selected={selected || active ? "true" : undefined}
+      data-label={layer.label}
       draggable={!editing}
       onDragStart={(e) => {
         e.dataTransfer.setData(DRAG_TYPE, layer.id);
@@ -157,6 +194,11 @@ function LayerRow({
       onDragOver={(e) => onDragOverRow(e, layer)}
       onDrop={(e) => onDropRow(e, layer)}
       onClick={(e) => selectRow(e)}
+      onContextMenu={(e) => onContextMenuRow(e, layer)}
+      // Double-click a row (not its name, which renames) for the Layer Style dialog.
+      onDoubleClick={() => {
+        if (!editing && hasLayerStyle(layer)) onOpenStyle(layer);
+      }}
       style={{ paddingLeft: 4 + depth * 14 + (layer.clipped ? 14 : 0) }}
     >
       <button
@@ -288,8 +330,12 @@ function LayerRow({
           aria-label={layer.name}
           aria-describedby="layer-rename-hint"
           aria-current={active ? "true" : undefined}
-          title="Double-click to rename"
-          onDoubleClick={() => setEditing(true)}
+          title="Double-click the name to rename"
+          onDoubleClick={(e) => {
+            // The name renames; the rest of the row opens the Layer Style dialog.
+            e.stopPropagation();
+            setEditing(true);
+          }}
           onKeyDown={(e) => {
             if (e.key === "F2") setEditing(true);
             if (e.key === "Enter" || e.key === " ") {
@@ -355,19 +401,140 @@ export function LayersPanel({ actions }: { actions: Record<UiActionId, UiAction>
   const selectedIds = selectedLayerIds(session);
   const selected = new Set(selectedIds.length > 1 ? selectedIds : []);
   const [drop, setDrop] = useState<{ id: string; position: DropPosition } | null>(null);
+  const [menu, setMenu] = useState<{ x: number; y: number } | null>(null);
+  const [dropOn, setDropOn] = useState<"delete" | "duplicate" | null>(null);
+  const closeMenu = useCallback(() => setMenu(null), []);
 
-  const toolbarButton = (id: UiActionId, icon: React.ReactNode) => (
+  /** Make a dragged layer part of the selection, keeping a multi-selection it already belongs to. */
+  const selectDragged = (id: string) => {
+    if (!selectedLayerIds(controller.store.getSession()).includes(id)) {
+      controller.store.selectLayer(id);
+    }
+  };
+
+  /** Drop layers on the trash to delete them, or on New layer to duplicate them. */
+  const dropHandlers = (kind: "delete" | "duplicate") => ({
+    onDragOver: (event: DragEvent<HTMLButtonElement>) => {
+      if (!event.dataTransfer.types.includes(DRAG_TYPE)) return;
+      event.preventDefault();
+      event.dataTransfer.dropEffect = kind === "delete" ? "move" : "copy";
+      if (dropOn !== kind) setDropOn(kind);
+    },
+    onDragLeave: () => setDropOn(null),
+    onDrop: (event: DragEvent<HTMLButtonElement>) => {
+      const draggedId = event.dataTransfer.getData(DRAG_TYPE);
+      setDropOn(null);
+      setDrop(null);
+      if (!draggedId) return;
+      event.preventDefault();
+      selectDragged(draggedId);
+      if (kind === "delete") controller.deleteSelectedLayers();
+      else controller.duplicateActiveLayer();
+    },
+  });
+
+  const toolbarButton = (
+    id: UiActionId,
+    icon: React.ReactNode,
+    dropKind?: "delete" | "duplicate",
+  ) => (
     <button
       type="button"
-      className={styles.iconButton}
+      className={`${styles.iconButton} ${dropKind && dropOn === dropKind ? styles.dropTarget : ""}`}
       aria-label={actions[id].label}
-      title={actions[id].label}
-      disabled={!actions[id].enabled}
-      onClick={actions[id].run}
+      title={
+        dropKind === "delete"
+          ? `${actions[id].label} (or drop layers here)`
+          : dropKind === "duplicate"
+            ? `${actions[id].label} (drop layers here to duplicate them)`
+            : actions[id].label
+      }
+      disabled={!actions[id].enabled && !dropKind}
+      onClick={actions[id].enabled ? actions[id].run : undefined}
+      {...(dropKind ? dropHandlers(dropKind) : {})}
     >
       {icon}
     </button>
   );
+
+  const onContextMenuRow = (event: MouseEvent<HTMLLIElement>, layer: Layer) => {
+    event.preventDefault();
+    event.stopPropagation();
+    // As in Photoshop: right-clicking outside the selection selects that layer first.
+    selectDragged(layer.id);
+    setMenu({ x: event.clientX, y: event.clientY });
+  };
+
+  const openStyle = (layer: Layer) => {
+    controller.store.selectLayer(layer.id);
+    actions["layer.style"].run();
+  };
+
+  const item = (id: UiActionId, label = actions[id].label): ContextMenuEntry => ({
+    kind: "item",
+    label,
+    enabled: actions[id].enabled,
+    run: actions[id].run,
+  });
+  const active = doc?.activeLayerId
+    ? rows.find((r) => r.layer.id === doc.activeLayerId)?.layer
+    : undefined;
+  const menuItems: ContextMenuEntry[] = [
+    item("layer.style"),
+    item("layer.selectPixels"),
+    { kind: "separator" },
+    {
+      kind: "item",
+      label: "Duplicate Layer",
+      enabled: !!active,
+      run: () => controller.duplicateActiveLayer(),
+    },
+    {
+      kind: "item",
+      label: "Delete",
+      enabled: !!active,
+      run: () => controller.deleteSelectedLayers(),
+    },
+    { kind: "separator" },
+    item("layer.toSmartObject"),
+    ...(active?.kind === "smart" ? [item("layer.editContents")] : []),
+    { kind: "separator" },
+    item("layer.rasterize"),
+    item("layer.rasterizeStyle"),
+    { kind: "separator" },
+    item("layer.clip"),
+    { kind: "separator" },
+    item("layer.mergeDown"),
+    item("layer.flatten"),
+    { kind: "separator" },
+    {
+      kind: "submenu",
+      label: "Color",
+      items: [
+        {
+          kind: "item",
+          label: "No Color",
+          enabled: true,
+          checked: !active?.label,
+          run: () => controller.setSelectedLayersLabel(null),
+        },
+        ...LAYER_LABELS.map((label): ContextMenuEntry => ({
+          kind: "item",
+          label: LABEL_NAMES[label],
+          enabled: true,
+          checked: active?.label === label,
+          icon: (
+            <span
+              className={styles.labelSwatch}
+              style={{ background: LABEL_COLORS[label] }}
+              aria-hidden
+            />
+          ),
+          run: () => controller.setSelectedLayersLabel(label),
+        })),
+      ],
+    },
+  ];
 
   const onDragOverRow = (event: DragEvent<HTMLLIElement>, layer: Layer) => {
     if (!event.dataTransfer.types.includes(DRAG_TYPE)) return;
@@ -397,15 +564,24 @@ export function LayersPanel({ actions }: { actions: Record<UiActionId, UiAction>
       )}
       {!doc && <p className={`${styles.panelBody} ${styles.muted}`}>No document open.</p>}
       <p id="layer-rename-hint" className={styles.srOnly}>
-        Double-click or press F2 to rename. Drag to reorder or to move into a group. Cmd or
-        Ctrl-click adds a layer to the selection; Shift-click selects a range.
+        Double-click the name or press F2 to rename; double-click elsewhere on the row for layer
+        styles. Drag to reorder, into a group, onto the trash to delete or onto New layer to
+        duplicate. Right-click for more. Cmd or Ctrl-click adds a layer to the selection;
+        Shift-click selects a range.
       </p>
       {selected.size > 1 && (
         <p className={styles.srOnly} role="status">
           {selected.size} layers selected
         </p>
       )}
-      <ul className={styles.layerList} aria-label="Layers" onDragEnd={() => setDrop(null)}>
+      <ul
+        className={styles.layerList}
+        aria-label="Layers"
+        onDragEnd={() => {
+          setDrop(null);
+          setDropOn(null);
+        }}
+      >
         {rows.map(({ layer, depth, effectivelyVisible }, i) => (
           <LayerRow
             key={layer.id}
@@ -421,6 +597,8 @@ export function LayersPanel({ actions }: { actions: Record<UiActionId, UiAction>
             drop={drop?.id === layer.id ? drop.position : null}
             onDragOverRow={onDragOverRow}
             onDropRow={onDropRow}
+            onContextMenuRow={onContextMenuRow}
+            onOpenStyle={openStyle}
           />
         ))}
       </ul>
@@ -430,9 +608,12 @@ export function LayersPanel({ actions }: { actions: Record<UiActionId, UiAction>
         {toolbarButton("layer.addMask", <MaskIcon />)}
         {toolbarButton("layer.newGroup", <FolderIcon />)}
         {toolbarButton("layer.duplicate", <DuplicateIcon />)}
-        {toolbarButton("layer.new", <PlusIcon />)}
-        {toolbarButton("layer.delete", <TrashIcon />)}
+        {toolbarButton("layer.new", <PlusIcon />, "duplicate")}
+        {toolbarButton("layer.delete", <TrashIcon />, "delete")}
       </div>
+      {menu && doc && (
+        <ContextMenu x={menu.x} y={menu.y} label="Layer" items={menuItems} onClose={closeMenu} />
+      )}
     </section>
   );
 }

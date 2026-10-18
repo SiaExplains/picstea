@@ -36,6 +36,9 @@ describe("sponsorships", () => {
     expect(isSafeTarget("javascript:alert(1)")).toBe(false);
     expect(isSafeTarget("http://example.com")).toBe(false);
     expect(isSafeTarget("//evil.example")).toBe(false);
+    expect(isSafeTarget("/\\evil.example")).toBe(false);
+    expect(isSafeTarget("/\t/evil.example")).toBe(false);
+    expect(isSafeTarget("https://example.com/a b")).toBe(false);
     expect(isSafeTarget("/sponsorship")).toBe(true);
     expect(isSafeImage("https://tracker.example/pixel.gif")).toBe(false);
     expect(isSafeImage("/sponsors/../secret.png")).toBe(false);

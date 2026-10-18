@@ -4,7 +4,7 @@ import { useMemo, useSyncExternalStore } from "react";
 import { FILTERS, type FilterId } from "@/editor/filters/registry";
 import type { AlignEdge } from "@/editor/core/geometry/snapping";
 import { ALIGN_LABELS } from "@/editor/controller/editor-controller";
-import { shiftLayer } from "@/editor/core/commands";
+import { mergeTarget, shiftLayer } from "@/editor/core/commands";
 import { selectedLayerIds } from "@/editor/core/editor-store";
 import { DISTRIBUTE_LABELS, type DistributeMode } from "@/editor/core/geometry/multi-transform";
 import { ADJUSTMENTS } from "@/editor/adjustments/registry";
@@ -41,6 +41,10 @@ export type UiActionId =
   | "layer.toSmartObject"
   | "layer.editContents"
   | "layer.rasterize"
+  | "layer.rasterizeStyle"
+  | "layer.flatten"
+  | "layer.selectPixels"
+  | "layer.style"
   | "file.placeEmbedded"
   | "file.batch"
   | "layer.toggleVectorMask"
@@ -89,6 +93,8 @@ export interface ActionHosts {
   openWorkPathDialog: () => void;
   openBatchDialog: () => void;
   openSmartFilterDialog: (layerId: string, filter: SmartFilter) => void;
+  /** Layer → Blending Options… / double-click a layer: the Layer Style dialog. */
+  openLayerStyle: () => void;
 }
 
 /** Download the active document as a portable `.picstea` file (File → Save Project As…). */
@@ -356,6 +362,36 @@ export function useEditorActions(hosts: ActionHosts): Record<UiActionId, UiActio
           !layer.locked &&
           (layer.kind === "smart" || layer.kind === "shape" || layer.kind === "text"),
         run: () => controller.rasterizeActiveLayer(),
+      },
+      "layer.mergeDown": {
+        label: "Merge Down",
+        enabled: !!doc && !!layer && !layer.locked && !!mergeTarget(doc, layer.id),
+        run: () => controller.mergeActiveDown(),
+      },
+      "layer.flatten": {
+        label: "Flatten Image",
+        enabled: !!doc && doc.layers.length > 0,
+        run: () => controller.flattenImage(),
+      },
+      "layer.rasterizeStyle": {
+        label: "Rasterize Layer Style",
+        enabled:
+          !!layer &&
+          !layer.locked &&
+          !!layer.effects &&
+          layer.kind !== "group" &&
+          layer.kind !== "adjustment",
+        run: () => controller.rasterizeActiveLayerStyle(),
+      },
+      "layer.selectPixels": {
+        label: "Select Pixels",
+        enabled: !!layer && layer.kind !== "adjustment",
+        run: () => controller.selectLayerPixels(),
+      },
+      "layer.style": {
+        label: "Blending Options…",
+        enabled: !!layer && !layer.locked && layer.kind !== "adjustment" && layer.kind !== "group",
+        run: () => hosts.openLayerStyle(),
       },
       "layer.clip": {
         label: layer?.clipped ? "Release Clipping Mask" : "Create Clipping Mask",

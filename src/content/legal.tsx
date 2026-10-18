@@ -204,6 +204,14 @@ export const LEGAL: Record<"privacy" | "cookies" | "terms" | "imprint" | "sponso
                 <td>Remembers the last few document sizes you created.</td>
                 <td>Until cleared</td>
               </tr>
+              <tr>
+                <td>
+                  <code>picstea.panelSizes</code>
+                </td>
+                <td>Local storage</td>
+                <td>Remembers how wide and tall you made the editor&apos;s panels.</td>
+                <td>Until cleared</td>
+              </tr>
             </tbody>
           </table>
           <p>This data stays on your device and is never sent to us.</p>
