@@ -35,6 +35,8 @@ interface PsdNodeBase {
   readonly mask?: PsdMask;
   /** Clipped to the layer below (the record's clipping byte). */
   readonly clipping?: boolean;
+  /** Layers-panel colour (`lclr`): 1 red … 7 grey; absent or 0 = none. */
+  readonly colorLabel?: number;
 }
 
 export interface PsdPixelLayer extends PsdNodeBase {

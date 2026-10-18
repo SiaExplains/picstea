@@ -134,6 +134,9 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 | Legal pages: Privacy, Cookies, Terms, Imprint, Sponsorship | 🟡 | Drafts with [TO COMPLETE] fields; need operator details and legal review |
 | Google-certified CMP (IAB TCF) for personalised EU ads | ✅ | `NEXT_PUBLIC_ADSENSE_CMP=google` (ADR-0024); default stays own banner |
 | Editor side column: own sponsorship, Privacy settings, website links (≥ 1280 px) | ✅ | ADR-0025; Google ads in the editor 📋 (needs a new ADR) |
+| Layers right-click menu (styles, select pixels, merge, flatten, rasterize style, colour labels) | ✅ | ADR-0026; Duplicate Into, Convert to Shape/Point Text 📋 |
+| Layer Style dialog (double-click a layer / Blending Options…) | ✅ | Live, one undo step; inner glow, satin, pattern overlay 📋 |
+| Drag layers onto trash / New Layer; resizable, remembered panels | ✅ | `picstea.panelSizes` |
 | ads.txt + AdSense verification meta tag | ✅ | Generated from `NEXT_PUBLIC_ADSENSE_CLIENT`; off without it |
 | Analytics | ⏸ | None by decision; category ready |
 

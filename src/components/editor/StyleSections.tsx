@@ -105,7 +105,7 @@ export function AdjustmentSection({ layer }: { layer: AdjustmentLayer }) {
   );
 }
 
-const EFFECT_LABELS: Record<EffectKind, string> = {
+export const EFFECT_LABELS: Record<EffectKind, string> = {
   dropShadow: "Drop shadow",
   outerGlow: "Outer glow",
   innerShadow: "Inner shadow",
@@ -117,14 +117,209 @@ const EFFECT_LABELS: Record<EffectKind, string> = {
 
 const percent = (v: number) => `${Math.round(v * 100)}%`;
 
-export function EffectsSection({ layer }: { layer: Layer }) {
+/** Write an effect of a layer, starting from the defaults the first time it is switched on. */
+export function useEffectUpdate(layer: Layer | undefined) {
   const controller = useController();
-  const effects: LayerEffects = layer.effects ?? {};
-
-  function update<K extends EffectKind>(kind: K, patch: Partial<NonNullable<LayerEffects[K]>>) {
+  const effects: LayerEffects = layer?.effects ?? {};
+  return function update<K extends EffectKind>(
+    kind: K,
+    patch: Partial<NonNullable<LayerEffects[K]>>,
+  ) {
+    if (!layer) return;
     const current = effects[kind] ?? DEFAULT_EFFECTS[kind];
     controller.execute(setLayerEffect(layer.id, kind, { ...current, ...patch } as LayerEffects[K]));
-  }
+  };
+}
+
+/** The settings of one effect (colour, opacity and its own options), for the panel and dialog. */
+export function EffectControls({ layer, kind }: { layer: Layer; kind: EffectKind }) {
+  const controller = useController();
+  const update = useEffectUpdate(layer);
+  const effects: LayerEffects = layer.effects ?? {};
+  const effect = effects[kind];
+  if (!effect) return null;
+  return (
+    <>
+      {"color" in effect && (
+        <label className={styles.smallLabel}>
+          <span>Colour</span>
+          <input
+            type="color"
+            aria-label={`${EFFECT_LABELS[kind]} colour`}
+            className={styles.colorInput}
+            style={{ width: 36 }}
+            value={effect.color}
+            onChange={(e) => update(kind, { color: e.target.value })}
+            onBlur={() => controller.store.sealHistory()}
+          />
+        </label>
+      )}
+      <Slider
+        label="Opacity"
+        value={effect.opacity}
+        min={0}
+        max={1}
+        step={0.01}
+        format={percent}
+        onChange={(opacity) => update(kind, { opacity })}
+      />
+      {kind === "dropShadow" && effects.dropShadow && (
+        <>
+          <Slider
+            label="Angle"
+            value={effects.dropShadow.angle}
+            min={-180}
+            max={180}
+            format={(v) => `${v}°`}
+            onChange={(angle) => update("dropShadow", { angle })}
+          />
+          <Slider
+            label="Distance"
+            value={effects.dropShadow.distance}
+            min={0}
+            max={200}
+            onChange={(distance) => update("dropShadow", { distance })}
+          />
+          <Slider
+            label="Blur"
+            value={effects.dropShadow.blur}
+            min={0}
+            max={100}
+            onChange={(blur) => update("dropShadow", { blur })}
+          />
+        </>
+      )}
+      {kind === "innerShadow" && effects.innerShadow && (
+        <>
+          <Slider
+            label="Angle"
+            value={effects.innerShadow.angle}
+            min={-180}
+            max={180}
+            format={(v) => `${v}°`}
+            onChange={(angle) => update("innerShadow", { angle })}
+          />
+          <Slider
+            label="Distance"
+            value={effects.innerShadow.distance}
+            min={0}
+            max={100}
+            onChange={(distance) => update("innerShadow", { distance })}
+          />
+          <Slider
+            label="Blur"
+            value={effects.innerShadow.blur}
+            min={0}
+            max={100}
+            onChange={(blur) => update("innerShadow", { blur })}
+          />
+        </>
+      )}
+      {kind === "bevel" && effects.bevel && (
+        <>
+          <Slider
+            label="Size"
+            value={effects.bevel.size}
+            min={1}
+            max={100}
+            onChange={(size) => update("bevel", { size })}
+          />
+          <Slider
+            label="Angle"
+            value={effects.bevel.angle}
+            min={-180}
+            max={180}
+            format={(v) => `${v}°`}
+            onChange={(angle) => update("bevel", { angle })}
+          />
+          <label className={styles.smallLabel}>
+            <span>Shadow</span>
+            <input
+              type="color"
+              aria-label="Bevel shadow colour"
+              className={styles.colorInput}
+              style={{ width: 36 }}
+              value={effects.bevel.shadowColor}
+              onChange={(e) => update("bevel", { shadowColor: e.target.value })}
+              onBlur={() => controller.store.sealHistory()}
+            />
+          </label>
+          <Slider
+            label="Shadow opacity"
+            value={effects.bevel.shadowOpacity}
+            min={0}
+            max={1}
+            step={0.01}
+            format={percent}
+            onChange={(shadowOpacity) => update("bevel", { shadowOpacity })}
+          />
+          <label className={styles.smallLabel}>
+            <input
+              type="checkbox"
+              checked={effects.bevel.direction === "down"}
+              onChange={(e) => {
+                update("bevel", { direction: e.target.checked ? "down" : "up" });
+                controller.store.sealHistory();
+              }}
+            />
+            <span>Pressed in</span>
+          </label>
+        </>
+      )}
+      {kind === "gradientOverlay" && effects.gradientOverlay && (
+        <>
+          <Slider
+            label="Angle"
+            value={effects.gradientOverlay.angle}
+            min={-180}
+            max={180}
+            format={(v) => `${v}°`}
+            onChange={(angle) => update("gradientOverlay", { angle })}
+          />
+          <GradientStopsEditor
+            label="Overlay gradient"
+            stops={effects.gradientOverlay.stops}
+            onChange={(stops) => update("gradientOverlay", { stops })}
+          />
+          <label className={styles.smallLabel}>
+            <input
+              type="checkbox"
+              checked={effects.gradientOverlay.reverse}
+              onChange={(e) => {
+                update("gradientOverlay", { reverse: e.target.checked });
+                controller.store.sealHistory();
+              }}
+            />
+            <span>Reverse</span>
+          </label>
+        </>
+      )}
+      {kind === "outerGlow" && effects.outerGlow && (
+        <Slider
+          label="Size"
+          value={effects.outerGlow.size}
+          min={0}
+          max={100}
+          onChange={(size) => update("outerGlow", { size })}
+        />
+      )}
+      {kind === "stroke" && effects.stroke && (
+        <Slider
+          label="Size"
+          value={effects.stroke.size}
+          min={1}
+          max={50}
+          onChange={(size) => update("stroke", { size })}
+        />
+      )}
+    </>
+  );
+}
+
+export function EffectsSection({ layer }: { layer: Layer }) {
+  const controller = useController();
+  const update = useEffectUpdate(layer);
+  const effects: LayerEffects = layer.effects ?? {};
 
   return (
     <div className={styles.subsection}>
@@ -144,178 +339,10 @@ export function EffectsSection({ layer }: { layer: Layer }) {
                 }}
               />
               <span>{EFFECT_LABELS[kind]}</span>
-              {effect && "color" in effect && (
-                <input
-                  type="color"
-                  aria-label={`${EFFECT_LABELS[kind]} colour`}
-                  className={styles.colorInput}
-                  style={{ width: 36 }}
-                  value={effect.color}
-                  onChange={(e) => update(kind, { color: e.target.value })}
-                  onBlur={() => controller.store.sealHistory()}
-                />
-              )}
             </label>
             {effect && on && (
               <div style={{ marginTop: 4 }}>
-                <Slider
-                  label="Opacity"
-                  value={effect.opacity}
-                  min={0}
-                  max={1}
-                  step={0.01}
-                  format={percent}
-                  onChange={(opacity) => update(kind, { opacity })}
-                />
-                {kind === "dropShadow" && effects.dropShadow && (
-                  <>
-                    <Slider
-                      label="Angle"
-                      value={effects.dropShadow.angle}
-                      min={-180}
-                      max={180}
-                      format={(v) => `${v}°`}
-                      onChange={(angle) => update("dropShadow", { angle })}
-                    />
-                    <Slider
-                      label="Distance"
-                      value={effects.dropShadow.distance}
-                      min={0}
-                      max={200}
-                      onChange={(distance) => update("dropShadow", { distance })}
-                    />
-                    <Slider
-                      label="Blur"
-                      value={effects.dropShadow.blur}
-                      min={0}
-                      max={100}
-                      onChange={(blur) => update("dropShadow", { blur })}
-                    />
-                  </>
-                )}
-                {kind === "innerShadow" && effects.innerShadow && (
-                  <>
-                    <Slider
-                      label="Angle"
-                      value={effects.innerShadow.angle}
-                      min={-180}
-                      max={180}
-                      format={(v) => `${v}°`}
-                      onChange={(angle) => update("innerShadow", { angle })}
-                    />
-                    <Slider
-                      label="Distance"
-                      value={effects.innerShadow.distance}
-                      min={0}
-                      max={100}
-                      onChange={(distance) => update("innerShadow", { distance })}
-                    />
-                    <Slider
-                      label="Blur"
-                      value={effects.innerShadow.blur}
-                      min={0}
-                      max={100}
-                      onChange={(blur) => update("innerShadow", { blur })}
-                    />
-                  </>
-                )}
-                {kind === "bevel" && effects.bevel && (
-                  <>
-                    <Slider
-                      label="Size"
-                      value={effects.bevel.size}
-                      min={1}
-                      max={100}
-                      onChange={(size) => update("bevel", { size })}
-                    />
-                    <Slider
-                      label="Angle"
-                      value={effects.bevel.angle}
-                      min={-180}
-                      max={180}
-                      format={(v) => `${v}°`}
-                      onChange={(angle) => update("bevel", { angle })}
-                    />
-                    <label className={styles.smallLabel}>
-                      <span>Shadow</span>
-                      <input
-                        type="color"
-                        aria-label="Bevel shadow colour"
-                        className={styles.colorInput}
-                        style={{ width: 36 }}
-                        value={effects.bevel.shadowColor}
-                        onChange={(e) => update("bevel", { shadowColor: e.target.value })}
-                        onBlur={() => controller.store.sealHistory()}
-                      />
-                    </label>
-                    <Slider
-                      label="Shadow opacity"
-                      value={effects.bevel.shadowOpacity}
-                      min={0}
-                      max={1}
-                      step={0.01}
-                      format={percent}
-                      onChange={(shadowOpacity) => update("bevel", { shadowOpacity })}
-                    />
-                    <label className={styles.smallLabel}>
-                      <input
-                        type="checkbox"
-                        checked={effects.bevel.direction === "down"}
-                        onChange={(e) => {
-                          update("bevel", { direction: e.target.checked ? "down" : "up" });
-                          controller.store.sealHistory();
-                        }}
-                      />
-                      <span>Pressed in</span>
-                    </label>
-                  </>
-                )}
-                {kind === "gradientOverlay" && effects.gradientOverlay && (
-                  <>
-                    <Slider
-                      label="Angle"
-                      value={effects.gradientOverlay.angle}
-                      min={-180}
-                      max={180}
-                      format={(v) => `${v}°`}
-                      onChange={(angle) => update("gradientOverlay", { angle })}
-                    />
-                    <GradientStopsEditor
-                      label="Overlay gradient"
-                      stops={effects.gradientOverlay.stops}
-                      onChange={(stops) => update("gradientOverlay", { stops })}
-                    />
-                    <label className={styles.smallLabel}>
-                      <input
-                        type="checkbox"
-                        checked={effects.gradientOverlay.reverse}
-                        onChange={(e) => {
-                          update("gradientOverlay", { reverse: e.target.checked });
-                          controller.store.sealHistory();
-                        }}
-                      />
-                      <span>Reverse</span>
-                    </label>
-                  </>
-                )}
-                {kind === "outerGlow" && effects.outerGlow && (
-                  <Slider
-                    label="Size"
-                    value={effects.outerGlow.size}
-                    min={0}
-                    max={100}
-                    onChange={(size) => update("outerGlow", { size })}
-                  />
-                )}
-                {kind === "stroke" && effects.stroke && (
-                  <Slider
-                    label="Size"
-                    value={effects.stroke.size}
-                    min={1}
-                    max={50}
-                    onChange={(size) => update("stroke", { size })}
-                  />
-                )}
+                <EffectControls layer={layer} kind={kind} />
               </div>
             )}
           </div>

@@ -17,7 +17,7 @@ import styles from "./editor.module.css";
 import { ShapeSection, TextSection, TransformSection } from "./LayerSections";
 import { AdjustmentSection, EffectsSection, MaskSection } from "./StyleSections";
 
-const BLEND_LABELS: Record<BlendMode, string> = {
+export const BLEND_LABELS: Record<BlendMode, string> = {
   normal: "Normal",
   multiply: "Multiply",
   screen: "Screen",
@@ -51,6 +51,7 @@ export function PropertiesPanel({
     <section
       className={`${styles.panel} ${styles.panelScroll}`}
       aria-labelledby="properties-heading"
+      data-panel="properties"
     >
       <h2 id="properties-heading" className={styles.panelHeader}>
         Properties

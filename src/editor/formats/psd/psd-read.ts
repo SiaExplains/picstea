@@ -58,6 +58,7 @@ interface RawRecord {
   readonly opacity: number;
   readonly visible: boolean;
   readonly clipping: boolean;
+  readonly colorLabel: number;
   readonly name: string;
   readonly mask?: { rect: PsdRect; defaultColor: number; disabled: boolean };
   readonly section?: { type: number; blendKey?: string };
@@ -119,6 +120,7 @@ function readRecord(r: ByteReader): RawRecord {
   extra.skip(extra.u32()); // blending ranges
   let name = pascal(extra, 4);
   let section: RawRecord["section"];
+  let colorLabel = 0;
   let source: RawRecord["source"];
   while (extra.remaining >= 12) {
     const signature = extra.ascii(4);
@@ -137,6 +139,9 @@ function readRecord(r: ByteReader): RawRecord {
         }
         break;
       }
+      case "lclr":
+        if (body.remaining >= 2) colorLabel = body.u16();
+        break;
       case "lsct":
       case "lsdk": {
         const type = body.u32();
@@ -192,6 +197,7 @@ function readRecord(r: ByteReader): RawRecord {
     opacity,
     visible: (flags & 2) === 0,
     clipping: clipping !== 0,
+    colorLabel,
     name,
     mask,
     section,
@@ -382,6 +388,7 @@ async function readPsdFile(
           blendKey: rec.section?.blendKey ?? rec.blendKey,
           mask,
           ...(rec.clipping ? { clipping: true } : {}),
+          ...(rec.colorLabel >= 1 && rec.colorLabel <= 7 ? { colorLabel: rec.colorLabel } : {}),
         };
         if (rec.section?.type === 3) {
           decoded.push({ kind: "divider" });

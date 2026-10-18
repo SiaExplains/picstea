@@ -26,6 +26,8 @@ import { ColorPickerDialog, type ColorTarget } from "./ColorPickerDialog";
 import { BatchDialog } from "./BatchDialog";
 import { PanelTabs } from "./PanelTabs";
 import { SideColumn } from "./SideColumn";
+import { LayerStyleDialog } from "./LayerStyleDialog";
+import { PANEL_LIMITS, PanelSplitter, usePanelSizes } from "./PanelSplitter";
 import { useEditorActions, type ActionHosts } from "./use-editor-actions";
 
 const matchShortcut = createShortcutMatcher();
@@ -51,6 +53,7 @@ export function EditorShell() {
   const [workPathDialogOpen, setWorkPathDialogOpen] = useState(false);
   const [colorTarget, setColorTarget] = useState<ColorTarget | null>(null);
   const [batchOpen, setBatchOpen] = useState(false);
+  const [styleLayerId, setStyleLayerId] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const pickModeRef = useRef<PickMode>("open");
@@ -82,6 +85,13 @@ export function EditorShell() {
       openGridDialog: () => setGridDialogOpen(true),
       openWorkPathDialog: () => setWorkPathDialogOpen(true),
       openBatchDialog: () => setBatchOpen(true),
+      openLayerStyle: () => {
+        const doc = controller.store.getSession()?.document;
+        const active = doc ? activeLayer(doc) : undefined;
+        if (active && active.kind !== "group" && active.kind !== "adjustment") {
+          setStyleLayerId(active.id);
+        }
+      },
       pickImage: (mode) => {
         pickModeRef.current = mode;
         fileInputRef.current?.click();
@@ -90,6 +100,11 @@ export function EditorShell() {
     [controller],
   );
   const actions = useEditorActions(hosts);
+  const closeLayerStyle = useCallback(() => setStyleLayerId(null), []);
+  const [, resizePanels, panelStyle] = usePanelSizes();
+  const panelsRef = useRef<HTMLElement>(null);
+  const panelHeight = (name: string) =>
+    panelsRef.current?.querySelector<HTMLElement>(`[data-panel="${name}"]`)?.offsetHeight ?? 0;
 
   const importFiles = useCallback(
     async (files: File[], mode: PickMode) => {
@@ -174,6 +189,7 @@ export function EditorShell() {
   return (
     <div
       className={styles.root}
+      style={panelStyle}
       onDragOver={(e) => {
         if (!hasFiles(e)) return;
         e.preventDefault();
@@ -201,9 +217,31 @@ export function EditorShell() {
         {session ? <CanvasViewport /> : <StartScreen actions={actions} />}
         {dragging && <div className={styles.dropOverlay}>Drop an image to open it</div>}
       </main>
-      <aside className={styles.panels} aria-label="Panels">
+      <aside ref={panelsRef} className={styles.panels} aria-label="Panels">
+        <PanelSplitter
+          label="Resize panels"
+          orientation="vertical"
+          invert
+          measure={() => panelsRef.current?.offsetWidth ?? 280}
+          {...PANEL_LIMITS.width}
+          onResize={(width) => resizePanels({ width })}
+        />
         <PropertiesPanel onEditSmartFilter={hosts.openSmartFilterDialog} />
+        <PanelSplitter
+          label="Resize Properties"
+          orientation="horizontal"
+          measure={() => panelHeight("properties")}
+          {...PANEL_LIMITS.properties}
+          onResize={(properties) => resizePanels({ properties })}
+        />
         <PanelTabs />
+        <PanelSplitter
+          label="Resize History, Swatches and Actions"
+          orientation="horizontal"
+          measure={() => panelHeight("tabs")}
+          {...PANEL_LIMITS.tabs}
+          onResize={(tabs) => resizePanels({ tabs })}
+        />
         <LayersPanel actions={actions} />
       </aside>
       <SideColumn onPrivacySettings={actions["help.privacy"].run} />
@@ -227,6 +265,9 @@ export function EditorShell() {
         <ColorPickerDialog target={colorTarget} onClose={() => setColorTarget(null)} />
       )}
       {batchOpen && <BatchDialog onClose={() => setBatchOpen(false)} />}
+      {styleLayerId && (
+        <LayerStyleDialog key={styleLayerId} layerId={styleLayerId} onClose={closeLayerStyle} />
+      )}
       <Notices />
       <BusyOverlay />
       <input

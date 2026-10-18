@@ -59,6 +59,7 @@ export type ActionId =
   | "tool.pathSelect"
   | "path.makeSelection"
   | "layer.clip"
+  | "layer.mergeDown"
   | "tool.text"
   | "tool.hand"
   | "tool.zoom"
@@ -131,6 +132,7 @@ export const DEFAULT_KEYMAP: Readonly<Record<ActionId, readonly string[]>> = {
   "tool.pathSelect": ["A"],
   "path.makeSelection": ["Mod+Enter"],
   "layer.clip": ["Mod+Alt+G"],
+  "layer.mergeDown": ["Mod+E"],
   "tool.text": ["T"],
   "tool.hand": ["H"],
   "tool.zoom": ["Z"],

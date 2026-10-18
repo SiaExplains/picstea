@@ -56,6 +56,7 @@ const LABELS: Record<ActionId, string> = {
   "tool.pathSelect": "Direct Selection (edit path points)",
   "path.makeSelection": "Make a selection from the work path",
   "layer.clip": "Create or release a clipping mask",
+  "layer.mergeDown": "Merge the layer into the one below",
   "tool.text": "Text tool",
   "tool.hand": "Hand tool",
   "tool.zoom": "Zoom tool",

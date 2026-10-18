@@ -257,6 +257,13 @@ export class EditorStore {
     return step.label;
   }
 
+  /** Forget the redo steps (a cancelled dialog's changes shouldn't be redoable). */
+  discardRedo(documentId = this.state.activeDocumentId): void {
+    const session = this.getSession(documentId);
+    if (!session || session.history.future.length === 0) return;
+    this.updateSession(session.document.id, { history: { ...session.history, future: [] } });
+  }
+
   /** Fold the steps made since the document was `before` into one undo step. */
   collapseHistory(
     before: EditorDocument,

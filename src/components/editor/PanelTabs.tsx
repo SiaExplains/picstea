@@ -32,6 +32,7 @@ export function PanelTabs() {
     <section
       className={`${styles.panel} ${styles.tabbedPanel}`}
       aria-label="History, swatches and actions"
+      data-panel="tabs"
     >
       <div className={styles.panelTabs} role="tablist" aria-label="Panels" onKeyDown={onKeyDown}>
         {TABS.map((tab, i) => (

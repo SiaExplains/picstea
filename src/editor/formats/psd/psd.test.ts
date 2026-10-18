@@ -116,6 +116,25 @@ describe("PSD write → read", () => {
     expect(Array.from(hidden.rgba!)).toEqual([1, 2, 3, 4]);
     expect(Array.from(file.composite!.slice(0, 4))).toEqual([9, 8, 7, 255]);
   });
+
+  it("keeps Layers-panel colour labels (lclr) on layers and groups", async () => {
+    const file = sample();
+    const group = file.layers[1] as PsdGroup;
+    const labelled: PsdFile = {
+      ...file,
+      layers: [
+        { ...file.layers[0], colorLabel: 5 },
+        { ...group, colorLabel: 2, children: [{ ...group.children[0], colorLabel: 7 }] },
+      ],
+    };
+    const { file: read } = await readPsd(writePsd(labelled));
+    expect(read.layers[0].colorLabel).toBe(5);
+    expect(read.layers[1].colorLabel).toBe(2);
+    expect((read.layers[1] as PsdGroup).children[0].colorLabel).toBe(7);
+    // No label written, none read back.
+    const { file: plain } = await readPsd(writePsd(sample()));
+    expect(plain.layers[0].colorLabel).toBeUndefined();
+  });
 });
 
 describe("PSD reader hardening", () => {
