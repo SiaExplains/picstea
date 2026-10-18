@@ -25,7 +25,7 @@ const stored = (id: string, data: Uint8Array) => ({
   blob: new Blob([data as BlobPart], { type: "image/png" }),
 });
 
-describe("MYLPER project files", () => {
+describe("Picstea project files", () => {
   it("round-trips the document and its images with fresh ids", async () => {
     const { doc, png } = sample();
     const blob = await writeProjectFile(doc, [stored("asset_a", png), stored("asset_m", png)]);
@@ -44,7 +44,7 @@ describe("MYLPER project files", () => {
 
   it("refuses files that are not projects, or are missing images", async () => {
     const notProject = await writeZip([{ name: "readme.txt", data: new Uint8Array(3) }]);
-    await expect(readProjectFile(notProject, ids)).rejects.toThrow(/not a MYLPER project/);
+    await expect(readProjectFile(notProject, ids)).rejects.toThrow(/not a Picstea project/);
 
     const { doc, png } = sample();
     const partial = await writeProjectFile(doc, [stored("asset_a", png)]);

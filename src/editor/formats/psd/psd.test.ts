@@ -83,7 +83,7 @@ describe("PackBits", () => {
 });
 
 describe("blend keys", () => {
-  it("maps every MYLPER mode both ways and rejects unknown keys", () => {
+  it("maps every Picstea mode both ways and rejects unknown keys", () => {
     expect(blendKey("multiply")).toBe("mul ");
     expect(blendModeFromKey("pass")).toBe("pass-through");
     expect(blendModeFromKey("lbrn")).toBeNull();

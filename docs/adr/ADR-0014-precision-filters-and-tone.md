@@ -23,7 +23,7 @@ and the history panel.
   by the renderer in screen space and are never part of a composite, so they can't be exported.
 - **View preferences are not document data.** Rulers, guide visibility, lock, grid, grid size and
   snap live in a `ViewSettings` observable on the controller; the UI keeps them in local storage
-  (`mylper.view`, listed in the cookie policy). Rulers are off by default (they shrink the canvas).
+  (`picstea.view`, listed in the cookie policy). Rulers are off by default (they shrink the canvas).
 - **Snapping is pure maths** (`core/geometry/snapping.ts`): targets are collected from the
   document (guides, canvas edges and centre, visible layers' bounds, the grid as a formula rather
   than a list of lines), cached per document state in the tool manager, and matched within
@@ -63,7 +63,7 @@ and the history panel.
 - The adjustment registry gains an optional `parse` hook for structured settings; validation of
   stored projects goes through it, so malformed curves are rejected.
 - **No schema migration**: schema v3 documents remain valid. A project that uses Levels or Curves
-  will not open in an older MYLPER build (the validator there doesn't know the types); that is
+  will not open in an older Picstea build (the validator there doesn't know the types); that is
   acceptable for a forward-only web app.
 - PSD export keeps them in the composite only, like the other adjustments.
 

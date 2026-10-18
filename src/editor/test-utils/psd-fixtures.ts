@@ -117,7 +117,7 @@ export function textBlock(options: {
       ["EngineData", { type: "tdta", value: engine }],
     ],
   });
-  // Warp (none) and bounds follow; MYLPER doesn't need them.
+  // Warp (none) and bounds follow; Picstea doesn't need them.
   w.u16(1);
   writeVersionedDescriptor(w, {
     classId: "warp",
@@ -200,7 +200,7 @@ export function gradientMapBlock(
     colorRecord(w, s.color);
     w.u16(0);
   }
-  // Opacity stops and the rest of the gradient, which MYLPER doesn't read.
+  // Opacity stops and the rest of the gradient, which Picstea doesn't read.
   w.u16(2).u32(0).u32(50).u16(255).u32(4096).u32(50).u16(255);
   return w.toBytes();
 }

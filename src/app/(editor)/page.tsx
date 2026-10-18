@@ -5,12 +5,12 @@ import { WelcomeDialog } from "@/components/welcome/WelcomeDialog";
 import { SITE } from "@/lib/seo/site";
 
 export const metadata: Metadata = {
-  title: { absolute: `${SITE.name} — Free online image editor, private by design` },
+  title: { absolute: `${SITE.name} — ${SITE.tagline}` },
   description: SITE.description,
   alternates: { canonical: "/" },
   openGraph: {
     url: "/",
-    title: `${SITE.name} — Free online image editor`,
+    title: `${SITE.name} — ${SITE.tagline}`,
     description: SITE.description,
   },
 };

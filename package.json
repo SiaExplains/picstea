@@ -1,8 +1,8 @@
 {
-  "name": "mylper",
-  "version": "0.16.1",
+  "name": "picstea",
+  "version": "0.17.0",
   "private": true,
-  "description": "MYLPER — a local-first, browser-native image editor.",
+  "description": "Picstea — a local-first, browser-native image editor.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

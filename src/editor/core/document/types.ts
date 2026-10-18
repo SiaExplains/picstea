@@ -1,5 +1,5 @@
 /**
- * MYLPER document model (docs/03_DOCUMENT_MODEL.md).
+ * Picstea document model (docs/03_DOCUMENT_MODEL.md).
  *
  * Documents are immutable values: every edit produces a new document that shares unchanged
  * structure with the previous one. Pixel data never lives in the document — raster layers

@@ -72,7 +72,7 @@ Deliver:
 
 ### Gate 3 acceptance
 
-MYLPER becomes a useful basic image editor.
+Picstea becomes a useful basic image editor.
 
 ---
 
@@ -116,7 +116,7 @@ Deliver robust:
 
 ### Gate 6 acceptance
 
-Users can move projects between MYLPER and common creative tools.
+Users can move projects between Picstea and common creative tools.
 
 ---
 

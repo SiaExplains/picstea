@@ -4,7 +4,7 @@ SEO and AEO are first-class product requirements.
 
 ## SEO goals
 
-MYLPER should be discoverable for queries around:
+Picstea should be discoverable for queries around:
 
 - online image editor
 - free Photoshop alternative

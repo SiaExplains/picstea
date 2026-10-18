@@ -14,8 +14,8 @@ explains it, instead of a page of text in front of the editor.
 - `/` renders the editor. `/editor` answers with a permanent (308) redirect to `/`, configured in
   `next.config.ts`, so old links and bookmarks keep working.
 - `WelcomeDialog` (`src/components/welcome`) opens on the first visit. Dismissing it stores
-  `mylper.welcomeSeen` in `localStorage`; storage errors are ignored, so the dialog simply shows
-  again. The menu-bar logo and Help → Welcome to MYLPER reopen it.
+  `picstea.welcomeSeen` in `localStorage`; storage errors are ignored, so the dialog simply shows
+  again. The menu-bar logo and Help → Welcome to Picstea reopen it.
 - The dialog is part of the server-rendered HTML (a closed `<dialog>`). It holds the page's only
   `<h1>`, the feature highlights and a short FAQ, so search engines and AI assistants still get a
   real description of the app. JSON-LD (`WebSite`, `Organization`, `SoftwareApplication`) stays

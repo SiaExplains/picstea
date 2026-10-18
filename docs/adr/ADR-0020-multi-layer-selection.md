@@ -39,7 +39,7 @@ The existing single-layer maths (`scaleFromHandle`, `rotateAroundCenter`) transf
 frame, and its change `M = F₁·F₀⁻¹` is applied to each layer:
 
 - **Decomposition**: `transformThrough` splits `M·T` into position, rotation and signed scales.
-  It drops shear, because MYLPER layers can't be skewed, but places the content centre exactly.
+  It drops shear, because Picstea layers can't be skewed, but places the content centre exactly.
   It is exact for moves, uniform scales, rotations, flips and axis-aligned stretches.
 - **Choosing the form**: of the two equivalent forms it picks the one closest to the layer's old
   rotation, so a flip doesn't appear as a 180° turn.

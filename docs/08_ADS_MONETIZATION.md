@@ -5,7 +5,7 @@
 Primary revenue:
 
 1. Google Ads
-2. MYLPER custom sponsorship ads
+2. Picstea custom sponsorship ads
 
 ## Advertising principle
 

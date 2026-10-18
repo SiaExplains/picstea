@@ -4,7 +4,7 @@ import type { ConsentVendor } from "../consent/vendors";
  * Google AdSense as a consent vendor (docs/08, ADR-0013). Configured only through public build
  * variables; without a valid publisher ID nothing from Google is ever referenced. Ads are
  * requested as non-personalised: personalised ads in the EEA/UK need a Google-certified consent
- * platform (IAB TCF), which MYLPER does not use yet.
+ * platform (IAB TCF), which Picstea does not use yet.
  */
 
 const CLIENT_PATTERN = /^ca-pub-\d{16}$/;

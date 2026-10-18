@@ -22,7 +22,7 @@ import {
  * written before and deletes ones the document no longer references.
  */
 
-const DB_NAME = "mylper";
+const DB_NAME = "picstea";
 const DB_VERSION = 1;
 const PROJECTS = "projects";
 const ASSETS = "assets";
@@ -117,7 +117,7 @@ export class IndexedDbProjectStorage implements ProjectStorage {
           );
         req.onblocked = () =>
           reject(
-            new StorageError("unavailable", "Close other MYLPER tabs to finish updating storage."),
+            new StorageError("unavailable", "Close other Picstea tabs to finish updating storage."),
           );
       }).catch((error: unknown) => {
         this.dbPromise = null;

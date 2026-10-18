@@ -16,12 +16,12 @@ export const metadata: Metadata = {
 
 const FAQS: Faq[] = [
   {
-    q: "Is MYLPER free?",
+    q: "Is Picstea free?",
     a: "Yes. The editor is free to use in your browser, with no account and no watermark.",
   },
   {
     q: "Are my photos uploaded?",
-    a: "No. Photos are opened, edited and exported on your device. MYLPER has no server that receives your images.",
+    a: "No. Photos are opened, edited and exported on your device. Picstea has no server that receives your images.",
   },
   {
     q: "Which formats can I export?",
@@ -46,7 +46,7 @@ export default function OnlinePhotoEditor() {
     <LandingPage
       path={PATH}
       title={TITLE}
-      lead="MYLPER is a free photo editor that runs in your browser. It has layers, masks, adjustment layers and selections like a desktop editor — and your photos never leave your device."
+      lead="Picstea is a free photo editor that runs in your browser. It has layers, masks, adjustment layers and selections like a desktop editor — and your photos never leave your device."
       faqs={FAQS}
     >
       <h2>Edit a photo in four steps</h2>

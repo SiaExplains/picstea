@@ -60,7 +60,7 @@ needed there, including for importing PSD smart objects).
   object takes the clipping flag. Rasterize (smart objects, shapes, text) renders the layer
   without its opacity, blend, masks and effects and keeps those on the new pixel layer.
 - Place Embedded wraps an image, SVG, PSD (layers kept, via the existing PSD import) or a
-  `.mylper` project in a smart object; Place still creates pixel layers.
+  `.picstea` project in a smart object; Place still creates pixel layers.
 - PSD export rasterises smart objects with a warning; SVG embeds them as images.
 
 ## Consequences

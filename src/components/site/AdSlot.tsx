@@ -13,7 +13,7 @@ const noSubscribe = () => () => {};
 
 /**
  * A fixed-size ad space on website pages (never in the editor). With advertising consent and a
- * configured AdSense unit it shows a Google ad; otherwise MYLPER's own sponsorship. The box is
+ * configured AdSense unit it shows a Google ad; otherwise Picstea's own sponsorship. The box is
  * reserved up front, so nothing shifts when the ad loads (docs/08, docs/10 Core Web Vitals).
  */
 export function AdSlot({ placement }: { placement: Exclude<Placement, "editor-start"> }) {

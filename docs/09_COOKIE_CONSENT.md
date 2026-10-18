@@ -1,6 +1,6 @@
 # 09 — Cookies, Consent & Privacy Controls
 
-MYLPER targets users in Europe, including Germany.
+Picstea targets users in Europe, including Germany.
 
 Cookie/consent implementation must be treated as a product requirement, not a late marketing addition.
 
@@ -37,7 +37,7 @@ Examples:
 
 ### Custom advertising
 
-MYLPER's own sponsorship technology must have a documented privacy basis and should not silently become behavioral tracking.
+Picstea's own sponsorship technology must have a documented privacy basis and should not silently become behavioral tracking.
 
 ## Consent UI
 

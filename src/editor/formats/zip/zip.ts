@@ -3,7 +3,7 @@ import { deflate, inflate } from "../binary/compression";
 import { crc32 } from "./crc32";
 
 /**
- * Minimal ZIP (PKWARE APPNOTE) writer and hardened reader for MYLPER project files (ADR-0011).
+ * Minimal ZIP (PKWARE APPNOTE) writer and hardened reader for Picstea project files (ADR-0011).
  * Stored and deflated entries only; no ZIP64, encryption or multi-disk archives.
  */
 
@@ -109,7 +109,7 @@ export function readZip(bytes: Uint8Array, limits: ZipLimits): Map<string, ZipEn
       break;
     }
   }
-  if (endAt < 0) throw new FormatError("This is not a valid MYLPER project file.");
+  if (endAt < 0) throw new FormatError("This is not a valid Picstea project file.");
   const end = new ByteReader(bytes, true, endAt);
   end.skip(4);
   const disk = end.u16();

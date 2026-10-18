@@ -8,12 +8,13 @@
   --ed-border: #3a3b40;
   --ed-text: #e6e6e8;
   --ed-text-dim: #a4a5ab;
-  --ed-accent: #4c8dff;
+  /* Picstea brand blue (logo #0d99e6). */
+  --ed-accent: #2ba6ec;
   /* Filled backgrounds that carry text: white on it meets 4.5:1 (WCAG 1.4.3). */
-  --ed-accent-strong: #2f6fd8;
-  --ed-accent-soft: rgba(76, 141, 255, 0.18);
+  --ed-accent-strong: #0a72b5;
+  --ed-accent-soft: rgba(13, 153, 230, 0.2);
   --ed-danger: #ff6b6b;
-  --ed-focus: #8ab4ff;
+  --ed-focus: #7cc8f5;
 
   position: fixed;
   inset: 0;
@@ -74,6 +75,10 @@
   appearance: none;
   background: transparent;
   cursor: pointer;
+}
+
+.brandLogo {
+  border-radius: 3px;
 }
 
 .brand:hover {
@@ -975,7 +980,7 @@
   margin: 0;
   padding: 0;
   border: 0;
-  outline: 1px dashed #4c8dff;
+  outline: 1px dashed #2ba6ec;
   background: transparent;
   resize: none;
   overflow: hidden;

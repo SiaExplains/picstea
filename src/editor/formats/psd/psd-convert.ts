@@ -242,7 +242,7 @@ function convertPsdFile(
     const mode = blendModeFromKey(key);
     if (mode === "pass-through" && group) return mode;
     if (mode && mode !== "pass-through") return mode;
-    warnings.add("Some blend modes are not available in MYLPER and were set to Normal.");
+    warnings.add("Some blend modes are not available in Picstea and were set to Normal.");
     return group ? "pass-through" : "normal";
   };
 
@@ -251,7 +251,7 @@ function convertPsdFile(
     const w = rectWidth(mask.rect);
     const h = rectHeight(mask.rect);
     if (mask.defaultColor === 255 && w * h === 0) return undefined;
-    // Outside its box a MYLPER mask reveals; a PSD mask hiding outside its box is widened to
+    // Outside its box a Picstea mask reveals; a PSD mask hiding outside its box is widened to
     // cover the canvas so the hidden area stays hidden.
     const left = mask.defaultColor === 255 ? mask.rect.left : Math.min(0, mask.rect.left);
     const top = mask.defaultColor === 255 ? mask.rect.top : Math.min(0, mask.rect.top);
@@ -350,7 +350,7 @@ function convertPsdFile(
     return smart;
   };
 
-  /** What a Photoshop leaf layer becomes in MYLPER (ADR-0017). */
+  /** What a Photoshop leaf layer becomes in Picstea (ADR-0017). */
   const leaf = (node: PsdPixelLayer): Layer => {
     const x = node.extras;
     if (x?.adjustment) return createAdjustmentLayer(doc, x.adjustment, node.name || "Adjustment");

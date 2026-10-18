@@ -3,7 +3,7 @@ import { SITE } from "@/lib/seo/site";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: `${SITE.name} — free online image editor`,
+    name: `${SITE.name} — free online photo editor`,
     short_name: SITE.name,
     description: SITE.description,
     start_url: "/",

@@ -69,7 +69,7 @@ test("Google ads load only after consent, and the choice can be changed later", 
   for (const name of ["Reject non-essential", "Manage preferences", "Accept all"]) {
     await expect(banner.getByRole("button", { name })).toBeVisible();
   }
-  // Until a choice is made, the ad space shows MYLPER's own (tracking-free) sponsorship.
+  // Until a choice is made, the ad space shows Picstea's own (tracking-free) sponsorship.
   await expect(page.getByTestId("sponsor-card")).toBeVisible();
   expect(google).toEqual([]);
 
@@ -105,7 +105,7 @@ test("the editor stays free of third-party code even with ads configured", async
   // Even with advertising accepted on the website…
   await page.addInitScript(() =>
     localStorage.setItem(
-      "mylper.consent",
+      "picstea.consent",
       JSON.stringify({
         version: 1,
         choices: { analytics: true, advertising: true },
@@ -114,7 +114,7 @@ test("the editor stays free of third-party code even with ads configured", async
     ),
   );
   await openEditor(page);
-  // …the editor shows only MYLPER's own sponsorship on its start screen.
+  // …the editor shows only Picstea's own sponsorship on its start screen.
   const sponsor = page.getByTestId("sponsor-card");
   await expect(sponsor).toBeVisible();
   await expect(sponsor.getByText("Sponsored")).toBeVisible();

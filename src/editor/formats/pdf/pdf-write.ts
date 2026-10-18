@@ -81,7 +81,7 @@ export async function writePdf(page: PdfPage): Promise<Uint8Array> {
       );
     }
   }
-  const info = add(`<< /Producer (MYLPER) /Title ${pdfString(page.title ?? "Untitled")} >>`);
+  const info = add(`<< /Producer (Picstea) /Title ${pdfString(page.title ?? "Untitled")} >>`);
 
   // Assemble with byte offsets for the cross-reference table.
   // The binary comment after the version marks the file as binary for transfer tools.

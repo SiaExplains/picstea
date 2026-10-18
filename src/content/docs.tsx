@@ -4,7 +4,7 @@ import { EditorLink } from "@/components/site/EditorLink";
 import { ShortcutTable } from "@/components/site/ShortcutTable";
 
 /**
- * MYLPER documentation (docs/10 "Content strategy"). Every page describes features that exist
+ * Picstea documentation (docs/10 "Content strategy"). Every page describes features that exist
  * today; limitations are stated plainly. Content is typed TSX, so no Markdown dependency.
  */
 
@@ -21,19 +21,19 @@ export interface DocPage {
 export const DOCS: readonly DocPage[] = [
   {
     slug: "getting-started",
-    title: "Getting started with MYLPER",
+    title: "Getting started with Picstea",
     description:
       "Create a document, open an image or PSD, edit with layers and export — all in your browser, without uploading anything.",
     updated: "2026-10-09",
     body: () => (
       <>
         <p>
-          MYLPER is an image editor that runs entirely in your browser. Your images and projects
+          Picstea is an image editor that runs entirely in your browser. Your images and projects
           stay on your device: nothing is uploaded to a server.
         </p>
         <h2>Open the editor</h2>
         <p>
-          Go to <EditorLink>mylper.com</EditorLink>. The editor opens straight away. On the start
+          Go to <EditorLink>picstea.com</EditorLink>. The editor opens straight away. On the start
           screen you can:
         </p>
         <ul>
@@ -45,7 +45,7 @@ export const DOCS: readonly DocPage[] = [
             Sizes you use are listed under Recent.
           </li>
           <li>
-            <strong>Open image</strong> — PNG, JPEG, WebP, GIF, SVG, PSD or a <code>.mylper</code>{" "}
+            <strong>Open image</strong> — PNG, JPEG, WebP, GIF, SVG, PSD or a <code>.picstea</code>{" "}
             project file. You can also drop a file anywhere on the page or paste an image.
           </li>
           <li>
@@ -76,8 +76,8 @@ export const DOCS: readonly DocPage[] = [
         <ul>
           <li>Work is saved in this browser automatically; File → Save to Browser saves now.</li>
           <li>
-            File → Save Project As… downloads a <code>.mylper</code> file with everything in it, for
-            backups or to continue on another computer.
+            File → Save Project As… downloads a <code>.picstea</code> file with everything in it,
+            for backups or to continue on another computer.
           </li>
           <li>File → Export As… creates a PNG, JPEG, WebP, SVG, PDF or PSD file.</li>
         </ul>
@@ -92,7 +92,7 @@ export const DOCS: readonly DocPage[] = [
     slug: "layers-groups-and-masks",
     title: "Layers, groups and masks",
     description:
-      "How MYLPER's layers work: pixel, shape, text, fill and adjustment layers, groups, blend modes, opacity, masks and effects.",
+      "How Picstea's layers work: pixel, shape, text, fill and adjustment layers, groups, blend modes, opacity, masks and effects.",
     updated: "2026-10-09",
     body: () => (
       <>
@@ -207,7 +207,7 @@ export const DOCS: readonly DocPage[] = [
           <li>Masks follow a layer when it moves, but not when it is scaled or rotated.</li>
           <li>
             Stretching a selection that contains rotated layers keeps each of those layers
-            rectangular (MYLPER has no skew): their centres move correctly, but their shape is not
+            rectangular (Picstea has no skew): their centres move correctly, but their shape is not
             sheared.
           </li>
           <li>
@@ -272,7 +272,7 @@ export const DOCS: readonly DocPage[] = [
     slug: "painting-and-fills",
     title: "Painting, fills and gradients",
     description:
-      "Brush, pencil, eraser, paint bucket, gradient and eyedropper in MYLPER, and how they work with layers, masks and selections.",
+      "Brush, pencil, eraser, paint bucket, gradient and eyedropper in Picstea, and how they work with layers, masks and selections.",
     updated: "2026-10-09",
     body: () => (
       <>
@@ -314,7 +314,7 @@ export const DOCS: readonly DocPage[] = [
     slug: "retouching",
     title: "Retouching: clone, heal, dodge, burn and more",
     description:
-      "Remove blemishes and distractions with the Clone Stamp and Healing Brush in MYLPER, and lighten, darken, saturate, blur, sharpen or smudge areas with a brush.",
+      "Remove blemishes and distractions with the Clone Stamp and Healing Brush in Picstea, and lighten, darken, saturate, blur, sharpen or smudge areas with a brush.",
     updated: "2026-10-09",
     body: () => (
       <>
@@ -387,7 +387,7 @@ export const DOCS: readonly DocPage[] = [
     slug: "guides-grid-and-snapping",
     title: "Rulers, guides, grid and snapping",
     description:
-      "Place layers precisely in MYLPER: rulers, guides you drag from the ruler, a grid, snapping with smart guides, and aligning layers to the canvas or a selection.",
+      "Place layers precisely in Picstea: rulers, guides you drag from the ruler, a grid, snapping with smart guides, and aligning layers to the canvas or a selection.",
     updated: "2026-10-09",
     body: () => (
       <>
@@ -451,7 +451,7 @@ export const DOCS: readonly DocPage[] = [
     slug: "filters",
     title: "Filters: blur, sharpen, noise and more",
     description:
-      "Apply filters to a pixel layer in MYLPER with a live preview: Gaussian, box and motion blur, Unsharp Mask, Add Noise, Pixelate, Emboss and Find Edges.",
+      "Apply filters to a pixel layer in Picstea with a live preview: Gaussian, box and motion blur, Unsharp Mask, Add Noise, Pixelate, Emboss and Find Edges.",
     updated: "2026-10-09",
     body: () => (
       <>
@@ -513,7 +513,7 @@ export const DOCS: readonly DocPage[] = [
     slug: "paths-and-the-pen-tool",
     title: "Paths and the Pen tool",
     description:
-      "Draw precise shapes and selections in MYLPER with the Pen tool: anchor points, curves, Direct Selection, paths to selections and back, and vector masks.",
+      "Draw precise shapes and selections in Picstea with the Pen tool: anchor points, curves, Direct Selection, paths to selections and back, and vector masks.",
     updated: "2026-10-09",
     body: () => (
       <>
@@ -584,12 +584,12 @@ export const DOCS: readonly DocPage[] = [
     slug: "smart-objects-and-smart-filters",
     title: "Smart objects and smart filters",
     description:
-      "Use smart objects in MYLPER to scale and transform without losing quality, edit their contents in their own tab, and apply filters you can change later.",
+      "Use smart objects in Picstea to scale and transform without losing quality, edit their contents in their own tab, and apply filters you can change later.",
     updated: "2026-10-09",
     body: () => (
       <>
         <p>
-          A smart object is a layer that contains a whole document of its own. MYLPER redraws it
+          A smart object is a layer that contains a whole document of its own. Picstea redraws it
           from that original at whatever size it appears, so you can scale it down and back up — or
           rotate it many times — without losing sharpness.
         </p>
@@ -599,7 +599,7 @@ export const DOCS: readonly DocPage[] = [
             Layer → Convert to Smart Object turns the active layer (or group) into a smart object.
           </li>
           <li>
-            File → Place Embedded… adds an image, SVG, PSD or <code>.mylper</code> project as a
+            File → Place Embedded… adds an image, SVG, PSD or <code>.picstea</code> project as a
             smart object. PSD files keep their layers inside it.
           </li>
         </ul>
@@ -644,7 +644,7 @@ export const DOCS: readonly DocPage[] = [
     slug: "actions-batch-colours-and-history",
     title: "Actions, batch processing, colours and history",
     description:
-      "Record actions in MYLPER and replay them on any image or a whole batch of files, pick exact colours, keep swatches, and step back through the History panel.",
+      "Record actions in Picstea and replay them on any image or a whole batch of files, pick exact colours, keep swatches, and step back through the History panel.",
     updated: "2026-10-09",
     body: () => (
       <>
@@ -706,9 +706,9 @@ export const DOCS: readonly DocPage[] = [
         <h2>Sharing actions</h2>
         <p>
           Actions are stored in this browser. Export… saves all of them as a{" "}
-          <code>mylper-actions.json</code> file; Import… adds the actions from such a file, for
-          example on another computer. Imported files are checked strictly: anything MYLPER does not
-          recognise is refused.
+          <code>picstea-actions.json</code> file; Import… adds the actions from such a file, for
+          example on another computer. Imported files are checked strictly: anything Picstea does
+          not recognise is refused.
         </p>
       </>
     ),
@@ -717,7 +717,7 @@ export const DOCS: readonly DocPage[] = [
     slug: "file-formats",
     title: "File formats: PSD, PNG, JPEG, WebP, SVG, PDF",
     description:
-      "Which file types MYLPER opens and exports, what each format keeps, and how to move projects between MYLPER and other tools.",
+      "Which file types Picstea opens and exports, what each format keeps, and how to move projects between Picstea and other tools.",
     updated: "2026-10-09",
     body: () => (
       <>
@@ -742,7 +742,7 @@ export const DOCS: readonly DocPage[] = [
             <strong>SVG</strong> opens as an image (pixels). Scripts in SVG files never run.
           </li>
           <li>
-            <strong>.mylper</strong> project files open exactly as they were saved.
+            <strong>.picstea</strong> project files open exactly as they were saved.
           </li>
         </ul>
         <p>Files are recognised by their contents, not their names.</p>
@@ -768,7 +768,7 @@ export const DOCS: readonly DocPage[] = [
         </ul>
         <h2>Not supported yet</h2>
         <p>
-          Opening PDF and TIFF files, PSB (large document) files, 16/32-bit and CMYK PSDs. MYLPER
+          Opening PDF and TIFF files, PSB (large document) files, 16/32-bit and CMYK PSDs. Picstea
           says so clearly when you try.
         </p>
       </>
@@ -777,7 +777,7 @@ export const DOCS: readonly DocPage[] = [
   {
     slug: "keyboard-shortcuts",
     title: "Keyboard shortcuts",
-    description: "Every MYLPER keyboard shortcut. Cmd on macOS, Ctrl on Windows and Linux.",
+    description: "Every Picstea keyboard shortcut. Cmd on macOS, Ctrl on Windows and Linux.",
     updated: "2026-10-09",
     body: () => (
       <>
@@ -793,13 +793,13 @@ export const DOCS: readonly DocPage[] = [
     slug: "privacy-and-storage",
     title: "Privacy and where your files are stored",
     description:
-      "MYLPER edits images on your device and never uploads them. Where projects are kept, how to back them up and what the website stores.",
+      "Picstea edits images on your device and never uploads them. Where projects are kept, how to back them up and what the website stores.",
     updated: "2026-10-09",
     body: () => (
       <>
         <h2>Your images never leave your device</h2>
         <p>
-          Opening, editing, saving and exporting all happen in your browser. MYLPER has no server
+          Opening, editing, saving and exporting all happen in your browser. Picstea has no server
           that receives your images or projects, and the editor is not allowed to send document data
           anywhere — the browser enforces that with a security policy.
         </p>
@@ -808,7 +808,7 @@ export const DOCS: readonly DocPage[] = [
           Projects are saved in your browser&apos;s storage (IndexedDB) on this device. They are not
           synced to other devices or browsers. Browsers can clear this storage — for example in
           private windows or when space runs low — so for anything important use File → Save Project
-          As… to keep a <code>.mylper</code> file, or export the image.
+          As… to keep a <code>.picstea</code> file, or export the image.
         </p>
         <h2>What the website stores</h2>
         <p>

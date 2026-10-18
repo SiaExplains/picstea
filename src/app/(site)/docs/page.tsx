@@ -7,9 +7,9 @@ import { DOCS } from "@/content/docs";
 export const metadata: Metadata = {
   title: "Documentation",
   description:
-    "How to use MYLPER, the free online image editor: layers, masks, selections, painting, file formats, shortcuts and privacy.",
+    "How to use Picstea, the free online image editor: layers, masks, selections, painting, file formats, shortcuts and privacy.",
   alternates: { canonical: "/docs" },
-  openGraph: { url: "/docs", title: "MYLPER documentation" },
+  openGraph: { url: "/docs", title: "Picstea documentation" },
 };
 
 export default function DocsIndex() {
@@ -20,7 +20,7 @@ export default function DocsIndex() {
         { name: "Docs", path: "/docs" },
       ]}
       title="Documentation"
-      lead="Everything MYLPER can do today, how to use it, and what it can't do yet."
+      lead="Everything Picstea can do today, how to use it, and what it can't do yet."
     >
       <ul className={styles.list}>
         {DOCS.map((doc) => (

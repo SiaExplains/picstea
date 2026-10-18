@@ -13,7 +13,7 @@ export interface Action {
 export const MAX_ACTIONS = 100;
 export const MAX_ACTION_STEPS = 200;
 export const MAX_ACTION_NAME_LENGTH = 100;
-export const ACTIONS_FILE_FORMAT = "mylper-actions";
+export const ACTIONS_FILE_FORMAT = "picstea-actions";
 export const ACTIONS_FILE_VERSION = 1;
 /** Imported action files larger than this are refused before parsing. */
 export const MAX_ACTIONS_FILE_BYTES = 2 * 1024 * 1024;
@@ -90,7 +90,7 @@ export function parseActionsFile(text: string, newId: () => string): Action[] {
   try {
     data = JSON.parse(text);
   } catch {
-    throw new ActionsFormatError("This is not a MYLPER actions file.");
+    throw new ActionsFormatError("This is not a Picstea actions file.");
   }
   if (
     typeof data !== "object" ||
@@ -98,10 +98,10 @@ export function parseActionsFile(text: string, newId: () => string): Action[] {
     own(data, "format") !== ACTIONS_FILE_FORMAT ||
     !Array.isArray(own(data, "actions"))
   ) {
-    throw new ActionsFormatError("This is not a MYLPER actions file.");
+    throw new ActionsFormatError("This is not a Picstea actions file.");
   }
   if (own(data, "version") !== ACTIONS_FILE_VERSION) {
-    throw new ActionsFormatError("This actions file was made by a newer version of MYLPER.");
+    throw new ActionsFormatError("This actions file was made by a newer version of Picstea.");
   }
   const list = own(data, "actions") as unknown[];
   if (list.length > MAX_ACTIONS) {

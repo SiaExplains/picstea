@@ -135,7 +135,7 @@ export function EditorShell() {
       if (isTypingTarget(event.target)) return;
       const files = imageFiles(event.clipboardData?.files);
       if (files.length === 0) {
-        // No image from another app: paste pixels copied in MYLPER, if any.
+        // No image from another app: paste pixels copied in Picstea, if any.
         if (controller.store.getSession() && controller.hasClipboard()) {
           event.preventDefault();
           controller.pasteClipboard();

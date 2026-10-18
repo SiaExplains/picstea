@@ -6,7 +6,7 @@ const LABELS: Record<ActionId, string> = {
   "file.new": "New document",
   "file.open": "Open file",
   "file.save": "Save to browser",
-  "file.saveProject": "Save project as .mylper",
+  "file.saveProject": "Save project as .picstea",
   "file.export": "Export",
   "edit.undo": "Undo",
   "edit.redo": "Redo",

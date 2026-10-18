@@ -1324,7 +1324,7 @@ export class EditorController {
     );
   }
 
-  /** Pixels last copied in MYLPER (the system clipboard may hold something else). */
+  /** Pixels last copied in Picstea (the system clipboard may hold something else). */
   private clipboard: { asset: string; x: number; y: number; width: number; height: number } | null =
     null;
 
@@ -1437,7 +1437,7 @@ export class EditorController {
       const blob = await this.assets.getBlob(assetId);
       await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
     } catch (error) {
-      // Denied permission or no image support: copying inside MYLPER still works.
+      // Denied permission or no image support: copying inside Picstea still works.
       this.logger.info("system clipboard unavailable", describeError(error));
     }
   }
@@ -1518,7 +1518,7 @@ export class EditorController {
 
   // ---------------------------------------------------------------- files (ADR-0011)
 
-  /** Open any supported file — image, SVG, PSD or MYLPER project — detected from its bytes. */
+  /** Open any supported file — image, SVG, PSD or Picstea project — detected from its bytes. */
   openFile(file: Blob, filename: string): Promise<Result> {
     return this.withBusy("Opening…", () => this.openFileNow(file, filename));
   }
@@ -1663,7 +1663,7 @@ export class EditorController {
     if (warnings.length > 0) this.notify("info", `${title}: ${warnings.join(" ")}`);
   }
 
-  /** The active document as a portable `.mylper` project file. */
+  /** The active document as a portable `.picstea` project file. */
   saveProjectFile(): ReturnType<EditorController["saveProjectFileNow"]> {
     return this.withBusy("Saving project…", () => this.saveProjectFileNow());
   }

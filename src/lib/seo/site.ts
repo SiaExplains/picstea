@@ -1,6 +1,6 @@
 /** Canonical site settings shared by metadata, sitemap, robots and structured data. */
 
-const FALLBACK_SITE_URL = "https://mylper.com";
+const FALLBACK_SITE_URL = "https://picstea.com";
 
 function resolveSiteUrl(): string {
   const raw = process.env.NEXT_PUBLIC_SITE_URL?.trim();
@@ -15,12 +15,14 @@ function resolveSiteUrl(): string {
 }
 
 export const SITE = {
-  name: "MYLPER",
+  name: "Picstea",
   url: resolveSiteUrl(),
-  tagline: "Free online image editor that keeps your images on your device",
+  /** The brand line, used in marketing copy and the welcome dialog — not in the editor chrome. */
+  slogan: "Edit Boldly. Create Freely.",
+  tagline: "Free Online Photo Editor",
   description:
-    "MYLPER is a free image editor in your browser, with layers, masks and adjustment layers. " +
-    "Your images stay on your device and are never uploaded.",
+    "Picstea is a free online photo editor with layers, masks and adjustment layers. " +
+    "Edit and export images in your browser — they never leave your device.",
 } as const;
 
 export function absoluteUrl(path: string): string {

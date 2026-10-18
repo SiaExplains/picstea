@@ -3,7 +3,7 @@
 ## High-level architecture
 
 ```text
-                         MYLPER.COM
+                         PICSTEA.COM
                              |
                          Vercel
                              |

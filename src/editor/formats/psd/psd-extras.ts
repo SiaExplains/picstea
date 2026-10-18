@@ -333,7 +333,7 @@ function decodeText(body: Uint8Array, notes: Set<string>): PsdText | undefined {
   };
 }
 
-/** Placement of a smart object, or undefined when MYLPER can't reproduce it (warps, filters). */
+/** Placement of a smart object, or undefined when Picstea can't reproduce it (warps, filters). */
 function decodePlaced(key: string, body: Uint8Array, notes: Set<string>): PsdPlaced | undefined {
   const r = new ByteReader(body);
   let id: string | undefined;

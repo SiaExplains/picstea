@@ -179,7 +179,7 @@ function readRecord(r: ByteReader): RawRecord {
         source = "adjustment";
         break;
       case "lrFX":
-        // Old-style effects; files with them also carry lfx2, which is what MYLPER reads.
+        // Old-style effects; files with them also carry lfx2, which is what Picstea reads.
         break;
       default:
         break;

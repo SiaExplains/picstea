@@ -1,4 +1,4 @@
-/** MYLPER's own minimal icon set (no third-party or proprietary artwork). */
+/** Picstea's own minimal icon set (no third-party or proprietary artwork). */
 
 type IconProps = { size?: number };
 

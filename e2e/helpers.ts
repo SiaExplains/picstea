@@ -13,7 +13,7 @@ export function trackErrors(page: Page): string[] {
 
 /** Open the editor (the home page) with the first-visit welcome dialog already dismissed. */
 export async function openEditor(page: Page) {
-  await page.addInitScript(() => window.localStorage.setItem("mylper.welcomeSeen", "1"));
+  await page.addInitScript(() => window.localStorage.setItem("picstea.welcomeSeen", "1"));
   await page.goto("/");
 }
 

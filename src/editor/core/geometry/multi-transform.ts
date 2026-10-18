@@ -43,7 +43,7 @@ const angleDistance = (a: number, b: number) => Math.abs(normalizeDegrees(a - b)
 /**
  * Apply `change` to a layer with transform `t` and content `size`. Exact when the result has no
  * skew (moves, uniform scales, rotations, flips, and axis-aligned stretches). Otherwise the
- * skew is dropped — MYLPER layers can't be skewed — while the content centre still lands exactly
+ * skew is dropped — Picstea layers can't be skewed — while the content centre still lands exactly
  * where the full transform puts it. Of the two equivalent forms (flipped in x or y), the one
  * whose rotation is closer to the original is chosen, so a flip doesn't show up as 180°.
  */

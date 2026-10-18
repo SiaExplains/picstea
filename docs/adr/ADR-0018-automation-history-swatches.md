@@ -31,8 +31,8 @@ stored, exported or replayed on another file.
 
 ### Untrusted action files
 
-Actions are kept in local storage (`mylper.actions`) and exported/imported as
-`{ format: "mylper-actions", version: 1, actions }`. Parsing reads own properties only, knows
+Actions are kept in local storage (`picstea.actions`) and exported/imported as
+`{ format: "picstea-actions", version: 1, actions }`. Parsing reads own properties only, knows
 only the listed step types, validates filter values and adjustments with the existing
 validators (`parseFilterValues`, `parseAdjustment`), and enforces limits: 2 MB per file, 100
 actions, 200 steps per action, names up to 100 characters. Imported actions get fresh ids.
@@ -57,7 +57,7 @@ keyboard-operable listbox.
 
 The toolbar colour chips open an HSB picker (saturation/brightness field operable with arrow
 keys, hue slider, Hex/RGB/HSB fields), applied on OK. Swatches live in local storage
-(`mylper.swatches`, at most 300, validated on load). Both storage keys are listed in the cookie
+(`picstea.swatches`, at most 300, validated on load). Both storage keys are listed in the cookie
 policy. Colour fields in the Properties panel keep the native picker.
 
 ## Consequences

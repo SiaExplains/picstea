@@ -1,5 +1,5 @@
 /**
- * MYLPER's own sponsorship system (docs/08). Sponsorships are static, self-hosted content: no
+ * Picstea's own sponsorship system (docs/08). Sponsorships are static, self-hosted content: no
  * scripts, no cookies, no impression or click tracking, so they never need consent and never
  * inspect what a user is editing (ADR-0013).
  */
@@ -22,8 +22,8 @@ export interface Advertisement {
 /** Shown when no sponsor is booked for a placement. */
 export const HOUSE_AD: Advertisement = {
   id: "house",
-  sponsor: "MYLPER",
-  title: "Sponsor MYLPER",
+  sponsor: "Picstea",
+  title: "Sponsor Picstea",
   description: "Reach people who create and edit images. Privacy-friendly, no tracking.",
   targetUrl: "/sponsorship",
   placement: ["site-sidebar", "blog-inline", "editor-start"],

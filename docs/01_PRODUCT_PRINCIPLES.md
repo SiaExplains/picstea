@@ -2,9 +2,9 @@
 
 ## 1. Browser-first
 
-MYLPER is primarily a browser application.
+Picstea is primarily a browser application.
 
-The editor must be able to operate after the application shell loads, without a request to a MYLPER editing backend.
+The editor must be able to operate after the application shell loads, without a request to a Picstea editing backend.
 
 ## 2. Local-first
 

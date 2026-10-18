@@ -5,7 +5,7 @@
 
 ## Context
 
-MYLPER's core promise is that user images and projects stay on the user's device
+Picstea's core promise is that user images and projects stay on the user's device
 (docs/01_PRODUCT_PRINCIPLES.md, docs/07_STORAGE_PRIVACY.md). Vercel hosts the Next.js app, but must
 not become an image-processing or storage backend.
 

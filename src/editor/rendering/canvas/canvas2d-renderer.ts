@@ -27,7 +27,7 @@ export const DEFAULT_THEME: Canvas2DTheme = {
   checkerLight: "#ffffff",
   checkerDark: "#cccccc",
   border: "rgba(0, 0, 0, 0.6)",
-  overlay: "#4c8dff",
+  overlay: "#2ba6ec",
   overlayShadow: "rgba(0, 0, 0, 0.55)",
   cropShade: "rgba(0, 0, 0, 0.55)",
   guide: "#00c2ff",

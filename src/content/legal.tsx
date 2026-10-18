@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 
 /**
- * Legal pages (docs/09 "Legal pages"). DRAFTS: they describe what MYLPER actually does, but the
+ * Legal pages (docs/09 "Legal pages"). DRAFTS: they describe what Picstea actually does, but the
  * operator details are placeholders and the wording must be reviewed by a qualified lawyer.
  * Until `finalized` is set, each page shows a draft note and is not indexed.
  *
@@ -40,7 +40,7 @@ export const LEGAL: Record<"privacy" | "cookies" | "terms" | "imprint" | "sponso
       path: "/privacy",
       title: "Privacy policy",
       description:
-        "How MYLPER handles personal data: images stay on your device; what the website and its hosting process.",
+        "How Picstea handles personal data: images stay on your device; what the website and its hosting process.",
       finalized: false,
       body: () => (
         <>
@@ -93,8 +93,8 @@ export const LEGAL: Record<"privacy" | "cookies" | "terms" | "imprint" | "sponso
           </p>
           <h2>Sponsorships</h2>
           <p>
-            MYLPER&apos;s own sponsorships are plain images and links served from our site. They use
-            no cookies and no tracking; we do not record who sees or clicks them.
+            Picstea&apos;s own sponsorships are plain images and links served from our site. They
+            use no cookies and no tracking; we do not record who sees or clicks them.
           </p>
           <h2>Your rights</h2>
           <p>
@@ -113,7 +113,7 @@ export const LEGAL: Record<"privacy" | "cookies" | "terms" | "imprint" | "sponso
     cookies: {
       path: "/cookies",
       title: "Cookie policy",
-      description: "What MYLPER stores in your browser, why, and how to change your consent.",
+      description: "What Picstea stores in your browser, why, and how to change your consent.",
       finalized: false,
       body: () => (
         <>
@@ -134,7 +134,7 @@ export const LEGAL: Record<"privacy" | "cookies" | "terms" | "imprint" | "sponso
             <tbody>
               <tr>
                 <td>
-                  <code>mylper</code>
+                  <code>picstea</code>
                 </td>
                 <td>IndexedDB</td>
                 <td>Your projects and images, saved in this browser by the editor.</td>
@@ -142,7 +142,7 @@ export const LEGAL: Record<"privacy" | "cookies" | "terms" | "imprint" | "sponso
               </tr>
               <tr>
                 <td>
-                  <code>mylper.consent</code>
+                  <code>picstea.consent</code>
                 </td>
                 <td>Local storage</td>
                 <td>Remembers your privacy choice.</td>
@@ -150,7 +150,7 @@ export const LEGAL: Record<"privacy" | "cookies" | "terms" | "imprint" | "sponso
               </tr>
               <tr>
                 <td>
-                  <code>mylper.welcomeSeen</code>
+                  <code>picstea.welcomeSeen</code>
                 </td>
                 <td>Local storage</td>
                 <td>Remembers that you have seen the welcome dialog.</td>
@@ -158,7 +158,7 @@ export const LEGAL: Record<"privacy" | "cookies" | "terms" | "imprint" | "sponso
               </tr>
               <tr>
                 <td>
-                  <code>mylper.view</code>
+                  <code>picstea.view</code>
                 </td>
                 <td>Local storage</td>
                 <td>Remembers your view settings: rulers, guides, grid and snapping.</td>
@@ -166,7 +166,7 @@ export const LEGAL: Record<"privacy" | "cookies" | "terms" | "imprint" | "sponso
               </tr>
               <tr>
                 <td>
-                  <code>mylper.swatches</code>
+                  <code>picstea.swatches</code>
                 </td>
                 <td>Local storage</td>
                 <td>Remembers your colour swatches.</td>
@@ -174,7 +174,7 @@ export const LEGAL: Record<"privacy" | "cookies" | "terms" | "imprint" | "sponso
               </tr>
               <tr>
                 <td>
-                  <code>mylper.actions</code>
+                  <code>picstea.actions</code>
                 </td>
                 <td>Local storage</td>
                 <td>Remembers the actions you recorded (names and steps, no images).</td>
@@ -182,7 +182,7 @@ export const LEGAL: Record<"privacy" | "cookies" | "terms" | "imprint" | "sponso
               </tr>
               <tr>
                 <td>
-                  <code>mylper.recentSizes</code>
+                  <code>picstea.recentSizes</code>
                 </td>
                 <td>Local storage</td>
                 <td>Remembers the last few document sizes you created.</td>
@@ -192,7 +192,7 @@ export const LEGAL: Record<"privacy" | "cookies" | "terms" | "imprint" | "sponso
           </table>
           <p>This data stays on your device and is never sent to us.</p>
           <h2>Analytics</h2>
-          <p>MYLPER currently uses no analytics.</p>
+          <p>Picstea currently uses no analytics.</p>
           <h2>Advertising (only with consent)</h2>
           <p>
             If you accept advertising, Google AdSense is loaded on website pages (never in the
@@ -209,13 +209,13 @@ export const LEGAL: Record<"privacy" | "cookies" | "terms" | "imprint" | "sponso
     terms: {
       path: "/terms",
       title: "Terms of use",
-      description: "The terms for using the MYLPER image editor and website.",
+      description: "The terms for using the Picstea image editor and website.",
       finalized: false,
       body: () => (
         <>
           <h2>The service</h2>
           <p>
-            MYLPER is a free, browser-based image editor provided by{" "}
+            Picstea is a free, browser-based image editor provided by{" "}
             <Todo>operator name or company</Todo>. No account is needed. The editor runs on your
             device; we do not receive or store your images or projects.
           </p>
@@ -227,13 +227,13 @@ export const LEGAL: Record<"privacy" | "cookies" | "terms" | "imprint" | "sponso
           </p>
           <h2>Acceptable use</h2>
           <p>
-            Do not use MYLPER to create or process content that is illegal or infringes the rights
+            Do not use Picstea to create or process content that is illegal or infringes the rights
             of others, and do not attempt to disrupt or attack the website.
           </p>
           <h2>Availability and warranty</h2>
           <p>
-            MYLPER is provided free of charge and without guarantee of availability or fitness for a
-            particular purpose. <Todo>liability clause under applicable (German) law</Todo>
+            Picstea is provided free of charge and without guarantee of availability or fitness for
+            a particular purpose. <Todo>liability clause under applicable (German) law</Todo>
           </p>
           <h2>Changes</h2>
           <p>We may update these terms; the current version is always on this page.</p>
@@ -247,7 +247,7 @@ export const LEGAL: Record<"privacy" | "cookies" | "terms" | "imprint" | "sponso
     imprint: {
       path: "/imprint",
       title: "Imprint (Impressum)",
-      description: "Legal information about the operator of MYLPER.",
+      description: "Legal information about the operator of Picstea.",
       finalized: false,
       body: () => (
         <>
@@ -276,13 +276,13 @@ export const LEGAL: Record<"privacy" | "cookies" | "terms" | "imprint" | "sponso
       path: "/sponsorship",
       title: "Advertising and sponsorship",
       description:
-        "How advertising and sponsorships work on MYLPER, how they are labelled, and how to sponsor MYLPER.",
+        "How advertising and sponsorships work on Picstea, how they are labelled, and how to sponsor Picstea.",
       finalized: false,
       body: () => (
         <>
-          <h2>How MYLPER is funded</h2>
+          <h2>How Picstea is funded</h2>
           <p>
-            MYLPER is free. It is funded by advertising on the website and blog, and by
+            Picstea is free. It is funded by advertising on the website and blog, and by
             sponsorships.
           </p>
           <h2>Labelling</h2>
@@ -303,7 +303,7 @@ export const LEGAL: Record<"privacy" | "cookies" | "terms" | "imprint" | "sponso
             advertising is never chosen based on the images you edit — the editor never sends them
             anywhere.
           </p>
-          <h2>Sponsor MYLPER</h2>
+          <h2>Sponsor Picstea</h2>
           <p>
             Interested in reaching people who create and edit images? Contact{" "}
             <Todo>sponsorship contact email</Todo>.

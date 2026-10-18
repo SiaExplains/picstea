@@ -25,22 +25,13 @@ export default function SiteLayout({ children }: LayoutProps<"/">) {
         <div className={styles.site}>
           <header className={styles.header}>
             <EditorLink className={styles.brand} aria-label={`${SITE.name} editor`}>
-              {/* Dark-text logo on light backgrounds, light-text logo in dark mode (CSS picks one). */}
+              {/* White wordmark on the brand blue: one image reads on light and dark pages. */}
               <Image
-                src="/brand/mylper-logo.png"
+                src="/brand/picstea-logo.png"
                 alt={SITE.name}
-                width={89}
-                height={24}
-                className={styles.logoLight}
-                priority
-                unoptimized
-              />
-              <Image
-                src="/brand/mylper-logo-on-dark.png"
-                alt=""
-                width={89}
-                height={24}
-                className={styles.logoDark}
+                width={93}
+                height={28}
+                className={styles.logo}
                 priority
                 unoptimized
               />
@@ -65,7 +56,9 @@ export default function SiteLayout({ children }: LayoutProps<"/">) {
               <Link href="/sponsorship">Advertising &amp; sponsorship</Link>
               <PrivacySettingsButton />
             </nav>
-            <p>© {SITE.name}. Images are edited on your device and never uploaded.</p>
+            <p>
+              © {SITE.name} — {SITE.slogan} Images are edited on your device and never uploaded.
+            </p>
           </footer>
           <ConsentManager />
         </div>

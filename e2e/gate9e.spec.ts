@@ -193,7 +193,7 @@ test("Batch plays an action on several files into one ZIP", async ({ page }) => 
 
   // An imported action: invert, so white images come out black.
   const actions = JSON.stringify({
-    format: "mylper-actions",
+    format: "picstea-actions",
     version: 1,
     actions: [{ name: "Invert", steps: [{ type: "adjustment", adjustment: { type: "invert" } }] }],
   });

@@ -10,7 +10,7 @@ avoid rewriting large binaries on every autosave.
 
 ## Decision
 
-- Database `mylper` v1 has two stores:
+- Database `picstea` v1 has two stores:
   - `projects` (key `id`): serialized document, schema version and a list summary.
   - `assets` (key `[projectId, assetId]`, index `byProject`): `ArrayBuffer` plus metadata. We store
     ArrayBuffer rather than Blob to avoid long-standing Blob-in-IDB engine bugs.

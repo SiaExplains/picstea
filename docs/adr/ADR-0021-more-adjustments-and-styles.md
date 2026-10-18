@@ -5,7 +5,7 @@
 
 ## Context
 
-MYLPER had ten adjustment types and four layer effects. PSDs that use other common adjustments
+Picstea had ten adjustment types and four layer effects. PSDs that use other common adjustments
 or styles lost those settings on import (kept only as pixels), and users had no equivalents in
 the editor.
 

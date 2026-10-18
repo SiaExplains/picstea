@@ -73,7 +73,7 @@ export function deserializeProject(
   if (schemaVersion > currentVersion) {
     return {
       ok: false,
-      error: "This project was saved by a newer version of MYLPER. Reload the page to update.",
+      error: "This project was saved by a newer version of Picstea. Reload the page to update.",
     };
   }
 
