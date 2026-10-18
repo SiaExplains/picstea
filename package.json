@@ -1,6 +1,6 @@
 {
   "name": "mylper",
-  "version": "0.16.0",
+  "version": "0.16.1",
   "private": true,
   "description": "MYLPER — a local-first, browser-native image editor.",
   "scripts": {

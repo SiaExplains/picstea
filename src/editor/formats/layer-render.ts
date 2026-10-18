@@ -12,7 +12,7 @@ export { cropToContent };
  * to RGBA in document space, crop to the visible pixels and encode PNG data URLs.
  */
 
-const PENDING = "Some layers are still loading. Try exporting again in a moment.";
+export const PENDING = "Some layers are still loading. Try exporting again in a moment.";
 
 /** The document (or the given layers in its place) flattened to RGBA, full canvas size. */
 export function renderRgba(

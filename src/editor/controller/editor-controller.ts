@@ -120,7 +120,8 @@ import {
   type Size,
 } from "../core/viewport/viewport";
 import { FormatError } from "../formats/binary/bytes";
-import { exportAs, type ExportRequest } from "../formats/export/document-export";
+import type { ExportRequest } from "../formats/export/document-export";
+import { ColorRangeSession, exportFile } from "../workers/offthread";
 import { exportFilename, ExportError, safeFilename } from "../formats/export/raster-export";
 import { rgbaToSurface } from "../formats/layer-render";
 import { detectFileKind } from "../formats/open-file";
@@ -151,7 +152,7 @@ import {
   selectionSurface,
   type Surface,
 } from "../pixels/layer-pixels";
-import { colorRange, type RgbaPixels } from "../selection/flood";
+import type { RgbaPixels } from "../selection/flood";
 import { selectionBytes, type SelectionMask } from "../selection/mask";
 import { mainThreadRunner, type JobRunner } from "../workers/job-runner";
 import {
@@ -568,37 +569,32 @@ export class EditorController {
 
   /**
    * The selection Select → Color Range would make (pixels near `color`), for the dialog preview.
-   * Null while the image is still loading.
+   * The image is drawn once per document state (in the worker when it can, ADR-0022); slider
+   * steps only re-run the colour test. Null while the image is still loading.
    */
-  colorRangePreview(color: string, fuzziness: number, sampleAll: boolean): SelectionMask | null {
+  colorRangePreview(
+    color: string,
+    fuzziness: number,
+    sampleAll: boolean,
+  ): Promise<SelectionMask | null> {
     const doc = this.store.getSession()?.document;
-    if (!doc) return null;
-    // The dialog re-runs this for every slider step: read the pixels once per document state.
+    if (!doc) return Promise.resolve(null);
     const layer = sampleAll ? undefined : activeLayer(doc);
-    const key = this.colorRangePixels;
-    let pixels = key && key.doc === doc && key.layer === layer ? key.pixels : null;
-    if (!pixels) {
-      pixels = readPixels(this, doc, layer);
-      if (!pixels) return null;
-      this.colorRangePixels = { doc, layer, pixels };
-    }
     const [r, g, b] = hexToRgb(color);
-    return colorRange(pixels, [r, g, b, 255], fuzziness);
+    return this.colorRange.preview(doc, layer, [r, g, b, 255], fuzziness);
   }
 
-  private colorRangePixels: {
-    doc: EditorDocument;
-    layer: Layer | undefined;
-    pixels: RgbaPixels;
-  } | null = null;
+  private readonly colorRange = new ColorRangeSession(this, (doc, layer) =>
+    readPixels(this, doc, layer),
+  );
 
   /** Free the pixels Color Range kept while its dialog was open. */
   endColorRange(): void {
-    this.colorRangePixels = null;
+    this.colorRange.end();
   }
 
   applySelection(mask: SelectionMask | null, label: string): void {
-    this.colorRangePixels = null;
+    this.colorRange.end();
     this.execute(setSelection(mask, label));
     this.enforcePixelBudget();
   }
@@ -2306,7 +2302,7 @@ export class EditorController {
         }
         const doc = this.store.getSession(documentId)!.document;
         await this.assets.whenDecoded(referencedAssetIds(doc));
-        const { blob } = await exportAs(this, doc, request, this.jobs);
+        const { blob } = await exportFile(this, doc, request, this.jobs);
         if (total + blob.size > MAX_BATCH_OUTPUT_BYTES) {
           this.notify("error", "The batch output reached 1 GB. The remaining files were skipped.");
           cancelled = true;
@@ -2362,7 +2358,7 @@ export class EditorController {
     const session = this.store.getSession();
     if (!session) return this.fail("No document is open.");
     try {
-      const { blob, warnings } = await exportAs(this, session.document, request, this.jobs);
+      const { blob, warnings } = await exportFile(this, session.document, request, this.jobs);
       const filename = exportFilename(session.document.name, request.format);
       return { ok: true, blob, filename, warnings };
     } catch (error) {

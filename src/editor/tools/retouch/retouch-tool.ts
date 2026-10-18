@@ -6,11 +6,14 @@ import type { Point } from "../../core/viewport/viewport";
 import {
   context2d,
   layerSelectionCoverage,
-  readCompositeInLayerSpace,
-  readLayerPixels,
   releaseSurface,
   type Surface,
 } from "../../pixels/layer-pixels";
+import {
+  lazyCompositeInLayerSpace,
+  lazyLayerPixels,
+  type LazyLayerPixels,
+} from "../../pixels/lazy-layer-pixels";
 import type { CompositePreview } from "../../rendering/compositing/compositor";
 import type { Overlay } from "../../rendering/overlay";
 import {
@@ -55,13 +58,15 @@ interface ActiveStroke {
   readonly image: ImageData;
   readonly interpolator: StrokeInterpolator;
   readonly label: string;
+  /** Pixels read on demand during the stroke (ADR-0022). */
+  readonly sources: readonly LazyLayerPixels[];
 }
 
 /**
  * Clone Stamp, Healing Brush, Dodge/Burn/Sponge and Blur/Sharpen/Smudge (ADR-0019). The pixel
- * work is done by the pure strokes in `src/editor/retouch`; this tool reads the layer once, feeds
- * dabs in layer space, uploads only the changed area to a preview surface, and commits one
- * `setRasterContent` step on release.
+ * work is done by the pure strokes in `src/editor/retouch`; this tool reads the layer as the stroke
+ * reaches it (ADR-0022), feeds dabs in layer space, uploads only the changed area to a preview
+ * surface, and commits one `setRasterContent` step on release.
  */
 export class RetouchTool implements Tool {
   private active: ActiveStroke | null = null;
@@ -104,8 +109,8 @@ export class RetouchTool implements Tool {
     if (!layer) return;
     const toLocal = invertMatrix(fromTransform(layer.transform));
     if (!toLocal) return;
-    const pixels = readLayerPixels(ctx, layer);
-    if (!pixels) {
+    const lazy = lazyLayerPixels(ctx, layer);
+    if (!lazy) {
       ctx.notify("info", "This layer is still loading. Try again in a moment.");
       return;
     }
@@ -115,10 +120,13 @@ export class RetouchTool implements Tool {
     const scale = Math.sqrt(Math.abs(t.scaleX * t.scaleY)) || 1;
     const radius = Math.max(0.5, settings.size / 2 / scale);
     const { width, height } = layer;
+    const pixels = lazy.pixels;
+    const sources = [lazy];
     const options: StrokeOptions = {
       width,
       height,
       base: pixels.data,
+      prepare: lazy.prepare,
       radius,
       hardness: settings.hardness,
       strength: 1,
@@ -132,14 +140,13 @@ export class RetouchTool implements Tool {
       case "clone":
       case "heal": {
         const cfg = s[this.id];
-        const sampled =
-          cfg.sample === "all"
-            ? readCompositeInLayerSpace(ctx, doc, layer)
-            : { pixels, inside: null };
+        const sampled = cfg.sample === "all" ? lazyCompositeInLayerSpace(ctx, doc, layer) : lazy;
         if (!sampled) {
+          lazy.release();
           ctx.notify("info", "The image is still loading. Try again in a moment.");
           return;
         }
+        if (sampled !== lazy) sources.push(sampled);
         if (!cfg.aligned || !this.offset) {
           const from = this.source!.point;
           this.offset = { x: from.x - pointer.doc.x, y: from.y - pointer.doc.y };
@@ -155,11 +162,11 @@ export class RetouchTool implements Tool {
         if (this.id === "clone") {
           stroke = new CoverageStroke(
             { ...options, strength: cfg.opacity },
-            cloneEffect(source, width, height, dx, dy, sampled.inside),
+            cloneEffect(source, width, height, dx, dy, sampled.inside, sampled.prepare),
           );
           label = "Clone Stamp";
         } else {
-          stroke = new HealStroke(options, source, dx, dy, sampled.inside);
+          stroke = new HealStroke(options, source, dx, dy, sampled.inside, sampled.prepare);
           label = "Healing Brush";
         }
         break;
@@ -187,7 +194,13 @@ export class RetouchTool implements Tool {
           stroke = new SmudgeStroke({ ...options, strength: cfg.strength });
           label = "Smudge";
         } else {
-          const tiles = new BlurTiles(pixels.data, width, height, blurRadiusFor(radius));
+          const tiles = new BlurTiles(
+            pixels.data,
+            width,
+            height,
+            blurRadiusFor(radius),
+            lazy.prepare,
+          );
           stroke = new CoverageStroke(
             { ...options, strength: cfg.strength },
             focusEffect(pixels.data, width, tiles, cfg.mode),
@@ -200,7 +213,13 @@ export class RetouchTool implements Tool {
 
     const preview = ctx.createSurface(width, height);
     const image = new ImageData(stroke.out, width, height);
-    context2d(preview).putImageData(image, 0, 0);
+    const bitmap = layer.assetId ? ctx.assets.getBitmap(layer.assetId) : undefined;
+    if (lazy.prepare && bitmap) {
+      // A GPU copy of the layer; only the areas the stroke changes are uploaded.
+      context2d(preview).drawImage(bitmap, 0, 0);
+    } else {
+      context2d(preview).putImageData(image, 0, 0);
+    }
     const spacing = this.id === "focus" ? radius * 0.1 : radius * 0.2;
     this.active = {
       layerId: layer.id,
@@ -213,6 +232,7 @@ export class RetouchTool implements Tool {
       image,
       interpolator: new StrokeInterpolator(Math.max(0.5, spacing)),
       label,
+      sources,
     };
     this.overrides.set(layer.id, preview);
     for (const p of this.active.interpolator.start(applyMatrix(toLocal, pointer.doc))) {
@@ -251,6 +271,7 @@ export class RetouchTool implements Tool {
       current.height !== active.height
     ) {
       releaseSurface(active.preview);
+      for (const source of active.sources) source.release();
       ctx.notify("info", `The ${active.label} stroke was dropped because the layer changed.`);
       ctx.invalidate();
       return;
@@ -258,6 +279,7 @@ export class RetouchTool implements Tool {
     this.active = active;
     this.upload(ctx, active.stroke.finish());
     this.active = null;
+    for (const source of active.sources) source.release();
     const asset = ctx.assets.addBitmap(active.preview, active.width, active.height);
     const result = ctx.store.dispatch(setRasterContent(active.layerId, asset.id, active.label));
     if (!result.ok) ctx.notify("error", result.error);
@@ -290,7 +312,10 @@ export class RetouchTool implements Tool {
   }
 
   cancel(ctx: ToolContext): void {
-    if (this.active) releaseSurface(this.active.preview);
+    if (this.active) {
+      releaseSurface(this.active.preview);
+      for (const source of this.active.sources) source.release();
+    }
     this.active = null;
     this.overrides.clear();
     this.hover = null;

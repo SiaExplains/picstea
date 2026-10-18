@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import type { SelectionModification } from "@/editor/core/commands";
+import type { SelectionMask } from "@/editor/selection/mask";
 import { MAX_MODIFY_RADIUS } from "@/editor/selection/modify";
 import { useController, useEditorState } from "./editor-context";
 import styles from "./editor.module.css";
@@ -108,13 +109,31 @@ export function ColorRangeDialog({ open, onClose }: { open: boolean; onClose: ()
   const [color, setColor] = useState(foreground);
   const [fuzziness, setFuzziness] = useState(40);
   const [sampleAll, setSampleAll] = useState(true);
-  const mask = useMemo(
-    () => (open ? controller.colorRangePreview(color, fuzziness, sampleAll) : null),
-    [controller, open, color, fuzziness, sampleAll],
-  );
-  const count = mask?.bounds
-    ? `${mask.bounds.width} × ${mask.bounds.height} px area`
-    : "Nothing matches";
+  // The preview is computed in the background; a slower, older answer never replaces a newer one.
+  const [preview, setPreview] = useState<{ mask: SelectionMask | null; ready: boolean }>({
+    mask: null,
+    ready: false,
+  });
+  const request = useRef(0);
+  useEffect(() => {
+    if (!open) return;
+    const id = ++request.current;
+    controller
+      .colorRangePreview(color, fuzziness, sampleAll)
+      .then((mask) => {
+        if (id === request.current) setPreview({ mask, ready: true });
+      })
+      .catch(() => {
+        if (id === request.current)
+          controller.notify("error", "Color Range did not work. Try again.");
+      });
+  }, [controller, open, color, fuzziness, sampleAll]);
+  const { mask } = preview;
+  const count = !preview.ready
+    ? "Working…"
+    : mask?.bounds
+      ? `${mask.bounds.width} × ${mask.bounds.height} px area`
+      : "Nothing matches";
 
   // Show the candidate as marching ants behind the dialog.
   useEffect(() => {
@@ -127,10 +146,20 @@ export function ColorRangeDialog({ open, onClose }: { open: boolean; onClose: ()
     onClose();
   };
 
-  const submit = (event: FormEvent) => {
+  const submit = async (event: FormEvent) => {
     event.preventDefault();
+    // Use the selection for the current settings, even if its preview hasn't arrived yet.
+    const id = ++request.current;
+    let final: SelectionMask | null;
+    try {
+      final = await controller.colorRangePreview(color, fuzziness, sampleAll);
+    } catch {
+      controller.notify("error", "Color Range did not work. Try again.");
+      return;
+    }
+    if (id !== request.current) return;
     controller.tools.previewSelection(undefined);
-    controller.applySelection(mask?.bounds ? mask : null, "Color Range");
+    controller.applySelection(final?.bounds ? final : null, "Color Range");
     onClose();
   };
 

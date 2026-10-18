@@ -3,9 +3,13 @@ import type { Point } from "../core/viewport/viewport";
 /**
  * Retouching strokes (ADR-0019): pure pixel code, no canvas, so it runs and is tested anywhere.
  * Pixels are straight (non-premultiplied) RGBA bytes in the layer's own space, as returned by
- * `getImageData`. A stroke reads the layer once at the start (`base`), writes into `out`, and
- * reports which area changed so the caller only uploads that.
+ * `getImageData`. A stroke reads the layer (`base`), writes into `out`, and reports which area
+ * changed so the caller only uploads that. With `prepare`, `base` is filled on demand: the stroke
+ * asks for each area before it reads it (ADR-0022), so a large layer isn't read all at once.
  */
+
+/** Make `rect` (clipped to the image) valid in the lazily read pixels; returns what was loaded. */
+export type PixelPrepare = (rect: PixelRect) => readonly PixelRect[];
 
 /** Pixel bounds, half-open: x0 ≤ x < x1. */
 export interface PixelRect {
@@ -27,6 +31,8 @@ export interface StrokeOptions {
   readonly strength: number;
   /** Selection coverage per layer pixel (0…255), or null for no selection. */
   readonly selection: Uint8Array | null;
+  /** Lazily read `base`: called before an area is read. Without it `base` is complete. */
+  readonly prepare?: PixelPrepare;
 }
 
 /** A stroke that changes `out` as dabs arrive. */
@@ -100,7 +106,17 @@ export function mixPixel(
 export interface PixelEffect {
   /** Write the straight RGBA target for pixel (x, y) into `t`; false leaves the pixel as it was. */
   target(x: number, y: number, t: Float32Array): boolean;
+  /** Make what `target` reads for `rect` available (lazily read sources). */
+  prepare?(rect: PixelRect): void;
 }
+
+/** `rect` moved by (dx, dy). */
+export const shiftRect = (rect: PixelRect, dx: number, dy: number): PixelRect => ({
+  x0: rect.x0 + dx,
+  y0: rect.y0 + dy,
+  x1: rect.x1 + dx,
+  y1: rect.y1 + dy,
+});
 
 const COVERAGE_MAX = 65535;
 
@@ -124,7 +140,9 @@ export class CoverageStroke implements PixelStroke {
   ) {
     const { width, height, base } = options;
     if (base.length !== width * height * 4) throw new RangeError("Pixel data does not match.");
-    this.out = new Uint8ClampedArray(base);
+    // `render` writes every pixel of an area before it is uploaded, so a lazy stroke doesn't
+    // need a copy of the whole layer up front.
+    this.out = options.prepare ? new Uint8ClampedArray(base.length) : new Uint8ClampedArray(base);
     this.coverage = new Uint16Array(width * height);
   }
 
@@ -166,6 +184,8 @@ export class CoverageStroke implements PixelStroke {
 
   protected render(rect: PixelRect): void {
     const { width, base } = this.options;
+    this.options.prepare?.(rect);
+    this.effect.prepare?.(rect);
     const t = this.t;
     for (let y = rect.y0; y < rect.y1; y++) {
       for (let x = rect.x0; x < rect.x1; x++) {
