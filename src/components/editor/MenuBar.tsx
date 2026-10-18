@@ -144,7 +144,10 @@ const MENUS: { label: string; items: MenuEntry[] }[] = [
       "view.gridSettings",
     ],
   },
-  { label: "Help", items: ["help.welcome", "-", "help.docs", "help.blog"] },
+  {
+    label: "Help",
+    items: ["help.welcome", "-", "help.docs", "help.shortcuts", "help.blog", "-", "help.privacy"],
+  },
 ];
 
 function shortcutFor(id: UiActionId, isMac: boolean): string {
@@ -311,6 +314,21 @@ export function MenuBar({ actions }: { actions: Record<UiActionId, UiAction> }) 
           );
         })}
       </div>
+      {/* Website links open in a new tab, so the editor and its work stay where they are. */}
+      <nav aria-label="Picstea" className={styles.menubarLinks}>
+        <button type="button" onClick={actions["help.welcome"].run}>
+          About
+        </button>
+        <a href="/docs" target="_blank" rel="noopener">
+          Learn
+        </a>
+        <a href="/docs/keyboard-shortcuts" target="_blank" rel="noopener">
+          Shortcuts
+        </a>
+        <a href="/blog" target="_blank" rel="noopener">
+          Blog
+        </a>
+      </nav>
     </div>
   );
 }

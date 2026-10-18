@@ -4,7 +4,7 @@
  * inspect what a user is editing (ADR-0013).
  */
 
-export type Placement = "site-sidebar" | "blog-inline" | "editor-start";
+export type Placement = "site-sidebar" | "blog-inline" | "editor-start" | "editor-side";
 
 export interface Advertisement {
   readonly id: string;
@@ -26,7 +26,7 @@ export const HOUSE_AD: Advertisement = {
   title: "Sponsor Picstea",
   description: "Reach people who create and edit images. Privacy-friendly, no tracking.",
   targetUrl: "/sponsorship",
-  placement: ["site-sidebar", "blog-inline", "editor-start"],
+  placement: ["site-sidebar", "blog-inline", "editor-start", "editor-side"],
   active: true,
 };
 

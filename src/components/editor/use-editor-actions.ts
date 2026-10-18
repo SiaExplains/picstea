@@ -16,6 +16,7 @@ import { isTransformable } from "@/editor/core/geometry/layer-geometry";
 import type { ActionId } from "@/editor/core/shortcuts/shortcuts";
 import { DEFAULT_COLORS } from "@/editor/core/tool-settings";
 import { openWelcome } from "@/components/welcome/welcome";
+import { PRIVACY_SETTINGS_URL } from "@/lib/consent/consent";
 import type { EditorController } from "@/editor/controller/editor-controller";
 import { PROJECT_MIME } from "@/editor/formats/project/project-file";
 import { useActiveSession, useController, useEditorState } from "./editor-context";
@@ -64,7 +65,9 @@ export type UiActionId =
   | "select.transform"
   | "help.welcome"
   | "help.docs"
-  | "help.blog";
+  | "help.blog"
+  | "help.shortcuts"
+  | "help.privacy";
 
 export interface UiAction {
   readonly label: string;
@@ -537,6 +540,17 @@ export function useEditorActions(hosts: ActionHosts): Record<UiActionId, UiActio
         label: "Blog",
         enabled: true,
         run: () => window.open("/blog", "_blank", "noopener"),
+      },
+      "help.shortcuts": {
+        label: "Keyboard Shortcuts",
+        enabled: true,
+        run: () => window.open("/docs/keyboard-shortcuts", "_blank", "noopener"),
+      },
+      // The editor loads no consent vendors; the choices apply to the website, managed there.
+      "help.privacy": {
+        label: "Privacy Settings…",
+        enabled: true,
+        run: () => window.open(PRIVACY_SETTINGS_URL, "_blank", "noopener"),
       },
       "tool.move": tool("move", "Move Tool"),
       "tool.transform": { ...tool("move", "Free Transform"), enabled: canTransform },

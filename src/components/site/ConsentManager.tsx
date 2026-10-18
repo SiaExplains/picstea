@@ -6,6 +6,7 @@ import {
   CATEGORY_INFO,
   NONE,
   OPTIONAL_CATEGORIES,
+  PRIVACY_SETTINGS_HASH,
   type ConsentChoices,
 } from "@/lib/consent/consent";
 import { consentRuntime, OPEN_PRIVACY_SETTINGS } from "@/lib/consent/runtime";
@@ -28,6 +29,8 @@ export function ConsentManager() {
   useEffect(() => {
     void consentRuntime.start();
     const open = () => setManaging(true);
+    // Arriving from the editor's "Privacy settings" link opens the preferences straight away.
+    if (window.location.hash === PRIVACY_SETTINGS_HASH) open();
     window.addEventListener(OPEN_PRIVACY_SETTINGS, open);
     return () => window.removeEventListener(OPEN_PRIVACY_SETTINGS, open);
   }, []);
