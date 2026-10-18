@@ -38,8 +38,11 @@ export const DOCS: readonly DocPage[] = [
         </p>
         <ul>
           <li>
-            <strong>New document</strong> — choose a size (or a preset such as HD or a square post)
-            and a background.
+            <strong>New document</strong> — pick a ready-made size from Social (Instagram, YouTube,
+            X, LinkedIn…), Print (A4, Letter, business cards), Photo, Screen, Mobile, Ads or Icons,
+            or search for one such as “story” or “A4”. You can also type your own size in pixels,
+            inches, centimetres or millimetres, set the resolution (ppi) and choose a background.
+            Sizes you use are listed under Recent.
           </li>
           <li>
             <strong>Open image</strong> — PNG, JPEG, WebP, GIF, SVG, PSD or a <code>.mylper</code>{" "}

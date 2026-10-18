@@ -146,6 +146,7 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 | 9f | Retouching: clone stamp, healing brush, dodge/burn/sponge, blur/sharpen/smudge | ✅ |
 | 9g | Multi-layer selection: move/scale/rotate together, group transforms, align/distribute, group/duplicate/delete | ✅ |
 | 9h | Vibrance, Color Balance, Photo Filter, Channel Mixer, Gradient Map; inner shadow, bevel, gradient overlay | ✅ |
+| 9i | New-document size presets: Social, Print, Photo, Screen, Mobile, Ads, Icons; units and resolution; search; recent sizes | ✅ |
 
 ### 9a
 
@@ -239,6 +240,16 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 | PSD import of the above (`vibA`, `blnc`, `phfl`, `mixr`, `grdm`, `IrSh`, `ebbl`, `GrFl`) | ✅ | Noise gradients, other bevel styles noted |
 | PSD export of Vibrance, Color Balance, Channel Mixer | ✅ | Photo Filter, Gradient Map flattened; Photoshop check pending |
 | Selective Color, Color Lookup; inner glow, satin, pattern overlay | 📋 | |
+
+### 9i
+
+| Feature | Status | Notes |
+|---|---|---|
+| About 80 size presets in 7 categories, with proportional previews | ✅ | Print/photo carry their ppi; large posters at 150 ppi to stay under 36 MP |
+| Units px / in / cm / mm, resolution (ppi), swap orientation, custom background colour | ✅ | Unit changes keep the pixel size; the document stores the ppi |
+| Search across all sizes; Recent sizes (`mylper.recentSizes`) | ✅ | |
+| Starter design templates (text/shape/photo layouts) | 📋 | Needs content and image licensing |
+| Colour modes other than RGB 8-bit, artboards | 📋 | Not in the engine |
 
 ## Launch readiness (2026-10)
 

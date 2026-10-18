@@ -8,6 +8,7 @@ import { parseStoredActions } from "@/editor/automation/actions";
 import { createId } from "@/editor/core/ids";
 import type { Observable } from "@/editor/core/observable";
 import { DEFAULT_SWATCHES, parseSwatches } from "@/editor/core/swatches";
+import { parseRecentSizes } from "@/editor/core/document/presets";
 import {
   IndexedDbProjectStorage,
   isIndexedDbAvailable,
@@ -94,11 +95,12 @@ function getBrowserController(): EditorController {
   persist(c.view, "mylper.view", parseViewSettings);
   persist(c.swatches, "mylper.swatches", (v) => parseSwatches(v) ?? DEFAULT_SWATCHES);
   persist(c.actions, "mylper.actions", (v) => parseStoredActions(v, () => createId("action")));
+  persist(c.recentSizes, "mylper.recentSizes", parseRecentSizes);
   return c;
 }
 
 /**
- * Per-browser preferences (view settings, swatches, actions) live in local storage, which may be
+ * Per-browser preferences (view settings, swatches, actions, recent sizes) live in local storage, which may be
  * unavailable (private mode, blocked storage): then they just aren't remembered.
  */
 function persist<T>(observable: Observable<T>, key: string, parse: (value: unknown) => T): void {

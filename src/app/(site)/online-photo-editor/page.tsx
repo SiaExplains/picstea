@@ -61,6 +61,10 @@ export default function OnlinePhotoEditor() {
       </ol>
       <h2>What you can do</h2>
       <ul>
+        <li>
+          Ready-made sizes for social posts, print (A4, Letter, business cards), photos, screens,
+          phones, ads and icons, in pixels, inches, centimetres or millimetres.
+        </li>
         <li>Layers with 16 blend modes, opacity, groups and layer masks.</li>
         <li>Select several layers to move, scale, rotate, align and distribute them together.</li>
         <li>

@@ -180,6 +180,14 @@ export const LEGAL: Record<"privacy" | "cookies" | "terms" | "imprint" | "sponso
                 <td>Remembers the actions you recorded (names and steps, no images).</td>
                 <td>Until cleared</td>
               </tr>
+              <tr>
+                <td>
+                  <code>mylper.recentSizes</code>
+                </td>
+                <td>Local storage</td>
+                <td>Remembers the last few document sizes you created.</td>
+                <td>Until cleared</td>
+              </tr>
             </tbody>
           </table>
           <p>This data stays on your device and is never sent to us.</p>

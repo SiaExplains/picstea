@@ -3,6 +3,20 @@
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.16.0] — 2026-10-17
+
+### Added
+
+- **Size presets for new documents.** File → New now shows ready-made sizes in seven groups:
+  Social (Instagram, TikTok, Facebook, YouTube, X, LinkedIn, Pinterest), Print (A2–A6, B4, B5,
+  Letter, Legal, Tabloid, business cards, postcards), Photo, Screen, Mobile, Ads and Icons. Each
+  one shows a small preview of its shape.
+- Search for a size by name or numbers, such as “story”, “A4” or “1080”.
+- Enter sizes in pixels, inches, centimetres or millimetres, set the resolution (ppi), swap
+  width and height, and pick any background colour. The pixel size and memory use are shown as
+  you type.
+- The sizes you create most recently appear under Recent.
+
 ## [0.15.1] — 2026-10-09
 
 ### Fixed

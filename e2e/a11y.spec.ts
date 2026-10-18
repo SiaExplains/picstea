@@ -114,6 +114,17 @@ test("the editor passes the accessibility audit in its main states", async ({ pa
     await expect(page.getByRole("dialog", { name })).toBeHidden();
   }
 
+  // Size presets: a physical-unit category and search results.
+  await page.keyboard.press(`${MOD}+Alt+n`);
+  const newDoc = page.getByRole("dialog", { name: "New document" });
+  await newDoc.getByRole("tab", { name: "Print" }).click();
+  await newDoc.getByRole("radio", { name: /^A4,/ }).click();
+  await expectClean(page, "New document, Print");
+  await newDoc.getByRole("searchbox", { name: "Search sizes" }).fill("story");
+  await expectClean(page, "New document, search");
+  await newDoc.getByRole("button", { name: "Cancel" }).click();
+  await expect(newDoc).toBeHidden();
+
   // Properties for each kind of layer, and the tool options of every tool.
   await page.keyboard.press(`${MOD}+Shift+n`);
   await expectClean(page, "pixel layer");
