@@ -3,6 +3,21 @@
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.18.0] — 2026-10-18
+
+### Added
+
+- **The blog is live.** Eleven guides are now published: editing PSDs without uploading them,
+  choosing between PNG, JPEG and WebP, layers and masks, Levels and Curves, the Pen tool, smart
+  objects, actions and batch processing, retouching, working with several layers, and the newer
+  colour adjustments. They are listed in the sitemap.
+
+### Fixed
+
+- The two PSD articles now describe what Picstea opens today: editable text, adjustment layers,
+  smart objects and clipping masks are kept, and only a few features (such as Selective Color,
+  satin styles and warped text) still open as pixels.
+
 ## [0.17.0] — 2026-10-18
 
 ### Changed
