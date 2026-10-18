@@ -4,7 +4,7 @@ import { useEffect, useRef, useSyncExternalStore } from "react";
 import { SPONSORSHIPS } from "@/content/sponsorships";
 import { ADSENSE_CLIENT, ADSENSE_SLOT } from "@/lib/ads/adsense";
 import { allows } from "@/lib/consent/consent";
-import { consentRuntime } from "@/lib/consent/runtime";
+import { consentRuntime, GOOGLE_CMP } from "@/lib/consent/runtime";
 import { dayNumber, pickSponsorship, type Placement } from "@/lib/sponsorship/sponsorship";
 import styles from "./site.module.css";
 import { SponsorCard } from "./SponsorCard";
@@ -12,13 +12,15 @@ import { SponsorCard } from "./SponsorCard";
 const noSubscribe = () => () => {};
 
 /**
- * A fixed-size ad space on website pages (never in the editor). With advertising consent and a
- * configured AdSense unit it shows a Google ad; otherwise Picstea's own sponsorship. The box is
+ * A fixed-size ad space on website pages (never in the editor). With a configured AdSense unit and
+ * advertising consent — or Google's CMP deciding consent itself — it shows a Google ad; otherwise
+ * Picstea's own sponsorship. The box is
  * reserved up front, so nothing shifts when the ad loads (docs/08, docs/10 Core Web Vitals).
  */
 export function AdSlot({ placement }: { placement: Exclude<Placement, "editor-start"> }) {
   const consent = useSyncExternalStore(consentRuntime.subscribe, consentRuntime.get, () => null);
-  const google = !!ADSENSE_CLIENT && !!ADSENSE_SLOT && allows(consent, "advertising");
+  const google =
+    !!ADSENSE_CLIENT && !!ADSENSE_SLOT && (GOOGLE_CMP || allows(consent, "advertising"));
   const pushed = useRef(false);
 
   useEffect(() => {

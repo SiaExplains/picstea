@@ -132,7 +132,8 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 | Custom sponsorships (no tracking), editor start-screen slot | ✅ | House ad until sponsors are booked |
 | Per-route CSP: strict editor, ad origins only on website pages | ✅ | ADR-0013 |
 | Legal pages: Privacy, Cookies, Terms, Imprint, Sponsorship | 🟡 | Drafts with [TO COMPLETE] fields; need operator details and legal review |
-| Google-certified CMP (IAB TCF) for personalised EU ads | 📋 | Product decision |
+| Google-certified CMP (IAB TCF) for personalised EU ads | ✅ | `NEXT_PUBLIC_ADSENSE_CMP=google` (ADR-0024); default stays own banner |
+| ads.txt + AdSense verification meta tag | ✅ | Generated from `NEXT_PUBLIC_ADSENSE_CLIENT`; off without it |
 | Analytics | ⏸ | None by decision; category ready |
 
 ## Gate 9 — Professional parity (open-ended, shipped in slices)
