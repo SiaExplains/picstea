@@ -237,10 +237,10 @@ export function MenuBar({ actions }: { actions: Record<UiActionId, UiAction> }) 
         onClick={actions["help.welcome"].run}
       >
         <Image
-          src="/brand/picstea-logo.png"
+          src="/brand/picstea-icon.png"
           alt="Picstea"
-          width={66}
-          height={20}
+          width={22}
+          height={22}
           className={styles.brandLogo}
           priority
           unoptimized

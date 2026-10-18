@@ -3,6 +3,12 @@
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.19.1] — 2026-10-18
+
+### Fixed
+
+- The Picstea logo in the editor's menu bar was too small to read. It is now the square app icon.
+
 ## [0.19.0] — 2026-10-18
 
 ### Added
