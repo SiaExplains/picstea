@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { pageOpenGraph } from "@/lib/seo/root-metadata";
 import { EditorRoot } from "@/components/editor/EditorRoot";
 import { JsonLd } from "@/components/marketing/JsonLd";
 import { WelcomeDialog } from "@/components/welcome/WelcomeDialog";
@@ -8,11 +9,11 @@ export const metadata: Metadata = {
   title: { absolute: `${SITE.name} — ${SITE.tagline}` },
   description: SITE.description,
   alternates: { canonical: "/" },
-  openGraph: {
+  openGraph: pageOpenGraph({
     url: "/",
     title: `${SITE.name} — ${SITE.tagline}`,
     description: SITE.description,
-  },
+  }),
 };
 
 /** The home page is the editor itself; a welcome dialog explains it on the first visit. */

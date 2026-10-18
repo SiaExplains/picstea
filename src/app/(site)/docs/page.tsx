@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { pageOpenGraph } from "@/lib/seo/root-metadata";
 import Link from "next/link";
 import { ContentPage } from "@/components/site/ContentPage";
 import styles from "@/components/site/site.module.css";
@@ -9,7 +10,7 @@ export const metadata: Metadata = {
   description:
     "How to use Picstea, the free online image editor: layers, masks, selections, painting, file formats, shortcuts and privacy.",
   alternates: { canonical: "/docs" },
-  openGraph: { url: "/docs", title: "Picstea documentation" },
+  openGraph: pageOpenGraph({ url: "/docs", title: "Picstea documentation" }),
 };
 
 export default function DocsIndex() {

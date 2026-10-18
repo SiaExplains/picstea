@@ -3,6 +3,20 @@
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.24.0] — 2026-10-19
+
+### Added
+
+- **Easier to find in search and AI assistants.** New pages comparing Picstea with Photoshop and
+  Photopea, a FAQ page, and an `llms.txt` summary that AI assistants can read.
+- **A preview image** when Picstea pages are shared on social media and in chats.
+- "More guides" at the end of every guide, and previous/next links in the documentation.
+
+### Fixed
+
+- Shared links to docs, guides and landing pages now always carry the site name and preview
+  image.
+
 ## [0.23.0] — 2026-10-19
 
 ### Added

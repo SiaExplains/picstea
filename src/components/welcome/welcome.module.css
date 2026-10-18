@@ -104,3 +104,15 @@
   outline: 2px solid #8fd3c9;
   outline-offset: 2px;
 }
+
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin: -4px 0 16px;
+  font-size: 13px;
+}
+
+.links a {
+  color: #8fd3c9;
+}

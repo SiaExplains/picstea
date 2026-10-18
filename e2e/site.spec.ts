@@ -75,3 +75,36 @@ test("security headers are sent", async ({ request }) => {
   expect(headers["x-content-type-options"]).toBe("nosniff");
   expect(headers["x-powered-by"]).toBeUndefined();
 });
+
+test("AI assistants and social previews: llms.txt, robots and preview images", async ({
+  request,
+  page,
+}) => {
+  const llms = await request.get("/llms.txt");
+  expect(llms.status()).toBe(200);
+  expect(llms.headers()["content-type"]).toContain("text/markdown");
+  const text = await llms.text();
+  expect(text).toMatch(/^# Picstea/);
+  expect(text).toContain("/photopea-alternative");
+  expect((await request.get("/llms-full.txt")).status()).toBe(200);
+
+  const robots = await (await request.get("/robots.txt")).text();
+  for (const bot of ["GPTBot", "ClaudeBot", "PerplexityBot", "Google-Extended"]) {
+    expect(robots).toContain(`User-Agent: ${bot}`);
+  }
+  expect(robots).not.toContain("Disallow");
+
+  const image = await request.get("/og-image.png");
+  expect(image.headers()["content-type"]).toBe("image/png");
+  for (const path of ["/", "/faq", "/blog/png-vs-jpeg-vs-webp"]) {
+    await page.goto(path);
+    await expect(page.locator('meta[property="og:image"]')).toHaveAttribute(
+      "content",
+      /\/og-image\.png$/,
+    );
+    await expect(page.locator('meta[property="og:site_name"]')).toHaveAttribute(
+      "content",
+      "Picstea",
+    );
+  }
+});

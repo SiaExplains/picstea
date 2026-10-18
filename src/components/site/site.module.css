@@ -331,3 +331,24 @@
   font-size: 14px;
   color: var(--muted);
 }
+
+/* Links onwards at the end of guides and docs (internal linking, docs/10). */
+.related {
+  margin-top: 40px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.related h2 {
+  margin-top: 0;
+  font-size: 18px;
+}
+
+.prevNext {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 40px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
