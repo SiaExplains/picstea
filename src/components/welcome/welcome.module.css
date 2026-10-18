@@ -52,7 +52,7 @@
   display: grid;
   gap: 2px;
   padding-left: 12px;
-  border-left: 2px solid #2ba6ec;
+  border-left: 2px solid #4da297;
 }
 
 .highlights span {
@@ -94,13 +94,13 @@
   font-size: 14px;
   padding: 8px 18px;
   border-radius: 6px;
-  border: 1px solid #0a72b5;
-  background: #0a72b5;
+  border: 1px solid #007a7a;
+  background: #007a7a;
   color: #fff;
   cursor: pointer;
 }
 
 .primary:focus-visible {
-  outline: 2px solid #7cc8f5;
+  outline: 2px solid #8fd3c9;
   outline-offset: 2px;
 }

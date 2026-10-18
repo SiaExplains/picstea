@@ -25,11 +25,11 @@ export default function SiteLayout({ children }: LayoutProps<"/">) {
         <div className={styles.site}>
           <header className={styles.header}>
             <EditorLink className={styles.brand} aria-label={`${SITE.name} editor`}>
-              {/* White wordmark on the brand blue: one image reads on light and dark pages. */}
+              {/* White wordmark on the brand teal: one image reads on light and dark pages. */}
               <Image
                 src="/brand/picstea-logo.png"
                 alt={SITE.name}
-                width={93}
+                width={83}
                 height={28}
                 className={styles.logo}
                 priority

@@ -8,13 +8,13 @@
   --ed-border: #3a3b40;
   --ed-text: #e6e6e8;
   --ed-text-dim: #a4a5ab;
-  /* Picstea brand blue (logo #0d99e6). */
-  --ed-accent: #2ba6ec;
+  /* Picstea brand teal (logo #4da297). */
+  --ed-accent: #4da297;
   /* Filled backgrounds that carry text: white on it meets 4.5:1 (WCAG 1.4.3). */
-  --ed-accent-strong: #0a72b5;
-  --ed-accent-soft: rgba(13, 153, 230, 0.2);
+  --ed-accent-strong: #007a7a;
+  --ed-accent-soft: rgba(77, 162, 151, 0.22);
   --ed-danger: #ff6b6b;
-  --ed-focus: #7cc8f5;
+  --ed-focus: #8fd3c9;
 
   position: fixed;
   inset: 0;
@@ -981,7 +981,7 @@
   margin: 0;
   padding: 0;
   border: 0;
-  outline: 1px dashed #2ba6ec;
+  outline: 1px dashed #4da297;
   background: transparent;
   resize: none;
   overflow: hidden;

@@ -76,7 +76,7 @@ export function WelcomeDialog() {
         <Image
           src="/brand/picstea-logo.png"
           alt="Picstea"
-          width={119}
+          width={107}
           height={36}
           className={styles.logo}
           unoptimized
