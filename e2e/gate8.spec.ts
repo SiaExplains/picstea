@@ -43,15 +43,20 @@ test("website pages are indexable with metadata and structured data", async ({ p
   expect(errors).toEqual([]);
 });
 
-test("draft posts and unfinished legal pages are kept out of search", async ({ page, request }) => {
-  expect((await request.get("/blog/edit-psd-online-without-uploading")).status()).toBe(404);
+test("published posts are in search; unfinished legal pages are kept out", async ({
+  page,
+  request,
+}) => {
+  expect((await request.get("/blog/edit-psd-online-without-uploading")).status()).toBe(200);
   const sitemap = await (await request.get("/sitemap.xml")).text();
   expect(sitemap).toContain("/psd-editor");
   expect(sitemap).toContain("/docs/selections");
-  expect(sitemap).not.toContain("/blog/");
+  expect(sitemap).toContain("/blog/edit-psd-online-without-uploading");
   expect(sitemap).not.toMatch(/\/(privacy|cookies|terms|imprint|sponsorship)<\/loc>/);
   await page.goto("/blog");
-  await expect(page.getByText("The first articles are coming soon.")).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "How to edit a PSD file online without uploading it" }),
+  ).toBeVisible();
   await page.goto("/imprint");
   await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", /noindex/);
   await expect(page.getByText(/Draft — under legal review/)).toBeVisible();

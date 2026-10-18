@@ -20,15 +20,15 @@ export const DOC_SLUGS: readonly string[] = [
 
 /** Blog posts and whether they are published (drafts are 404 in production). */
 export const POST_SLUGS: Readonly<Record<string, "draft" | "published">> = {
-  "edit-psd-online-without-uploading": "draft",
-  "png-vs-jpeg-vs-webp": "draft",
-  "layers-and-masks-explained": "draft",
-  "levels-and-curves-explained": "draft",
-  "how-to-use-the-pen-tool": "draft",
-  "smart-objects-explained": "draft",
-  "open-psd-files-with-editable-text-and-adjustments": "draft",
-  "record-actions-and-batch-process-images": "draft",
-  "remove-blemishes-and-retouch-photos-in-your-browser": "draft",
-  "select-align-and-distribute-several-layers": "draft",
-  "vibrance-color-balance-gradient-map-and-more": "draft",
+  "edit-psd-online-without-uploading": "published",
+  "png-vs-jpeg-vs-webp": "published",
+  "layers-and-masks-explained": "published",
+  "levels-and-curves-explained": "published",
+  "how-to-use-the-pen-tool": "published",
+  "smart-objects-explained": "published",
+  "open-psd-files-with-editable-text-and-adjustments": "published",
+  "record-actions-and-batch-process-images": "published",
+  "remove-blemishes-and-retouch-photos-in-your-browser": "published",
+  "select-align-and-distribute-several-layers": "published",
+  "vibrance-color-balance-gradient-map-and-more": "published",
 };

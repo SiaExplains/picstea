@@ -124,7 +124,7 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 | Website (separate layout, static pages, no editor bundle) | ✅ | Links to the editor don't prefetch it |
 | Landing pages: /online-photo-editor, /psd-editor | ✅ | Direct answers, how-to, limitations, FAQ |
 | Docs (7 pages incl. generated shortcut table) | ✅ | |
-| Blog (index, posts, Article data) | ✅ | 3 posts written as **drafts** awaiting approval |
+| Blog (index, posts, Article data) | ✅ | 11 posts published (2026-10-18) |
 | Structured data: WebSite, Organization, SoftwareApplication, BreadcrumbList, Article, FAQPage | ✅ | No ratings/reviews |
 | Sitemap from one routes registry; real 404s for unknown docs/blog URLs | ✅ | Drafts and unfinished legal pages excluded |
 | Consent system: banner, preferences, vendor registry, versioned storage | ✅ | Only shown when an optional vendor is configured |

@@ -25,8 +25,8 @@ export const POSTS: readonly BlogPost[] = [
     title: "How to edit a PSD file online without uploading it",
     description:
       "Open and edit Photoshop files in your browser while the file stays on your computer — with layers, groups and masks intact.",
-    published: "2026-10-09",
-    draft: true,
+    published: "2026-10-18",
+    draft: false,
     body: () => (
       <>
         <p>
@@ -60,7 +60,9 @@ export const POSTS: readonly BlogPost[] = [
         <h2>What comes across</h2>
         <p>
           Picstea supports 8-bit RGB and greyscale PSD files — the most common kind. Pixel layers,
-          groups, layer names, opacity, visibility, blend modes and layer masks are kept.
+          groups, layer names, opacity, visibility, blend modes and layer masks are kept. Text
+          layers stay editable, and adjustment layers, shapes, smart objects, vector and clipping
+          masks and common layer styles open as their Picstea equivalents.
         </p>
         <h2>What changes</h2>
         <p>
@@ -68,9 +70,10 @@ export const POSTS: readonly BlogPost[] = [
           Picstea lists them when the file opens:
         </p>
         <ul>
-          <li>Text layers and smart objects open as pixels (they keep their names).</li>
-          <li>Photoshop adjustment layers and layer styles are not imported.</li>
-          <li>Clipping masks open as normal layers.</li>
+          <li>
+            Selective Color and Color Lookup adjustments, satin and pattern styles, warped text and
+            Photoshop smart filters keep their look as pixels.
+          </li>
           <li>PSB, 16/32-bit and CMYK files cannot be opened yet.</li>
         </ul>
         <h2>Why it can work without a server</h2>
@@ -88,11 +91,11 @@ export const POSTS: readonly BlogPost[] = [
   },
   {
     slug: "png-vs-jpeg-vs-webp",
-    title: "PNG vs JPEG vs WebP: which image format should you use?",
+    title: "PNG vs JPEG vs WebP: which format to use?",
     description:
       "A practical guide to choosing between PNG, JPEG and WebP: transparency, file size, quality and where each format works best.",
-    published: "2026-10-09",
-    draft: true,
+    published: "2026-10-18",
+    draft: false,
     body: () => (
       <>
         <p>
@@ -177,8 +180,8 @@ export const POSTS: readonly BlogPost[] = [
     title: "Layers and masks explained",
     description:
       "What layers, blend modes, adjustment layers and layer masks are, and how they let you edit images without destroying the original.",
-    published: "2026-10-09",
-    draft: true,
+    published: "2026-10-18",
+    draft: false,
     body: () => (
       <>
         <p>
@@ -232,11 +235,11 @@ export const POSTS: readonly BlogPost[] = [
   },
   {
     slug: "levels-and-curves-explained",
-    title: "Levels and Curves explained: fix brightness and contrast like a pro",
+    title: "Levels and Curves: fix brightness and contrast",
     description:
       "What Levels and Curves do, when to use which, and how to correct a dull or dark photo with them — without changing the original pixels.",
-    published: "2026-10-09",
-    draft: true,
+    published: "2026-10-18",
+    draft: false,
     body: () => (
       <>
         <p>
@@ -312,11 +315,11 @@ export const POSTS: readonly BlogPost[] = [
   },
   {
     slug: "how-to-use-the-pen-tool",
-    title: "How to use the Pen tool: precise shapes, cut-outs and masks",
+    title: "How to use the Pen tool for shapes and cut-outs",
     description:
       "A practical introduction to the Pen tool: corner and curve points, closing a path, editing it, and turning it into a shape, a selection or a vector mask.",
-    published: "2026-10-09",
-    draft: true,
+    published: "2026-10-18",
+    draft: false,
     body: () => (
       <>
         <p>
@@ -378,11 +381,11 @@ export const POSTS: readonly BlogPost[] = [
   },
   {
     slug: "smart-objects-explained",
-    title: "Smart objects: scale and filter without losing quality",
+    title: "Smart objects: scale without losing quality",
     description:
       "Why resizing pixels loses detail, how smart objects avoid it, and how smart filters let you change your mind later.",
-    published: "2026-10-09",
-    draft: true,
+    published: "2026-10-18",
+    draft: false,
     body: () => (
       <>
         <p>
@@ -426,11 +429,11 @@ export const POSTS: readonly BlogPost[] = [
   },
   {
     slug: "open-psd-files-with-editable-text-and-adjustments",
-    title: "Open PSD files with editable text, adjustment layers and smart objects",
+    title: "Open PSDs with editable text and adjustments",
     description:
-      "Picstea now opens Photoshop files with much more of their structure intact: editable text, adjustment layers, shapes, smart objects, vector masks and layer styles.",
-    published: "2026-10-09",
-    draft: true,
+      "Picstea opens Photoshop files with their structure intact: editable text, adjustment layers, shapes, smart objects, vector masks and layer styles.",
+    published: "2026-10-18",
+    draft: false,
     body: () => (
       <>
         <p>
@@ -470,9 +473,9 @@ export const POSTS: readonly BlogPost[] = [
         </p>
         <h2>What still changes</h2>
         <p>
-          Some Photoshop features don&apos;t have a Picstea equivalent yet — for example Vibrance,
-          bevels or warped text. Those layers keep their look as pixels, and Picstea lists exactly
-          what changed when the file opens.
+          Some Photoshop features don&apos;t have a Picstea equivalent yet — for example Selective
+          Color, satin styles or warped text. Those layers keep their look as pixels, and Picstea
+          lists exactly what changed when the file opens.
         </p>
         <p>
           <EditorLink>Open a PSD in Picstea</EditorLink> — no account, no upload. Details are in{" "}
@@ -483,11 +486,11 @@ export const POSTS: readonly BlogPost[] = [
   },
   {
     slug: "record-actions-and-batch-process-images",
-    title: "Record actions and batch-process images in your browser",
+    title: "Record actions and batch-process images",
     description:
       "Picstea can now record a sequence of edits and replay it on any image — or on a whole folder of photos at once — without uploading anything.",
-    published: "2026-10-09",
-    draft: true,
+    published: "2026-10-18",
+    draft: false,
     body: () => (
       <>
         <p>
@@ -534,11 +537,11 @@ export const POSTS: readonly BlogPost[] = [
   },
   {
     slug: "remove-blemishes-and-retouch-photos-in-your-browser",
-    title: "Remove blemishes and retouch photos in your browser",
+    title: "Remove blemishes and retouch photos online",
     description:
       "Picstea now has a Clone Stamp, Healing Brush, Dodge and Burn, Sponge, Blur, Sharpen and Smudge — classic retouching tools that run entirely in your browser.",
-    published: "2026-10-09",
-    draft: true,
+    published: "2026-10-18",
+    draft: false,
     body: () => (
       <>
         <p>
@@ -573,11 +576,11 @@ export const POSTS: readonly BlogPost[] = [
   },
   {
     slug: "select-align-and-distribute-several-layers",
-    title: "Select, align and distribute several layers at once",
+    title: "Select, align and distribute several layers",
     description:
       "Picstea now lets you select several layers, move and transform them together, scale and rotate whole groups, and align or distribute them evenly.",
-    published: "2026-10-09",
-    draft: true,
+    published: "2026-10-18",
+    draft: false,
     body: () => (
       <>
         <p>
@@ -614,9 +617,9 @@ export const POSTS: readonly BlogPost[] = [
     slug: "vibrance-color-balance-gradient-map-and-more",
     title: "Vibrance, Color Balance, Gradient Map and more",
     description:
-      "Picstea adds five adjustment layers — Vibrance, Color Balance, Photo Filter, Channel Mixer and Gradient Map — and inner shadow, bevel and gradient overlay effects.",
-    published: "2026-10-09",
-    draft: true,
+      "Five new adjustment layers — Vibrance, Color Balance, Photo Filter, Channel Mixer and Gradient Map — plus inner shadow, bevel and gradient overlay effects.",
+    published: "2026-10-18",
+    draft: false,
     body: () => (
       <>
         <p>
