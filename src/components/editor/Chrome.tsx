@@ -1,10 +1,20 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
+import { useCallback, useRef, useState, useSyncExternalStore } from "react";
 import { SELECTION_MODES, type SelectionMode } from "@/editor/selection/ops";
 import { FONT_FAMILIES, type FontFamily, type ShapeKind } from "@/editor/core/document/types";
 import { isDirty, selectedLayerIds, type ToolId } from "@/editor/core/editor-store";
-import { primaryBinding, type ActionId } from "@/editor/core/shortcuts/shortcuts";
+import { primaryBinding } from "@/editor/core/shortcuts/shortcuts";
+import {
+  activateMember,
+  isMemberActive,
+  rememberedTool,
+  shownMember,
+  TOOL_GROUPS,
+  type ToolGroup,
+} from "@/editor/core/tool-groups";
+import { ContextMenu, type ContextMenuEntry } from "./ContextMenu";
+import { measureLine } from "@/editor/tools/measure/measure-tools";
 import { useActiveSession, useController, useEditorState, useIsMac } from "./editor-context";
 import styles from "./editor.module.css";
 import {
@@ -22,57 +32,179 @@ import {
   CloneIcon,
   HealIcon,
   ToneIcon,
-  FocusIcon,
   HandIcon,
   MoveIcon,
   PathSelectIcon,
   PenIcon,
-  ShapeIcon,
   SwapIcon,
   TextIcon,
   ZoomIcon,
+  EllipseMarqueeIcon,
+  PolygonLassoIcon,
+  SamplerIcon,
+  RulerIcon,
+  SpotHealIcon,
+  RedEyeIcon,
+  ColorReplaceIcon,
+  BackgroundEraserIcon,
+  MagicEraserIcon,
+  FocusIcon,
+  SharpenIcon,
+  SmudgeIcon,
+  BurnIcon,
+  SpongeIcon,
+  PenAddIcon,
+  PenDeleteIcon,
+  ConvertPointIcon,
+  PathMoveIcon,
+  RectShapeIcon,
+  RoundedRectIcon,
+  EllipseShapeIcon,
+  PolygonShapeIcon,
+  LineShapeIcon,
+  ResetColorsIcon,
 } from "./icons";
 import type { UiAction, UiActionId } from "./use-editor-actions";
 import { ArrangeButtons } from "./ArrangeButtons";
 
-const TOOLS: { id: ToolId; label: string; action: ActionId; icon: React.ReactNode }[] = [
-  { id: "move", label: "Move", action: "tool.move", icon: <MoveIcon size={18} /> },
-  { id: "marquee", label: "Marquee", action: "tool.marquee", icon: <MarqueeIcon size={18} /> },
-  { id: "lasso", label: "Lasso", action: "tool.lasso", icon: <LassoIcon size={18} /> },
-  { id: "wand", label: "Magic Wand", action: "tool.wand", icon: <WandIcon size={18} /> },
-  { id: "crop", label: "Crop", action: "tool.crop", icon: <CropIcon size={18} /> },
-  {
-    id: "eyedropper",
-    label: "Eyedropper",
-    action: "tool.eyedropper",
-    icon: <EyedropperIcon size={18} />,
-  },
-  { id: "brush", label: "Brush", action: "tool.brush", icon: <BrushIcon size={18} /> },
-  { id: "pencil", label: "Pencil", action: "tool.pencil", icon: <PencilIcon size={18} /> },
-  { id: "eraser", label: "Eraser", action: "tool.eraser", icon: <EraserIcon size={18} /> },
-  { id: "clone", label: "Clone Stamp", action: "tool.clone", icon: <CloneIcon size={18} /> },
-  { id: "heal", label: "Healing Brush", action: "tool.heal", icon: <HealIcon size={18} /> },
-  { id: "tone", label: "Dodge, Burn, Sponge", action: "tool.tone", icon: <ToneIcon size={18} /> },
-  {
-    id: "focus",
-    label: "Blur, Sharpen, Smudge",
-    action: "tool.focus",
-    icon: <FocusIcon size={18} />,
-  },
-  { id: "bucket", label: "Paint Bucket", action: "tool.bucket", icon: <BucketIcon size={18} /> },
-  { id: "gradient", label: "Gradient", action: "tool.gradient", icon: <GradientIcon size={18} /> },
-  { id: "shape", label: "Shape", action: "tool.shape", icon: <ShapeIcon size={18} /> },
-  { id: "pen", label: "Pen", action: "tool.pen", icon: <PenIcon size={18} /> },
-  {
-    id: "path-select",
-    label: "Direct Selection",
-    action: "tool.pathSelect",
-    icon: <PathSelectIcon size={18} />,
-  },
-  { id: "text", label: "Text", action: "tool.text", icon: <TextIcon size={18} /> },
-  { id: "hand", label: "Hand", action: "tool.hand", icon: <HandIcon size={18} /> },
-  { id: "zoom", label: "Zoom", action: "tool.zoom", icon: <ZoomIcon size={18} /> },
-];
+/** Icon for every toolbar group member (ADR-0027). */
+const MEMBER_ICONS: Record<string, React.ReactNode> = {
+  move: <MoveIcon size={18} />,
+  "marquee-rect": <MarqueeIcon size={18} />,
+  "marquee-ellipse": <EllipseMarqueeIcon size={18} />,
+  lasso: <LassoIcon size={18} />,
+  "lasso-polygonal": <PolygonLassoIcon size={18} />,
+  wand: <WandIcon size={18} />,
+  crop: <CropIcon size={18} />,
+  eyedropper: <EyedropperIcon size={18} />,
+  "color-sampler": <SamplerIcon size={18} />,
+  ruler: <RulerIcon size={18} />,
+  "spot-heal": <SpotHealIcon size={18} />,
+  heal: <HealIcon size={18} />,
+  "red-eye": <RedEyeIcon size={18} />,
+  brush: <BrushIcon size={18} />,
+  pencil: <PencilIcon size={18} />,
+  "color-replace": <ColorReplaceIcon size={18} />,
+  clone: <CloneIcon size={18} />,
+  eraser: <EraserIcon size={18} />,
+  "bg-eraser": <BackgroundEraserIcon size={18} />,
+  "magic-eraser": <MagicEraserIcon size={18} />,
+  gradient: <GradientIcon size={18} />,
+  bucket: <BucketIcon size={18} />,
+  blur: <FocusIcon size={18} />,
+  sharpen: <SharpenIcon size={18} />,
+  smudge: <SmudgeIcon size={18} />,
+  dodge: <ToneIcon size={18} />,
+  burn: <BurnIcon size={18} />,
+  sponge: <SpongeIcon size={18} />,
+  text: <TextIcon size={18} />,
+  pen: <PenIcon size={18} />,
+  "anchor-add": <PenAddIcon size={18} />,
+  "anchor-delete": <PenDeleteIcon size={18} />,
+  "anchor-convert": <ConvertPointIcon size={18} />,
+  "path-move": <PathMoveIcon size={18} />,
+  "path-select": <PathSelectIcon size={18} />,
+  "shape-rect": <RectShapeIcon size={18} />,
+  "shape-rounded": <RoundedRectIcon size={18} />,
+  "shape-ellipse": <EllipseShapeIcon size={18} />,
+  "shape-polygon": <PolygonShapeIcon size={18} />,
+  "shape-line": <LineShapeIcon size={18} />,
+  hand: <HandIcon size={18} />,
+  zoom: <ZoomIcon size={18} />,
+};
+
+/** Hold the pointer this long on a group to open its flyout (as in Photoshop). */
+const LONG_PRESS_MS = 450;
+
+function ToolGroupButton({ group }: { group: ToolGroup }) {
+  const controller = useController();
+  const state = useEditorState((s) => s);
+  const isMac = useIsMac();
+  const [flyout, setFlyout] = useState<{ x: number; y: number } | null>(null);
+  const press = useRef<number | null>(null);
+  const opened = useRef(false);
+  const member = shownMember(group, state, rememberedTool(group, state));
+  const shortcut = primaryBinding(group.action, isMac);
+  const many = group.members.length > 1;
+  const closeFlyout = useCallback(() => setFlyout(null), []);
+
+  const open = (el: HTMLElement) => {
+    const r = el.getBoundingClientRect();
+    setFlyout({ x: r.right + 4, y: r.top });
+  };
+  const clearPress = () => {
+    if (press.current !== null) window.clearTimeout(press.current);
+    press.current = null;
+  };
+
+  return (
+    <>
+      <button
+        type="button"
+        className={`${styles.toolButton} ${many ? styles.toolGroup : ""}`}
+        aria-pressed={isMemberActive(member, state)}
+        aria-label={`${member.label} tool`}
+        aria-haspopup={many ? "menu" : undefined}
+        aria-expanded={many ? !!flyout : undefined}
+        aria-keyshortcuts={shortcut || undefined}
+        title={`${member.label} (${shortcut})${many ? " · right-click or hold for more" : ""}`}
+        data-tool-group={group.id}
+        onPointerDown={(e) => {
+          if (!many || e.button !== 0) return;
+          opened.current = false;
+          const el = e.currentTarget;
+          press.current = window.setTimeout(() => {
+            opened.current = true;
+            open(el);
+          }, LONG_PRESS_MS);
+        }}
+        onPointerUp={clearPress}
+        onPointerLeave={clearPress}
+        onClick={() => {
+          // A long press opened the flyout instead.
+          if (opened.current) return;
+          activateMember(controller.store, member);
+        }}
+        onContextMenu={(e) => {
+          if (!many) return;
+          e.preventDefault();
+          open(e.currentTarget);
+        }}
+        onKeyDown={(e) => {
+          if (!many) return;
+          if (
+            e.key === "ArrowRight" ||
+            e.key === "ContextMenu" ||
+            (e.shiftKey && e.key === "F10")
+          ) {
+            e.preventDefault();
+            e.stopPropagation();
+            open(e.currentTarget);
+          }
+        }}
+      >
+        {MEMBER_ICONS[member.id]}
+      </button>
+      {flyout && (
+        <ContextMenu
+          x={flyout.x}
+          y={flyout.y}
+          label={`${member.label} tools`}
+          onClose={closeFlyout}
+          items={group.members.map((m): ContextMenuEntry => ({
+            kind: "item",
+            label: m.label,
+            enabled: true,
+            checked: m === member,
+            icon: <span className={styles.flyoutIcon}>{MEMBER_ICONS[m.id]}</span>,
+            shortcut,
+            run: () => activateMember(controller.store, m),
+          }))}
+        />
+      )}
+    </>
+  );
+}
 
 /** Only implemented tools are shown — no placeholder buttons (docs/15 rule 6). */
 export function Toolbar({
@@ -82,29 +214,12 @@ export function Toolbar({
   actions: Record<UiActionId, UiAction>;
   onEditColor: (which: "foreground" | "background") => void;
 }) {
-  const controller = useController();
-  const activeTool = useEditorState((s) => s.activeTool);
   const colors = useEditorState((s) => s.colors);
-  const isMac = useIsMac();
   return (
     <nav className={styles.toolbar} aria-label="Tools">
-      {TOOLS.map((tool) => {
-        const shortcut = primaryBinding(tool.action, isMac);
-        return (
-          <button
-            key={tool.id}
-            type="button"
-            className={styles.toolButton}
-            aria-pressed={activeTool === tool.id}
-            aria-label={`${tool.label} tool`}
-            aria-keyshortcuts={shortcut}
-            title={`${tool.label} (${shortcut})`}
-            onClick={() => controller.store.setActiveTool(tool.id)}
-          >
-            {tool.icon}
-          </button>
-        );
-      })}
+      {TOOL_GROUPS.map((group) => (
+        <ToolGroupButton key={group.id} group={group} />
+      ))}
       <div className={styles.toolSeparator} role="separator" />
       <div className={styles.swatches}>
         {(["foreground", "background"] as const).map((which) => (
@@ -120,15 +235,26 @@ export function Toolbar({
           />
         ))}
       </div>
-      <button
-        type="button"
-        className={styles.iconButton}
-        aria-label={`${actions["colors.swap"].label} (X)`}
-        title="Swap colours (X)"
-        onClick={actions["colors.swap"].run}
-      >
-        <SwapIcon size={14} />
-      </button>
+      <div className={styles.swatchButtons}>
+        <button
+          type="button"
+          className={styles.iconButton}
+          aria-label={`${actions["colors.reset"].label} (D)`}
+          title="Default colours: black and white (D)"
+          onClick={actions["colors.reset"].run}
+        >
+          <ResetColorsIcon size={12} />
+        </button>
+        <button
+          type="button"
+          className={styles.iconButton}
+          aria-label={`${actions["colors.swap"].label} (X)`}
+          title="Swap colours (X)"
+          onClick={actions["colors.swap"].run}
+        >
+          <SwapIcon size={14} />
+        </button>
+      </div>
     </nav>
   );
 }
@@ -213,7 +339,11 @@ function BrushOptions({ tool }: { tool: "brush" | "pencil" | "eraser" }) {
 }
 
 /** Size and hardness, shared by the retouching tools. */
-function TipOptions({ tool }: { tool: "clone" | "heal" | "tone" | "focus" }) {
+function TipOptions({
+  tool,
+}: {
+  tool: "clone" | "heal" | "tone" | "focus" | "spot-heal" | "bg-eraser" | "color-replace";
+}) {
   const controller = useController();
   const size = useEditorState((s) => s.toolSettings[tool].size);
   const hardness = useEditorState((s) => s.toolSettings[tool].hardness);
@@ -525,7 +655,7 @@ function LassoOptions() {
   );
 }
 
-function FloodOptions({ tool }: { tool: "wand" | "bucket" }) {
+function FloodOptions({ tool }: { tool: "wand" | "bucket" | "magic-eraser" }) {
   const controller = useController();
   const settings = useEditorState((s) => s.toolSettings[tool]);
   const set = (patch: Partial<typeof settings>) => controller.store.updateToolSettings(tool, patch);
@@ -549,6 +679,121 @@ function FloodOptions({ tool }: { tool: "wand" | "bucket" }) {
         onChange={(sampleAll) => set({ sampleAll })}
       />
       {tool === "wand" && <SelectionModeOption tool="wand" />}
+    </>
+  );
+}
+
+/** Background Eraser and Color Replacement: brush tip plus colour tolerance. */
+function SampledBrushOptions({ tool }: { tool: "bg-eraser" | "color-replace" }) {
+  const controller = useController();
+  const tolerance = useEditorState((s) => s.toolSettings[tool].tolerance);
+  return (
+    <>
+      <TipOptions tool={tool} />
+      <NumberOption
+        label="Tolerance"
+        value={tolerance}
+        min={0}
+        max={255}
+        onChange={(v) => controller.store.updateToolSettings(tool, { tolerance: v })}
+      />
+      <span>
+        {tool === "bg-eraser"
+          ? "Erases colours like the one under the first dab"
+          : "Paints the foreground colour over colours like the one under the first dab, keeping their shading"}
+      </span>
+    </>
+  );
+}
+
+function RedEyeOptions() {
+  const controller = useController();
+  const settings = useEditorState((s) => s.toolSettings["red-eye"]);
+  const set = (patch: Partial<typeof settings>) =>
+    controller.store.updateToolSettings("red-eye", patch);
+  return (
+    <>
+      <NumberOption
+        label="Pupil size"
+        value={settings.size}
+        min={2}
+        max={500}
+        suffix="px"
+        onChange={(size) => set({ size })}
+      />
+      <NumberOption
+        label="Darken"
+        value={Math.round(settings.darken * 100)}
+        min={0}
+        max={100}
+        suffix="%"
+        onChange={(v) => set({ darken: v / 100 })}
+      />
+      <span>Click or paint over red pupils</span>
+    </>
+  );
+}
+
+const hex2 = (n: number) => n.toString(16).padStart(2, "0");
+
+/** Color Sampler readout: each point's current colour, kept live while you edit. */
+function SamplerOptions() {
+  const controller = useController();
+  const samplers = useEditorState((s) => s.measure.samplers);
+  // Re-read the colours whenever the document changes.
+  useActiveSession();
+  return (
+    <>
+      {samplers.length === 0 && <span>Click to place up to four colour sample points</span>}
+      <ul className={styles.samplerList} aria-label="Colour samples">
+        {samplers.map((p, i) => {
+          const c = controller.sampleColor(p.x, p.y);
+          const label = c ? `#${hex2(c[0])}${hex2(c[1])}${hex2(c[2])}` : "…";
+          return (
+            <li key={i}>
+              <span
+                className={styles.samplerSwatch}
+                style={{ background: c ? label : "transparent" }}
+              />
+              <strong>#{i + 1}</strong> {c ? `R ${c[0]} G ${c[1]} B ${c[2]}` : "loading"}{" "}
+              <code>{label}</code>
+            </li>
+          );
+        })}
+      </ul>
+      {samplers.length > 0 && (
+        <button
+          type="button"
+          className={styles.button}
+          onClick={() => controller.store.setMeasure({ samplers: [] })}
+        >
+          Clear
+        </button>
+      )}
+      {samplers.length > 0 && <span>Drag a point to move it · Alt-click removes it</span>}
+    </>
+  );
+}
+
+function RulerOptions() {
+  const controller = useController();
+  const ruler = useEditorState((s) => s.measure.ruler);
+  if (!ruler) return <span>Drag to measure a distance and an angle · Shift snaps to 45°</span>;
+  const m = measureLine(ruler.from, ruler.to);
+  const f = (v: number) => (Math.round(v * 10) / 10).toString();
+  return (
+    <>
+      <output className={styles.rulerReadout} aria-label="Measurement">
+        X {f(m.x)} · Y {f(m.y)} · W {f(m.width)} · H {f(m.height)} · A {f(m.angle)}° · L{" "}
+        {f(m.length)} px
+      </output>
+      <button
+        type="button"
+        className={styles.button}
+        onClick={() => controller.store.setMeasure({ ruler: null })}
+      >
+        Clear
+      </button>
     </>
   );
 }
@@ -611,9 +856,10 @@ function ShapeOptions() {
   const settings = useEditorState((s) => s.toolSettings.shape);
   const set = (patch: Partial<typeof settings>) =>
     controller.store.updateToolSettings("shape", patch);
-  const kinds: { id: Exclude<ShapeKind, "path">; label: string }[] = [
+  const kinds: { id: Exclude<ShapeKind, "path"> | "polygon"; label: string }[] = [
     { id: "rect", label: "Rectangle" },
     { id: "ellipse", label: "Ellipse" },
+    { id: "polygon", label: "Polygon" },
     { id: "line", label: "Line" },
   ];
   return (
@@ -669,6 +915,15 @@ function ShapeOptions() {
         suffix="px"
         onChange={(strokeWidth) => set({ strokeWidth })}
       />
+      {settings.kind === "polygon" && (
+        <NumberOption
+          label="Sides"
+          value={settings.sides}
+          min={3}
+          max={64}
+          onChange={(sides) => set({ sides })}
+        />
+      )}
       {settings.kind === "rect" && (
         <NumberOption
           label="Radius"
@@ -899,6 +1154,17 @@ const TOOL_LABELS: Record<ToolId, string> = {
   text: "Text",
   hand: "Hand",
   zoom: "Zoom",
+  "spot-heal": "Spot Healing Brush",
+  "red-eye": "Red Eye",
+  "bg-eraser": "Background Eraser",
+  "magic-eraser": "Magic Eraser",
+  "color-replace": "Color Replacement",
+  "color-sampler": "Color Sampler",
+  ruler: "Ruler",
+  "path-move": "Path Selection",
+  "anchor-add": "Add Anchor Point",
+  "anchor-delete": "Delete Anchor Point",
+  "anchor-convert": "Convert Point",
 };
 
 export function OptionsBar({ actions }: { actions: Record<UiActionId, UiAction> }) {
@@ -921,7 +1187,40 @@ export function OptionsBar({ actions }: { actions: Record<UiActionId, UiAction> 
       {activeTool === "crop" && <CropOptions />}
       {activeTool === "marquee" && <MarqueeOptions />}
       {activeTool === "lasso" && <LassoOptions />}
-      {(activeTool === "wand" || activeTool === "bucket") && <FloodOptions tool={activeTool} />}
+      {(activeTool === "wand" || activeTool === "bucket" || activeTool === "magic-eraser") && (
+        <FloodOptions tool={activeTool} />
+      )}
+      {activeTool === "magic-eraser" && <span>Click to erase an area of similar colour</span>}
+      {activeTool === "color-sampler" && <SamplerOptions />}
+      {activeTool === "ruler" && <RulerOptions />}
+      {activeTool === "spot-heal" && (
+        <>
+          <TipOptions tool="spot-heal" />
+          <span>Paint over spots — the texture comes from around them automatically</span>
+        </>
+      )}
+      {activeTool === "red-eye" && <RedEyeOptions />}
+      {(activeTool === "bg-eraser" || activeTool === "color-replace") && (
+        <SampledBrushOptions tool={activeTool} />
+      )}
+      {(activeTool === "path-move" ||
+        activeTool === "anchor-add" ||
+        activeTool === "anchor-delete" ||
+        activeTool === "anchor-convert") && (
+        <>
+          <PathButtons actions={actions} />
+          <span>
+            {
+              {
+                "path-move": "Drag a path to move all of it",
+                "anchor-add": "Click a path segment to add a point",
+                "anchor-delete": "Click a point to delete it",
+                "anchor-convert": "Click a point for corner ↔ smooth · drag it to pull out handles",
+              }[activeTool]
+            }
+          </span>
+        </>
+      )}
       {activeTool === "eyedropper" && <EyedropperOptions />}
       {(activeTool === "brush" || activeTool === "pencil" || activeTool === "eraser") && (
         <BrushOptions tool={activeTool} />

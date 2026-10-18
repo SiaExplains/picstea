@@ -228,3 +228,126 @@ export function cloneEffect(
     },
   };
 }
+
+/** Largest per-channel difference between pixel `i` of `base` and an RGB colour. */
+const colorDistance = (base: Uint8ClampedArray, i: number, rgb: readonly number[]) =>
+  Math.max(
+    Math.abs(base[i] - rgb[0]),
+    Math.abs(base[i + 1] - rgb[1]),
+    Math.abs(base[i + 2] - rgb[2]),
+  );
+
+/**
+ * Background Eraser (ADR-0027): pixels close to the colour sampled at the start of the stroke
+ * become transparent; everything else under the brush stays. Partial matches near the tolerance
+ * edge fade out smoothly instead of leaving a hard fringe.
+ */
+export function backgroundEraseEffect(
+  base: Uint8ClampedArray,
+  width: number,
+  sample: readonly number[],
+  tolerance: number,
+): PixelEffect {
+  const soft = Math.max(1, tolerance * 0.25);
+  return {
+    target(x, y, t) {
+      const i = (y * width + x) * 4;
+      const d = colorDistance(base, i, sample);
+      if (d > tolerance + soft) return false;
+      const keep = d <= tolerance ? 0 : (d - tolerance) / soft;
+      t[0] = base[i];
+      t[1] = base[i + 1];
+      t[2] = base[i + 2];
+      t[3] = base[i + 3] * keep;
+      return true;
+    },
+  };
+}
+
+/** RGB (0…255) → hue (0…1), saturation (0…1), lightness (0…1). */
+function toHsl(r: number, g: number, b: number): [number, number, number] {
+  const rn = r / 255;
+  const gn = g / 255;
+  const bn = b / 255;
+  const max = Math.max(rn, gn, bn);
+  const min = Math.min(rn, gn, bn);
+  const l = (max + min) / 2;
+  if (max === min) return [0, 0, l];
+  const d = max - min;
+  const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+  const h =
+    max === rn
+      ? (gn - bn) / d + (gn < bn ? 6 : 0)
+      : max === gn
+        ? (bn - rn) / d + 2
+        : (rn - gn) / d + 4;
+  return [h / 6, s, l];
+}
+
+function hueToRgb(p: number, q: number, t: number): number {
+  if (t < 0) t += 1;
+  if (t > 1) t -= 1;
+  if (t < 1 / 6) return p + (q - p) * 6 * t;
+  if (t < 1 / 2) return q;
+  if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+  return p;
+}
+
+function fromHsl(h: number, s: number, l: number, out: Float32Array): void {
+  if (s === 0) {
+    out[0] = out[1] = out[2] = l * 255;
+    return;
+  }
+  const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+  const p = 2 * l - q;
+  out[0] = hueToRgb(p, q, h + 1 / 3) * 255;
+  out[1] = hueToRgb(p, q, h) * 255;
+  out[2] = hueToRgb(p, q, h - 1 / 3) * 255;
+}
+
+/**
+ * Color Replacement: pixels close to the sampled colour take the hue and saturation of `color`
+ * and keep their own lightness, so shading and texture survive.
+ */
+export function colorReplaceEffect(
+  base: Uint8ClampedArray,
+  width: number,
+  sample: readonly number[],
+  tolerance: number,
+  color: readonly number[],
+): PixelEffect {
+  const [hue, sat] = toHsl(color[0], color[1], color[2]);
+  return {
+    target(x, y, t) {
+      const i = (y * width + x) * 4;
+      if (colorDistance(base, i, sample) > tolerance) return false;
+      const [, , l] = toHsl(base[i], base[i + 1], base[i + 2]);
+      fromHsl(hue, sat, l, t);
+      t[3] = base[i + 3];
+      return true;
+    },
+  };
+}
+
+/**
+ * Red Eye: strongly red pixels lose their red cast and are darkened; other pixels under the
+ * brush (skin, eyelids) are left alone.
+ */
+export function redEyeEffect(base: Uint8ClampedArray, width: number, darken: number): PixelEffect {
+  return {
+    target(x, y, t) {
+      const i = (y * width + x) * 4;
+      const r = base[i];
+      const g = base[i + 1];
+      const b = base[i + 2];
+      const other = (g + b) / 2;
+      if (r < 60 || r < other * 1.5) return false;
+      const k = 1 - darken * 0.8;
+      t[0] = other * k;
+      t[1] = g * k;
+      t[2] = b * k;
+      t[3] = base[i + 3];
+      return true;
+    },
+  };
+}

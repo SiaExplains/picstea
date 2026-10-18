@@ -26,6 +26,7 @@ import { DirectSelectTool } from "../tools/pen/direct-select-tool";
 import { PenTool } from "../tools/pen/pen-tool";
 import { ShapeTool } from "../tools/shape/shape-tool";
 import { TextTool } from "../tools/text/text-tool";
+import { ColorSamplerTool, RulerTool } from "../tools/measure/measure-tools";
 import type { TextEditRequest, Tool, ToolContext, ToolKey, ToolPointer } from "../tools/tool";
 
 export interface ToolManagerHost {
@@ -89,6 +90,18 @@ export class ToolManager {
       pen: this.pen,
       "path-select": new DirectSelectTool(),
       text: new TextTool(),
+      // Group members (ADR-0027).
+      "spot-heal": new RetouchTool("spot-heal"),
+      "red-eye": new RetouchTool("red-eye"),
+      "bg-eraser": new RetouchTool("bg-eraser"),
+      "color-replace": new RetouchTool("color-replace"),
+      "magic-eraser": new BucketTool("magic-eraser"),
+      "color-sampler": new ColorSamplerTool(),
+      ruler: new RulerTool(),
+      "path-move": new DirectSelectTool("path"),
+      "anchor-add": new DirectSelectTool("add"),
+      "anchor-delete": new DirectSelectTool("delete"),
+      "anchor-convert": new DirectSelectTool("convert"),
     };
     this.context = {
       store: host.store,

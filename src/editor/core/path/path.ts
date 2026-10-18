@@ -284,6 +284,110 @@ export function toggleSmooth(path: VectorPath, subpath: number, index: number): 
   }));
 }
 
+/** Point on the cubic segment from `a` to `b` at parameter t (0…1). */
+function cubicAt(a: Anchor, b: Anchor, t: number): Point {
+  const u = 1 - t;
+  const w0 = u * u * u;
+  const w1 = 3 * u * u * t;
+  const w2 = 3 * u * t * t;
+  const w3 = t * t * t;
+  return {
+    x: w0 * a.x + w1 * a.out.x + w2 * b.in.x + w3 * b.x,
+    y: w0 * a.y + w1 * a.out.y + w2 * b.in.y + w3 * b.y,
+  };
+}
+
+/** Where a point is closest to a path's segments: segment `index` runs from anchor index → next. */
+export interface SegmentPosition {
+  readonly subpath: number;
+  readonly index: number;
+  readonly t: number;
+  readonly distance: number;
+}
+
+/** The nearest position on any segment of the path, or null for a path without segments. */
+export function nearestOnPath(path: VectorPath, p: Point): SegmentPosition | null {
+  let best: SegmentPosition | null = null;
+  path.subpaths.forEach((sub, s) => {
+    const n = sub.anchors.length;
+    const segments = sub.closed ? n : n - 1;
+    for (let i = 0; i < segments; i++) {
+      const a = sub.anchors[i];
+      const b = sub.anchors[(i + 1) % n];
+      // Coarse sampling, then a local refinement around the best sample.
+      let bestT = 0;
+      let bestD = Infinity;
+      const STEPS = 48;
+      for (let k = 0; k <= STEPS; k++) {
+        const q = cubicAt(a, b, k / STEPS);
+        const d = Math.hypot(q.x - p.x, q.y - p.y);
+        if (d < bestD) {
+          bestD = d;
+          bestT = k / STEPS;
+        }
+      }
+      let lo = Math.max(0, bestT - 1 / STEPS);
+      let hi = Math.min(1, bestT + 1 / STEPS);
+      for (let iter = 0; iter < 20; iter++) {
+        const m1 = lo + (hi - lo) / 3;
+        const m2 = hi - (hi - lo) / 3;
+        const d1 = Math.hypot(cubicAt(a, b, m1).x - p.x, cubicAt(a, b, m1).y - p.y);
+        const d2 = Math.hypot(cubicAt(a, b, m2).x - p.x, cubicAt(a, b, m2).y - p.y);
+        if (d1 < d2) hi = m2;
+        else lo = m1;
+      }
+      const t = (lo + hi) / 2;
+      const q = cubicAt(a, b, t);
+      const d = Math.hypot(q.x - p.x, q.y - p.y);
+      if (!best || d < best.distance) best = { subpath: s, index: i, t, distance: d };
+    }
+  });
+  return best;
+}
+
+const lerp = (a: Point, b: Point, t: number): Point => ({
+  x: a.x + (b.x - a.x) * t,
+  y: a.y + (b.y - a.y) * t,
+});
+
+/**
+ * Add an anchor on segment `index` at parameter t without changing the path's shape (de
+ * Casteljau split). Straight segments stay straight; the new anchor is a corner there.
+ */
+export function insertAnchor(
+  path: VectorPath,
+  subpath: number,
+  index: number,
+  t: number,
+): VectorPath {
+  const sub = path.subpaths[subpath];
+  if (!sub || anchorCount(path) >= MAX_ANCHORS) return path;
+  const n = sub.anchors.length;
+  const a = sub.anchors[index];
+  const b = sub.anchors[(index + 1) % n];
+  if (!a || !b) return path;
+  const p01 = lerp(a, a.out, t);
+  const p12 = lerp(a.out, b.in, t);
+  const p23 = lerp(b.in, b, t);
+  const p012 = lerp(p01, p12, t);
+  const p123 = lerp(p12, p23, t);
+  const mid = lerp(p012, p123, t);
+  const straight = samePoint(a.out, a) && samePoint(b.in, b);
+  const added: Anchor = straight
+    ? corner(mid.x, mid.y)
+    : { x: mid.x, y: mid.y, in: p012, out: p123 };
+  const anchors = sub.anchors.map((anchor, i) => {
+    if (straight) return anchor;
+    if (i === index) return { ...anchor, out: p01 };
+    if (i === (index + 1) % n) return { ...anchor, in: p23 };
+    return anchor;
+  });
+  anchors.splice(index + 1, 0, added);
+  return {
+    subpaths: path.subpaths.map((s, i) => (i === subpath ? { ...s, anchors } : s)),
+  };
+}
+
 /** Delete an anchor; a subpath left with fewer than two anchors is removed. */
 export function removeAnchor(path: VectorPath, subpath: number, index: number): VectorPath {
   const subpaths: Subpath[] = [];

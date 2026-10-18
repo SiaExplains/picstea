@@ -9,10 +9,15 @@ import type { Tool, ToolContext, ToolPointer } from "../tool";
 
 /**
  * Paint bucket: fill the area of similar colour under the click with the foreground colour,
- * limited to the selection. Uses the same flood fill as the magic wand.
+ * limited to the selection. Uses the same flood fill as the magic wand. As the Magic Eraser
+ * (ADR-0027) the same area becomes transparent instead.
  */
 export class BucketTool implements Tool {
-  readonly id = "bucket";
+  constructor(readonly id: "bucket" | "magic-eraser" = "bucket") {}
+
+  private get erases(): boolean {
+    return this.id === "magic-eraser";
+  }
 
   cursor(): string {
     return "crosshair";
@@ -22,10 +27,10 @@ export class BucketTool implements Tool {
     if (pointer.button !== 0) return;
     const doc = ctx.store.getSession()?.document;
     if (!doc) return;
-    const layer = editablePixelLayer(ctx, "The paint bucket");
+    const layer = editablePixelLayer(ctx, this.erases ? "The Magic Eraser" : "The paint bucket");
     if (!layer) return;
     const { toolSettings, colors } = ctx.store.getState();
-    const settings = toolSettings.bucket;
+    const settings = toolSettings[this.id];
     const documentId = doc.id;
     const fill = colors.foreground;
     const sampled = settings.sampleAll ? doc.layers : [{ ...layer, visible: true }];
@@ -56,9 +61,15 @@ export class BucketTool implements Tool {
     if (!region?.bounds) return;
     const paint = selectionFill(ctx, doc, color, region);
     try {
-      const assetId = paintRasterLayer(ctx, layer, paint);
+      const assetId = paintRasterLayer(
+        ctx,
+        layer,
+        paint,
+        this.erases ? "destination-out" : "source-over",
+      );
       if (!assetId) return;
-      const result = ctx.store.dispatch(setRasterContent(layer.id, assetId, "Paint Bucket"));
+      const label = this.erases ? "Magic Eraser" : "Paint Bucket";
+      const result = ctx.store.dispatch(setRasterContent(layer.id, assetId, label));
       if (!result.ok) ctx.notify("error", result.error);
       ctx.pixelsCommitted();
       ctx.invalidate();

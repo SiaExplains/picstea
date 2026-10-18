@@ -349,6 +349,23 @@ export class Canvas2DRenderer implements Renderer {
         });
         break;
       }
+      case "sampler": {
+        const c = toScreen(overlay.center);
+        this.strokeOutline(ctx, () => {
+          ctx.beginPath();
+          ctx.moveTo(c.x - 7, c.y);
+          ctx.lineTo(c.x + 7, c.y);
+          ctx.moveTo(c.x, c.y - 7);
+          ctx.lineTo(c.x, c.y + 7);
+        });
+        ctx.font = "bold 11px system-ui, sans-serif";
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = "rgba(0, 0, 0, 0.75)";
+        ctx.strokeText(overlay.label, c.x + 5, c.y - 5);
+        ctx.fillStyle = "#ffffff";
+        ctx.fillText(overlay.label, c.x + 5, c.y - 5);
+        break;
+      }
     }
     ctx.restore();
   }

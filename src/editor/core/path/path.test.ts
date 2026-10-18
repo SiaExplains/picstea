@@ -162,3 +162,50 @@ describe("path ↔ selection", () => {
     expect(selectionToPath(board, 0.5)).toEqual({ ok: false, reason: "too-complex" });
   });
 });
+
+describe("adding anchors (Add Anchor Point tool)", () => {
+  it("finds the nearest segment position and splits it without changing the shape", async () => {
+    const { distanceToSegment, insertAnchor, nearestOnPath, flattenPath } = await import("./path");
+    const curve = {
+      subpaths: [
+        {
+          closed: false,
+          anchors: [
+            { x: 0, y: 0, in: { x: 0, y: 0 }, out: { x: 30, y: -40 } },
+            { x: 100, y: 0, in: { x: 70, y: -40 }, out: { x: 100, y: 0 } },
+          ],
+        },
+      ],
+    };
+    const hit = nearestOnPath(curve, { x: 50, y: -28 })!;
+    expect(hit.subpath).toBe(0);
+    expect(hit.index).toBe(0);
+    expect(hit.t).toBeCloseTo(0.5, 1);
+    expect(hit.distance).toBeLessThan(3);
+    const split = insertAnchor(curve, 0, 0, 0.5);
+    expect(split.subpaths[0].anchors).toHaveLength(3);
+    // Same outline: every flattened point of the split path lies on the original.
+    const before = flattenPath(curve, 0.25)[0].points;
+    for (const q of flattenPath(split, 0.25)[0].points) {
+      const d = Math.min(...before.slice(1).map((b, i) => distanceToSegment(q, before[i], b)));
+      expect(d).toBeLessThan(0.5);
+    }
+  });
+
+  it("keeps straight segments straight and works on the closing segment", async () => {
+    const { insertAnchor, isCorner } = await import("./path");
+    const square = {
+      subpaths: [
+        {
+          closed: true,
+          anchors: [corner(0, 0), corner(10, 0), corner(10, 10), corner(0, 10)],
+        },
+      ],
+    };
+    const split = insertAnchor(square, 0, 3, 0.5);
+    const anchors = split.subpaths[0].anchors;
+    expect(anchors).toHaveLength(5);
+    expect(anchors[4]).toMatchObject({ x: 0, y: 5 });
+    expect(anchors.every(isCorner)).toBe(true);
+  });
+});

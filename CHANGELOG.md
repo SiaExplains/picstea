@@ -3,6 +3,19 @@
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.23.0] — 2026-10-19
+
+### Added
+
+- **Tool groups like Photoshop's.** Related tools share a toolbar slot: right-click it or hold
+  the mouse on it to choose another, or press Shift with its key to go through them.
+- **New tools:** Spot Healing Brush, Red Eye, Background Eraser, Magic Eraser, Color
+  Replacement, Color Sampler, Ruler, Path Selection, Add / Delete Anchor Point, Convert Point,
+  Rounded Rectangle and Polygon.
+- Dodge, Burn, Sponge, Blur, Sharpen, Smudge, the elliptical marquee and the polygonal lasso are
+  now tools of their own in the toolbar.
+- A **default colours** button (black and white, D) next to the swap button.
+
 ## [0.22.0] — 2026-10-19
 
 ### Added

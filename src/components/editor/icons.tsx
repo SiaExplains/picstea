@@ -267,3 +267,159 @@ export const GradientIcon = (p: IconProps) => (
     <path d="M11 3v10" strokeOpacity="0.3" />
   </Svg>
 );
+
+/* ---------- tool group members (ADR-0027) ---------- */
+
+export const EllipseMarqueeIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <ellipse cx="8" cy="8" rx="6" ry="4.5" strokeDasharray="2 1.6" />
+  </Svg>
+);
+
+export const PolygonLassoIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M3 4.5 9.5 2l4 5-3 5.5H5.5L2.5 9Z" />
+    <path d="M5.5 12.5 4 15" />
+  </Svg>
+);
+
+export const SamplerIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="m9.5 3.5 3 3M11 2l3 3-1.5 1.5-3-3Z" />
+    <path d="m10 6-5.5 5.5L3.5 13l-.5-.5 1.5-1L10 6" />
+    <path d="M2 4h4M4 2v4" />
+  </Svg>
+);
+
+export const RulerIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <rect x="1.5" y="5.5" width="13" height="5" rx="1" transform="rotate(-30 8 8)" />
+    <path d="m5 9.6.9 1.5M7.4 8.2l.9 1.5M9.8 6.8l.9 1.5" />
+  </Svg>
+);
+
+export const SpotHealIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <rect x="1.8" y="6" width="10" height="4.5" rx="2.25" transform="rotate(-45 6.8 8.2)" />
+    <path d="M12.5 1.5v3M11 3h3" />
+  </Svg>
+);
+
+export const RedEyeIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M1.5 8S4 4 8 4s6.5 4 6.5 4S12 12 8 12 1.5 8 1.5 8Z" />
+    <circle cx="8" cy="8" r="1.6" fill="currentColor" />
+  </Svg>
+);
+
+export const ColorReplaceIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M13.5 2.5 8 8M8 8c-1-1-3 0-3 2 0 1.4-1 2.5-2.5 2.5 2 2 6 1.5 6-1.5" />
+    <path d="M2 4.5a3 3 0 0 1 4.5-2.3M6.5 2.2V4H4.7" />
+  </Svg>
+);
+
+export const BackgroundEraserIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M5 10.5 9.5 6a1.2 1.2 0 0 1 1.7 0l1.3 1.3a1.2 1.2 0 0 1 0 1.7L8.5 13H6.5Z" />
+    <path d="M2 2.5h.01M4.5 2.5h.01M2 5h.01M2 7.5h.01M4.5 5h.01" />
+  </Svg>
+);
+
+export const MagicEraserIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M4.5 11 9 6.5a1.2 1.2 0 0 1 1.7 0L12 7.8a1.2 1.2 0 0 1 0 1.7L8 13.5H6Z" />
+    <path d="M3.5 1.5v3M2 3h3M6.5 3.5h.01" />
+  </Svg>
+);
+
+export const SharpenIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M8 1.5 12.5 14h-9Z" />
+  </Svg>
+);
+
+export const SmudgeIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M6 14.5V7.5a1.2 1.2 0 0 1 2.4 0V6a1.2 1.2 0 0 1 2.4 0v1a1.2 1.2 0 0 1 2.4 0v3.5a4 4 0 0 1-4 4Z" />
+    <path d="M6 3.5V1.5" />
+  </Svg>
+);
+
+export const BurnIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M4 10.5a4 4 0 1 0 8 0c0-1.6-1-2.6-2-3.5-.4 1-1 1.5-1.8 1.5.3-2.2-.7-4.2-2.7-5.5.3 2.1-1.5 4.1-1.5 7.5Z" />
+  </Svg>
+);
+
+export const SpongeIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <rect x="2.5" y="4" width="11" height="8" rx="2.5" />
+    <path d="M5.5 7h.01M8.5 6.5h.01M10.5 9h.01M6.5 9.5h.01" />
+  </Svg>
+);
+
+export const PenAddIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="m3 13 1.5-5L9 3.5l3.5 3.5L8 11.5Z" />
+    <path d="M13 11.5v3M11.5 13h3" />
+  </Svg>
+);
+
+export const PenDeleteIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="m3 13 1.5-5L9 3.5l3.5 3.5L8 11.5Z" />
+    <path d="M11.5 13h3" />
+  </Svg>
+);
+
+export const ConvertPointIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M2 13 8 4l6 9" />
+    <circle cx="8" cy="4" r="1.3" fill="currentColor" />
+  </Svg>
+);
+
+export const PathMoveIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M4 2v11l3-3 2 4.5 1.8-.8-2-4.4h4.2Z" fill="currentColor" />
+  </Svg>
+);
+
+export const RectShapeIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <rect x="2.5" y="3.5" width="11" height="9" />
+  </Svg>
+);
+
+export const RoundedRectIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <rect x="2.5" y="3.5" width="11" height="9" rx="3" />
+  </Svg>
+);
+
+export const EllipseShapeIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <ellipse cx="8" cy="8" rx="6" ry="5" />
+  </Svg>
+);
+
+export const PolygonShapeIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M8 2 13.7 6.2 11.5 13h-7L2.3 6.2Z" />
+  </Svg>
+);
+
+export const LineShapeIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="m3 13 10-10" />
+  </Svg>
+);
+
+/** Default colours: black over white, as Photoshop's small icon. */
+export const ResetColorsIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <rect x="1.5" y="1.5" width="6" height="6" fill="currentColor" />
+    <rect x="5.5" y="5.5" width="6" height="6" />
+  </Svg>
+);

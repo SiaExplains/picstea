@@ -24,7 +24,7 @@ export const DOCS: readonly DocPage[] = [
     title: "Getting started with Picstea",
     description:
       "Create a document, open an image or PSD, edit with layers and export — all in your browser, without uploading anything.",
-    updated: "2026-10-09",
+    updated: "2026-10-19",
     body: () => (
       <>
         <p>
@@ -64,8 +64,11 @@ export const DOCS: readonly DocPage[] = [
             selection mode.
           </li>
           <li>
-            <strong>Toolbar</strong> (left) — move, selection, crop, painting, shape, text, hand and
-            zoom tools, plus foreground and background colours.
+            <strong>Toolbar</strong> (left) — move, selection, crop, painting, retouching, shape,
+            pen, text, hand and zoom tools, plus foreground and background colours. Related tools
+            share a slot, marked with a small corner: right-click it or hold the mouse on it to
+            choose another one, or press Shift with its key (for example Shift+J) to go through
+            them. The key alone returns to the tool you used last in that slot.
           </li>
           <li>
             <strong>Properties and Layers</strong> (right) — settings of the active layer and the
@@ -94,7 +97,7 @@ export const DOCS: readonly DocPage[] = [
     title: "Layers, groups and masks",
     description:
       "How Picstea's layers work: pixel, shape, text, fill and adjustment layers, groups, blend modes, opacity, masks and effects.",
-    updated: "2026-10-09",
+    updated: "2026-10-19",
     body: () => (
       <>
         <p>
@@ -288,7 +291,7 @@ export const DOCS: readonly DocPage[] = [
     title: "Painting, fills and gradients",
     description:
       "Brush, pencil, eraser, paint bucket, gradient and eyedropper in Picstea, and how they work with layers, masks and selections.",
-    updated: "2026-10-09",
+    updated: "2026-10-19",
     body: () => (
       <>
         <p>
@@ -303,7 +306,19 @@ export const DOCS: readonly DocPage[] = [
             <strong>Pencil</strong> (N) — hard-edged pixels, good for pixel art.
           </li>
           <li>
+            <strong>Color Replacement</strong> (Shift+B) — paints the foreground colour&apos;s hue
+            over colours like the one under the first dab, keeping their shading.
+          </li>
+          <li>
             <strong>Eraser</strong> (E) — erases to transparency.
+          </li>
+          <li>
+            <strong>Background Eraser</strong> — erases only colours close to the one under the
+            first dab (Tolerance), for cutting out an object from a plain background.
+          </li>
+          <li>
+            <strong>Magic Eraser</strong> — click to erase an area of similar colour at once, like
+            the paint bucket in reverse.
           </li>
           <li>
             <strong>Paint Bucket</strong> (Shift+G) — fills an area of similar colour with the
@@ -316,6 +331,13 @@ export const DOCS: readonly DocPage[] = [
           <li>
             <strong>Eyedropper</strong> (I) — click to pick the foreground colour, Alt-click for the
             background colour. Alt-click with the brush or pencil also picks a colour.
+          </li>
+          <li>
+            <strong>Color Sampler</strong> — up to four fixed points whose colours stay listed in
+            the options bar while you edit. Drag a point to move it, Alt-click to remove it.
+          </li>
+          <li>
+            <strong>Ruler</strong> — drag to measure a distance and an angle (Shift: 45° steps).
           </li>
         </ul>
         <p>
@@ -330,7 +352,7 @@ export const DOCS: readonly DocPage[] = [
     title: "Retouching: clone, heal, dodge, burn and more",
     description:
       "Remove blemishes and distractions with the Clone Stamp and Healing Brush in Picstea, and lighten, darken, saturate, blur, sharpen or smudge areas with a brush.",
-    updated: "2026-10-09",
+    updated: "2026-10-19",
     body: () => (
       <>
         <p>
@@ -360,6 +382,13 @@ export const DOCS: readonly DocPage[] = [
           colour and brightness of its new surroundings while keeping its texture. It is the
           quickest way to remove spots, dust and blemishes: Alt-click on clean skin or background
           nearby, then paint over the blemish.
+        </p>
+        <h2>Spot Healing Brush and Red Eye</h2>
+        <p>
+          The <strong>Spot Healing Brush</strong> needs no Alt-click: paint over a small spot and
+          Picstea picks a matching patch nearby by itself, then heals it the same way. The{" "}
+          <strong>Red Eye</strong> tool takes the red out of pupils you click or paint over and
+          darkens them (Darken); skin and eyelids around them are left alone.
         </p>
         <h2>Dodge, Burn and Sponge (O)</h2>
         <ul>
@@ -529,7 +558,7 @@ export const DOCS: readonly DocPage[] = [
     title: "Paths and the Pen tool",
     description:
       "Draw precise shapes and selections in Picstea with the Pen tool: anchor points, curves, Direct Selection, paths to selections and back, and vector masks.",
-    updated: "2026-10-09",
+    updated: "2026-10-19",
     body: () => (
       <>
         <p>
@@ -568,6 +597,15 @@ export const DOCS: readonly DocPage[] = [
           <li>Drag a line between points to move that whole part of the path.</li>
           <li>Delete removes the selected point; the arrow keys nudge it (Shift: 10 px).</li>
         </ul>
+        <p>
+          The other tools in the same slots: <strong>Path Selection</strong> (Shift+A) drags a whole
+          path; <strong>Add Anchor Point</strong> adds a point where you click a segment, without
+          changing the curve; <strong>Delete Anchor Point</strong> removes the point you click;{" "}
+          <strong>Convert Point</strong> switches a point between corner and smooth, or pulls
+          handles out of it when you drag. The Shape tool also draws{" "}
+          <strong>rounded rectangles</strong> and <strong>polygons</strong> (3–64 sides), which stay
+          editable as paths.
+        </p>
         <h2>Paths and selections</h2>
         <ul>
           <li>

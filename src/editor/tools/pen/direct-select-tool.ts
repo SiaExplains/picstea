@@ -1,7 +1,9 @@
 import { createId } from "../../core/ids";
 import {
   hitTestPath,
+  insertAnchor,
   mapPath,
+  nearestOnPath,
   moveAnchor,
   moveHandle,
   removeAnchor,
@@ -45,10 +47,28 @@ interface Drag {
  * handle (Alt breaks the symmetry), Alt-click an anchor to toggle corner/smooth, Delete removes
  * the selected anchor and the arrow keys nudge it. Each drag is one undo step.
  */
+/**
+ * The same tool covers the rest of Photoshop's path tools (ADR-0027): Path Selection moves a
+ * whole path; Add / Delete Anchor Point and Convert Point edit single anchors with a click.
+ */
+export type PathToolMode = "direct" | "path" | "add" | "delete" | "convert";
+
+const PATH_TOOL_IDS: Record<PathToolMode, string> = {
+  direct: "path-select",
+  path: "path-move",
+  add: "anchor-add",
+  delete: "anchor-delete",
+  convert: "anchor-convert",
+};
+
 export class DirectSelectTool implements Tool {
-  readonly id = "path-select";
+  readonly id: string;
   private selected: Selected | null = null;
   private drag: Drag | null = null;
+
+  constructor(private readonly mode: PathToolMode = "direct") {
+    this.id = PATH_TOOL_IDS[mode];
+  }
 
   private targets(ctx: ToolContext): PathTarget[] {
     const doc = ctx.store.getSession()?.document;
@@ -67,8 +87,22 @@ export class DirectSelectTool implements Tool {
   cursor(ctx: ToolContext, pointer: ToolPointer | null): string {
     if (this.drag) return "grabbing";
     if (!pointer) return "default";
+    if (this.mode === "add") return this.segmentAt(ctx, pointer) ? "copy" : "default";
     const found = this.hit(ctx, pointer);
-    return found ? (found.hit.kind === "segment" ? "move" : "pointer") : "default";
+    if (!found) return "default";
+    if (this.mode === "path") return "move";
+    if (this.mode === "delete") return found.hit.kind === "anchor" ? "pointer" : "default";
+    return found.hit.kind === "segment" ? "move" : "pointer";
+  }
+
+  /** The nearest segment position within reach, for adding an anchor. */
+  private segmentAt(ctx: ToolContext, pointer: ToolPointer) {
+    const r = HANDLE_HIT_PX / ctx.viewport().zoom;
+    for (const target of this.targets(ctx)) {
+      const at = nearestOnPath(target.path, pointer.doc);
+      if (at && at.distance <= r) return { target, at };
+    }
+    return null;
   }
 
   private commit(ctx: ToolContext, key: PathTarget["key"], path: VectorPath, mergeKey?: string) {
@@ -86,6 +120,29 @@ export class DirectSelectTool implements Tool {
   pointerDown(ctx: ToolContext, pointer: ToolPointer): void {
     const session = ctx.store.getSession();
     if (!session || pointer.button !== 0) return;
+    if (this.mode === "add") {
+      const seg = this.segmentAt(ctx, pointer);
+      if (!seg) return;
+      const { target, at } = seg;
+      if (this.commit(ctx, target.key, insertAnchor(target.path, at.subpath, at.index, at.t))) {
+        this.selected = { key: target.key, subpath: at.subpath, anchor: at.index + 1 };
+      }
+      ctx.invalidate();
+      return;
+    }
+    if (this.mode === "delete") {
+      const found = this.hit(ctx, pointer);
+      if (found?.hit.kind === "anchor") {
+        this.commit(
+          ctx,
+          found.target.key,
+          removeAnchor(found.target.path, found.hit.subpath, found.hit.anchor),
+        );
+        this.selected = null;
+        ctx.invalidate();
+      }
+      return;
+    }
     const found = this.hit(ctx, pointer);
     if (!found) {
       this.selected = null;
@@ -96,7 +153,8 @@ export class DirectSelectTool implements Tool {
     this.selected = {
       key: target.key,
       subpath: hit.subpath,
-      anchor: hit.kind === "segment" ? null : hit.anchor,
+      // Path Selection always takes the whole path.
+      anchor: hit.kind === "segment" || this.mode === "path" ? null : hit.anchor,
     };
     this.drag = {
       documentId: session.document.id,
@@ -120,7 +178,21 @@ export class DirectSelectTool implements Tool {
     drag.moved = true;
     const { hit, start } = drag;
     let next: VectorPath;
-    if (hit.kind === "anchor") {
+    if (this.mode === "path") {
+      next = mapPath(start, (p) => ({ x: p.x + dx, y: p.y + dy }));
+    } else if (this.mode === "convert" && hit.kind === "anchor") {
+      // Drag out of an anchor: pull symmetric handles (a corner becomes smooth).
+      const to = pointer.doc;
+      next = updateAnchor(start, hit.subpath, hit.anchor, (a) => ({
+        ...a,
+        out: to,
+        in: { x: 2 * a.x - to.x, y: 2 * a.y - to.y },
+      }));
+    } else if (this.mode === "convert" && hit.kind === "handle") {
+      next = updateAnchor(start, hit.subpath, hit.anchor, (a) =>
+        moveHandle(a, hit.side, pointer.doc, true),
+      );
+    } else if (hit.kind === "anchor") {
       next = updateAnchor(start, hit.subpath, hit.anchor, (a) => moveAnchor(a, dx, dy));
     } else if (hit.kind === "handle") {
       next = updateAnchor(start, hit.subpath, hit.anchor, (a) =>
@@ -144,8 +216,8 @@ export class DirectSelectTool implements Tool {
     if (!drag) return;
     if (drag.moved) {
       ctx.store.sealHistory();
-    } else if (drag.alt && drag.hit.kind === "anchor") {
-      // Alt-click: corner ↔ smooth.
+    } else if ((drag.alt || this.mode === "convert") && drag.hit.kind === "anchor") {
+      // Alt-click (or a click with Convert Point): corner ↔ smooth.
       this.commit(ctx, drag.key, toggleSmooth(drag.start, drag.hit.subpath, drag.hit.anchor));
     }
     ctx.invalidate();
