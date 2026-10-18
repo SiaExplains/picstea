@@ -77,8 +77,9 @@
   cursor: pointer;
 }
 
+/* The square app icon: the wordmark was too small to read in the 30px menu bar. */
 .brandLogo {
-  border-radius: 3px;
+  border-radius: 5px;
 }
 
 .brand:hover {
