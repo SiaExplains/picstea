@@ -83,7 +83,7 @@ function getBrowserController(): EditorController {
       () =>
         new Worker(new URL("../../workers/editor.worker.ts", import.meta.url), {
           type: "module",
-          name: "mylper-editor",
+          name: "picstea-editor",
         }),
     ),
     sizer: createCanvasTextSizer(
@@ -92,10 +92,10 @@ function getBrowserController(): EditorController {
     logger,
   });
   const c = browserController;
-  persist(c.view, "mylper.view", parseViewSettings);
-  persist(c.swatches, "mylper.swatches", (v) => parseSwatches(v) ?? DEFAULT_SWATCHES);
-  persist(c.actions, "mylper.actions", (v) => parseStoredActions(v, () => createId("action")));
-  persist(c.recentSizes, "mylper.recentSizes", parseRecentSizes);
+  persist(c.view, "picstea.view", parseViewSettings);
+  persist(c.swatches, "picstea.swatches", (v) => parseSwatches(v) ?? DEFAULT_SWATCHES);
+  persist(c.actions, "picstea.actions", (v) => parseStoredActions(v, () => createId("action")));
+  persist(c.recentSizes, "picstea.recentSizes", parseRecentSizes);
   return c;
 }
 

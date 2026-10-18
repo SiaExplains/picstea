@@ -62,7 +62,7 @@ async function composition(page: Page, name: string) {
   await page.keyboard.press(`${MOD}+g`);
 }
 
-test("PSD export keeps layers and groups and opens again in MYLPER", async ({ page }) => {
+test("PSD export keeps layers and groups and opens again in Picstea", async ({ page }) => {
   const errors = trackErrors(page);
   const offending = watchNetwork(page);
   await composition(page, "Layered");
@@ -85,12 +85,12 @@ test("PSD export keeps layers and groups and opens again in MYLPER", async ({ pa
   expect(errors).toEqual([]);
 });
 
-test("a .mylper project file moves a project to another browser", async ({ page, browser }) => {
+test("a .picstea project file moves a project to another browser", async ({ page, browser }) => {
   const errors = trackErrors(page);
   await composition(page, "Portable");
   await page.keyboard.press(`${MOD}+Shift+s`);
   const download = await page.waitForEvent("download");
-  expect(download.suggestedFilename()).toBe("Portable.mylper");
+  expect(download.suggestedFilename()).toBe("Portable.picstea");
   const path = (await download.path())!;
 
   // A fresh browser profile: nothing in IndexedDB.

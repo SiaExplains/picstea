@@ -37,7 +37,7 @@ import {
 } from "./icons";
 import type { UiAction, UiActionId } from "./use-editor-actions";
 
-const DRAG_TYPE = "application/x-mylper-layer";
+const DRAG_TYPE = "application/x-picstea-layer";
 
 function LayerThumb({ layer, targeted }: { layer: Layer; targeted: boolean }) {
   const className = `${styles.layerThumb} ${targeted ? styles.thumbTargeted : ""}`;

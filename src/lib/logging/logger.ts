@@ -25,7 +25,7 @@ function defaultMinLevel(): LogLevel {
 export function createLogger(scope: string, minLevel: LogLevel = defaultMinLevel()): Logger {
   const emit = (level: LogLevel, message: string, context?: LogContext) => {
     if (LEVEL_ORDER[level] < LEVEL_ORDER[minLevel]) return;
-    const line = `[mylper:${scope}] ${message}`;
+    const line = `[picstea:${scope}] ${message}`;
     const args = context ? [line, context] : [line];
     console[level === "debug" ? "debug" : level](...args);
   };

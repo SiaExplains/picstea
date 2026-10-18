@@ -1,4 +1,4 @@
-# MYLPER
+# Picstea
 
 A local-first, browser-native image editor. Images and projects never leave the user's device.
 The full engineering handbook is in [`docs/`](docs/INDEX.md). Start with
@@ -61,4 +61,4 @@ See [`.env.example`](.env.example). Only public values belong in `NEXT_PUBLIC_*`
 ## Deployment
 
 Vercel (Next.js preset, pnpm). Set `NEXT_PUBLIC_SITE_URL` to the canonical origin
-(`https://mylper.com` in production). The deployment does not depend on the DNS provider.
+(`https://picstea.com` in production). The deployment does not depend on the DNS provider.

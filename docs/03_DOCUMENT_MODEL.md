@@ -1,6 +1,6 @@
 # 03 — Document Model
 
-The document model is the foundation of MYLPER.
+The document model is the foundation of Picstea.
 
 ## Conceptual model
 

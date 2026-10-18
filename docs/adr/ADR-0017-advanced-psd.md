@@ -6,7 +6,7 @@
 ## Context
 
 ADR-0011 imported PSDs as pixel layers, groups and masks, and exported everything else as pixels.
-Since then MYLPER gained adjustment layers, effects, vector and clipping masks, path shapes, text
+Since then Picstea gained adjustment layers, effects, vector and clipping masks, path shapes, text
 and smart objects. docs/05 Phase 13 asks PSD support to progress through text, masks, effects and
 "advanced Photoshop-specific constructs where technically feasible" — without ever claiming full
 Photoshop compatibility.
@@ -23,10 +23,10 @@ Photoshop compatibility.
 - **EngineData** (`engine-data.ts`): a bounded tokenizer/parser for the text engine's
   PostScript-like data (depth 64, 200 000 items, 8 MB), null-prototype dictionaries, own-property
   lookups only.
-- The reader keeps the bodies of the layer blocks MYLPER understands and decodes them into typed
+- The reader keeps the bodies of the layer blocks Picstea understands and decodes them into typed
   "extras" (`psd-extras.ts`). Each part is decoded independently inside a try: a damaged block
   costs only that part, which falls back to the layer's pixels with a warning. Every decoded value
-  is clamped to MYLPER's ranges and passed through MYLPER's own validators (`parseAdjustment`,
+  is clamped to Picstea's ranges and passed through Picstea's own validators (`parseAdjustment`,
   `parsePath`, effect limits).
 - Global blocks `lnk2`/`lnkD`/`lnk3` give smart objects' embedded files: images are passed to the
   main thread (decoded lazily by the asset store); embedded PSDs are read recursively (two levels,
@@ -34,14 +34,14 @@ Photoshop compatibility.
 
 ### Import mapping
 
-| Photoshop | MYLPER |
+| Photoshop | Picstea |
 |---|---|
 | `brit` / `CgEd`, `hue2`, `expA`, `levl`, `curv`, `nvrt`, `post`, `thrs`, `blwh` | adjustment layers (values clamped; colorize, exposure offset, B&W mix noted) |
 | `lfx2` drop shadow / outer glow / stroke / colour overlay (incl. `…Multi`) | effects (global light angle from resource 1037) |
 | `vmsk` / `vsms` | vector mask (raster mask rendered from it is dropped) |
 | `SoCo` + vector path (+ `vstk`) | path shape layer with fill and stroke |
 | `SoCo` alone | fill layer |
-| `TySh` + EngineData | text layer from the first style run; fonts mapped to MYLPER's families; position from the layer's pixel bounds |
+| `TySh` + EngineData | text layer from the first style run; fonts mapped to Picstea's families; position from the layer's pixel bounds |
 | `SoLd` / `PlLd` + embedded file | smart object; transform from the placement corners |
 
 Unsupported adjustments are named in the warning and left out (their effect on the composite is
@@ -67,6 +67,6 @@ Photoshop or Photopea remains a manual check.
 
 ## Consequences
 
-- Round-tripping a PSD through MYLPER keeps far more structure.
+- Round-tripping a PSD through Picstea keeps far more structure.
 - Fidelity limits are explicit (fonts, mixed text styles, unsupported adjustments and styles),
   surfaced per file.

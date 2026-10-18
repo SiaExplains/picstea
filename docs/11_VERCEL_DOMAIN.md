@@ -12,12 +12,16 @@ Primary platform:
 Primary domain:
 
 ```text
-mylper.com
+picstea.com
 ```
 
-The domain is currently registered outside Route 53.
+The canonical origin is `https://picstea.com` (`src/lib/seo/site.ts`, overridable with
+`NEXT_PUBLIC_SITE_URL`). Whichever of `picstea.com` / `www.picstea.com` Vercel serves as the
+primary domain must match that origin, otherwise every canonical URL points at a redirect.
 
-The current registration is expected to run until February 2027 and is planned to be moved to Squarespace.
+The former domain `mylper.com` (registered outside Route 53, registration running until
+February 2027) should permanently redirect (301/308) to the same path on `picstea.com`. That
+redirect lives in the hosting configuration, not in the app (ADR-0023).
 
 Do not make Route 53 an architectural dependency.
 
@@ -46,13 +50,13 @@ Suggested domains:
 ```text
 localhost
 <vercel-preview-url>
-mylper.com
+picstea.com
 ```
 
 Potential later:
 
 ```text
-www.mylper.com
+www.picstea.com
 ```
 
 Redirect one canonical hostname to the other.

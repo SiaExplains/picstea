@@ -94,7 +94,7 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 | Feature | Status | Notes |
 |---|---|---|
 | Open PNG, JPEG, WebP, GIF (first frame) | ✅ | Sniffed by content, header-validated |
-| `.mylper` project files (save / open) | ✅ | ZIP + versioned JSON; same validator as local storage |
+| `.picstea` project files (save / open) | ✅ | ZIP + versioned JSON; same validator as local storage |
 | PSD import: 8-bit RGB/greyscale, layers, groups, names, opacity, visibility, blend modes, masks | ✅ | Text, adjustments, styles, vector masks, shapes, smart objects ✅ (9d); clipping ✅ (9b) |
 | PSD export: layers, groups, names, opacity, visibility, blend modes, masks, composite | ✅ | Shapes/text rasterised; effects merged; adjustments in composite only |
 | SVG export (vector shapes/text, images for the rest) | ✅ | Flattened when adjustment layers are present |
@@ -162,7 +162,7 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 | Filter framework (catalogue, dialog, live preview, worker job, selection blending) | ✅ | Destructive on pixel layers; smart filters come with 9c |
 | Filters: Gaussian, Box and Motion Blur, Unsharp Mask, Add Noise, Pixelate, Emboss, Find Edges | ✅ | Last Filter (Mod+Alt+F) |
 | Levels and Curves adjustment layers (RGB + per channel, histogram) | ✅ | Composite only in PSD export |
-| View preferences remembered per browser | ✅ | `mylper.view` in local storage |
+| View preferences remembered per browser | ✅ | `picstea.view` in local storage |
 
 ### 9b
 
@@ -184,7 +184,7 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 | Re-rendered from source at the displayed scale (power-of-two levels, cached) | ✅ | Quality kept through any scale/rotate |
 | Convert to Smart Object, Edit Contents tab (applies on save/autosave/close, one undo step) | ✅ | Edit tabs are never stored as separate projects |
 | Smart filters (any filter; hide, edit, reorder, delete) | ✅ | Run on the main thread at render scale, cached |
-| Place Embedded (image, SVG, PSD with layers, .mylper) | ✅ | Place keeps creating pixel layers |
+| Place Embedded (image, SVG, PSD with layers, .picstea) | ✅ | Place keeps creating pixel layers |
 | Rasterize Layer (smart objects, shapes, text) | ✅ | Keeps opacity, blend, masks, effects, clipping |
 | Linked smart objects, PSD smart object import/export | 🟡 | PSD import ✅ (9d); linked files and PSD export 📋 |
 
@@ -207,10 +207,10 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 |---|---|---|
 | History panel (jump to any step, keyboard listbox) | ✅ | Snapshots 📋 |
 | Actions: record, play (one undo step), rename, delete steps | ✅ | ADR-0018; brush strokes, transforms, text not recordable 📋 |
-| Actions export/import (`mylper-actions.json`, validated) | ✅ | Stored in `mylper.actions` |
+| Actions export/import (`picstea-actions.json`, validated) | ✅ | Stored in `picstea.actions` |
 | Batch: action over up to 200 files → one ZIP (PNG/JPEG/WebP) | ✅ | Transient documents, never stored; 1 GB output limit |
 | Colour picker (HSB field, hue, Hex/RGB/HSB) for foreground/background | ✅ | Properties-panel colour fields stay native |
-| Swatches panel (default palette, add, delete, reset) | ✅ | `mylper.swatches`; ASE/GPL import 📋 |
+| Swatches panel (default palette, add, delete, reset) | ✅ | `picstea.swatches`; ASE/GPL import 📋 |
 
 ### 9f
 
@@ -249,7 +249,7 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 |---|---|---|
 | About 80 size presets in 7 categories, with proportional previews | ✅ | Print/photo carry their ppi; large posters at 150 ppi to stay under 36 MP |
 | Units px / in / cm / mm, resolution (ppi), swap orientation, custom background colour | ✅ | Unit changes keep the pixel size; the document stores the ppi |
-| Search across all sizes; Recent sizes (`mylper.recentSizes`) | ✅ | |
+| Search across all sizes; Recent sizes (`picstea.recentSizes`) | ✅ | |
 | Starter design templates (text/shape/photo layouts) | 📋 | Needs content and image licensing |
 | Colour modes other than RGB 8-bit, artboards | 📋 | Not in the engine |
 

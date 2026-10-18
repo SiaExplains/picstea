@@ -10,15 +10,15 @@ import { readImageHeader } from "../raster/image-header";
 import { readZip, writeZip } from "../zip/zip";
 
 /**
- * Portable MYLPER project files (`.mylper`, ADR-0011): a ZIP with `mylper.json` (the versioned,
+ * Portable Picstea project files (`.picstea`, ADR-0011): a ZIP with `picstea.json` (the versioned,
  * validated serialization used for local storage) and the image assets under `assets/`.
  * Opening a file goes through exactly the same validation and migrations as IndexedDB.
  */
 
-export const PROJECT_EXTENSION = "mylper";
-export const PROJECT_MIME = "application/x-mylper";
-const MANIFEST = "mylper.json";
-const FORMAT_ID = "mylper-project";
+export const PROJECT_EXTENSION = "picstea";
+export const PROJECT_MIME = "application/x-picstea";
+const MANIFEST = "picstea.json";
+const FORMAT_ID = "picstea-project";
 const EXTENSIONS: Record<RasterMime, string> = {
   "image/png": "png",
   "image/jpeg": "jpg",
@@ -77,7 +77,7 @@ export async function readProjectFile(
   });
   const manifestEntry = entries.get(MANIFEST);
   if (!manifestEntry || manifestEntry.size > MAX_MANIFEST_BYTES) {
-    throw new FormatError("This is not a MYLPER project file.");
+    throw new FormatError("This is not a Picstea project file.");
   }
   let manifest: Partial<Manifest>;
   try {
@@ -88,7 +88,7 @@ export async function readProjectFile(
     throw new FormatError("The project file is damaged.");
   }
   if (manifest?.format !== FORMAT_ID || !Array.isArray(manifest.assets)) {
-    throw new FormatError("This is not a MYLPER project file.");
+    throw new FormatError("This is not a Picstea project file.");
   }
   const result = deserializeProject(manifest.project);
   if (!result.ok) throw new FormatError(result.error);

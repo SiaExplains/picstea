@@ -6,9 +6,9 @@ import { visiblePosts } from "@/content/blog";
 
 export const metadata: Metadata = {
   title: "Blog",
-  description: "Guides and explanations about editing images in the browser with MYLPER.",
+  description: "Guides and explanations about editing images in the browser with Picstea.",
   alternates: { canonical: "/blog" },
-  openGraph: { url: "/blog", title: "MYLPER blog" },
+  openGraph: { url: "/blog", title: "Picstea blog" },
 };
 
 export default function BlogIndex() {

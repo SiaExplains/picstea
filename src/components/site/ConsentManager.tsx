@@ -38,7 +38,7 @@ export function ConsentManager() {
       {showBanner && (
         <section className={styles.banner} aria-label="Privacy choices" role="region">
           <p>
-            MYLPER never uploads your images. On the website and blog we would like to show Google
+            Picstea never uploads your images. On the website and blog we would like to show Google
             ads, which may use cookies. You choose — the editor works the same either way.{" "}
             <a href="/cookies">Cookie policy</a>
           </p>

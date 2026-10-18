@@ -2,7 +2,7 @@ import { parsePath, type Anchor, type Subpath, type VectorPath } from "../../cor
 import { ByteReader, ByteWriter } from "../binary/bytes";
 
 /**
- * Photoshop vector paths (`vmsk` / `vsms` vector masks and shape outlines) ↔ MYLPER paths
+ * Photoshop vector paths (`vmsk` / `vsms` vector masks and shape outlines) ↔ Picstea paths
  * (ADR-0017). Path records are 26 bytes; points are 8.24 fixed-point fractions of the canvas
  * height (y) and width (x).
  */
@@ -55,7 +55,7 @@ export function decodeVectorMask(
         break;
       }
       default:
-        // Fill rule, clipboard and initial fill records carry nothing MYLPER uses.
+        // Fill rule, clipboard and initial fill records carry nothing Picstea uses.
         break;
     }
   }

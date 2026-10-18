@@ -9,9 +9,9 @@ export default function GlobalError({
   return (
     <html lang="en">
       <body style={{ fontFamily: "system-ui, sans-serif", padding: 24 }}>
-        <title>Something went wrong · MYLPER</title>
+        <title>Something went wrong · Picstea</title>
         <h1>Something went wrong</h1>
-        <p>MYLPER could not load. Please try again.</p>
+        <p>Picstea could not load. Please try again.</p>
         <button type="button" onClick={() => retry()}>
           Try again
         </button>

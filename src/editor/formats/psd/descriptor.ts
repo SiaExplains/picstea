@@ -261,7 +261,7 @@ export function getColor(d: Descriptor | undefined, key = "Clr "): string | unde
 }
 
 // -------------------------------------------------------------------------------------------
-// Writing (export): only the value types MYLPER writes.
+// Writing (export): only the value types Picstea writes.
 
 export type WritableValue =
   | { readonly type: "doub"; readonly value: number }

@@ -16,12 +16,12 @@ import {
 } from "./descriptor";
 
 /**
- * Photoshop adjustment layers ↔ MYLPER adjustments (ADR-0017). Layouts follow Adobe's PSD file
- * format specification. Every decoded value is clamped into MYLPER's ranges and validated with
+ * Photoshop adjustment layers ↔ Picstea adjustments (ADR-0017). Layouts follow Adobe's PSD file
+ * format specification. Every decoded value is clamped into Picstea's ranges and validated with
  * `parseAdjustment`, so a damaged block can only produce a valid adjustment or nothing.
  */
 
-/** Adjustment block keys MYLPER reads (`CgEd` refines `brit`). */
+/** Adjustment block keys Picstea reads (`CgEd` refines `brit`). */
 export const ADJUSTMENT_KEYS = [
   "brit",
   "CgEd",
@@ -40,7 +40,7 @@ export const ADJUSTMENT_KEYS = [
   "grdm",
 ] as const;
 
-/** Photoshop adjustments MYLPER doesn't have, by block key, for the warning. */
+/** Photoshop adjustments Picstea doesn't have, by block key, for the warning. */
 export const UNSUPPORTED_ADJUSTMENTS: Record<string, string> = {
   selc: "Selective Color",
   clrL: "Color Lookup",
@@ -106,7 +106,7 @@ export function decodeAdjustment(
         contrast = r.i16();
       }
       if (Math.abs(brightness) > 100 || contrast < -100 || contrast > 100) {
-        notes.push("Brightness/Contrast values were limited to MYLPER's range.");
+        notes.push("Brightness/Contrast values were limited to Picstea's range.");
       }
       value = {
         type: "brightness-contrast",

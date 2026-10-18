@@ -3,6 +3,19 @@
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.17.0] — 2026-10-18
+
+### Changed
+
+- **MYLPER is now Picstea.** New name, new logo and icons, and a new home at picstea.com.
+  The editor works exactly as before. Edit Boldly. Create Freely.
+- Buttons, links and highlights use the blue from the new logo.
+- Projects are now saved as `.picstea` files, and exported actions as `picstea-actions.json`.
+
+### Removed
+
+- `.mylper` project files and settings saved under the old name are no longer read.
+
 ## [0.16.1] — 2026-10-18
 
 ### Changed

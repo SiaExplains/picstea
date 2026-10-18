@@ -233,14 +233,15 @@ export function MenuBar({ actions }: { actions: Record<UiActionId, UiAction> }) 
       <button
         type="button"
         className={styles.brand}
-        title="About MYLPER"
+        title="About Picstea"
         onClick={actions["help.welcome"].run}
       >
         <Image
-          src="/brand/mylper-logo-on-dark.png"
-          alt="MYLPER"
-          width={74}
+          src="/brand/picstea-logo.png"
+          alt="Picstea"
+          width={66}
           height={20}
+          className={styles.brandLogo}
           priority
           unoptimized
         />

@@ -5,7 +5,7 @@ export default function NotFound() {
     <main style={{ maxWidth: 560, margin: "15vh auto", padding: "0 16px" }}>
       <h1>Page not found</h1>
       <p>
-        <Link href="/">Open the MYLPER editor</Link>.
+        <Link href="/">Open the Picstea editor</Link>.
       </p>
     </main>
   );

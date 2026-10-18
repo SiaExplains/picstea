@@ -8,7 +8,9 @@
   --background: #ffffff;
   --foreground: #17181b;
   --muted: #5b5d66;
-  --accent: #2f6fe0;
+  /* Brand blue from the Picstea logo is #0d99e6; these shades keep text contrast >= 4.5:1. */
+  --accent: #0a72b5;
+  --accent-strong: #0a72b5;
   --surface: #f4f5f7;
   --border: #dfe1e6;
   color-scheme: light dark;
@@ -19,7 +21,7 @@
     --background: #141518;
     --foreground: #ececef;
     --muted: #a2a4ad;
-    --accent: #6b9dff;
+    --accent: #4cb4f0;
     --surface: #1d1e22;
     --border: #2e3036;
   }

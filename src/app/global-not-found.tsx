@@ -3,7 +3,7 @@ import Link from "next/link";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Page not found · MYLPER",
+  title: "Page not found · Picstea",
   robots: { index: false },
 };
 
@@ -16,7 +16,7 @@ export default function GlobalNotFound() {
           <h1>Page not found</h1>
           <p>
             <Link href="/" prefetch={false}>
-              Open the MYLPER editor
+              Open the Picstea editor
             </Link>{" "}
             or read the <Link href="/docs">documentation</Link>.
           </p>

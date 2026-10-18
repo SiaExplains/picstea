@@ -1,6 +1,6 @@
 @AGENTS.md
 
-# MYLPER — working rules
+# Picstea — working rules
 
 - Read `docs/` (start at `docs/17_INITIAL_CLAUDE_PROMPT.md`) and `docs/FEATURE_STATUS.md` before changing architecture.
 - `src/editor/**` must stay framework-independent; edits go through commands (`src/editor/core/commands`).

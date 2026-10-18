@@ -6,8 +6,8 @@
 ## Context
 
 Gate 8 (docs/14) asks for an indexable, fast and monetizable public website without
-compromising privacy: marketing pages, docs, blog, structured data, Google Ads, MYLPER's own
-sponsorships and a consent system (docs/08–12). MYLPER's core promise is that images never
+compromising privacy: marketing pages, docs, blog, structured data, Google Ads, Picstea's own
+sponsorships and a consent system (docs/08–12). Picstea's core promise is that images never
 leave the device; the editor's `connect-src 'self'` CSP enforces it.
 
 Product decisions (Sia): AdSense account exists, ID supplied later via environment variables;
@@ -36,7 +36,7 @@ sponsorship space on the editor's start screen.
 - **AdSense** is a vendor in the advertising category, enabled only when
   `NEXT_PUBLIC_ADSENSE_CLIENT` (and `NEXT_PUBLIC_ADSENSE_SLOT` for the ad unit) are valid. Ads
   are requested as non-personalised. Ad spaces reserve fixed space (no layout shift) and show
-  MYLPER's sponsorship until consent is given.
+  Picstea's sponsorship until consent is given.
 - **Per-route CSP.** Every route, including the editor, gets the strict policy. Website routes
   additionally allow Google's ad origins (scripts, frames, connections, images) — and only when
   an AdSense ID is configured. Third-party domains allowed: `*.googlesyndication.com`,

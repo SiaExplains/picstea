@@ -20,7 +20,7 @@ export function StartScreen({ actions }: { actions: Record<UiActionId, UiAction>
     <div className={styles.start}>
       <h2 className={styles.startTitle}>Start editing</h2>
       <p className={styles.startLead}>
-        Create a new document, or open an image, a PSD or a .mylper project. Everything stays in
+        Create a new document, or open an image, a PSD or a .picstea project. Everything stays in
         this browser — nothing is uploaded. You can also drop a file anywhere on this page.
       </p>
       {!persistent && (
@@ -98,7 +98,7 @@ const noSubscribe = () => () => {};
 
 /**
  * The editor's only sponsorship space (docs/08): on the start screen, before a document is open,
- * never over the canvas or tools. MYLPER's own sponsorships only — no third-party code runs in
+ * never over the canvas or tools. Picstea's own sponsorships only — no third-party code runs in
  * the editor.
  */
 function StartSponsorship() {

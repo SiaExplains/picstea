@@ -36,9 +36,9 @@ export function detectFileKind(bytes: Uint8Array): FileKind {
   return {
     kind: "unsupported",
     message:
-      "This file type is not supported. MYLPER opens PNG, JPEG, WebP, GIF, SVG, PSD and .mylper files.",
+      "This file type is not supported. Picstea opens PNG, JPEG, WebP, GIF, SVG, PSD and .picstea files.",
   };
 }
 
 export const OPEN_ACCEPT =
-  ".png,.jpg,.jpeg,.webp,.gif,.svg,.psd,.mylper,image/png,image/jpeg,image/webp,image/gif,image/svg+xml,image/vnd.adobe.photoshop";
+  ".png,.jpg,.jpeg,.webp,.gif,.svg,.psd,.picstea,image/png,image/jpeg,image/webp,image/gif,image/svg+xml,image/vnd.adobe.photoshop";

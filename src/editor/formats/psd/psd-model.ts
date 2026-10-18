@@ -1,7 +1,7 @@
 import type { PsdExtras } from "./psd-extras";
 
 /**
- * A plain model of the subset of PSD that MYLPER reads and writes (ADR-0011): 8-bit RGB pixel
+ * A plain model of the subset of PSD that Picstea reads and writes (ADR-0011): 8-bit RGB pixel
  * layers, groups, names, opacity, visibility, blend modes and user masks. No canvas here; the
  * converters in `psd-convert.ts` bridge to editor documents.
  */

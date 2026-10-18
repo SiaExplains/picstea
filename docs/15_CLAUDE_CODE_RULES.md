@@ -1,6 +1,6 @@
 # 15 — Claude Code Implementation Rules
 
-You are implementing MYLPER.
+You are implementing Picstea.
 
 ## Rule 1 — Read before coding
 
@@ -99,7 +99,7 @@ Validate everything.
 
 ## Rule 11 — Don't copy protected assets
 
-MYLPER can be inspired by the workflow and concepts of professional editors.
+Picstea can be inspired by the workflow and concepts of professional editors.
 
 Do not copy:
 
@@ -110,7 +110,7 @@ Do not copy:
 - proprietary source code
 - copyrighted UI assets
 
-Create MYLPER's own visual identity.
+Create Picstea's own visual identity.
 
 ## Rule 12 — Definition of done
 

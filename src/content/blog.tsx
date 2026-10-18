@@ -35,13 +35,13 @@ export const POSTS: readonly BlogPost[] = [
           client work, unreleased designs or personal photos, that is often not acceptable.
         </p>
         <p>
-          MYLPER takes a different approach. It reads the PSD file inside your browser, so the file
+          Picstea takes a different approach. It reads the PSD file inside your browser, so the file
           never leaves your device. Here is how to edit one, and what to expect.
         </p>
         <h2>Step by step</h2>
         <ol>
           <li>
-            Open <EditorLink>the MYLPER editor</EditorLink>.
+            Open <EditorLink>the Picstea editor</EditorLink>.
           </li>
           <li>
             Click <strong>Open image</strong> and choose your <code>.psd</code> file, or drop it
@@ -59,13 +59,13 @@ export const POSTS: readonly BlogPost[] = [
         </ol>
         <h2>What comes across</h2>
         <p>
-          MYLPER supports 8-bit RGB and greyscale PSD files — the most common kind. Pixel layers,
+          Picstea supports 8-bit RGB and greyscale PSD files — the most common kind. Pixel layers,
           groups, layer names, opacity, visibility, blend modes and layer masks are kept.
         </p>
         <h2>What changes</h2>
         <p>
-          Some Photoshop features have no equivalent yet. Rather than changing them silently, MYLPER
-          lists them when the file opens:
+          Some Photoshop features have no equivalent yet. Rather than changing them silently,
+          Picstea lists them when the file opens:
         </p>
         <ul>
           <li>Text layers and smart objects open as pixels (they keep their names).</li>
@@ -76,12 +76,12 @@ export const POSTS: readonly BlogPost[] = [
         <h2>Why it can work without a server</h2>
         <p>
           Modern browsers can decode images, run code in background threads and store data locally.
-          MYLPER reads the PSD format itself, inside the page, and keeps projects in your
+          Picstea reads the PSD format itself, inside the page, and keeps projects in your
           browser&apos;s storage. The editor is not even allowed to send document data anywhere: the
           browser enforces that.
         </p>
         <p>
-          <EditorLink>Open a PSD in MYLPER</EditorLink> — no account, no upload.
+          <EditorLink>Open a PSD in Picstea</EditorLink> — no account, no upload.
         </p>
       </>
     ),
@@ -165,7 +165,7 @@ export const POSTS: readonly BlogPost[] = [
           <li>Anything you will keep editing: keep the original project, not a flattened image.</li>
         </ul>
         <p>
-          In MYLPER, <strong>File → Export As…</strong> offers all three. The quality slider for
+          In Picstea, <strong>File → Export As…</strong> offers all three. The quality slider for
           JPEG and WebP lets you trade size against detail, and the image is created on your device.{" "}
           <EditorLink>Try it in the editor</EditorLink>.
         </p>
@@ -218,7 +218,7 @@ export const POSTS: readonly BlogPost[] = [
         <h2>Try it</h2>
         <ol>
           <li>
-            Open a photo in <EditorLink>MYLPER</EditorLink>.
+            Open a photo in <EditorLink>Picstea</EditorLink>.
           </li>
           <li>Choose Adjustments → Black &amp; White.</li>
           <li>Click the adjustment layer&apos;s mask thumbnail and paint black over one object.</li>
@@ -287,14 +287,14 @@ export const POSTS: readonly BlogPost[] = [
         </ul>
         <h2>Why adjustment layers</h2>
         <p>
-          In MYLPER, Levels and Curves are adjustment layers. They change how the image looks, not
+          In Picstea, Levels and Curves are adjustment layers. They change how the image looks, not
           its pixels: hide the layer to compare, change the settings later, or paint on its mask to
           apply the correction to only part of the image.
         </p>
         <h2>Try it</h2>
         <ol>
           <li>
-            Open a photo in <EditorLink>MYLPER</EditorLink>.
+            Open a photo in <EditorLink>Picstea</EditorLink>.
           </li>
           <li>
             Choose Adjustments → Levels and drag the black and white inputs to the ends of the
@@ -363,7 +363,7 @@ export const POSTS: readonly BlogPost[] = [
         <h2>Try it</h2>
         <ol>
           <li>
-            Open a photo in <EditorLink>MYLPER</EditorLink> and press P.
+            Open a photo in <EditorLink>Picstea</EditorLink> and press P.
           </li>
           <li>Choose Path in the options bar and click around an object, closing the path.</li>
           <li>Press A and adjust the points, then press Cmd/Ctrl+Enter.</li>
@@ -411,7 +411,7 @@ export const POSTS: readonly BlogPost[] = [
         <h2>Try it</h2>
         <ol>
           <li>
-            In <EditorLink>MYLPER</EditorLink>, choose File → Place Embedded… and pick a photo.
+            In <EditorLink>Picstea</EditorLink>, choose File → Place Embedded… and pick a photo.
           </li>
           <li>Scale it down with the Move tool, then scale it back up — it stays sharp.</li>
           <li>Add Filter → Gaussian Blur, then hide or change it in the Properties panel.</li>
@@ -428,14 +428,14 @@ export const POSTS: readonly BlogPost[] = [
     slug: "open-psd-files-with-editable-text-and-adjustments",
     title: "Open PSD files with editable text, adjustment layers and smart objects",
     description:
-      "MYLPER now opens Photoshop files with much more of their structure intact: editable text, adjustment layers, shapes, smart objects, vector masks and layer styles.",
+      "Picstea now opens Photoshop files with much more of their structure intact: editable text, adjustment layers, shapes, smart objects, vector masks and layer styles.",
     published: "2026-10-09",
     draft: true,
     body: () => (
       <>
         <p>
           A PSD is more than its pixels. The value is in the structure: text you can still change,
-          adjustments you can still tweak, shapes that stay sharp. MYLPER now keeps much more of
+          adjustments you can still tweak, shapes that stay sharp. Picstea now keeps much more of
           that structure when it opens a Photoshop file — still entirely in your browser.
         </p>
         <h2>What opens editable</h2>
@@ -470,12 +470,12 @@ export const POSTS: readonly BlogPost[] = [
         </p>
         <h2>What still changes</h2>
         <p>
-          Some Photoshop features don&apos;t have a MYLPER equivalent yet — for example Vibrance,
-          bevels or warped text. Those layers keep their look as pixels, and MYLPER lists exactly
+          Some Photoshop features don&apos;t have a Picstea equivalent yet — for example Vibrance,
+          bevels or warped text. Those layers keep their look as pixels, and Picstea lists exactly
           what changed when the file opens.
         </p>
         <p>
-          <EditorLink>Open a PSD in MYLPER</EditorLink> — no account, no upload. Details are in{" "}
+          <EditorLink>Open a PSD in Picstea</EditorLink> — no account, no upload. Details are in{" "}
           <Link href="/docs/file-formats">file formats</Link>.
         </p>
       </>
@@ -485,15 +485,15 @@ export const POSTS: readonly BlogPost[] = [
     slug: "record-actions-and-batch-process-images",
     title: "Record actions and batch-process images in your browser",
     description:
-      "MYLPER can now record a sequence of edits and replay it on any image — or on a whole folder of photos at once — without uploading anything.",
+      "Picstea can now record a sequence of edits and replay it on any image — or on a whole folder of photos at once — without uploading anything.",
     published: "2026-10-09",
     draft: true,
     body: () => (
       <>
         <p>
           Resizing a product shot, adding the same adjustment, blurring the same corner: some edits
-          are the same every time. MYLPER can now record them once and replay them — on one image or
-          on a hundred.
+          are the same every time. Picstea can now record them once and replay them — on one image
+          or on a hundred.
         </p>
         <h2>Record once</h2>
         <p>
@@ -523,7 +523,7 @@ export const POSTS: readonly BlogPost[] = [
           <li>A History panel to jump back to any step — and forward again.</li>
         </ul>
         <p>
-          <EditorLink>Try it in MYLPER</EditorLink> — no account needed. The details are in{" "}
+          <EditorLink>Try it in Picstea</EditorLink> — no account needed. The details are in{" "}
           <Link href="/docs/actions-batch-colours-and-history">
             Actions, batch processing, colours and history
           </Link>
@@ -536,15 +536,15 @@ export const POSTS: readonly BlogPost[] = [
     slug: "remove-blemishes-and-retouch-photos-in-your-browser",
     title: "Remove blemishes and retouch photos in your browser",
     description:
-      "MYLPER now has a Clone Stamp, Healing Brush, Dodge and Burn, Sponge, Blur, Sharpen and Smudge — classic retouching tools that run entirely in your browser.",
+      "Picstea now has a Clone Stamp, Healing Brush, Dodge and Burn, Sponge, Blur, Sharpen and Smudge — classic retouching tools that run entirely in your browser.",
     published: "2026-10-09",
     draft: true,
     body: () => (
       <>
         <p>
           A speck of dust on a product shot, a power line across the sky, a blemish in a portrait:
-          small distractions that take seconds to fix with the right tool. MYLPER now has those
-          tools — and like everything else in MYLPER, your photos never leave your device.
+          small distractions that take seconds to fix with the right tool. Picstea now has those
+          tools — and like everything else in Picstea, your photos never leave your device.
         </p>
         <h2>Heal it</h2>
         <p>
@@ -565,7 +565,7 @@ export const POSTS: readonly BlogPost[] = [
           or push pixels around.
         </p>
         <p>
-          <EditorLink>Open a photo in MYLPER</EditorLink> and try them — no account, no upload. The
+          <EditorLink>Open a photo in Picstea</EditorLink> and try them — no account, no upload. The
           details are in <Link href="/docs/retouching">Retouching</Link>.
         </p>
       </>
@@ -575,14 +575,14 @@ export const POSTS: readonly BlogPost[] = [
     slug: "select-align-and-distribute-several-layers",
     title: "Select, align and distribute several layers at once",
     description:
-      "MYLPER now lets you select several layers, move and transform them together, scale and rotate whole groups, and align or distribute them evenly.",
+      "Picstea now lets you select several layers, move and transform them together, scale and rotate whole groups, and align or distribute them evenly.",
     published: "2026-10-09",
     draft: true,
     body: () => (
       <>
         <p>
           Laying out a banner, a product grid or a social post means arranging many things at once.
-          Until now MYLPER worked on one layer at a time. Now you can select as many as you like.
+          Until now Picstea worked on one layer at a time. Now you can select as many as you like.
         </p>
         <h2>Select several layers</h2>
         <p>
@@ -604,7 +604,7 @@ export const POSTS: readonly BlogPost[] = [
           Properties panel.
         </p>
         <p>
-          <EditorLink>Try it in MYLPER</EditorLink> — free, no account, nothing uploaded. More in{" "}
+          <EditorLink>Try it in Picstea</EditorLink> — free, no account, nothing uploaded. More in{" "}
           <Link href="/docs/layers-groups-and-masks">Layers, groups and masks</Link>.
         </p>
       </>
@@ -614,13 +614,13 @@ export const POSTS: readonly BlogPost[] = [
     slug: "vibrance-color-balance-gradient-map-and-more",
     title: "Vibrance, Color Balance, Gradient Map and more",
     description:
-      "MYLPER adds five adjustment layers — Vibrance, Color Balance, Photo Filter, Channel Mixer and Gradient Map — and inner shadow, bevel and gradient overlay effects.",
+      "Picstea adds five adjustment layers — Vibrance, Color Balance, Photo Filter, Channel Mixer and Gradient Map — and inner shadow, bevel and gradient overlay effects.",
     published: "2026-10-09",
     draft: true,
     body: () => (
       <>
         <p>
-          Colour is where a photo gets its mood. MYLPER now has the adjustment layers photographers
+          Colour is where a photo gets its mood. Picstea now has the adjustment layers photographers
           and designers reach for most often after Levels and Curves — all non-destructive, all
           running in your browser.
         </p>
@@ -658,7 +658,7 @@ export const POSTS: readonly BlogPost[] = [
           of baked into the pixels.
         </p>
         <p>
-          <EditorLink>Try them in MYLPER</EditorLink> — free, no account, nothing uploaded.
+          <EditorLink>Try them in Picstea</EditorLink> — free, no account, nothing uploaded.
         </p>
       </>
     ),

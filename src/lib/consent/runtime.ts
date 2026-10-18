@@ -11,7 +11,7 @@ import { VendorLoader, type ConsentVendor } from "./vendors";
 
 const VENDORS: ConsentVendor[] = ADSENSE_CLIENT ? [adsenseVendor(ADSENSE_CLIENT)] : [];
 
-export const OPEN_PRIVACY_SETTINGS = "mylper:privacy-settings";
+export const OPEN_PRIVACY_SETTINGS = "picstea:privacy-settings";
 
 const storage = () => {
   try {

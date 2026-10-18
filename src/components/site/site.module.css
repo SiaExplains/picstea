@@ -21,18 +21,8 @@
   display: flex;
 }
 
-.logoDark {
-  display: none;
-}
-
-@media (prefers-color-scheme: dark) {
-  .logoLight {
-    display: none;
-  }
-
-  .logoDark {
-    display: block;
-  }
+.logo {
+  border-radius: 5px;
 }
 
 .nav {
@@ -52,7 +42,7 @@
 
 .cta,
 .ctaLarge {
-  background: var(--accent);
+  background: var(--accent-strong);
   color: #fff !important;
   border-radius: 6px;
   padding: 7px 14px;

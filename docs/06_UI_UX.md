@@ -8,7 +8,7 @@ The editor should feel immediately familiar to Photopea/Photoshop users without 
 
 ```text
 ┌─────────────────────────────────────────────────────────┐
-│ MYLPER / File Edit Image Layer Type Select Filter View │
+│ Picstea / File Edit Image Layer Type Select Filter View │
 ├─────────────────────────────────────────────────────────┤
 │ Tool Options                                            │
 ├───────┬───────────────────────────────────────┬─────────┤

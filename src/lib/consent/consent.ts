@@ -19,7 +19,7 @@ export interface StoredConsent {
 }
 
 export const CONSENT_VERSION = 1;
-export const CONSENT_STORAGE_KEY = "mylper.consent";
+export const CONSENT_STORAGE_KEY = "picstea.consent";
 
 export const NONE: ConsentChoices = { analytics: false, advertising: false };
 export const ALL: ConsentChoices = { analytics: true, advertising: true };
@@ -32,7 +32,7 @@ export const CATEGORY_INFO: Record<ConsentCategory, { title: string; description
   },
   analytics: {
     title: "Analytics",
-    description: "Counting visits to improve the website. MYLPER currently uses no analytics.",
+    description: "Counting visits to improve the website. Picstea currently uses no analytics.",
   },
   advertising: {
     title: "Advertising",

@@ -84,10 +84,10 @@ describe("actions", () => {
 
   it("explains why a file is refused", () => {
     const file = (actions: unknown, extra: object = {}) =>
-      JSON.stringify({ format: "mylper-actions", version: 1, actions, ...extra });
+      JSON.stringify({ format: "picstea-actions", version: 1, actions, ...extra });
     const cases: [string, RegExp][] = [
-      ["not json", /not a MYLPER actions file/],
-      [JSON.stringify({ format: "other", version: 1, actions: [] }), /not a MYLPER/],
+      ["not json", /not a Picstea actions file/],
+      [JSON.stringify({ format: "other", version: 1, actions: [] }), /not a Picstea/],
       [file([], { version: 2 }), /newer version/],
       [file([{ name: "x", steps: [{ type: "eval" }] }]), /Step 1 of "x"/],
       [file([{ name: "  ", steps: [] }]), /no name/],

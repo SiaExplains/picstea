@@ -14,7 +14,7 @@ test("home page is the editor and welcomes first-time visitors once", async ({ p
   await expect(page.getByRole("button", { name: "New document" })).toBeVisible();
   await expect(welcome).toBeHidden();
   // The logo sits on the dark menu bar with no native button background behind it.
-  const logo = page.getByRole("button", { name: "MYLPER" });
+  const logo = page.getByRole("button", { name: "Picstea" });
   expect(await logo.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe(
     "rgba(0, 0, 0, 0)",
   );
@@ -57,7 +57,7 @@ test("home page is indexable with metadata, icons and structured data", async ({
   const sitemap = await (await request.get("/sitemap.xml")).text();
   expect(sitemap).not.toContain("/editor");
   const manifest = await (await request.get("/manifest.webmanifest")).json();
-  expect(manifest.short_name).toBe("MYLPER");
+  expect(manifest.short_name).toBe("Picstea");
   expect((await request.get("/favicon.ico")).status()).toBe(200);
 });
 

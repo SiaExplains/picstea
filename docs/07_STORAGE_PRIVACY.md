@@ -2,7 +2,7 @@
 
 ## Core rule
 
-MYLPER editing is local-first.
+Picstea editing is local-first.
 
 ### Data that stays local
 

@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useRef } from "react";
+import { SITE } from "@/lib/seo/site";
 import styles from "./welcome.module.css";
 import { OPEN_WELCOME_EVENT, WELCOME_SEEN_KEY } from "./welcome";
 
@@ -20,7 +21,7 @@ const HIGHLIGHTS = [
 ] as const;
 
 const FAQ = [
-  ["Is MYLPER free?", "Yes. It runs in your browser with no account required."],
+  ["Is Picstea free?", "Yes. It runs in your browser with no account required."],
   [
     "Where is my work saved?",
     "In this browser's storage on your device. Use File → Save Project As to keep a copy.",
@@ -44,7 +45,7 @@ function rememberWelcomeSeen(): void {
 }
 
 /**
- * Explains MYLPER on the first visit; reopened from the logo or Help menu. The content is part of
+ * Explains Picstea on the first visit; reopened from the logo or Help menu. The content is part of
  * the server-rendered page, so it also describes the app to search engines and AI assistants.
  */
 export function WelcomeDialog() {
@@ -73,9 +74,9 @@ export function WelcomeDialog() {
     >
       <form method="dialog" className={styles.body} onSubmit={rememberWelcomeSeen}>
         <Image
-          src="/brand/mylper-logo-on-dark.png"
-          alt="MYLPER"
-          width={133}
+          src="/brand/picstea-logo.png"
+          alt="Picstea"
+          width={119}
           height={36}
           className={styles.logo}
           unoptimized
@@ -84,7 +85,7 @@ export function WelcomeDialog() {
           A free image editor that keeps your images on your device
         </h1>
         <p className={styles.lead}>
-          MYLPER is a layer-based image editor that runs entirely in your browser.
+          {SITE.slogan} Picstea is a layer-based image editor that runs entirely in your browser.
         </p>
         <ul className={styles.highlights}>
           {HIGHLIGHTS.map(([title, body]) => (

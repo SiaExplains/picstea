@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 const FAQS: Faq[] = [
   {
     q: "Can I open a PSD without Photoshop?",
-    a: "Yes. MYLPER opens 8-bit RGB and greyscale PSD files in the browser, with their layers, groups, masks, blend modes, editable text, adjustment layers, shape layers, smart objects and common layer styles.",
+    a: "Yes. Picstea opens 8-bit RGB and greyscale PSD files in the browser, with their layers, groups, masks, blend modes, editable text, adjustment layers, shape layers, smart objects and common layer styles.",
   },
   {
     q: "Is my PSD uploaded to a server?",
@@ -29,7 +29,7 @@ const FAQS: Faq[] = [
   },
   {
     q: "What doesn't come across?",
-    a: "Some Photoshop features have no MYLPER equivalent yet: adjustments such as Selective Color or Color Lookup, satin and pattern styles, warped text and smart filters keep their look as pixels or are left out. Text may need a font check. MYLPER lists what changed when the file opens.",
+    a: "Some Photoshop features have no Picstea equivalent yet: adjustments such as Selective Color or Color Lookup, satin and pattern styles, warped text and smart filters keep their look as pixels or are left out. Text may need a font check. Picstea lists what changed when the file opens.",
   },
 ];
 
@@ -38,7 +38,7 @@ export default function PsdEditor() {
     <LandingPage
       path={PATH}
       title={TITLE}
-      lead="MYLPER opens Photoshop (PSD) files directly in your browser, keeps their layers, and lets you save them back as PSD — without uploading the file anywhere."
+      lead="Picstea opens Photoshop (PSD) files directly in your browser, keeps their layers, and lets you save them back as PSD — without uploading the file anywhere."
       faqs={FAQS}
     >
       <h2>How to edit a PSD online</h2>

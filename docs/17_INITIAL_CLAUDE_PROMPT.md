@@ -1,12 +1,12 @@
 # Initial Claude Code Prompt
 
-You are the lead engineer implementing **MYLPER**, a browser-based professional image editor.
+You are the lead engineer implementing **Picstea**, a browser-based professional image editor.
 
 Read this entire `docs/` handbook before making architectural decisions.
 
 ## Product
 
-MYLPER is intended to become a serious browser-based image editor inspired by Photopea and Photoshop.
+Picstea is intended to become a serious browser-based image editor inspired by Photopea and Photoshop.
 
 The application must eventually support a broad professional feature set including:
 
@@ -62,7 +62,7 @@ Vercel hosts the application. It is not the user's image-processing backend.
 
 The product domain is:
 
-`mylper.com`
+`picstea.com`
 
 The domain is currently registered outside Route 53 and is expected to be moved to Squarespace around/after the current registration period ending in February 2027.
 
@@ -73,7 +73,7 @@ Do not make Route 53 a dependency.
 Revenue comes from:
 
 - Google Ads
-- MYLPER custom sponsorship advertisements
+- Picstea custom sponsorship advertisements
 
 Ads must never obstruct editing or access document contents.
 

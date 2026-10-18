@@ -88,11 +88,11 @@ export interface ActionHosts {
   openSmartFilterDialog: (layerId: string, filter: SmartFilter) => void;
 }
 
-/** Download the active document as a portable `.mylper` file (File → Save Project As…). */
+/** Download the active document as a portable `.picstea` file (File → Save Project As…). */
 async function saveProjectFile(controller: EditorController): Promise<void> {
   const result = await controller.saveProjectFile();
   if (!result.ok) return;
-  const saved = await saveFile(result.blob, result.filename, PROJECT_MIME, "MYLPER project");
+  const saved = await saveFile(result.blob, result.filename, PROJECT_MIME, "Picstea project");
   if (saved === "saved") controller.notify("info", `Saved ${result.filename}`);
   if (saved === "failed") controller.notify("error", "The project file could not be saved.");
 }
@@ -526,7 +526,7 @@ export function useEditorActions(hosts: ActionHosts): Record<UiActionId, UiActio
         enabled: !!lastFilter && layer?.kind === "raster" && !layer.locked,
         run: () => void controller.repeatLastFilter(),
       },
-      "help.welcome": { label: "Welcome to MYLPER", enabled: true, run: openWelcome },
+      "help.welcome": { label: "Welcome to Picstea", enabled: true, run: openWelcome },
       // The website opens in a new tab so the editor and its work stay where they are.
       "help.docs": {
         label: "Documentation",

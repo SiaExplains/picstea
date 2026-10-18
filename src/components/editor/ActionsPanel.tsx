@@ -39,7 +39,12 @@ export function ActionsPanel() {
 
   const exportAll = async () => {
     const blob = new Blob([serializeActions(actions)], { type: "application/json" });
-    const saved = await saveFile(blob, "mylper-actions.json", "application/json", "MYLPER actions");
+    const saved = await saveFile(
+      blob,
+      "picstea-actions.json",
+      "application/json",
+      "Picstea actions",
+    );
     if (saved === "failed") controller.notify("error", "The actions file could not be saved.");
   };
 

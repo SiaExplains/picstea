@@ -82,7 +82,7 @@ test("every sitemap page has complete metadata, valid links and good lab vitals"
   test.setTimeout(180_000);
   // Decline ads/consent so measurements match a first visit without third-party code.
   await page.addInitScript(() =>
-    localStorage.setItem("mylper.consent", JSON.stringify({ version: 1, ads: false })),
+    localStorage.setItem("picstea.consent", JSON.stringify({ version: 1, ads: false })),
   );
   const urls = await sitemapUrls(page);
   expect(urls.length).toBeGreaterThan(10);

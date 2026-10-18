@@ -70,7 +70,7 @@ function drawRuler(
   ctx.stroke();
   if (cursor !== null) {
     const p = Math.round(pan + cursor * viewport.zoom) + 0.5;
-    ctx.strokeStyle = css.getPropertyValue("--ed-accent").trim() || "#4c8dff";
+    ctx.strokeStyle = css.getPropertyValue("--ed-accent").trim() || "#2ba6ec";
     ctx.beginPath();
     if (axis === "x") {
       ctx.moveTo(p, 0);

@@ -123,7 +123,7 @@ describe("IndexedDbProjectStorage specifics", () => {
     await storage.save({ document: doc, assets: [] });
 
     const db = await new Promise<IDBDatabase>((resolve, reject) => {
-      const req = factory.open("mylper", 1);
+      const req = factory.open("picstea", 1);
       req.onsuccess = () => resolve(req.result);
       req.onerror = () => reject(req.error);
     });

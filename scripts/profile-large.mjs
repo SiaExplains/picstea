@@ -19,7 +19,7 @@ const page = await browser.newPage({
   deviceScaleFactor: DPR,
 });
 await page.addInitScript(() => {
-  localStorage.setItem("mylper.welcomeSeen", "1");
+  localStorage.setItem("picstea.welcomeSeen", "1");
   window.__lt = [];
   new PerformanceObserver((l) => {
     for (const e of l.getEntries()) window.__lt.push(e.duration);
