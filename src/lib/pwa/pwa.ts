@@ -51,12 +51,31 @@ export async function promptInstall(): Promise<boolean> {
   return true;
 }
 
-/** Same-origin app files this page already loaded (scripts, styles, images, fonts). */
-function loadedAppFiles(): string[] {
-  return performance
-    .getEntriesByType("resource")
-    .map((e) => e.name)
-    .filter((url) => url.startsWith(location.origin));
+/**
+ * Tell the worker which same-origin app files (scripts, styles, images, fonts) this page loads,
+ * so a second visit works offline even for files that loaded before the worker took control.
+ *
+ * A one-off snapshot is not enough: a resource only appears in the performance timeline once its
+ * response has finished, so a file requested just before the worker took control (the menu bar
+ * logo, rendered after `load`) would be missing from it and never cached. Later entries are
+ * reported as they finish; the worker skips files it already has.
+ */
+function shareLoadedFiles(worker: ServiceWorker): void {
+  const seen = new Set<string>();
+  const send = (entries: PerformanceEntryList, page?: string) => {
+    const urls = entries
+      .map((e) => e.name)
+      .filter((url) => url.startsWith(location.origin) && !seen.has(url));
+    urls.forEach((url) => seen.add(url));
+    if (urls.length === 0 && !page) return;
+    (navigator.serviceWorker.controller ?? worker).postMessage({ type: "cache-urls", urls, page });
+  };
+  send(performance.getEntriesByType("resource"), location.href);
+  if (typeof PerformanceObserver === "undefined") return;
+  new PerformanceObserver((list) => send(list.getEntries())).observe({
+    type: "resource",
+    buffered: true,
+  });
 }
 
 async function registerWorker(): Promise<void> {
@@ -64,7 +83,7 @@ async function registerWorker(): Promise<void> {
   try {
     await navigator.serviceWorker.register("/sw.js", { scope: "/", updateViaCache: "none" });
     const ready = await navigator.serviceWorker.ready;
-    ready.active?.postMessage({ type: "cache-urls", urls: loadedAppFiles(), page: location.href });
+    if (ready.active) shareLoadedFiles(ready.active);
   } catch {
     // Unsupported or blocked (private mode, policies): the site simply works online only.
   }

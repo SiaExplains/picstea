@@ -16,4 +16,15 @@ export const SPONSORSHIPS: readonly Advertisement[] = [
     placement: ["editor-side", "editor-start"],
     active: true,
   },
+  {
+    id: "wikidigit",
+    sponsor: "WikiDigit",
+    title: "WikiDigit — tech news for the curious",
+    description: "Explore the stories at wikidigit.com.",
+    video: "/sponsors/wikidigit.mp4",
+    image: "/sponsors/wikidigit-poster.png",
+    targetUrl: "https://wikidigit.com",
+    placement: ["editor-side", "editor-start"],
+    active: true,
+  },
 ];

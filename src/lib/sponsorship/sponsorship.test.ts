@@ -90,6 +90,10 @@ describe("several slots (ADR-0034)", () => {
       expect(isSafeImage(booked.image)).toBe(true);
       expect(isSafeVideo(booked.video)).toBe(true);
     }
-    expect(pickSponsorships(SPONSORSHIPS, "editor-side", 0, 3)[0].id).toBe("focuscrew");
+    // Two bookings take turns in the first slot; the third is a house ad.
+    const today = pickSponsorships(SPONSORSHIPS, "editor-side", 0, 3).map((ad) => ad.id);
+    expect(today).toEqual(["focuscrew", "wikidigit", HOUSE_ADS[0].id]);
+    const tomorrow = pickSponsorships(SPONSORSHIPS, "editor-side", 1, 3).map((ad) => ad.id);
+    expect(tomorrow).toEqual(["wikidigit", "focuscrew", HOUSE_ADS[0].id]);
   });
 });

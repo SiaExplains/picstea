@@ -36,3 +36,9 @@ product owner asked for this video in the first slot, and for three slots in tot
   sponsorships may be short silent videos and appear beside the canvas.
 - The video adds about 185 KB, loaded only on wide screens (`preload="metadata"`) where the
   column shows. The service worker does not cache it.
+
+## Addendum — 2026-10-19: second sponsor
+
+WikiDigit is booked for the same placements as FocusCrew, with a 9.6-second, silent,
+256 × 256 H.264 video (242 KB) linking to `https://wikidigit.com`. The two take turns in the
+first slot by day, as decided above; the third slot stays a house ad. No logic changed.

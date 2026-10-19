@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { openEditor, trackErrors } from "./helpers";
+import { appOrigin, openEditor, trackErrors } from "./helpers";
 
 const GOOGLE = /googlesyndication\.com|doubleclick\.net|adtrafficquality\.google|google\.com\//;
 
@@ -102,10 +102,11 @@ test("the editor stays free of third-party code even with ads configured", async
 }) => {
   const errors = trackErrors(page);
   const google = await interceptGoogle(page);
+  const origin = appOrigin();
   const external: string[] = [];
   page.on("request", (r) => {
     const url = new URL(r.url());
-    if (!["blob:", "data:"].includes(url.protocol) && url.port !== "3100") external.push(r.url());
+    if (!["blob:", "data:"].includes(url.protocol) && url.origin !== origin) external.push(r.url());
   });
   // Even with advertising accepted on the website…
   await page.addInitScript(() =>

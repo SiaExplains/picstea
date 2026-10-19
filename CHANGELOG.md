@@ -23,6 +23,40 @@ All notable changes to this project are documented here. The format follows
 - Filter → Pixelate → Pixelate is now called **Mosaic**, as in Photoshop. Smart filters that
   already use it keep working.
 
+## [0.32.0] — 2026-10-19
+
+### Added
+
+- **WikiDigit is Picstea's second sponsor.** Its short silent video appears beside the canvas
+  and on the start screen. FocusCrew and WikiDigit take turns in the top slot each day.
+
+## [0.31.4] — 2026-10-19
+
+### Fixed
+
+- **CI checks pass again.** `pnpm typecheck` failed on a fresh checkout because the route types
+  Next.js generates (`PageProps`, `LayoutProps`) only existed after a build. It now runs
+  `next typegen` first. This failure had kept the GitHub `verify` check red.
+
+## [0.31.3] — 2026-10-19
+
+### Fixed
+
+- **The end-to-end tests run on any port.** The network checks treated every request that wasn't
+  on port 3100 as leaving the app, so setting `E2E_PORT` failed six tests. They now compare
+  against the configured base URL.
+- **The large-document painting test no longer fails at random.** It failed when one task ran a
+  little over 200 ms under a parallel run. It now fails only when many moves block, or when total
+  blocking exceeds one second. That still catches the original ~250 ms-per-move slowdown.
+
+## [0.31.2] — 2026-10-19
+
+### Fixed
+
+- **Offline, the editor no longer logs a failed image request.** A file that started loading just
+  before the offline support took over (the Picstea logo in the menu bar) sometimes wasn't saved
+  for offline use; now every file the page loads on the first visit is saved.
+
 ## [0.31.1] — 2026-10-19
 
 ### Added

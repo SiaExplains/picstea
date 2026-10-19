@@ -9,6 +9,7 @@ import {
   pixel,
   trackErrors,
   pickMenu,
+  watchNetwork,
 } from "./helpers";
 
 const rows = (page: Page) => page.getByTestId("layer-row");
@@ -170,17 +171,7 @@ test("drop shadow and outer stroke render around the layer", async ({ page }) =>
 
 test("a full composition survives reload and sends nothing over the network", async ({ page }) => {
   const errors = trackErrors(page);
-  const offending: string[] = [];
-  page.on("request", (r) => {
-    const url = new URL(r.url());
-    if (
-      url.protocol !== "blob:" &&
-      url.protocol !== "data:" &&
-      (r.method() !== "GET" || url.port !== "3100")
-    ) {
-      offending.push(`${r.method()} ${r.url()}`);
-    }
-  });
+  const offending = watchNetwork(page);
 
   await newDocument(page, "Composition");
   await rectangle(page, [50, 50], [350, 150]);
