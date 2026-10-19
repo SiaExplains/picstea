@@ -79,7 +79,8 @@ export default function OnlinePhotoEditor() {
         </li>
         <li>Vibrance, Color Balance, Channel Mixer, Gradient Map and Photo Filter adjustments.</li>
         <li>
-          Drop shadows, glows, inner shadows, bevels, outlines and gradient or colour overlays.
+          Drop shadows, glows, satin, bevels, strokes and colour, gradient or pattern overlays, with
+          several copies and saved styles.
         </li>
         <li>Open and save layered PSD files; export PNG, JPEG, WebP, SVG and PDF.</li>
         <li>Record actions and replay them, or batch-process many photos into one ZIP download.</li>

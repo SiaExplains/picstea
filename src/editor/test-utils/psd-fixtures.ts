@@ -292,3 +292,231 @@ export function innerStylesBlock(options: {
   });
   return w.toBytes();
 }
+
+const text = (value: string): WritableValue => ({ type: "TEXT", value });
+const list = (values: readonly WritableValue[]): WritableValue => ({ type: "VlLs", values });
+const point = (h: number, v: number): WritableValue =>
+  objc({
+    classId: "CrPt",
+    items: [
+      ["Hrzn", doub(h)],
+      ["Vrtc", doub(v)],
+    ],
+  });
+const contour = (name: string, points: readonly [number, number][]): WritableValue =>
+  objc({
+    classId: "ShpC",
+    items: [
+      ["Nm  ", text(name)],
+      ["Crv ", list(points.map(([h, v]) => point(h, v)))],
+    ],
+  });
+const gradient = (colors: readonly string[]): WritableValue =>
+  objc({
+    classId: "Grdn",
+    items: [
+      ["GrdF", enm("GrdF", "CstS")],
+      [
+        "Clrs",
+        list(
+          colors.map((c, i) =>
+            objc({
+              classId: "Clrt",
+              items: [
+                ["Clr ", rgbColor(c)],
+                ["Lctn", long(Math.round((i / (colors.length - 1)) * 4096))],
+                ["Mdpn", long(50)],
+              ],
+            }),
+          ),
+        ),
+      ],
+    ],
+  });
+const pattern = (name: string): WritableValue =>
+  objc({
+    classId: "Ptrn",
+    items: [
+      ["Nm  ", text(name)],
+      ["Idnt", text("x")],
+    ],
+  });
+const offset = (h: number, v: number): WritableValue =>
+  objc({
+    classId: "Pnt ",
+    items: [
+      ["Hrzn", doub(h)],
+      ["Vrtc", doub(v)],
+    ],
+  });
+
+/** `lfx2` using the full Layer Style option set (ADR-0030): copies, contours, every effect. */
+export function proStylesBlock(): Uint8Array {
+  const shadow = (color: string, distance: number) =>
+    objc({
+      classId: "DrSh",
+      items: [
+        ["enab", bool(true)],
+        ["Md  ", enm("BlnM", "Scrn")],
+        ["Clr ", rgbColor(color)],
+        ["Opct", untf("#Prc", 40)],
+        ["uglg", bool(true)],
+        ["lagl", untf("#Ang", 10)],
+        ["Dstn", untf("#Pxl", distance)],
+        ["Ckmt", untf("#Pxl", 20)],
+        ["blur", untf("#Pxl", 9)],
+        ["Nose", untf("#Prc", 10)],
+        ["AntA", bool(true)],
+        ["TrnS", contour("Cone", [])],
+        ["layerConceals", bool(false)],
+      ],
+    });
+  const w = new ByteWriter();
+  w.u32(0);
+  writeVersionedDescriptor(w, {
+    classId: "null",
+    items: [
+      ["masterFXSwitch", bool(true)],
+      ["dropShadowMulti", list([shadow("#ff0000", 4), shadow("#00ff00", 12)])],
+      [
+        "OrGl",
+        objc({
+          classId: "OrGl",
+          items: [
+            ["enab", bool(true)],
+            ["Md  ", enm("BlnM", "Nrml")],
+            ["Opct", untf("#Prc", 60)],
+            ["Grad", gradient(["#ffffff", "#0000ff"])],
+            ["GlwT", enm("BETE", "PrBL")],
+            ["Ckmt", untf("#Pxl", 30)],
+            ["blur", untf("#Pxl", 12)],
+            [
+              "TrnS",
+              contour("Custom", [
+                [0, 0],
+                [128, 200],
+                [255, 64],
+              ]),
+            ],
+            ["Inpr", untf("#Prc", 70)],
+            ["ShdN", untf("#Prc", 15)],
+          ],
+        }),
+      ],
+      [
+        "IrGl",
+        objc({
+          classId: "IrGl",
+          items: [
+            ["enab", bool(true)],
+            ["Md  ", enm("BlnM", "Ovrl")],
+            ["Clr ", rgbColor("#ffcc00")],
+            ["glwS", enm("IGSr", "SrcC")],
+            ["blur", untf("#Pxl", 7)],
+          ],
+        }),
+      ],
+      [
+        "ChFX",
+        objc({
+          classId: "ChFX",
+          items: [
+            ["enab", bool(true)],
+            ["Md  ", enm("BlnM", "Mltp")],
+            ["Clr ", rgbColor("#220044")],
+            ["Opct", untf("#Prc", 50)],
+            ["lagl", untf("#Ang", 45)],
+            ["Dstn", untf("#Pxl", 6)],
+            ["blur", untf("#Pxl", 8)],
+            ["MpgS", contour("Gaussian", [])],
+            ["Invr", bool(false)],
+          ],
+        }),
+      ],
+      [
+        "patternFill",
+        objc({
+          classId: "patternFill",
+          items: [
+            ["enab", bool(true)],
+            ["Md  ", enm("BlnM", "Nrml")],
+            ["Opct", untf("#Prc", 100)],
+            ["Ptrn", pattern("Diagonal Stripes 2")],
+            ["Scl ", untf("#Prc", 200)],
+            ["Algn", bool(false)],
+            ["phase", offset(5, -3)],
+          ],
+        }),
+      ],
+      [
+        "frameFXMulti",
+        list([
+          objc({
+            classId: "FrFX",
+            items: [
+              ["enab", bool(true)],
+              ["Styl", enm("FStl", "InsF")],
+              ["PntT", enm("FrFl", "GrFl")],
+              ["Md  ", enm("BlnM", "Nrml")],
+              ["Opct", untf("#Prc", 100)],
+              ["Sz  ", untf("#Pxl", 6)],
+              ["Grad", gradient(["#000000", "#ffffff"])],
+              ["Type", enm("GrdT", "Rdl ")],
+              ["Angl", untf("#Ang", 30)],
+              ["Scl ", untf("#Prc", 80)],
+            ],
+          }),
+        ]),
+      ],
+      [
+        "GrFl",
+        objc({
+          classId: "GrFl",
+          items: [
+            ["enab", bool(true)],
+            ["Md  ", enm("BlnM", "SftL")],
+            ["Opct", untf("#Prc", 90)],
+            ["Grad", gradient(["#ff0000", "#00ff00", "#0000ff"])],
+            ["Type", enm("GrdT", "Dmnd")],
+            ["Angl", untf("#Ang", 45)],
+            ["Scl ", untf("#Prc", 120)],
+            ["Ofst", offset(10, -20)],
+            ["Dthr", bool(true)],
+            ["gradientsInterpolationMethod", enm("gradientInterpolationMethodType", "Perc")],
+          ],
+        }),
+      ],
+      [
+        "ebbl",
+        objc({
+          classId: "ebbl",
+          items: [
+            ["enab", bool(true)],
+            ["bvlS", enm("BESl", "Embs")],
+            ["bvlT", enm("bvlT", "Slmt")],
+            ["bvlD", enm("BESs", "Out ")],
+            ["srgR", untf("#Prc", 250)],
+            ["blur", untf("#Pxl", 9)],
+            ["Sftn", untf("#Pxl", 3)],
+            ["uglg", bool(false)],
+            ["lagl", untf("#Ang", 60)],
+            ["Lald", untf("#Ang", 45)],
+            ["hglM", enm("BlnM", "CDdg")],
+            ["hglC", rgbColor("#ffffee")],
+            ["hglO", untf("#Prc", 90)],
+            ["sdwM", enm("BlnM", "linearBurn")],
+            ["sdwO", untf("#Prc", 40)],
+            ["useShape", bool(true)],
+            ["MpgS", contour("Ring", [])],
+            ["Inpr", untf("#Prc", 80)],
+            ["useTexture", bool(true)],
+            ["Ptrn", pattern("Bricks")],
+            ["textureDepth", untf("#Prc", -150)],
+            ["InvT", bool(true)],
+          ],
+        }),
+      ],
+    ],
+  });
+  return w.toBytes();
+}

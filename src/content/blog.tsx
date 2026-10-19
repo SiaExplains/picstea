@@ -71,8 +71,8 @@ export const POSTS: readonly BlogPost[] = [
         </p>
         <ul>
           <li>
-            Selective Color and Color Lookup adjustments, satin and pattern styles, warped text and
-            Photoshop smart filters keep their look as pixels.
+            Selective Color and Color Lookup adjustments, warped text and Photoshop smart filters
+            keep their look as pixels; Photoshop pattern images become built-in patterns.
           </li>
           <li>PSB, 16/32-bit and CMYK files cannot be opened yet.</li>
         </ul>

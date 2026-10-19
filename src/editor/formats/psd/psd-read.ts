@@ -317,6 +317,8 @@ async function readPsdFile(
     if (budget.left < 0) throw new FormatError("This file is too large to open in the browser.");
   };
   let globalAngle = 30;
+  let globalAltitude = 30;
+  let hasGlobalLight = false;
 
   r.skip(r.u32()); // colour mode data
 
@@ -332,7 +334,17 @@ async function readPsdFile(
     if (size % 2 === 1 && resources.remaining > 0) resources.skip(1);
     if (id === 1037 && body.remaining >= 4) {
       const angle = body.i32();
-      if (Math.abs(angle) <= 360) globalAngle = angle;
+      if (Math.abs(angle) <= 360) {
+        globalAngle = angle;
+        hasGlobalLight = true;
+      }
+    }
+    if (id === 1049 && body.remaining >= 4) {
+      const altitude = body.i32();
+      if (altitude >= 0 && altitude <= 90) {
+        globalAltitude = altitude;
+        hasGlobalLight = true;
+      }
     }
     if (id === 1005 && body.remaining >= 4) {
       const ppi = body.u32() / 65536;
@@ -471,6 +483,7 @@ async function readPsdFile(
     width: header.width,
     height: header.height,
     resolution,
+    ...(hasGlobalLight ? { globalLight: { angle: globalAngle, altitude: globalAltitude } } : {}),
     layers: nodes,
     composite,
     ...(linked.length ? { linked } : {}),

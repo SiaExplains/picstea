@@ -84,6 +84,8 @@ export interface PsdFile {
   readonly height: number;
   /** Pixels per inch, if stored. */
   readonly resolution?: number;
+  /** Global light for layer styles (image resources 1037 and 1049), when stored. */
+  readonly globalLight?: { readonly angle: number; readonly altitude: number };
   /** Bottom-most first. */
   readonly layers: readonly PsdNode[];
   /** Flattened image (RGBA), always written; read when present. */

@@ -225,7 +225,7 @@ describe("masks", () => {
 describe("effects", () => {
   it("sets, validates and removes effects", () => {
     let d = setLayerEffect("a", "dropShadow", DEFAULT_EFFECTS.dropShadow).apply(doc());
-    expect(findLayerDeep(d.layers, "a")?.effects?.dropShadow).toEqual(DEFAULT_EFFECTS.dropShadow);
+    expect(findLayerDeep(d.layers, "a")?.effects?.dropShadow).toEqual([DEFAULT_EFFECTS.dropShadow]);
     expect(setLayerEffect("a", "dropShadow", DEFAULT_EFFECTS.dropShadow).apply(d)).toBe(d);
     expect(() =>
       setLayerEffect("a", "stroke", { ...DEFAULT_EFFECTS.stroke, size: 9999 }).apply(d),

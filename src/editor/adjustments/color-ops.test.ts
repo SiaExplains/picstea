@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { addLayer, checkEffect, DEFAULT_EFFECTS, setLayerEffect } from "../core/commands";
+import { addLayer, DEFAULT_EFFECTS, setLayerEffect } from "../core/commands";
+import { EffectError, parseEffect } from "../core/effects/parse";
 import { createAdjustmentLayer, createDocument, createRasterLayer } from "../core/document/factory";
 import type { Adjustment, EditorDocument } from "../core/document/types";
 import { EditorStore } from "../core/editor-store";
@@ -197,22 +198,20 @@ describe("registry parsing of the new adjustments", () => {
 describe("Gate 9h effects", () => {
   it("validates and normalises the new effects", () => {
     for (const kind of ["innerShadow", "bevel", "gradientOverlay"] as const) {
-      expect(
-        checkEffect(kind, DEFAULT_EFFECTS[kind] as unknown as Record<string, unknown>),
-      ).toBeNull();
+      expect(parseEffect(kind, DEFAULT_EFFECTS[kind])).toEqual(DEFAULT_EFFECTS[kind]);
     }
-    expect(checkEffect("bevel", { ...DEFAULT_EFFECTS.bevel, direction: "sideways" })).toMatch(
-      /Direction/,
+    expect(() => parseEffect("bevel", { ...DEFAULT_EFFECTS.bevel, direction: "sideways" })).toThrow(
+      /one of up, down/,
     );
-    expect(
-      checkEffect("gradientOverlay", { ...DEFAULT_EFFECTS.gradientOverlay, stops: [] }),
-    ).toMatch(/2–16/);
-    expect(checkEffect("innerShadow", { ...DEFAULT_EFFECTS.innerShadow, blur: 999 })).toMatch(
-      /Blur/,
+    expect(() =>
+      parseEffect("gradientOverlay", { ...DEFAULT_EFFECTS.gradientOverlay, stops: [] }),
+    ).toThrow(EffectError);
+    expect(() => parseEffect("innerShadow", { ...DEFAULT_EFFECTS.innerShadow, size: 999 })).toThrow(
+      EffectError,
     );
   });
 
-  it("survive a save and load, with the new adjustments (schema v6)", () => {
+  it("survive a save and load, with the new adjustments (schema v7)", () => {
     const store = new EditorStore(() => 0);
     const doc = createDocument({ name: "Doc", width: 50, height: 50 });
     store.openDocument(doc);
@@ -242,14 +241,14 @@ describe("Gate 9h effects", () => {
     }
     const saved = store.getSession()!.document;
     const project = serializeDocument(saved);
-    expect(project.schemaVersion).toBe(6);
+    expect(project.schemaVersion).toBe(7);
     const loaded = deserializeProject(JSON.parse(JSON.stringify(project)));
     expect(loaded.ok).toBe(true);
     const back = (loaded as { ok: true; document: EditorDocument }).document;
     expect(back.layers).toEqual(saved.layers);
     const box = back.layers.find((l) => l.id === raster.id)!;
     // Stored lower-cased, in the order given.
-    expect(box.effects?.gradientOverlay?.stops[0]).toEqual({ position: 1, color: "#ff0000" });
+    expect(box.effects?.gradientOverlay?.[0].stops[0]).toEqual({ position: 1, color: "#ff0000" });
   });
 
   it("opens v5 projects", () => {

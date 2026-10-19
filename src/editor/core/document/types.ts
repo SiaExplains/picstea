@@ -8,6 +8,7 @@
 
 import type { SelectionMask } from "../../selection/mask";
 import type { VectorPath } from "../path/path";
+import type { GlobalLight, LayerEffects } from "../effects/model";
 
 export const BLEND_MODES = [
   "normal",
@@ -59,38 +60,6 @@ export interface LayerMask {
   readonly linked: boolean;
 }
 
-export interface DropShadowEffect {
-  readonly enabled: boolean;
-  readonly color: string;
-  /** 0..1 */
-  readonly opacity: number;
-  /** Degrees; the light comes from this direction, the shadow falls opposite. */
-  readonly angle: number;
-  readonly distance: number;
-  readonly blur: number;
-}
-
-export interface OuterGlowEffect {
-  readonly enabled: boolean;
-  readonly color: string;
-  readonly opacity: number;
-  readonly size: number;
-}
-
-export interface StrokeEffect {
-  readonly enabled: boolean;
-  readonly color: string;
-  readonly opacity: number;
-  /** Outside stroke width in px. */
-  readonly size: number;
-}
-
-export interface ColorOverlayEffect {
-  readonly enabled: boolean;
-  readonly color: string;
-  readonly opacity: number;
-}
-
 /** A colour at a position (0…1) along a gradient (Gradient Map, gradient overlay). */
 export interface GradientStop {
   readonly position: number;
@@ -98,53 +67,25 @@ export interface GradientStop {
   readonly color: string;
 }
 
-/** Shadow cast inside the layer's edges (Gate 9h). */
-export interface InnerShadowEffect {
-  readonly enabled: boolean;
-  readonly color: string;
-  readonly opacity: number;
-  readonly angle: number;
-  readonly distance: number;
-  readonly blur: number;
-}
-
-/**
- * Inner bevel: a highlight on the edges facing the light and a shadow on the others. `color` and
- * `opacity` are the highlight's.
- */
-export interface BevelEffect {
-  readonly enabled: boolean;
-  readonly color: string;
-  readonly opacity: number;
-  readonly shadowColor: string;
-  readonly shadowOpacity: number;
-  /** Degrees, like the drop shadow's light angle. */
-  readonly angle: number;
-  /** Width of the bevel in px. */
-  readonly size: number;
-  /** "up" raises the shape; "down" presses it in. */
-  readonly direction: "up" | "down";
-}
-
-export interface GradientOverlayEffect {
-  readonly enabled: boolean;
-  readonly opacity: number;
-  readonly angle: number;
-  readonly stops: readonly GradientStop[];
-  readonly reverse: boolean;
-}
-
-export interface LayerEffects {
-  readonly dropShadow?: DropShadowEffect;
-  readonly outerGlow?: OuterGlowEffect;
-  readonly innerShadow?: InnerShadowEffect;
-  readonly bevel?: BevelEffect;
-  readonly gradientOverlay?: GradientOverlayEffect;
-  readonly stroke?: StrokeEffect;
-  readonly colorOverlay?: ColorOverlayEffect;
-}
-
-export type EffectKind = keyof LayerEffects;
+// Layer styles live in their own module (ADR-0030); re-exported here for existing imports.
+export type {
+  AnyEffect,
+  BevelEffect,
+  ColorOverlayEffect,
+  Contour,
+  DropShadowEffect,
+  EffectByKind,
+  EffectKind,
+  GlobalLight,
+  GradientOverlayEffect,
+  InnerGlowEffect,
+  InnerShadowEffect,
+  LayerEffects,
+  OuterGlowEffect,
+  PatternOverlayEffect,
+  SatinEffect,
+  StrokeEffect,
+} from "../effects/model";
 
 /**
  * Vector mask (ADR-0015): the layer shows only inside the filled path (even-odd). The path is in
@@ -180,6 +121,11 @@ export interface BaseLayer {
   readonly clipped?: boolean;
   /** Colour tag in the Layers panel; no effect on rendering. */
   readonly label?: LayerLabel;
+  /**
+   * Fill opacity (Layer Style → Blending Options), 0…1: fades the layer's own content but not
+   * its effects. Absent = 1.
+   */
+  readonly fillOpacity?: number;
 }
 
 /** Bitmap content stored as an immutable asset. */
@@ -425,4 +371,6 @@ export interface EditorDocument {
    * but never saved: `serializeDocument` drops it.
    */
   readonly selection?: SelectionMask;
+  /** Photoshop's global light for effects with "Use global angle" (ADR-0030). Absent = default. */
+  readonly globalLight?: GlobalLight;
 }

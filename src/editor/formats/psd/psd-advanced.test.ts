@@ -289,13 +289,13 @@ describe("layer extras", () => {
       ctx,
       warnings,
     );
-    expect(extras.effects?.dropShadow).toMatchObject({
+    expect(extras.effects?.dropShadow?.[0]).toMatchObject({
       enabled: true,
       color: "#336699",
       opacity: 0.75,
       angle: 120,
       distance: 8,
-      blur: 4,
+      size: 4,
     });
     expect(extras.fill).toBe("#ff8800");
     expect(extras.text).toMatchObject({

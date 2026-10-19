@@ -7,6 +7,7 @@ import {
   createRasterLayer,
   createTextLayer,
 } from "../../core/document/factory";
+import { effectReach as effectReachOf, hasActiveEffects } from "../../core/effects/model";
 import {
   LAYER_LABELS,
   type EditorDocument,
@@ -41,8 +42,7 @@ import {
  * pixel layers, groups and masks.
  */
 
-const hasEffects = (layer: Layer) =>
-  !!layer.effects && Object.values(layer.effects).some((e) => e?.enabled);
+const hasEffects = (layer: Layer) => hasActiveEffects(layer.effects);
 
 /** A layer mask as a document-sized bitmap whose alpha is the mask (drawn like the compositor). */
 async function maskDraft(env: PixelEnv, doc: EditorDocument, mask: LayerMask): Promise<DraftMask> {
@@ -66,15 +66,7 @@ async function maskDraft(env: PixelEnv, doc: EditorDocument, mask: LayerMask): P
 }
 
 /** How far a layer's effects reach beyond its content, in document pixels. */
-function effectReach(layer: Layer): number {
-  const e = layer.effects;
-  if (!e) return 0;
-  let reach = 0;
-  if (e.dropShadow?.enabled) reach = Math.max(reach, e.dropShadow.distance + e.dropShadow.blur * 2);
-  if (e.outerGlow?.enabled) reach = Math.max(reach, e.outerGlow.size * 2);
-  if (e.stroke?.enabled) reach = Math.max(reach, e.stroke.size);
-  return Math.ceil(reach) + 2;
-}
+const effectReach = (layer: Layer) => effectReachOf(layer.effects) || 2;
 
 /** The document region a leaf layer can draw into (its box, plus effects, within the canvas). */
 function leafRegion(env: PixelEnv, doc: EditorDocument, layer: Layer) {
@@ -435,6 +427,9 @@ function convertPsdFile(
         ...(mask ? { mask } : {}),
         ...(vectorMask ? { vectorMask } : {}),
         ...(x?.effects && layer.kind !== "adjustment" ? { effects: x.effects } : {}),
+        ...(x?.fillOpacity !== undefined && layer.kind !== "adjustment"
+          ? { fillOpacity: x.fillOpacity }
+          : {}),
       } as Layer;
     });
 
@@ -455,5 +450,10 @@ function convertPsdFile(
     ];
   }
   const active = layers.at(-1)?.id ?? null;
-  return { ...doc, layers, activeLayerId: active };
+  return {
+    ...doc,
+    layers,
+    activeLayerId: active,
+    ...(psd.globalLight ? { globalLight: psd.globalLight } : {}),
+  };
 }

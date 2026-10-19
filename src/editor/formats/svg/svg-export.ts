@@ -1,4 +1,5 @@
 import { EMPTY_PATH, pathToSvgD } from "../../core/path/path";
+import { hasActiveEffects } from "../../core/effects/model";
 import { allLayers } from "../../core/document/tree";
 import type {
   EditorDocument,
@@ -118,7 +119,7 @@ function textElement(layer: TextLayer, sizer: ContentSizer): string {
 function isVector(layer: Layer): boolean {
   if (layer.mask && layer.mask.enabled) return false;
   if (layer.vectorMask?.enabled) return false;
-  if (layer.effects && Object.values(layer.effects).some((e) => e?.enabled)) return false;
+  if (hasActiveEffects(layer.effects) || (layer.fillOpacity ?? 1) < 1) return false;
   return layer.kind === "shape" || layer.kind === "text" || layer.kind === "fill";
 }
 
@@ -182,5 +183,5 @@ export async function buildSvg(
 function isVectorGroup(group: GroupLayer): boolean {
   if (group.mask && group.mask.enabled) return false;
   if (group.vectorMask?.enabled) return false;
-  return !(group.effects && Object.values(group.effects).some((e) => e?.enabled));
+  return !hasActiveEffects(group.effects) && (group.fillOpacity ?? 1) === 1;
 }

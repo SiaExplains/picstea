@@ -418,7 +418,7 @@ export function useEditorActions(hosts: ActionHosts): Record<UiActionId, UiActio
       },
       "layer.style": {
         label: "Blending Options…",
-        enabled: !!layer && !layer.locked && layer.kind !== "adjustment" && layer.kind !== "group",
+        enabled: !!layer && !layer.locked && layer.kind !== "adjustment",
         run: () => hosts.openLayerStyle(),
       },
       "layer.clip": {

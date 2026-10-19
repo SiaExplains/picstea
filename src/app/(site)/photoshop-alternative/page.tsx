@@ -53,8 +53,8 @@ export default function PhotoshopAlternative() {
           vector masks and clipping masks.
         </li>
         <li>
-          Layer styles in a Layer Style dialog: drop shadow, glow, inner shadow, bevel, overlays and
-          stroke.
+          The full Layer Style dialog: all ten effects with contours, several copies of an effect
+          and saved styles.
         </li>
         <li>
           Selections with marquee, lasso, magic wand and Color Range; healing, clone stamp, dodge

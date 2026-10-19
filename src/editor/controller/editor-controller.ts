@@ -67,6 +67,7 @@ import { writeZip, type ZipInput } from "../formats/zip/zip";
 import { EXPORT_FORMATS } from "../formats/export/raster-export";
 import { DEFAULT_SWATCHES, type Swatch } from "../core/swatches";
 import type { RecentSize } from "../core/document/presets";
+import type { LayerStylePreset } from "../core/effects/presets";
 import { adjustmentDefinition } from "../adjustments/registry";
 import type {
   Adjustment,
@@ -295,6 +296,8 @@ export class EditorController {
   readonly actions = new Observable<readonly Action[]>([]);
   /** Sizes of recently created documents, most recent first (the UI persists them). */
   readonly recentSizes = new Observable<readonly RecentSize[]>([]);
+  /** Layer styles saved with New Style… (the UI persists them, ADR-0030). */
+  readonly layerStyles = new Observable<readonly LayerStylePreset[]>([]);
   /** The action being recorded into. */
   readonly recording = new Observable<string | null>(null);
   /** The action being played. */

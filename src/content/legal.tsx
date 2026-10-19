@@ -206,6 +206,16 @@ export const LEGAL: Record<"privacy" | "cookies" | "terms" | "imprint" | "sponso
               </tr>
               <tr>
                 <td>
+                  <code>picstea.layerStyles</code>
+                </td>
+                <td>Local storage</td>
+                <td>
+                  Remembers the layer styles you saved with New Style… (settings only, no images).
+                </td>
+                <td>Until cleared</td>
+              </tr>
+              <tr>
+                <td>
                   <code>picstea.panelSizes</code>
                 </td>
                 <td>Local storage</td>

@@ -201,14 +201,42 @@ export const DOCS: readonly DocPage[] = [
         </p>
         <h2>Effects</h2>
         <p>
-          Drop shadow, outer glow, inner shadow, bevel, gradient overlay, outer stroke and colour
-          overlay are in the Properties panel, and together in the <strong>Layer Style</strong>{" "}
-          dialog: double-click a layer row (not its name) or choose Layer → Blending Options…. The
-          dialog also sets the blend mode and opacity; OK keeps everything as one undo step, Cancel
-          puts the layer back. Layers with effects show an <em>fx</em> badge. The gradient overlay
-          spans the layer&apos;s box (a new pixel layer is as big as the canvas); the bevel is a
-          soft inner bevel made from a highlight and a shadow along the edges. Layer → Rasterize
-          Layer Style bakes the effects into the pixels.
+          Picstea has Photoshop&apos;s ten layer effects: Bevel and Emboss (with Contour and
+          Texture), Stroke, Inner Shadow, Inner Glow, Satin, Color Overlay, Gradient Overlay,
+          Pattern Overlay, Outer Glow and Drop Shadow. Switch them on in the Properties panel, or
+          set them up in the <strong>Layer Style</strong> dialog: double-click a layer row (not its
+          name) or choose Layer → Blending Options…. Layers with effects show an <em>fx</em> badge.
+        </p>
+        <ul>
+          <li>
+            Every effect has its own blend mode and opacity, and the options you know from
+            Photoshop: spread or choke, size, contour, noise, angle and distance, gradient styles
+            (linear, radial, angle, reflected, diamond) and stroke position (outside, inside,
+            center).
+          </li>
+          <li>
+            The <strong>+</strong> button next to Drop Shadow, Inner Shadow, Stroke, Color Overlay
+            and Gradient Overlay adds another copy (up to 10). Reorder or delete a copy with the
+            buttons under the list.
+          </li>
+          <li>
+            <strong>Use Global Light</strong> links the angle of shadows and bevels across the
+            document: change it in one effect, or under Blending Options, and they all follow.
+          </li>
+          <li>
+            <strong>Fill Opacity</strong> (Blending Options) fades the layer&apos;s own pixels but
+            not its effects, for a glass or outline look.
+          </li>
+          <li>
+            <strong>New Style…</strong> saves the current style in this browser; the Styles page
+            lists your styles and a few built-in ones. Click one to apply it, or Clear Layer Style
+            to remove every effect.
+          </li>
+        </ul>
+        <p>
+          OK keeps everything as one undo step, Cancel puts the layer back. Layer → Rasterize Layer
+          Style bakes the effects into the pixels. Patterns are a built-in set; Photoshop patterns
+          in a PSD are replaced by the closest one.
         </p>
         <h2>Right-click a layer</h2>
         <p>

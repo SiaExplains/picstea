@@ -91,7 +91,7 @@ export function EditorShell() {
       openLayerStyle: () => {
         const doc = controller.store.getSession()?.document;
         const active = doc ? activeLayer(doc) : undefined;
-        if (active && active.kind !== "group" && active.kind !== "adjustment") {
+        if (active && active.kind !== "adjustment") {
           setStyleLayerId(active.id);
         }
       },
@@ -229,7 +229,10 @@ export function EditorShell() {
           {...PANEL_LIMITS.width}
           onResize={(width) => resizePanels({ width })}
         />
-        <PropertiesPanel onEditSmartFilter={hosts.openSmartFilterDialog} />
+        <PropertiesPanel
+          onEditSmartFilter={hosts.openSmartFilterDialog}
+          onEditLayerStyle={hosts.openLayerStyle}
+        />
         <PanelSplitter
           label="Resize Properties"
           orientation="horizontal"

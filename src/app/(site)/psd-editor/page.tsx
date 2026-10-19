@@ -30,7 +30,7 @@ const FAQS: Faq[] = [
   },
   {
     q: "What doesn't come across?",
-    a: "Some Photoshop features have no Picstea equivalent yet: adjustments such as Selective Color or Color Lookup, satin and pattern styles, warped text and smart filters keep their look as pixels or are left out. Text may need a font check. Picstea lists what changed when the file opens.",
+    a: "Some Photoshop features have no Picstea equivalent yet: adjustments such as Selective Color or Color Lookup, warped text and smart filters keep their look as pixels or are left out, and Photoshop pattern images are replaced by built-in patterns. Text may need a font check. Picstea lists what changed when the file opens.",
   },
 ];
 
@@ -62,16 +62,16 @@ export default function PsdEditor() {
         </li>
         <li>Shape and solid colour fill layers, embedded smart objects.</li>
         <li>
-          Layer styles: drop shadow, outer glow, inner shadow, bevel, gradient overlay, stroke and
-          colour overlay.
+          Layer styles: all ten Photoshop effects with their settings, several copies of shadows,
+          strokes and overlays, Fill opacity and the global light.
         </li>
       </ul>
       <h2>Not supported yet</h2>
       <ul>
         <li>PSB (large document) files, 16/32-bit colour and CMYK.</li>
         <li>
-          Selective Color and Color Lookup adjustments; satin, inner glow and pattern styles; warped
-          text; Photoshop smart filters and linked smart objects.
+          Selective Color and Color Lookup adjustments; custom pattern images (the closest built-in
+          pattern is used); warped text; Photoshop smart filters and linked smart objects.
         </li>
         <li>
           Saving text, shapes, smart objects and styles back to PSD keeps their look as pixels.
