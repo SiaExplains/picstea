@@ -24,3 +24,5 @@ Read in this order:
 20. `20_BACKLOG.md`
 
 For Claude Code, start with `17_INITIAL_CLAUDE_PROMPT.md`.
+
+Operations outside the code (domains, Search Console, AdSense, legal): `LAUNCH_CHECKLIST.md`.

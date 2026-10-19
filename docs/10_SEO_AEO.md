@@ -57,6 +57,15 @@ Pages should contain:
 - examples
 - limitations
 
+Machine-readable entry points for AI assistants (ADR-0028):
+
+- `/llms.txt` — what Picstea is, verified facts, current limits, every page, doc and guide.
+- `/llms-full.txt` — every docs page as Markdown.
+- Both are generated from the site content (`src/lib/seo/llms.ts`); update the facts and limits
+  there when features change, and never list something the editor can't do.
+- Comparison pages (`/photoshop-alternative`, `/photopea-alternative`) and `/faq` state only
+  general, verifiable facts about other products and say where they are the better choice.
+
 ## Structured data
 
 Where applicable implement:
@@ -80,6 +89,10 @@ Every important page needs:
 - Open Graph
 - Twitter/X metadata where useful
 - robots directives
+- one social preview image (`public/og-image.png`), set through `pageOpenGraph()` on every page
+  that defines its own Open Graph data (Next replaces the parent's `openGraph` entirely)
+
+All absolute URLs come from the canonical origin (`NEXT_PUBLIC_SITE_URL`, docs/11).
 
 ## Sitemap
 
@@ -95,6 +108,9 @@ Prevent indexing of:
 - local project identifiers
 - internal/debug pages
 - private user content
+
+Everything public is allowed, and the documented AI search and training crawlers are named
+explicitly (`src/app/robots.ts`).
 
 ## Performance
 

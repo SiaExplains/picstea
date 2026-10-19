@@ -60,5 +60,7 @@ See [`.env.example`](.env.example). Only public values belong in `NEXT_PUBLIC_*`
 
 ## Deployment
 
-Vercel (Next.js preset, pnpm). Set `NEXT_PUBLIC_SITE_URL` to the canonical origin
-(`https://picstea.com` in production). The deployment does not depend on the DNS provider.
+Vercel (Next.js preset, pnpm). Set `NEXT_PUBLIC_SITE_URL` to the canonical origin —
+`https://www.picstea.com` in production, the host Vercel serves (`picstea.com` redirects to it) —
+and redeploy after changing it: it is read at build time. The deployment does not depend on the
+DNS provider. Everything to do outside the code is in [docs/LAUNCH_CHECKLIST.md](docs/LAUNCH_CHECKLIST.md).
