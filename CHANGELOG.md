@@ -3,6 +3,13 @@
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.32.0] — 2026-10-19
+
+### Added
+
+- **WikiDigit is Picstea's second sponsor.** Its short silent video appears beside the canvas
+  and on the start screen. FocusCrew and WikiDigit take turns in the top slot each day.
+
 ## [0.31.3] — 2026-10-19
 
 ### Fixed

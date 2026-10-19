@@ -11,28 +11,28 @@ test("wide screens get the sponsorship column, privacy settings and website link
 
   const side = page.getByTestId("editor-side");
   await expect(side).toBeVisible();
-  // Three slots: the first is FocusCrew's video, then two house ads until they are booked.
-  await expect(side.getByTestId("side-slot")).toHaveCount(3);
-  const first = side.getByTestId("side-slot").first();
-  await expect(first.getByRole("link", { name: /FocusCrew/ })).toHaveAttribute(
-    "href",
-    "https://focus-crew.com",
-  );
-  await expect(first.getByRole("link", { name: /FocusCrew/ })).toHaveAttribute(
-    "rel",
-    "sponsored noopener noreferrer",
-  );
-  const video = first.locator("video");
-  await expect(video).toHaveAttribute("src", "/sponsors/focuscrew.mp4");
-  await expect.poll(() => video.evaluate((v: HTMLVideoElement) => v.muted && !v.paused)).toBe(true);
+  // Three slots: FocusCrew's and WikiDigit's videos (taking turns at the top each day), then a
+  // house ad until the last one is booked.
+  const slots = side.getByTestId("side-slot");
+  await expect(slots).toHaveCount(3);
+  for (const [name, href, src] of [
+    [/FocusCrew/, "https://focus-crew.com", "/sponsors/focuscrew.mp4"],
+    [/WikiDigit/, "https://wikidigit.com", "/sponsors/wikidigit.mp4"],
+  ] as const) {
+    const link = side.getByRole("link", { name });
+    await expect(link).toHaveAttribute("href", href);
+    await expect(link).toHaveAttribute("rel", "sponsored noopener noreferrer");
+    const video = side.locator(`video[src="${src}"]`);
+    await expect
+      .poll(() => video.evaluate((v: HTMLVideoElement) => v.muted && !v.paused))
+      .toBe(true);
+  }
+  const first = slots.first();
   // Media only, with the label over it; empty slots invite sponsors.
   await expect(first.getByText("Sponsored")).toBeVisible();
-  await expect(first.getByText(/your productivity/i)).toHaveCount(0);
-  await expect(side.getByTestId("side-slot").nth(1)).toContainText("Your ad here");
-  await expect(side.getByTestId("side-slot").nth(1).getByRole("link")).toHaveAttribute(
-    "href",
-    "/sponsorship",
-  );
+  await expect(first.getByText(/your productivity|tech news/i)).toHaveCount(0);
+  await expect(slots.nth(2)).toContainText("Your ad here");
+  await expect(slots.nth(2).getByRole("link")).toHaveAttribute("href", "/sponsorship");
   // The start screen doesn't repeat the sponsorship while the column shows it.
   await expect(page.getByTestId("sponsor-card")).toHaveCount(4);
   await expect(page.getByTestId("sponsor-card").first()).toBeHidden();
@@ -62,14 +62,19 @@ test("narrower screens keep the sponsorship on the start screen instead", async 
   await openEditor(page);
   await expect(page.getByTestId("editor-side")).toBeHidden();
   await expect(page.getByTestId("sponsor-card").first()).toBeVisible();
-  await expect(page.getByTestId("sponsor-card").first()).toHaveAccessibleName(/FocusCrew/);
+  await expect(page.getByTestId("sponsor-card").first()).toHaveAccessibleName(
+    /FocusCrew|WikiDigit/,
+  );
 });
 
-test("with reduced motion the sponsor video stays on its still frame", async ({ page }) => {
+test("with reduced motion the sponsor videos stay on their still frames", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.setViewportSize({ width: 1440, height: 860 });
   await openEditor(page);
-  const video = page.getByTestId("editor-side").locator("video");
-  await expect(video).toHaveAttribute("poster", "/sponsors/focuscrew-poster.png");
-  await expect.poll(() => video.evaluate((v: HTMLVideoElement) => v.paused)).toBe(true);
+  const side = page.getByTestId("editor-side");
+  for (const sponsor of ["focuscrew", "wikidigit"]) {
+    const video = side.locator(`video[src="/sponsors/${sponsor}.mp4"]`);
+    await expect(video).toHaveAttribute("poster", `/sponsors/${sponsor}-poster.png`);
+    await expect.poll(() => video.evaluate((v: HTMLVideoElement) => v.paused)).toBe(true);
+  }
 });
