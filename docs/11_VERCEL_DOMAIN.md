@@ -9,18 +9,25 @@ Primary platform:
 
 ## Domain
 
-Primary domain:
+Primary domain and canonical origin:
 
 ```text
-picstea.com
+https://www.picstea.com      ← served by Vercel (production)
+https://picstea.com          → 308 to www
+https://mylper.com           → should 308 to www (former domain, see the launch checklist)
 ```
 
-The canonical origin is `https://picstea.com` (`src/lib/seo/site.ts`, overridable with
-`NEXT_PUBLIC_SITE_URL`). Whichever of `picstea.com` / `www.picstea.com` Vercel serves as the
-primary domain must match that origin, otherwise every canonical URL points at a redirect.
+The canonical origin comes from `NEXT_PUBLIC_SITE_URL` (fallback in `src/lib/seo/site.ts`:
+`https://www.picstea.com`). It must be **exactly the host Vercel serves**; otherwise every
+canonical URL, the sitemap, robots.txt and llms.txt point at a redirect (or at another domain),
+and Search Console rejects the sitemap. `NEXT_PUBLIC_*` values are baked in at build time:
+redeploy after changing them.
+
+Lesson from the rebrand (2026-10-19): Vercel still had `NEXT_PUBLIC_SITE_URL=https://mylper.com`,
+so the live site declared mylper.com canonical. Check this variable whenever domains change.
 
 The former domain `mylper.com` (registered outside Route 53, registration running until
-February 2027) should permanently redirect (301/308) to the same path on `picstea.com`. That
+February 2027) should permanently redirect (301/308) to the same path on `www.picstea.com`. That
 redirect lives in the hosting configuration, not in the app (ADR-0023).
 
 Do not make Route 53 an architectural dependency.
@@ -48,18 +55,12 @@ Production
 Suggested domains:
 
 ```text
-localhost
-<vercel-preview-url>
-picstea.com
+localhost                 (NEXT_PUBLIC_SITE_URL=http://localhost:3000)
+<vercel-preview-url>      (leave unset: canonicals point at production; Vercel marks previews noindex)
+www.picstea.com           (production)
 ```
 
-Potential later:
-
-```text
-www.picstea.com
-```
-
-Redirect one canonical hostname to the other.
+`picstea.com` redirects to `www.picstea.com` (Vercel → Domains); keep one canonical host.
 
 ## Vercel responsibilities
 

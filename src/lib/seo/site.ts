@@ -1,6 +1,7 @@
 /** Canonical site settings shared by metadata, sitemap, robots and structured data. */
 
-const FALLBACK_SITE_URL = "https://picstea.com";
+/** The production host (Vercel serves www; picstea.com redirects there). */
+const FALLBACK_SITE_URL = "https://www.picstea.com";
 
 function resolveSiteUrl(): string {
   const raw = process.env.NEXT_PUBLIC_SITE_URL?.trim();

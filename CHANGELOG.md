@@ -3,6 +3,13 @@
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.24.1] — 2026-10-19
+
+### Changed
+
+- The website's canonical address is now `https://www.picstea.com` everywhere, matching where the
+  site is served. A launch checklist lists the remaining dashboard steps.
+
 ## [0.24.0] — 2026-10-19
 
 ### Added

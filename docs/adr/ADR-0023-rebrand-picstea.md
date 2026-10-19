@@ -40,3 +40,9 @@ The approved artwork changed from blue to teal (icon background `#4da297`, wordm
 `#008080`). Icons, wordmark and the menu-bar icon were replaced with the new supplied files, and
 the accent followed: `#4da297` for lines and highlights, `#007a7a` for fills and text that need
 WCAG 1.4.3 contrast on white, `#5cc0b2` for links on dark pages.
+
+## Update — canonical host (v0.24.1)
+
+Vercel serves `www.picstea.com` and redirects `picstea.com` to it, so the canonical origin (and the
+code's fallback) is `https://www.picstea.com`. The production `NEXT_PUBLIC_SITE_URL` was still
+`https://mylper.com` after the rebrand; it is now `https://www.picstea.com` (docs/11).
