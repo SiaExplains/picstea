@@ -847,7 +847,7 @@ export const DOCS: readonly DocPage[] = [
     title: "Privacy and where your files are stored",
     description:
       "Picstea edits images on your device and never uploads them. Where projects are kept, how to back them up and what the website stores.",
-    updated: "2026-10-09",
+    updated: "2026-10-19",
     body: () => (
       <>
         <h2>Your images never leave your device</h2>
@@ -862,6 +862,14 @@ export const DOCS: readonly DocPage[] = [
           synced to other devices or browsers. Browsers can clear this storage — for example in
           private windows or when space runs low — so for anything important use File → Save Project
           As… to keep a <code>.picstea</code> file, or export the image.
+        </p>
+        <h2>Offline and installing</h2>
+        <p>
+          After you have opened Picstea once, it also opens without an internet connection: a
+          service worker keeps a copy of the app&apos;s own files (code, styles, icons) in the
+          browser. It never stores or sees your images — those stay in your projects. In Chrome and
+          Edge you can install Picstea (Help → Install Picstea…) to open it in its own window like a
+          desktop app; on a Mac with Safari use File → Add to Dock.
         </p>
         <h2>What the website stores</h2>
         <p>

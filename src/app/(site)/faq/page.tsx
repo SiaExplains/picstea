@@ -46,6 +46,10 @@ const FAQS: Faq[] = [
     a: "No. Picstea runs in current versions of Chrome, Edge, Firefox and Safari.",
   },
   {
+    q: "Does Picstea work offline? Can I install it?",
+    a: "Yes. After you have opened it once, the editor also opens without an internet connection. In Chrome and Edge you can install it (Help → Install Picstea…) so it opens in its own window like a desktop app; in Safari on a Mac use File → Add to Dock.",
+  },
+  {
     q: "Does it work on a phone or tablet?",
     a: "The layout adapts to small screens, but Picstea is designed for a mouse or trackpad and a keyboard, so a computer gives the best experience.",
   },

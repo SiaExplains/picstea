@@ -212,6 +212,17 @@ export const LEGAL: Record<"privacy" | "cookies" | "terms" | "imprint" | "sponso
                 <td>Remembers how wide and tall you made the editor&apos;s panels.</td>
                 <td>Until cleared</td>
               </tr>
+              <tr>
+                <td>
+                  <code>picstea-static-v1</code>, <code>picstea-pages-v1</code>
+                </td>
+                <td>Cache storage (service worker)</td>
+                <td>
+                  Copies of Picstea&apos;s own code, styles, icons and pages, so the editor opens
+                  offline and loads faster. Never your images.
+                </td>
+                <td>Until cleared or replaced by a newer version</td>
+              </tr>
             </tbody>
           </table>
           <p>This data stays on your device and is never sent to us.</p>

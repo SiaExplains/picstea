@@ -38,6 +38,7 @@ const FACTS = [
   "Free to use, in the browser, with no account and no watermark.",
   "Local-first: images are opened, edited, saved and exported on the user's device. Picstea has no server that receives images; the editor page runs no third-party code and its Content-Security-Policy blocks sending document data anywhere.",
   "Projects are saved automatically in the browser (IndexedDB) and can be downloaded as .picstea project files.",
+  "Installable as an app (PWA) and works offline after the first visit; the service worker caches only the app's own files, never images.",
   "Layers: pixel, shape, text, fill and adjustment layers, groups, 16 blend modes, opacity, layer masks, vector masks, clipping masks, colour labels, merge down and flatten.",
   "Adjustment layers include Levels, Curves, Brightness/Contrast, Hue/Saturation, Exposure, Vibrance, Color Balance, Photo Filter, Channel Mixer, Gradient Map, Black & White, Invert, Posterize and Threshold.",
   "Layer styles: drop shadow, outer glow, inner shadow, bevel, gradient overlay, stroke and colour overlay, in a Layer Style dialog.",

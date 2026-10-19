@@ -18,6 +18,8 @@ import { DEFAULT_COLORS } from "@/editor/core/tool-settings";
 import { activateMember, nextMember, rememberedTool, TOOL_GROUPS } from "@/editor/core/tool-groups";
 import { openWelcome } from "@/components/welcome/welcome";
 import { PRIVACY_SETTINGS_URL } from "@/lib/consent/consent";
+import { promptInstall } from "@/lib/pwa/pwa";
+import { useInstallState } from "@/components/pwa/PwaStart";
 import type { EditorController } from "@/editor/controller/editor-controller";
 import { PROJECT_MIME } from "@/editor/formats/project/project-file";
 import { useActiveSession, useController, useEditorState } from "./editor-context";
@@ -72,7 +74,8 @@ export type UiActionId =
   | "help.docs"
   | "help.blog"
   | "help.shortcuts"
-  | "help.privacy";
+  | "help.privacy"
+  | "help.install";
 
 export interface UiAction {
   readonly label: string;
@@ -96,6 +99,8 @@ export interface ActionHosts {
   openSmartFilterDialog: (layerId: string, filter: SmartFilter) => void;
   /** Layer → Blending Options… / double-click a layer: the Layer Style dialog. */
   openLayerStyle: () => void;
+  /** Help → Install Picstea… when the browser has no install prompt to show. */
+  openInstallDialog: () => void;
 }
 
 /** Download the active document as a portable `.picstea` file (File → Save Project As…). */
@@ -110,6 +115,7 @@ async function saveProjectFile(controller: EditorController): Promise<void> {
 /** Every user-invokable editor action, shared by menus, toolbar buttons and shortcuts. */
 export function useEditorActions(hosts: ActionHosts): Record<UiActionId, UiAction> {
   const controller = useController();
+  const { installed } = useInstallState();
   const session = useActiveSession();
   const activeTool = useEditorState((s) => s.activeTool);
   const colors = useEditorState((s) => s.colors);
@@ -605,6 +611,15 @@ export function useEditorActions(hosts: ActionHosts): Record<UiActionId, UiActio
         run: () => window.open("/docs/keyboard-shortcuts", "_blank", "noopener"),
       },
       // The editor loads no consent vendors; the choices apply to the website, managed there.
+      "help.install": {
+        label: installed ? "Installed as an App" : "Install Picstea…",
+        enabled: !installed,
+        run: () => {
+          void promptInstall().then((shown) => {
+            if (!shown) hosts.openInstallDialog();
+          });
+        },
+      },
       "help.privacy": {
         label: "Privacy Settings…",
         enabled: true,
@@ -659,5 +674,5 @@ export function useEditorActions(hosts: ActionHosts): Record<UiActionId, UiActio
         run: () => controller.store.setColors(DEFAULT_COLORS),
       },
     };
-  }, [controller, session, hosts, activeTool, colors, view, lastFilter]);
+  }, [controller, session, hosts, activeTool, colors, view, lastFilter, installed]);
 }

@@ -11,6 +11,9 @@ export default defineConfig({
   use: {
     baseURL: `http://localhost:${PORT}`,
     trace: "retain-on-failure",
+    // The service worker (ADR-0029) is tested on its own in e2e/pwa.spec.ts; elsewhere it would
+    // cache across tests and hide requests from network assertions.
+    serviceWorkers: "block",
   },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   // E2E runs against the production build: run `pnpm build:e2e` first (fake AdSense ID).
