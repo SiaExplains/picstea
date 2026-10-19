@@ -85,6 +85,15 @@ const nextConfig: NextConfig = {
           },
         ],
       },
+      // The service worker (ADR-0029): always revalidated so updates reach users, strict policy.
+      {
+        source: "/sw.js",
+        headers: [
+          { key: "Content-Type", value: "application/javascript; charset=utf-8" },
+          { key: "Cache-Control", value: "no-cache, no-store, must-revalidate" },
+          { key: "Content-Security-Policy", value: "default-src 'self'; script-src 'self'" },
+        ],
+      },
       // Later rules override the same header: website pages get the site policy.
       ...SITE_ROUTES.flatMap((route) => [route, `${route}/:path*`]).map((source) => ({
         source,

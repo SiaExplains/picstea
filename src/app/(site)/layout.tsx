@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { EditorLink } from "@/components/site/EditorLink";
 import { ConsentManager } from "@/components/site/ConsentManager";
+import { PwaStart } from "@/components/pwa/PwaStart";
 import { PrivacySettingsButton } from "@/components/site/PrivacySettingsButton";
 import styles from "@/components/site/site.module.css";
 import { rootMetadata, rootViewport } from "@/lib/seo/root-metadata";
@@ -64,6 +65,7 @@ export default function SiteLayout({ children }: LayoutProps<"/">) {
             </p>
           </footer>
           <ConsentManager />
+          <PwaStart />
         </div>
       </body>
     </html>

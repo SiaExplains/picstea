@@ -27,6 +27,7 @@ import { BatchDialog } from "./BatchDialog";
 import { PanelTabs } from "./PanelTabs";
 import { SideColumn } from "./SideColumn";
 import { LayerStyleDialog } from "./LayerStyleDialog";
+import { InstallDialog } from "@/components/pwa/InstallDialog";
 import { PANEL_LIMITS, PanelSplitter, usePanelSizes } from "./PanelSplitter";
 import { useEditorActions, type ActionHosts } from "./use-editor-actions";
 
@@ -54,6 +55,7 @@ export function EditorShell() {
   const [colorTarget, setColorTarget] = useState<ColorTarget | null>(null);
   const [batchOpen, setBatchOpen] = useState(false);
   const [styleLayerId, setStyleLayerId] = useState<string | null>(null);
+  const [installOpen, setInstallOpen] = useState(false);
   const [dragging, setDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const pickModeRef = useRef<PickMode>("open");
@@ -85,6 +87,7 @@ export function EditorShell() {
       openGridDialog: () => setGridDialogOpen(true),
       openWorkPathDialog: () => setWorkPathDialogOpen(true),
       openBatchDialog: () => setBatchOpen(true),
+      openInstallDialog: () => setInstallOpen(true),
       openLayerStyle: () => {
         const doc = controller.store.getSession()?.document;
         const active = doc ? activeLayer(doc) : undefined;
@@ -265,6 +268,7 @@ export function EditorShell() {
         <ColorPickerDialog target={colorTarget} onClose={() => setColorTarget(null)} />
       )}
       {batchOpen && <BatchDialog onClose={() => setBatchOpen(false)} />}
+      {installOpen && <InstallDialog onClose={() => setInstallOpen(false)} />}
       {styleLayerId && (
         <LayerStyleDialog key={styleLayerId} layerId={styleLayerId} onClose={closeLayerStyle} />
       )}

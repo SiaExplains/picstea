@@ -3,6 +3,16 @@
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.25.0] — 2026-10-19
+
+### Added
+
+- **Picstea works offline.** After you have opened it once, the editor also opens without an
+  internet connection, with your saved projects.
+- **Install Picstea as an app.** In Chrome and Edge an Install button appears on the start
+  screen, and Help → Install Picstea… explains how to install in other browsers. Installed, it
+  opens in its own window like a desktop app.
+
 ## [0.24.1] — 2026-10-19
 
 ### Changed

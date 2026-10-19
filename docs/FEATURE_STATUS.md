@@ -145,6 +145,7 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 | AI crawlers named in robots.txt; /llms.txt and /llms-full.txt | ✅ | ADR-0028 |
 | Social preview image on every page; consistent Open Graph (site name, type, locale) | ✅ | `public/og-image.png`, `pageOpenGraph()` |
 | Photoshop / Photopea alternative pages, FAQ page; related guides, docs prev/next | ✅ | ADR-0028 |
+| Installable app (PWA) and offline editor after the first visit | ✅ | ADR-0029; Install button in Chromium, instructions elsewhere |
 | ads.txt + AdSense verification meta tag | ✅ | Generated from `NEXT_PUBLIC_ADSENSE_CLIENT`; off without it |
 | Analytics | ⏸ | None by decision; category ready |
 

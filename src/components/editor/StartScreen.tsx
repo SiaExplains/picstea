@@ -7,6 +7,8 @@ import { dayNumber, pickSponsorship } from "@/lib/sponsorship/sponsorship";
 import { useAppStatus, useController } from "./editor-context";
 import styles from "./editor.module.css";
 import { TrashIcon } from "./icons";
+import { useInstallState } from "@/components/pwa/PwaStart";
+import { promptInstall } from "@/lib/pwa/pwa";
 import type { UiAction, UiActionId } from "./use-editor-actions";
 
 const dateFormat = new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" });
@@ -15,6 +17,7 @@ export function StartScreen({ actions }: { actions: Record<UiActionId, UiAction>
   const controller = useController();
   const recent = useAppStatus((s) => s.recentProjects);
   const persistent = useAppStatus((s) => s.storagePersistent);
+  const install = useInstallState();
 
   return (
     <div className={styles.start}>
@@ -40,6 +43,16 @@ export function StartScreen({ actions }: { actions: Record<UiActionId, UiAction>
         <button type="button" className={styles.button} onClick={actions["file.open"].run}>
           Open image
         </button>
+        {install.canPrompt && !install.installed && (
+          <button
+            type="button"
+            className={styles.button}
+            title="Opens in its own window and works offline"
+            onClick={() => void promptInstall()}
+          >
+            Install Picstea
+          </button>
+        )}
       </div>
 
       <h2 className={styles.sectionTitle}>Recent in this browser</h2>

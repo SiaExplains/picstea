@@ -1,3 +1,4 @@
+import { PwaStart } from "@/components/pwa/PwaStart";
 import { rootMetadata, rootViewport } from "@/lib/seo/root-metadata";
 import "../globals.css";
 
@@ -12,7 +13,10 @@ export const viewport = rootViewport;
 export default function EditorLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        {children}
+        <PwaStart />
+      </body>
     </html>
   );
 }
