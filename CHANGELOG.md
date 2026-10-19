@@ -3,6 +3,21 @@
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.29.0] — 2026-10-19
+
+### Added
+
+- **Image → Image Size…** scales the whole image. Layers keep their original pixels, so
+  shrinking and enlarging again loses nothing.
+- **Image → Canvas Size…** adds or removes canvas around the image. Pick one of nine anchors, or
+  add a relative amount.
+- **Image → Image Rotation** turns or flips the whole canvas, with every layer, mask, path and
+  guide.
+- **Image → Trim… and Reveal All.**
+- **Image → Auto Tone, Auto Contrast and Auto Color** add a Levels adjustment layer set from the
+  image, so the result stays editable. Shortcuts: Cmd/Ctrl+Shift+L and Cmd/Ctrl+Alt+Shift+L.
+- **Image → Duplicate** opens a copy of the document in a new tab.
+
 ## [0.28.0] — 2026-10-19
 
 ### Added

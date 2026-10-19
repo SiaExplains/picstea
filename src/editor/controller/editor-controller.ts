@@ -1,4 +1,16 @@
 import { describeError, silentLogger, type Logger } from "@/lib/logging/logger";
+import type { LayerMask } from "../core/document/types";
+import { walkLayers } from "../core/document/tree";
+import { MAX_DOCUMENT_NAME_LENGTH, transformCanvas } from "../core/commands/document-commands";
+import type { Matrix } from "../core/geometry/matrix";
+import { AUTO_NAMES, autoLevels, type AutoKind } from "../adjustments/auto";
+import {
+  canvasOpLabel,
+  canvasTransform,
+  transformRect,
+  type CanvasOp,
+} from "../core/geometry/canvas-transform";
+import { trimBounds } from "../selection/derive";
 import {
   maskedPixels,
   similarSelection,
@@ -1557,6 +1569,179 @@ export class EditorController {
     });
     this.execute(addLayer(layer, "Layer via Copy"));
     this.enforcePixelBudget();
+  }
+
+  // ---------------------------------------------------------------- image commands (ADR-0033)
+
+  /**
+   * Image Size, Image Rotation and Flip Canvas: every layer moves through one matrix. Pixel
+   * layers keep their pixels and are drawn transformed, so nothing is lost; raster masks are
+   * re-rendered.
+   */
+  transformImage(op: CanvasOp, resolution?: number): boolean {
+    const doc = this.store.getSession()?.document;
+    if (!doc) return false;
+    const { matrix, width, height } = canvasTransform(op, doc.width, doc.height);
+    const check = checkDimensions(width, height);
+    if (!check.ok) {
+      this.notify("error", check.reason);
+      return false;
+    }
+    const targets = transformTargets(
+      doc,
+      doc.layers.map((l) => l.id),
+      this.sizer,
+    );
+    const transforms: Record<string, Transform> = {};
+    for (const { layerId, transform } of applyFrameChange(targets, matrix)) {
+      transforms[layerId] = transform;
+    }
+    const masks: Record<string, LayerMask> = {};
+    let pending = false;
+    walkLayers(doc.layers, (layer) => {
+      if (!layer.mask) return;
+      const mask = this.transformMask(layer.mask, matrix);
+      if (mask) masks[layer.id] = mask;
+      else pending = true;
+    });
+    if (pending) {
+      this.notify("info", "A layer mask is still loading. Try again in a moment.");
+      return false;
+    }
+    const changed = this.execute(
+      transformCanvas({
+        label: canvasOpLabel(op),
+        width,
+        height,
+        matrix,
+        transforms,
+        masks,
+        resolution,
+      }),
+    );
+    this.enforcePixelBudget();
+    return changed;
+  }
+
+  /** A raster mask through a matrix: its box moves, and its pixels are redrawn into the new box. */
+  private transformMask(mask: LayerMask, m: Matrix): LayerMask | null {
+    const box = transformRect(mask, m);
+    const x = Math.floor(box.x);
+    const y = Math.floor(box.y);
+    const width = Math.max(1, Math.ceil(box.x + box.width) - x);
+    const height = Math.max(1, Math.ceil(box.y + box.height) - y);
+    if (!mask.assetId) return { ...mask, x, y, width, height };
+    const bitmap = this.assets.getBitmap(mask.assetId);
+    if (!bitmap) return null;
+    const surface = this.createSurface(width, height);
+    const ctx = context2d(surface);
+    // Mask pixels → document (old) → document (new) → this surface.
+    ctx.setTransform(
+      m[0],
+      m[1],
+      m[2],
+      m[3],
+      m[0] * mask.x + m[2] * mask.y + m[4] - x,
+      m[1] * mask.x + m[3] * mask.y + m[5] - y,
+    );
+    ctx.drawImage(bitmap, 0, 0, mask.width, mask.height);
+    const asset = this.assets.addBitmap(surface, width, height);
+    return { ...mask, assetId: asset.id, x, y, width, height };
+  }
+
+  /**
+   * Image → Canvas Size: a new canvas size, anchored horizontally and vertically (0 = left/top,
+   * 0.5 = centre, 1 = right/bottom). Content is kept, not resampled.
+   */
+  canvasSize(width: number, height: number, anchorX: number, anchorY: number): boolean {
+    const doc = this.store.getSession()?.document;
+    if (!doc) return false;
+    const x = Math.round((doc.width - width) * anchorX);
+    const y = Math.round((doc.height - height) * anchorY);
+    return this.execute(cropDocument({ x, y, width, height }, "Canvas Size"));
+  }
+
+  /** Image → Trim: crop away transparent pixels, or pixels the colour of a corner. */
+  trim(basedOn: "transparent" | "top-left" | "bottom-right"): void {
+    const doc = this.store.getSession()?.document;
+    if (!doc) return;
+    const pixels = readPixels(this, doc);
+    if (!pixels) {
+      this.notify("info", "The image is still loading. Try again in a moment.");
+      return;
+    }
+    const box = trimBounds(pixels, basedOn);
+    if (!box) {
+      this.notify("info", "There is nothing to trim to.");
+      return;
+    }
+    this.execute(cropDocument(box, "Trim"));
+  }
+
+  /** Image → Reveal All: grow the canvas to show every layer's content. */
+  revealAll(): void {
+    const doc = this.store.getSession()?.document;
+    if (!doc) return;
+    let x0 = 0;
+    let y0 = 0;
+    let x1 = doc.width;
+    let y1 = doc.height;
+    const targets = transformTargets(
+      doc,
+      doc.layers.map((l) => l.id),
+      this.sizer,
+    );
+    const bounds = targetsBounds(targets);
+    if (bounds) {
+      x0 = Math.min(x0, Math.floor(bounds.x));
+      y0 = Math.min(y0, Math.floor(bounds.y));
+      x1 = Math.max(x1, Math.ceil(bounds.x + bounds.width));
+      y1 = Math.max(y1, Math.ceil(bounds.y + bounds.height));
+    }
+    const width = x1 - x0;
+    const height = y1 - y0;
+    if (width === doc.width && height === doc.height) {
+      this.notify("info", "Everything is already on the canvas.");
+      return;
+    }
+    const check = checkDimensions(width, height);
+    if (!check.ok) {
+      this.notify("error", check.reason);
+      return;
+    }
+    this.execute(cropDocument({ x: x0, y: y0, width, height }, "Reveal All"));
+  }
+
+  /** Image → Auto Tone / Contrast / Color: a Levels adjustment layer set from the histogram. */
+  autoAdjust(kind: AutoKind): void {
+    const session = this.store.getSession();
+    if (!session) return;
+    const pixels = readPixels(this, session.document);
+    if (!pixels) {
+      this.notify("info", "The image is still loading. Try again in a moment.");
+      return;
+    }
+    const adjustment = autoLevels(kind, pixels.data);
+    if (!adjustment) {
+      this.notify("info", `${AUTO_NAMES[kind]}: the image already uses the full range.`);
+      return;
+    }
+    const layer = createAdjustmentLayer(session.document, adjustment, AUTO_NAMES[kind]);
+    this.execute(addLayer(layer, AUTO_NAMES[kind]));
+  }
+
+  /** Image → Duplicate: the document as a new, separate document in a new tab. */
+  duplicateDocument(): void {
+    const doc = this.store.getSession()?.document;
+    if (!doc) return;
+    const now = new Date().toISOString();
+    const copy: EditorDocument = {
+      ...doc,
+      id: createId("doc"),
+      name: `${doc.name} copy`.slice(0, MAX_DOCUMENT_NAME_LENGTH),
+      metadata: { createdAt: now, modifiedAt: now },
+    };
+    this.openSession(copy);
   }
 
   /** Edit → Copy Merged: the selected pixels of everything visible, as one image. */

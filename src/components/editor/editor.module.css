@@ -1319,6 +1319,27 @@
   outline: 2px solid var(--ed-focus);
 }
 
+/* Canvas Size anchor: a 3 × 3 grid of positions. */
+.anchorGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 28px);
+  gap: 3px;
+}
+
+.anchorCell {
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--ed-border);
+  border-radius: 4px;
+  background: var(--ed-bg);
+  cursor: pointer;
+}
+
+.anchorCell[aria-checked="true"] {
+  background: var(--ed-accent-strong);
+  border-color: var(--ed-accent);
+}
+
 .effectToggles {
   display: grid;
   grid-template-columns: 1fr 1fr;
