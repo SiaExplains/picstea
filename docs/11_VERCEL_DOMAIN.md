@@ -83,9 +83,13 @@ Examples:
 
 ```text
 NEXT_PUBLIC_SITE_URL
-NEXT_PUBLIC_ADSENSE_CLIENT_ID
-NEXT_PUBLIC_ANALYTICS_ID
+NEXT_PUBLIC_ADSENSE_CLIENT
+NEXT_PUBLIC_ADSENSE_SLOT
+NEXT_PUBLIC_ADSENSE_CMP
 ```
+
+These are the variables the code reads today (ADR-0024). There is no analytics variable: Picstea
+uses no analytics.
 
 Only public values belong in NEXT_PUBLIC variables.
 

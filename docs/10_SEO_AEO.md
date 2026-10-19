@@ -65,6 +65,8 @@ Machine-readable entry points for AI assistants (ADR-0028):
   there when features change, and never list something the editor can't do.
 - Comparison pages (`/photoshop-alternative`, `/photopea-alternative`) and `/faq` state only
   general, verifiable facts about other products and say where they are the better choice.
+- `/about` (ADR-0032) describes the product, the privacy model, funding and the current version;
+  it is in the sitemap, the footer and `llms.txt`, and opened from Help → About Picstea.
 
 ## Structured data
 

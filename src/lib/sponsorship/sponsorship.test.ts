@@ -73,7 +73,7 @@ describe("several slots (ADR-0034)", () => {
   });
 
   it("accepts only self-hosted MP4 or WebM videos", () => {
-    expect(isSafeVideo("/sponsors/focuscrew.mp4")).toBe(true);
+    expect(isSafeVideo("/sponsors/focuscrew-tabs.mp4")).toBe(true);
     expect(isSafeVideo("https://cdn.example.com/a.mp4")).toBe(false);
     expect(isSafeVideo("/sponsors/../secret.mp4")).toBe(false);
     expect(isSafeVideo("/sponsors/a.mov")).toBe(false);

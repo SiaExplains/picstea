@@ -25,4 +25,7 @@ Read in this order:
 
 For Claude Code, start with `17_INITIAL_CLAUDE_PROMPT.md`.
 
+Decisions are recorded in `adr/` (ADR-0001 … ADR-0036); what is built is tracked in
+`FEATURE_STATUS.md`.
+
 Operations outside the code (domains, Search Console, AdSense, legal): `LAUNCH_CHECKLIST.md`.

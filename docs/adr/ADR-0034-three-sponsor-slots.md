@@ -42,3 +42,11 @@ product owner asked for this video in the first slot, and for three slots in tot
 WikiDigit is booked for the same placements as FocusCrew, with a 9.6-second, silent,
 256 × 256 H.264 video (242 KB) linking to `https://wikidigit.com`. The two take turns in the
 first slot by day, as decided above; the third slot stays a house ad. No logic changed.
+
+## Addendum — 2026-10-20: new FocusCrew creative
+
+FocusCrew replaced its video with a new 12-second, silent, 256 × 256 H.264 cut (154 KB) that
+opens with "Too many tabs?". It is served as `/sponsors/focuscrew-tabs.mp4` with the still frame
+`/sponsors/focuscrew-tabs-poster.png` (its end card). The old `focuscrew.mp4` and its poster were
+removed. New file names, rather than the same names, mean no browser or CDN cache can keep
+showing the old video. The link, placements and rotation are unchanged.

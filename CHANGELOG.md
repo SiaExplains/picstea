@@ -3,6 +3,15 @@
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.33.1] — 2026-10-20
+
+### Changed
+
+- **FocusCrew's sponsorship has a new video** ("Too many tabs?"), with a new still frame for
+  people who prefer reduced motion. It still links to focus-crew.com.
+- The engineering handbook (`docs/`) is brought up to date with the recent work: layer styles,
+  Blend If, menus, image commands, sponsorship slots, the dark website and the filter catalogue.
+
 ## [0.33.0] — 2026-10-19
 
 ### Added

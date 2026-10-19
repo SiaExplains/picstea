@@ -95,4 +95,10 @@ Define a versioned internal format.
 
 Future schema migrations must be possible.
 
+The current version is **8** (`CURRENT_SCHEMA_VERSION` in
+`src/editor/serialization/serialization.ts`, ADR-0005). v7 stores every layer effect as a list
+and adds Fill opacity and the document's global light (ADR-0030); v8 adds Blend If and channel
+restrictions (ADR-0031). Older projects are migrated on open; older builds refuse newer projects
+instead of losing data.
+
 Never assume the current document schema will remain unchanged.

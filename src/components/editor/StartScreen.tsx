@@ -110,9 +110,9 @@ export function StartScreen({ actions }: { actions: Record<UiActionId, UiAction>
 const noSubscribe = () => () => {};
 
 /**
- * The editor's only sponsorship space (docs/08): on the start screen, before a document is open,
- * never over the canvas or tools. Picstea's own sponsorships only — no third-party code runs in
- * the editor.
+ * The start screen's sponsorship (docs/08) on screens narrower than the side column, which has
+ * three slots of its own (ADR-0034, ADR-0035). Never over the canvas or tools. Picstea's own
+ * sponsorships only — no third-party code runs in the editor.
  */
 function StartSponsorship() {
   const day = useSyncExternalStore(

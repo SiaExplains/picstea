@@ -30,6 +30,11 @@ Viewport transform
 Canvas
 ```
 
+Layer effects are drawn in Photoshop's order (Drop Shadow at the bottom, Bevel on top), with
+interior effects unaffected by Fill opacity (ADR-0030). A layer with Blend If or channel
+restrictions is drawn normally and then mixed back towards the backdrop read before it, per pixel
+(`compositing/blend-if.ts`, ADR-0031); only such layers read pixels.
+
 ## Viewport
 
 The viewport must support:

@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { SPONSORSHIPS } from "../src/content/sponsorships";
 import { openEditor, trackErrors } from "./helpers";
 
 test("wide screens get the sponsorship column, privacy settings and website links", async ({
@@ -16,7 +17,7 @@ test("wide screens get the sponsorship column, privacy settings and website link
   const slots = side.getByTestId("side-slot");
   await expect(slots).toHaveCount(3);
   for (const [name, href, src] of [
-    [/FocusCrew/, "https://focus-crew.com", "/sponsors/focuscrew.mp4"],
+    [/FocusCrew/, "https://focus-crew.com", "/sponsors/focuscrew-tabs.mp4"],
     [/WikiDigit/, "https://wikidigit.com", "/sponsors/wikidigit.mp4"],
   ] as const) {
     const link = side.getByRole("link", { name });
@@ -72,9 +73,10 @@ test("with reduced motion the sponsor videos stay on their still frames", async 
   await page.setViewportSize({ width: 1440, height: 860 });
   await openEditor(page);
   const side = page.getByTestId("editor-side");
-  for (const sponsor of ["focuscrew", "wikidigit"]) {
-    const video = side.locator(`video[src="/sponsors/${sponsor}.mp4"]`);
-    await expect(video).toHaveAttribute("poster", `/sponsors/${sponsor}-poster.png`);
+  // Paths from the booked list, so a new creative doesn't need a test change.
+  for (const { video: src, image: poster } of SPONSORSHIPS.filter((ad) => ad.video)) {
+    const video = side.locator(`video[src="${src}"]`);
+    await expect(video).toHaveAttribute("poster", poster!);
     await expect.poll(() => video.evaluate((v: HTMLVideoElement) => v.paused)).toBe(true);
   }
 });
