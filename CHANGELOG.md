@@ -3,6 +3,20 @@
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.30.0] — 2026-10-19
+
+### Added
+
+- **Three sponsorship slots** in the editor's side column on wide screens. The first sponsor,
+  FocusCrew, is shown with a short silent video. Empty slots invite sponsors.
+- Sponsorships can be short, silent, looping videos, hosted on Picstea's own site. They stay
+  still when your device asks for reduced motion.
+
+### Changed
+
+- The FAQ, About, privacy and sponsorship pages now describe the sponsorships beside the
+  canvas.
+
 ## [0.29.0] — 2026-10-19
 
 ### Added

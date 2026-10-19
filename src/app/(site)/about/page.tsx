@@ -54,10 +54,10 @@ export default function AboutPage() {
       <h2>Free, with no account</h2>
       <p>
         There is no sign-up, no watermark and no limit on exports. Picstea is paid for by
-        advertising and sponsorship on the website and blog; the{" "}
-        <Link href="/sponsorship">sponsorship page</Link> explains how. The{" "}
-        <Link href="/privacy">privacy policy</Link> and <Link href="/cookies">cookie policy</Link>{" "}
-        list exactly what is stored and why.
+        advertising on the website and blog, and by clearly labelled sponsorships beside the canvas
+        — never over your work; the <Link href="/sponsorship">sponsorship page</Link> explains how.
+        The <Link href="/privacy">privacy policy</Link> and{" "}
+        <Link href="/cookies">cookie policy</Link> list exactly what is stored and why.
       </p>
 
       <h2>How it is made</h2>

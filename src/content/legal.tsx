@@ -109,8 +109,8 @@ export const LEGAL: Record<"privacy" | "cookies" | "terms" | "imprint" | "sponso
           <GoogleCmpNote />
           <h2>Sponsorships</h2>
           <p>
-            Picstea&apos;s own sponsorships are plain images and links served from our site. They
-            use no cookies and no tracking; we do not record who sees or clicks them.
+            Picstea&apos;s own sponsorships are images, short silent videos and links served from
+            our site. They use no cookies and no tracking; we do not record who sees or clicks them.
           </p>
           <h2>Your rights</h2>
           <p>
@@ -340,16 +340,18 @@ export const LEGAL: Record<"privacy" | "cookies" | "terms" | "imprint" | "sponso
               and only if you agree.
             </li>
             <li>
-              Sponsorships are labelled &ldquo;Sponsored&rdquo;. One sponsorship may appear on the
-              editor&apos;s start screen, never over the canvas, tools or your work.
+              Sponsorships are labelled &ldquo;Sponsored&rdquo;. Up to three appear in the
+              editor&apos;s side column on wide screens, and one on the start screen on smaller
+              screens — never over the canvas, tools or your work. Videos are silent, loop, and stay
+              still if your device asks for reduced motion.
             </li>
             <li>Sponsor links are marked as sponsored for search engines.</li>
           </ul>
           <h2>No tracking, no targeting by your work</h2>
           <p>
-            Sponsorships are plain images and links. We do not use cookies or tracking for them, and
-            advertising is never chosen based on the images you edit — the editor never sends them
-            anywhere.
+            Sponsorships are images, short silent videos and links, all served from our own site. We
+            do not use cookies or tracking for them, and advertising is never chosen based on the
+            images you edit — the editor never sends them anywhere.
           </p>
           <h2>Sponsor Picstea</h2>
           <p>

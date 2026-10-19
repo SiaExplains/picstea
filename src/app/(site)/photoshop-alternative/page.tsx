@@ -30,7 +30,7 @@ const FAQS: Faq[] = [
   },
   {
     q: "Does it cost anything?",
-    a: "No. Picstea is free, needs no account and adds no watermark. It is funded by advertising on the website and blog — never inside the editor.",
+    a: "No. Picstea is free, needs no account and adds no watermark. It is funded by advertising on the website and blog and by labelled sponsorships beside the canvas — never over your work.",
   },
 ];
 
