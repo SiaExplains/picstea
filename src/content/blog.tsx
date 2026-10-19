@@ -669,6 +669,135 @@ export const POSTS: readonly BlogPost[] = [
       </>
     ),
   },
+  {
+    slug: "layer-styles-blend-if-and-the-image-menu",
+    title: "Layer styles, Blend If and the Image menu",
+    description:
+      "Photoshop's full Layer Style dialog, Blend If sliders and a complete Image menu — Image Size, Canvas Size, rotation and Auto Tone — free and private.",
+    published: "2026-10-19",
+    draft: false,
+    body: () => (
+      <>
+        <p>
+          This release brings three things people coming from Photoshop or Photopea reach for every
+          day: the full Layer Style dialog, Blend If, and an Image menu that sizes, rotates and
+          tidies the whole picture. As always, everything runs in your browser and your images stay
+          on your device.
+        </p>
+
+        <h2>The full Layer Style dialog</h2>
+        <p>
+          Double-click a layer (or choose Layer → Layer Style → Blending Options…) to open it. On
+          the left are all ten effects Photoshop has: Bevel and Emboss with Contour and Texture,
+          Stroke, Inner Shadow, Inner Glow, Satin, Color, Gradient and Pattern Overlay, Outer Glow
+          and Drop Shadow. A preview swatch on the right shows the style as you change it.
+        </p>
+        <ul>
+          <li>
+            <strong>Every option you know.</strong> Each effect has its own blend mode and opacity,
+            plus spread or choke, size, noise, contour and anti-aliasing. Gradients come in linear,
+            radial, angle, reflected and diamond styles, with perceptual or linear colour blending.
+            Strokes can sit inside, centred on or outside the edge, in a colour or a gradient.
+          </li>
+          <li>
+            <strong>More than one of an effect.</strong> The + next to Drop Shadow, Inner Shadow,
+            Stroke, Color Overlay and Gradient Overlay adds another copy, so a double outline or a
+            soft shadow under a hard one takes seconds. The arrows under the list reorder them.
+          </li>
+          <li>
+            <strong>Global light.</strong> Tick Use Global Light and every shadow and bevel in the
+            document follows one angle; change it once and they all move.
+          </li>
+          <li>
+            <strong>Fill opacity.</strong> Under Blending Options, Fill fades a layer&apos;s own
+            pixels but not its effects — set it to 0 for a stroke-only outline or a glass look.
+          </li>
+          <li>
+            <strong>Saved styles.</strong> New Style… keeps a style in your browser; the Styles page
+            applies it to any other layer, next to a few built-in ones such as Neon, Gold and Glass.
+          </li>
+        </ul>
+        <p>
+          Photoshop files keep their layer styles when you open them in Picstea, including every
+          copy and option (Photoshop&apos;s own pattern images become the closest built-in pattern).
+          Bevel, satin and texture are drawn closely to Photoshop&apos;s, not pixel for pixel. See{" "}
+          <Link href="/docs/layers-groups-and-masks">layers, groups and masks</Link> for the
+          details.
+        </p>
+
+        <h2>Blend If: hide pixels by brightness</h2>
+        <p>
+          Blend If, also in Blending Options, hides a layer&apos;s pixels depending on how bright
+          they are — or how bright the pixels underneath are. It is the quickest way to put a
+          texture only on the darks of a photo, drop a logo onto a wall without its white
+          background, or let clouds show through a sky replacement.
+        </p>
+        <ol>
+          <li>
+            Drag the white slider of <strong>This Layer</strong> to the left to hide the
+            layer&apos;s brightest pixels, or the black slider to the right to hide its darkest.
+          </li>
+          <li>
+            Use <strong>Underlying Layer</strong> instead to show the layer only where the image
+            below is dark (or light).
+          </li>
+          <li>
+            Hold Alt (Option) while dragging a slider to split it into two halves: pixels between
+            the halves fade gradually instead of switching off at once.
+          </li>
+        </ol>
+        <p>
+          The Blend If menu works on grey or on the red, green or blue channel alone, and the R, G,
+          and B checkboxes above it limit which colour channels the layer changes at all.
+        </p>
+
+        <h2>A complete Image menu</h2>
+        <ul>
+          <li>
+            <strong>Image Size…</strong> scales the whole picture. Pixel layers keep their original
+            pixels and are drawn at the new size, so making an image smaller and then larger again
+            loses nothing; text and shapes stay sharp.
+          </li>
+          <li>
+            <strong>Canvas Size…</strong> adds or removes room around the image without scaling it.
+            Pick one of nine anchors to choose where the new space goes, or tick Relative to type
+            how much to add.
+          </li>
+          <li>
+            <strong>Image Rotation</strong> turns the canvas 90° either way or 180°, or flips it,
+            with every layer, mask, path and guide.
+          </li>
+          <li>
+            <strong>Trim…</strong> crops away transparent edges or edges of one colour;{" "}
+            <strong>Reveal All</strong> grows the canvas to show layers that reach past it.
+          </li>
+          <li>
+            <strong>Auto Tone, Auto Contrast and Auto Color</strong> fix a flat or tinted photo in
+            one click. Unlike in Photoshop, each adds a Levels adjustment layer, so you can still
+            tweak or delete the result.
+          </li>
+          <li>
+            <strong>Duplicate</strong> opens a copy of the document in a new tab, for trying an idea
+            without touching the original.
+          </li>
+        </ul>
+
+        <h2>Menus that fit on the screen</h2>
+        <p>
+          Related commands now live in submenus — Layer → New, Arrange and Align, filters grouped by
+          kind, View → Guides — so no menu needs scrolling. Point at an item marked › or press Arrow
+          Right to open it. There are new commands too: Edit → Copy Merged and Stroke…, Select →
+          Grow and Similar, and a Window menu that brings any panel forward. The{" "}
+          <Link href="/docs/getting-started">getting started guide</Link> walks through the
+          workspace.
+        </p>
+
+        <p>
+          <EditorLink>Try it in Picstea</EditorLink> — free, no account, nothing uploaded.
+        </p>
+      </>
+    ),
+  },
 ];
 
 const showDrafts = process.env.NODE_ENV !== "production";
