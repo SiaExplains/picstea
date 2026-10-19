@@ -42,6 +42,7 @@ import {
   percentProps,
 } from "./LayerStyleControls";
 import { EffectPage, type BevelPage } from "./LayerStylePages";
+import { AdvancedBlending } from "./BlendIfControls";
 import styles from "./editor.module.css";
 
 type Page =
@@ -522,6 +523,7 @@ function BlendingPage({
         onChange={(v) => controller.execute(setFillOpacity(layer.id, v))}
       />
       <p className={styles.muted}>Fill fades the layer&apos;s pixels but not its effects.</p>
+      <AdvancedBlending layer={layer} />
       <h4 className={styles.styleGroupTitle}>Global Light</h4>
       <AngleDial
         label="Global angle"

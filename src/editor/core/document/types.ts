@@ -9,6 +9,7 @@
 import type { SelectionMask } from "../../selection/mask";
 import type { VectorPath } from "../path/path";
 import type { GlobalLight, LayerEffects } from "../effects/model";
+import type { BlendIf, ChannelSet } from "./blending";
 
 export const BLEND_MODES = [
   "normal",
@@ -126,6 +127,10 @@ export interface BaseLayer {
    * its effects. Absent = 1.
    */
   readonly fillOpacity?: number;
+  /** Blending Options → Blend If (ADR-0031); absent = no limits. */
+  readonly blendIf?: BlendIf;
+  /** Blending Options → Channels; absent = all channels. */
+  readonly channels?: ChannelSet;
 }
 
 /** Bitmap content stored as an immutable asset. */

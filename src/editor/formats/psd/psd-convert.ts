@@ -1,4 +1,5 @@
 import { createGroup } from "../../core/commands/group-commands";
+import { layerBlendingOf, psdBlendingOf } from "./psd-blending";
 import {
   createAdjustmentLayer,
   createDocument,
@@ -114,6 +115,7 @@ export async function documentToPsdDraft(
         mask: layer.mask ? await maskDraft(env, doc, layer.mask) : undefined,
         ...(layer.clipped ? { clipping: true } : {}),
         ...(layer.label ? { colorLabel: LAYER_LABELS.indexOf(layer.label) + 1 } : {}),
+        ...(psdBlendingOf(layer) ? { blending: psdBlendingOf(layer) } : {}),
       };
       if (adjustmentBlock) {
         out.push({
@@ -154,6 +156,9 @@ export async function documentToPsdDraft(
         mask: undefined,
         // The vector mask is written as Photoshop vector data, not merged into the pixels.
         vectorMask: undefined,
+        // Blend If and channels are written in the record and need the layers below.
+        blendIf: undefined,
+        channels: undefined,
         clipped: false,
       } as Layer;
       const vectorBlock = layer.vectorMask
@@ -400,6 +405,7 @@ function convertPsdFile(
         ...(node.clipping ? { clipped: true } : {}),
         // Photoshop's colours are numbered in the same order as LAYER_LABELS, from 1.
         ...(node.colorLabel ? { label: LAYER_LABELS[node.colorLabel - 1] } : {}),
+        ...layerBlendingOf(node.blending),
       };
       const mask = toMask(node.mask);
       if (node.kind === "group") {

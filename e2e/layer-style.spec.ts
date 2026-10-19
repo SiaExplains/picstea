@@ -178,3 +178,49 @@ test("New Style saves a style in this browser and applies it to another layer", 
   await dialog.getByRole("button", { name: "Cancel" }).click();
   expect(errors).toEqual([]);
 });
+
+test("Blend If hides the layer over light pixels; Channels keep the backdrop's red", async ({
+  page,
+}) => {
+  const errors = trackErrors(page);
+  await newDocument(page, "Blend If");
+  await rectangle(page, [100, 100], [300, 300]);
+  const dialog = await openStyle(page, "Rectangle 1");
+  await dialog.getByRole("button", { name: "Blending Options" }).click();
+
+  const highlights = dialog.getByRole("slider", {
+    name: "Underlying Layer highlights",
+    exact: true,
+  });
+  await highlights.focus();
+  // Shift+arrow moves 10 levels: 255 → 155, below the white background.
+  for (let i = 0; i < 10; i++) await page.keyboard.press("Shift+ArrowLeft");
+  await expect(highlights).toHaveAttribute("aria-valuenow", "155");
+  expect(isWhite(await pixel(page, 200, 200))).toBe(true);
+
+  // Alt splits the slider into two halves.
+  // Focus stays on the moving half, so repeated presses keep going.
+  for (let i = 0; i < 5; i++) await page.keyboard.press("Alt+ArrowLeft");
+  await expect(
+    dialog.getByRole("slider", { name: "Underlying Layer highlights start" }),
+  ).toHaveAttribute("aria-valuenow", "150");
+  // Inside the visible half-triangle (its bottom right).
+  await dialog
+    .getByRole("slider", { name: "Underlying Layer highlights start" })
+    .dblclick({ position: { x: 5, y: 10 } });
+  await expect(highlights).toHaveAttribute("aria-valuenow", "150");
+
+  // Back to full range, then switch the red channel off: red comes from the white backdrop.
+  await highlights.focus();
+  for (let i = 0; i < 11; i++) await page.keyboard.press("Shift+ArrowRight");
+  expect(isBlue(await pixel(page, 200, 200))).toBe(true);
+  await dialog.getByRole("checkbox", { name: "R", exact: true }).uncheck();
+  const tinted = await pixel(page, 200, 200);
+  expect(tinted[0]).toBeGreaterThan(240);
+  expect(tinted[2]).toBeGreaterThan(200);
+
+  await dialog.getByRole("button", { name: "OK", exact: true }).click();
+  await page.keyboard.press(`${MOD}+z`);
+  expect(isBlue(await pixel(page, 200, 200))).toBe(true);
+  expect(errors).toEqual([]);
+});

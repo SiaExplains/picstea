@@ -394,3 +394,35 @@ describe("PSD files with extras", () => {
     expect(embedded.file.width).toBe(30);
   });
 });
+
+describe("Blend If in PSD records (ADR-0031)", () => {
+  it("writes and reads blending ranges and channel restrictions", async () => {
+    const blending = {
+      ranges: [
+        [
+          [0, 0, 255, 255],
+          [0, 20, 180, 230],
+        ],
+        [
+          [0, 0, 255, 255],
+          [0, 0, 255, 255],
+        ],
+        [
+          [40, 40, 255, 255],
+          [0, 0, 255, 255],
+        ],
+        [
+          [0, 0, 255, 255],
+          [0, 0, 255, 255],
+        ],
+      ],
+      restricted: [2],
+    } as const;
+    const { file: read } = await readPsd(
+      writePsd(file([{ ...layer("Blended", []), blending }, layer("Plain", [])])),
+    );
+    const [blended, plain] = read.layers as PsdPixelLayer[];
+    expect(blended.blending).toEqual(blending);
+    expect(plain.blending).toBeUndefined();
+  });
+});

@@ -211,7 +211,7 @@ describe("Gate 9h effects", () => {
     );
   });
 
-  it("survive a save and load, with the new adjustments (schema v7)", () => {
+  it("survive a save and load, with the new adjustments (schema v8)", () => {
     const store = new EditorStore(() => 0);
     const doc = createDocument({ name: "Doc", width: 50, height: 50 });
     store.openDocument(doc);
@@ -241,7 +241,7 @@ describe("Gate 9h effects", () => {
     }
     const saved = store.getSession()!.document;
     const project = serializeDocument(saved);
-    expect(project.schemaVersion).toBe(7);
+    expect(project.schemaVersion).toBe(8);
     const loaded = deserializeProject(JSON.parse(JSON.stringify(project)));
     expect(loaded.ok).toBe(true);
     const back = (loaded as { ok: true; document: EditorDocument }).document;

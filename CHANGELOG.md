@@ -3,6 +3,20 @@
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.27.0] — 2026-10-19
+
+### Added
+
+- **Blend If.** In Layer Style → Blending Options, two sliders hide a layer's pixels by their own
+  brightness (This Layer) or by what is beneath them (Underlying Layer), for grey or for red,
+  green or blue. Alt-drag splits a slider for a smooth transition.
+- **Channels.** Turn off R, G or B so the layer only changes the channels you choose.
+- Photoshop files keep both settings on import and on export.
+
+### Changed
+
+- Saved projects use format version 8.
+
 ## [0.26.0] — 2026-10-19
 
 ### Added
