@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 import { expect, test, type Page } from "@playwright/test";
-import { at, drag, MOD, newDocument, trackErrors } from "./helpers";
+import { at, drag, MOD, newDocument, trackErrors, pickMenu } from "./helpers";
 
 /**
  * Gate 9j (ADR-0022): exports, the magic wand and Color Range draw the document in the worker,
@@ -38,8 +38,7 @@ async function buildDocument(page: Page) {
   await page.mouse.click(p.x, p.y);
   await page.keyboard.type("Off thread");
   await page.keyboard.press(`${MOD}+Enter`);
-  await page.getByRole("menuitem", { name: "Adjustments", exact: true }).click();
-  await page.getByRole("menuitem", { name: "Gradient Map…", exact: true }).click();
+  await pickMenu(page, "Layer", "Gradient Map…");
 }
 
 async function exportPng(page: Page): Promise<Buffer> {

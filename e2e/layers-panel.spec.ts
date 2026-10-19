@@ -9,6 +9,7 @@ import {
   openEditor,
   pixel,
   trackErrors,
+  pickMenu,
 } from "./helpers";
 
 const row = (page: Page, name: string) =>
@@ -141,8 +142,7 @@ test("double-clicking a layer opens Layer Style; Cancel reverts and OK is one un
   await expect(rect.getByLabel("Has layer effects")).toHaveCount(0);
 
   // Layer → Blending Options… opens it too.
-  await page.getByRole("menuitem", { name: "Layer" }).click();
-  await page.getByRole("menuitem", { name: "Blending Options…" }).click();
+  await pickMenu(page, "Layer", "Blending Options…");
   await dialog.getByRole("checkbox", { name: "Use Stroke" }).check();
   await dialog.getByRole("button", { name: "Blending Options" }).click();
   await dialog.getByLabel("Blend mode").selectOption("multiply");

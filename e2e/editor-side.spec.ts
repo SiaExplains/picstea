@@ -23,11 +23,7 @@ test("wide screens get the sponsorship column, privacy settings and website link
     "href",
     "/docs/keyboard-shortcuts",
   );
-  await links.getByRole("button", { name: "About" }).click();
-  await expect(
-    page.getByRole("dialog", { name: /keeps your images on your device/ }),
-  ).toBeVisible();
-  await page.keyboard.press("Escape");
+  await expect(links.getByRole("link", { name: "About" })).toHaveAttribute("href", "/about");
 
   // Privacy settings opens the website's preferences in a new tab; the editor stays put.
   const [tab] = await Promise.all([

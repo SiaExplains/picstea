@@ -1,4 +1,4 @@
-import { expect, type Page } from "@playwright/test";
+import { expect, type Locator, type Page } from "@playwright/test";
 
 export const MOD = process.platform === "darwin" ? "Meta" : "Control";
 export const DOC = { width: 600, height: 400 };
@@ -133,4 +133,45 @@ export async function setForegroundColor(page: Page, hex: string) {
     "data-color",
     hex,
   );
+}
+
+/** The top-level menu that used to be called `top` (Adjustments now lives under Layer/Image). */
+const MENU_MOVES: Record<string, string> = { Adjustments: "Layer" };
+
+/**
+ * Open a menu-bar menu and choose `item`, opening submenus on the way when the item is inside
+ * one (ADR-0032). `role` is "menuitemcheckbox" for on/off items such as View → Snap.
+ */
+export async function pickMenu(
+  page: Page,
+  top: string,
+  item: string,
+  role: "menuitem" | "menuitemcheckbox" = "menuitem",
+) {
+  await page
+    .getByRole("menubar", { name: "Editor menu" })
+    .getByRole("menuitem", { name: MENU_MOVES[top] ?? top, exact: true })
+    .click();
+  const target = page.getByRole(role, { name: item, exact: true });
+  if (await target.isVisible()) {
+    await target.click();
+    return;
+  }
+  // Look one and two levels down: hover each submenu until the item shows.
+  const search = async (menu: Locator, depth: number): Promise<boolean> => {
+    const triggers = menu.locator(':scope > div > [aria-haspopup="menu"]:not([disabled])');
+    const count = await triggers.count();
+    for (let i = 0; i < count; i++) {
+      const trigger = triggers.nth(i);
+      await trigger.hover();
+      if (await target.isVisible()) return true;
+      const label = (await trigger.innerText()).replace("›", "").trim();
+      const submenu = page.getByRole("menu", { name: label, exact: true });
+      if (depth > 0 && (await search(submenu, depth - 1))) return true;
+    }
+    return false;
+  };
+  if (!(await search(page.getByRole("menu").first(), 1)))
+    throw new Error(`Menu item "${item}" not found under ${top}.`);
+  await target.click();
 }

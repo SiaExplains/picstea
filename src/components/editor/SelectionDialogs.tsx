@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import type { SelectionModification } from "@/editor/core/commands";
 import type { SelectionMask } from "@/editor/selection/mask";
 import { MAX_MODIFY_RADIUS } from "@/editor/selection/modify";
+import { MAX_STROKE_WIDTH, type StrokeLocation } from "@/editor/selection/derive";
 import { useController, useEditorState } from "./editor-context";
 import styles from "./editor.module.css";
 
@@ -286,6 +287,96 @@ export function WorkPathDialog({ onClose }: { onClose: () => void }) {
             Cancel
           </button>
           <button type="submit" className={`${styles.button} ${styles.primary}`}>
+            OK
+          </button>
+        </div>
+      </form>
+    </dialog>
+  );
+}
+
+/** Edit → Stroke: paint a band of the foreground colour along the selection's edge. */
+export function StrokeDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const controller = useController();
+  const foreground = useEditorState((s) => s.colors.foreground);
+  const ref = useModal(open);
+  const [width, setWidth] = useState("3");
+  const [location, setLocation] = useState<StrokeLocation>("center");
+  const [color, setColor] = useState<string | null>(null);
+  const valid =
+    Number.isInteger(Number(width)) && Number(width) >= 1 && Number(width) <= MAX_STROKE_WIDTH;
+
+  const submit = (event: FormEvent) => {
+    event.preventDefault();
+    if (!valid) return;
+    controller.strokeSelection(Number(width), location, color ?? foreground);
+    onClose();
+  };
+
+  return (
+    <dialog
+      ref={ref}
+      className={styles.dialog}
+      aria-labelledby="stroke-title"
+      onClose={(event) => {
+        if (!event.currentTarget.open) onClose();
+      }}
+    >
+      <form className={styles.dialogForm} onSubmit={submit} noValidate>
+        <h2 id="stroke-title" className={styles.dialogTitle}>
+          Stroke
+        </h2>
+        <div className={styles.field}>
+          <label className={styles.fieldLabel} htmlFor="stroke-width">
+            Width (px)
+          </label>
+          <input
+            id="stroke-width"
+            className={styles.input}
+            type="number"
+            inputMode="numeric"
+            min={1}
+            max={MAX_STROKE_WIDTH}
+            value={width}
+            onChange={(e) => setWidth(e.target.value)}
+          />
+        </div>
+        <div className={styles.field}>
+          <label className={styles.fieldLabel} htmlFor="stroke-color">
+            Colour
+          </label>
+          <input
+            id="stroke-color"
+            type="color"
+            className={styles.colorInput}
+            value={color ?? foreground}
+            onChange={(e) => setColor(e.target.value)}
+          />
+        </div>
+        <fieldset className={styles.field}>
+          <legend className={styles.fieldLabel}>Location</legend>
+          {(["inside", "center", "outside"] as const).map((value) => (
+            <label key={value} className={styles.smallLabel}>
+              <input
+                type="radio"
+                name="stroke-location"
+                checked={location === value}
+                onChange={() => setLocation(value)}
+              />
+              <span>{value[0].toUpperCase() + value.slice(1)}</span>
+            </label>
+          ))}
+        </fieldset>
+        {!valid && (
+          <p className={styles.error} role="alert">
+            Width must be a whole number from 1 to {MAX_STROKE_WIDTH}.
+          </p>
+        )}
+        <div className={styles.dialogActions}>
+          <button type="button" className={styles.button} onClick={onClose}>
+            Cancel
+          </button>
+          <button type="submit" className={`${styles.button} ${styles.primary}`} disabled={!valid}>
             OK
           </button>
         </div>

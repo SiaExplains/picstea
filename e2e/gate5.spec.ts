@@ -11,6 +11,7 @@ import {
   pixel,
   trackErrors,
   setForegroundColor,
+  pickMenu,
 } from "./helpers";
 
 const luminance = (rgba: number[]) => (rgba[0] + rgba[1] + rgba[2]) / 3;
@@ -279,8 +280,7 @@ test("polygonal lasso, Color Range and Transform Selection, all without network"
   await expect(page.getByTestId("selection-size")).toHaveText("Selection 100 × 100");
 
   // Expand by 5 px on every side.
-  await page.getByRole("menuitem", { name: "Select" }).click();
-  await page.getByRole("menuitem", { name: "Expand…" }).click();
+  await pickMenu(page, "Select", "Expand…");
   const expand = page.getByRole("dialog", { name: "Expand Selection" });
   await expand.getByLabel("By (px)").fill("5");
   await expand.getByRole("button", { name: "OK" }).click();

@@ -34,7 +34,7 @@ const FAQS: Faq[] = [
   },
   {
     q: "Can I edit many photos at once?",
-    a: "Yes. Record an action (for example an adjustment and a filter), then use File → Batch… to apply it to many photos. The results are saved as one ZIP file, built on your device.",
+    a: "Yes. Record an action (for example an adjustment and a filter), then use File → Automate → Batch… to apply it to many photos. The results are saved as one ZIP file, built on your device.",
   },
   {
     q: "Does it work offline?",
@@ -54,8 +54,8 @@ export default function OnlinePhotoEditor() {
       <ol>
         <li>Open the editor and click Open image (or drop a photo on the page).</li>
         <li>
-          Adjust it non-destructively: Adjustments → Brightness/Contrast, Hue/Saturation or
-          Exposure.
+          Adjust it non-destructively: Layer → New Adjustment Layer → Brightness/Contrast,
+          Hue/Saturation or Exposure.
         </li>
         <li>Select an area with the marquee, lasso or magic wand to edit just that part.</li>
         <li>File → Export As… and choose JPEG, PNG or WebP.</li>

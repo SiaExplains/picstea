@@ -1,4 +1,10 @@
 import { describeError, silentLogger, type Logger } from "@/lib/logging/logger";
+import {
+  maskedPixels,
+  similarSelection,
+  strokeArea,
+  type StrokeLocation,
+} from "../selection/derive";
 import { AssetStore, type BitmapDecoder, type BitmapEncoder } from "../assets/asset-store";
 import {
   addLayer,
@@ -1551,6 +1557,70 @@ export class EditorController {
     });
     this.execute(addLayer(layer, "Layer via Copy"));
     this.enforcePixelBudget();
+  }
+
+  /** Edit → Copy Merged: the selected pixels of everything visible, as one image. */
+  copyMerged(): boolean {
+    const doc = this.store.getSession()?.document;
+    if (!doc?.selection?.bounds) {
+      this.notify("error", "Make a selection first.");
+      return false;
+    }
+    const pixels = readPixels(this, doc);
+    const clip = pixels ? maskedPixels(pixels, doc.selection) : null;
+    if (!clip) {
+      this.notify("info", "The image is still loading. Try again in a moment.");
+      return false;
+    }
+    const surface = rgbaToSurface(this, clip.data, clip.width, clip.height);
+    const asset = this.assets.addBitmap(surface, clip.width, clip.height);
+    this.clipboard = {
+      asset: asset.id,
+      x: clip.x,
+      y: clip.y,
+      width: clip.width,
+      height: clip.height,
+    };
+    void this.writeSystemClipboard(asset.id);
+    return true;
+  }
+
+  /** Edit → Stroke: paint a band along the selection's edge on the active pixel layer. */
+  strokeSelection(
+    width: number,
+    location: StrokeLocation,
+    color = this.store.getState().colors.foreground,
+  ): void {
+    const doc = this.store.getSession()?.document;
+    const layer = this.selectedPixelLayer("Stroke");
+    if (!doc?.selection || !layer) return;
+    const band = strokeArea(doc.selection, width, location);
+    if (!band) {
+      this.notify("info", "There is no edge to stroke.");
+      return;
+    }
+    this.paintSelection(layer, selectionFill(this, doc, color, band), "source-over", "Stroke");
+  }
+
+  /**
+   * Select → Grow (connected) or Similar (anywhere): add pixels whose colour matches the
+   * selection, within the Magic Wand's tolerance and sampling setting.
+   */
+  growSelection(contiguous: boolean): void {
+    const doc = this.store.getSession()?.document;
+    if (!doc?.selection?.bounds) {
+      this.notify("error", "Make a selection first.");
+      return;
+    }
+    const { tolerance, sampleAll } = this.store.getState().toolSettings.wand;
+    const layer = activeLayer(doc);
+    const pixels = sampleAll || !layer ? readPixels(this, doc) : readPixels(this, doc, layer);
+    if (!pixels) {
+      this.notify("info", "The image is still loading. Try again in a moment.");
+      return;
+    }
+    const mask = similarSelection(pixels, doc.selection, tolerance, contiguous);
+    if (mask) this.applySelection(mask, contiguous ? "Grow" : "Similar");
   }
 
   private async writeSystemClipboard(assetId: string): Promise<void> {

@@ -11,12 +11,19 @@ import {
   solidColorBlock,
   textBlock,
 } from "../src/editor/test-utils/psd-fixtures";
-import { at, drag, layerNames, MOD, newDocument, openEditor, pixel, trackErrors } from "./helpers";
+import {
+  at,
+  drag,
+  layerNames,
+  MOD,
+  newDocument,
+  openEditor,
+  pixel,
+  trackErrors,
+  pickMenu,
+} from "./helpers";
 
-async function menu(page: Page, name: string, item: string) {
-  await page.getByRole("menuitem", { name, exact: true }).click();
-  await page.getByRole("menuitem", { name: item, exact: true }).click();
-}
+const menu = (page: Page, name: string, item: string) => pickMenu(page, name, item);
 
 async function exportPsd(page: Page): Promise<Buffer> {
   await page.keyboard.press(`${MOD}+Shift+e`);

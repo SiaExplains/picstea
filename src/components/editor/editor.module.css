@@ -188,6 +188,34 @@
   opacity: 0.7;
 }
 
+/* Submenus open to the side, fixed so a scrolling parent never clips them (ADR-0032). */
+.submenu {
+  position: relative;
+}
+
+.submenuPopup {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 51;
+}
+
+.submenuArrow {
+  opacity: 0.7;
+}
+
+/* On the highlighted (teal) row, dimmed text would fall below 4.5:1 contrast. */
+.menuItem:hover:not(:disabled) .shortcut,
+.menuItem:focus-visible .shortcut,
+.menuItem:hover:not(:disabled) .submenuArrow,
+.menuItem:focus-visible .submenuArrow {
+  opacity: 1;
+}
+
+.menuItem[aria-expanded="true"] {
+  background: var(--ed-chrome-2);
+}
+
 .menuSeparator {
   height: 1px;
   margin: 4px 6px;

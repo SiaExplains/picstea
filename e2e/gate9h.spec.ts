@@ -12,12 +12,10 @@ import {
   pixel,
   setForegroundColor,
   trackErrors,
+  pickMenu,
 } from "./helpers";
 
-async function menu(page: Page, name: string, item: string) {
-  await page.getByRole("menuitem", { name, exact: true }).click();
-  await page.getByRole("menuitem", { name: item, exact: true }).click();
-}
+const menu = (page: Page, name: string, item: string) => pickMenu(page, name, item);
 
 /** A square filled with `color` on a new pixel layer. */
 async function square(page: Page, color: string, from: [number, number], to: [number, number]) {

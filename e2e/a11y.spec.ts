@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { audit, describeViolations, type AuditOptions } from "./a11y";
-import { drag, MOD, newDocument, openEditor } from "./helpers";
+import { drag, MOD, newDocument, openEditor, pickMenu } from "./helpers";
 
 /** Paths listed in the sitemap, plus the 404 page. */
 async function sitePaths(page: Page): Promise<string[]> {
@@ -77,16 +77,23 @@ test("the editor passes the accessibility audit in its main states", async ({ pa
     "Edit",
     "Image",
     "Layer",
-    "Adjustments",
-    "Filter",
     "Select",
+    "Filter",
     "View",
+    "Window",
     "Help",
   ]) {
     await page.getByRole("menuitem", { name, exact: true }).click();
     await expectClean(page, `${name} menu`);
     await page.keyboard.press("Escape");
   }
+  // A submenu open beside its menu.
+  await page.getByRole("menuitem", { name: "Layer", exact: true }).click();
+  await page.keyboard.press("ArrowRight");
+  await expect(page.getByRole("menu", { name: "New" })).toBeVisible();
+  await expectClean(page, "Layer → New submenu");
+  await page.keyboard.press("Escape");
+  await page.keyboard.press("Escape");
 
   // Dialogs.
   const dialogs: [string, () => Promise<void>, string][] = [
@@ -100,8 +107,7 @@ test("the editor passes the accessibility audit in its main states", async ({ pa
     [
       "Batch",
       async () => {
-        await page.getByRole("menuitem", { name: "File", exact: true }).click();
-        await page.getByRole("menuitem", { name: "Batch…", exact: true }).click();
+        await pickMenu(page, "File", "Batch…");
       },
       "Batch",
     ],
@@ -131,11 +137,9 @@ test("the editor passes the accessibility audit in its main states", async ({ pa
   await page.keyboard.press("u");
   await drag(page, [50, 50], [150, 150]);
   await expectClean(page, "shape layer");
-  await page.getByRole("menuitem", { name: "Adjustments", exact: true }).click();
-  await page.getByRole("menuitem", { name: "Gradient Map…", exact: true }).click();
+  await pickMenu(page, "Layer", "Gradient Map…");
   await expectClean(page, "gradient map");
-  await page.getByRole("menuitem", { name: "Adjustments", exact: true }).click();
-  await page.getByRole("menuitem", { name: "Curves…", exact: true }).click();
+  await pickMenu(page, "Layer", "Curves…");
   await expectClean(page, "curves");
   await page.keyboard.press(`${MOD}+Alt+a`);
   await expectClean(page, "multi-selection");

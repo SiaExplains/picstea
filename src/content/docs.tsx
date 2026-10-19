@@ -56,8 +56,11 @@ export const DOCS: readonly DocPage[] = [
         <h2>The workspace</h2>
         <ul>
           <li>
-            <strong>Menu bar</strong> — File, Edit, Image, Layer, Adjustments, Filter, Select, View
-            and Help.
+            <strong>Menu bar</strong> — File, Edit, Image, Layer, Select, Filter, View, Window and
+            Help. Items marked › open a submenu: point at them, or press Arrow Right (Arrow Left or
+            Escape goes back). Adjustment layers are under Layer → New Adjustment Layer and Image →
+            Adjustments; filters are grouped by kind (Blur, Sharpen…). Window brings the Layers,
+            Properties, History, Swatches and Actions panels forward.
           </li>
           <li>
             <strong>Tool options</strong> — settings for the active tool, such as brush size or
@@ -130,12 +133,13 @@ export const DOCS: readonly DocPage[] = [
         </ul>
         <h2>Levels and Curves</h2>
         <p>
-          Adjustments → Levels sets the black point, white point and midtones (gamma) of the image
-          below, and can compress the output range. Adjustments → Curves gives full control of the
-          tones: click the curve to add a point, drag it, and drag a point off the graph to remove
-          it. A point can also be moved with the arrow keys (Shift for steps of 10), or by typing
-          its input and output values. Both work on the combined RGB channel or on red, green and
-          blue separately, and show a histogram of the image beneath the layer.
+          Layer → New Adjustment Layer → Levels sets the black point, white point and midtones
+          (gamma) of the image below, and can compress the output range. Layer → New Adjustment
+          Layer → Curves gives full control of the tones: click the curve to add a point, drag it,
+          and drag a point off the graph to remove it. A point can also be moved with the arrow keys
+          (Shift for steps of 10), or by typing its input and output values. Both work on the
+          combined RGB channel or on red, green and blue separately, and show a histogram of the
+          image beneath the layer.
         </p>
         <h2>Opacity and blend modes</h2>
         <p>
@@ -178,10 +182,10 @@ export const DOCS: readonly DocPage[] = [
         </p>
         <h2>Masks</h2>
         <p>
-          Layer → Add Layer Mask hides parts of a layer without erasing them. Click the mask
-          thumbnail, then paint black to hide, white to reveal and grey for partial transparency.
-          Shift-click the thumbnail to turn the mask off temporarily. With a selection active, the
-          new mask reveals only the selection.
+          Layer → Raster Mask → Add Layer Mask hides parts of a layer without erasing them. Click
+          the mask thumbnail, then paint black to hide, white to reveal and grey for partial
+          transparency. Shift-click the thumbnail to turn the mask off temporarily. With a selection
+          active, the new mask reveals only the selection.
         </p>
         <h2>Clipping masks</h2>
         <p>
@@ -193,10 +197,10 @@ export const DOCS: readonly DocPage[] = [
         <h2>Vector masks</h2>
         <p>
           A vector mask hides a layer outside a path, with perfectly smooth edges at any size. Draw
-          a path with the Pen tool in Path mode, then choose Layer → Add Vector Mask from Path (or
-          the Mask button in the Pen options). Edit its points with the Direct Selection tool (A);
-          Shift-click the mask badge in the Layers panel to turn it off. A layer can have both a
-          pixel mask and a vector mask. See{" "}
+          a path with the Pen tool in Path mode, then choose Layer → Vector Mask → Add Vector Mask
+          from Path (or the Mask button in the Pen options). Edit its points with the Direct
+          Selection tool (A); Shift-click the mask badge in the Layers panel to turn it off. A layer
+          can have both a pixel mask and a vector mask. See{" "}
           <Link href="/docs/paths-and-the-pen-tool">paths and the Pen tool</Link>.
         </p>
         <h2>Effects</h2>
@@ -472,8 +476,8 @@ export const DOCS: readonly DocPage[] = [
       <>
         <h2>Rulers</h2>
         <p>
-          View → Rulers (Cmd/Ctrl+R) shows rulers along the top and left of the canvas, in pixels.
-          They follow zoom and scrolling, and mark where the pointer is.
+          View → Show → Rulers (Cmd/Ctrl+R) shows rulers along the top and left of the canvas, in
+          pixels. They follow zoom and scrolling, and mark where the pointer is.
         </p>
         <h2>Guides</h2>
         <ul>
@@ -481,14 +485,14 @@ export const DOCS: readonly DocPage[] = [
             Drag down from the top ruler for a horizontal guide, or right from the left ruler for a
             vertical one.
           </li>
-          <li>View → New Guide… places a guide at an exact position.</li>
+          <li>View → Guides → New Guide… places a guide at an exact position.</li>
           <li>
             With the Move tool, drag a guide to move it. Drag it back onto a ruler (or off the
             canvas) to delete it.
           </li>
           <li>
-            View → Guides (Cmd/Ctrl+;) hides or shows them, View → Lock Guides stops them moving and
-            View → Clear Guides removes them all.
+            View → Show → Guides (Cmd/Ctrl+;) hides or shows them, View → Guides → Lock Guides stops
+            them moving and View → Guides → Clear Guides removes them all.
           </li>
         </ul>
         <p>
@@ -497,9 +501,9 @@ export const DOCS: readonly DocPage[] = [
         </p>
         <h2>Grid</h2>
         <p>
-          View → Grid (Cmd/Ctrl+&apos;) shows a grid over the canvas. Set its spacing with View →
-          Grid Size…. When you zoom out far, the grid shows every second or fourth line so it stays
-          readable.
+          View → Show → Grid (Cmd/Ctrl+&apos;) shows a grid over the canvas. Set its spacing with
+          View → Grid Size…. When you zoom out far, the grid shows every second or fourth line so it
+          stays readable.
         </p>
         <h2>Snapping and smart guides</h2>
         <p>
@@ -654,8 +658,8 @@ export const DOCS: readonly DocPage[] = [
         </ul>
         <h2>Vector masks</h2>
         <p>
-          With a work path, Layer → Add Vector Mask from Path hides the active layer outside the
-          path. The mask moves with the layer and can be edited with Direct Selection.
+          With a work path, Layer → Vector Mask → Add Vector Mask from Path hides the active layer
+          outside the path. The mask moves with the layer and can be edited with Direct Selection.
         </p>
         <h2>Limitations</h2>
         <ul>
@@ -684,11 +688,12 @@ export const DOCS: readonly DocPage[] = [
         <h2>Creating smart objects</h2>
         <ul>
           <li>
-            Layer → Convert to Smart Object turns the active layer (or group) into a smart object.
+            Layer → Smart Object → Convert to Smart Object turns the active layer (or group) into a
+            smart object.
           </li>
           <li>
-            File → Place Embedded… adds an image, SVG, PSD or <code>.picstea</code> project as a
-            smart object. PSD files keep their layers inside it.
+            File → Place → Place Embedded… adds an image, SVG, PSD or <code>.picstea</code> project
+            as a smart object. PSD files keep their layers inside it.
           </li>
         </ul>
         <h2>Editing the contents</h2>
@@ -785,11 +790,11 @@ export const DOCS: readonly DocPage[] = [
         </p>
         <h2>Batch processing</h2>
         <p>
-          File → Batch… plays an action on many files (up to 200 at a time): choose the action, the
-          files and the output format (PNG, JPEG or WebP). Each file is opened, the action is played
-          and the result is added to one ZIP file that you save at the end. The files are processed
-          on your device and are not stored in the browser. Files that can&apos;t be opened or
-          processed are skipped and listed.
+          File → Automate → Batch… plays an action on many files (up to 200 at a time): choose the
+          action, the files and the output format (PNG, JPEG or WebP). Each file is opened, the
+          action is played and the result is added to one ZIP file that you save at the end. The
+          files are processed on your device and are not stored in the browser. Files that
+          can&apos;t be opened or processed are skipped and listed.
         </p>
         <h2>Sharing actions</h2>
         <p>

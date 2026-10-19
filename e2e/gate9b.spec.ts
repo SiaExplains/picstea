@@ -10,6 +10,7 @@ import {
   newDocument,
   pixel,
   trackErrors,
+  pickMenu,
 } from "./helpers";
 
 async function click(page: Page, x: number, y: number) {
@@ -17,10 +18,7 @@ async function click(page: Page, x: number, y: number) {
   await page.mouse.click(p.x, p.y);
 }
 
-async function menu(page: Page, name: string, item: string) {
-  await page.getByRole("menuitem", { name, exact: true }).click();
-  await page.getByRole("menuitem", { name: item, exact: true }).click();
-}
+const menu = (page: Page, name: string, item: string) => pickMenu(page, name, item);
 
 /** Pen: click the three corners of a triangle and click the first again to close it. */
 async function penTriangle(page: Page) {

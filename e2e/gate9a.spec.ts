@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { at, drag, isWhite, MOD, newDocument, pixel, trackErrors } from "./helpers";
+import { at, drag, isWhite, MOD, newDocument, pixel, trackErrors, pickMenu } from "./helpers";
 
 /** Guide colour in the canvas renderer (theme.guide). */
 const isGuide = (rgba: number[]) => rgba[0] < 40 && rgba[1] > 170 && rgba[2] > 230;
@@ -11,8 +11,7 @@ async function menu(
   item: string,
   role: "menuitem" | "menuitemcheckbox" = "menuitem",
 ) {
-  await page.getByRole("menuitem", { name, exact: true }).click();
-  await page.getByRole(role, { name: item, exact: true }).click();
+  await pickMenu(page, name, item, role);
 }
 
 async function undoLabel(page: Page): Promise<string> {
