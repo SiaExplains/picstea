@@ -48,9 +48,8 @@ export const rootMetadata: Metadata = {
   },
 };
 
+/** The browser's toolbar colour: the editor and website are both dark (ADR-0035). */
 export const rootViewport: Viewport = {
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
-    { media: "(prefers-color-scheme: dark)", color: "#141518" },
-  ],
+  themeColor: "#1e1f22",
+  colorScheme: "dark",
 };

@@ -88,8 +88,10 @@ test("PSD export keeps layers and groups and opens again in Picstea", async ({ p
 test("a .picstea project file moves a project to another browser", async ({ page, browser }) => {
   const errors = trackErrors(page);
   await composition(page, "Portable");
+  // Listen before pressing: under load the download can start before a later listener.
+  const downloading = page.waitForEvent("download");
   await page.keyboard.press(`${MOD}+Shift+s`);
-  const download = await page.waitForEvent("download");
+  const download = await downloading;
   expect(download.suggestedFilename()).toBe("Portable.picstea");
   const path = (await download.path())!;
 

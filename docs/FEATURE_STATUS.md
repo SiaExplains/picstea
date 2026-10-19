@@ -139,6 +139,8 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 | Copy Merged, Edit → Stroke…, Select → Grow / Similar, Layer → Colour Label | ✅ | ADR-0032 |
 | About page (`/about`) | ✅ | ADR-0032 |
 | Three sponsorship slots in the editor column; silent looping video sponsorships (FocusCrew) | ✅ | ADR-0034; reduced motion shows the still frame |
+| Media-only sponsor tiles with an overlaid "Sponsored" label; compact empty slots | ✅ | ADR-0035 |
+| Website in the editor's dark theme | ✅ | ADR-0035 |
 | Image Size…, Canvas Size… (9 anchors, relative), Image Rotation (90°/180°, flip canvas) | ✅ | ADR-0033; layers transformed, not resampled; arbitrary angle 📋 |
 | Trim…, Reveal All, Duplicate document | ✅ | ADR-0033 |
 | Auto Tone, Auto Contrast, Auto Color (as a Levels adjustment layer) | ✅ | ADR-0033 |

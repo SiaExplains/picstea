@@ -25,7 +25,14 @@ test("wide screens get the sponsorship column, privacy settings and website link
   const video = first.locator("video");
   await expect(video).toHaveAttribute("src", "/sponsors/focuscrew.mp4");
   await expect.poll(() => video.evaluate((v: HTMLVideoElement) => v.muted && !v.paused)).toBe(true);
-  await expect(side.getByTestId("side-slot").nth(1)).toContainText("Sponsor Picstea");
+  // Media only, with the label over it; empty slots invite sponsors.
+  await expect(first.getByText("Sponsored")).toBeVisible();
+  await expect(first.getByText(/your productivity/i)).toHaveCount(0);
+  await expect(side.getByTestId("side-slot").nth(1)).toContainText("Your ad here");
+  await expect(side.getByTestId("side-slot").nth(1).getByRole("link")).toHaveAttribute(
+    "href",
+    "/sponsorship",
+  );
   // The start screen doesn't repeat the sponsorship while the column shows it.
   await expect(page.getByTestId("sponsor-card")).toHaveCount(4);
   await expect(page.getByTestId("sponsor-card").first()).toBeHidden();
@@ -55,7 +62,7 @@ test("narrower screens keep the sponsorship on the start screen instead", async 
   await openEditor(page);
   await expect(page.getByTestId("editor-side")).toBeHidden();
   await expect(page.getByTestId("sponsor-card").first()).toBeVisible();
-  await expect(page.getByTestId("sponsor-card").first()).toContainText("FocusCrew");
+  await expect(page.getByTestId("sponsor-card").first()).toHaveAccessibleName(/FocusCrew/);
 });
 
 test("with reduced motion the sponsor video stays on its still frame", async ({ page }) => {

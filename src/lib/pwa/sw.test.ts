@@ -49,6 +49,11 @@ describe("service worker caching policy", () => {
     expect(classify(`${ORIGIN}/`, "POST", "navigate", ORIGIN)).toBe("skip");
     expect(classify(`${ORIGIN}/sw.js`, "GET", "same-origin", ORIGIN)).toBe("skip");
     expect(classify(`${ORIGIN}/docs?_rsc=abc`, "GET", "cors", ORIGIN)).toBe("skip");
+    // Sponsorship media: the browser's business, never cached.
+    expect(classify(`${ORIGIN}/sponsors/focuscrew-poster.png`, "GET", "no-cors", ORIGIN)).toBe(
+      "skip",
+    );
+    expect(classify(`${ORIGIN}/sponsors/focuscrew.mp4`, "GET", "no-cors", ORIGIN)).toBe("skip");
     expect(classify(`${ORIGIN}/llms.txt`, "GET", "cors", ORIGIN)).toBe("skip");
     expect(classify("not a url", "GET", "navigate", ORIGIN)).toBe("skip");
   });

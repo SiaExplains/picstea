@@ -1,7 +1,7 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
-import { SponsorCard } from "@/components/site/SponsorCard";
+import { SponsorTile } from "@/components/site/SponsorTile";
 import { SPONSORSHIPS } from "@/content/sponsorships";
 import { dayNumber, pickSponsorship } from "@/lib/sponsorship/sponsorship";
 import { useAppStatus, useController } from "./editor-context";
@@ -122,14 +122,8 @@ function StartSponsorship() {
   );
   const ad = pickSponsorship(SPONSORSHIPS, "editor-start", day);
   return (
-    <SponsorCard
-      ad={ad}
-      styles={{
-        card: styles.sponsor,
-        label: styles.sponsorLabel,
-        title: styles.sponsorTitle,
-        text: styles.muted,
-      }}
-    />
+    <div className={styles.startSponsor}>
+      <SponsorTile ad={ad} size={200} />
+    </div>
   );
 }

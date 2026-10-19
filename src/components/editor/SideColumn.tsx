@@ -1,7 +1,7 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
-import { SponsorCard } from "@/components/site/SponsorCard";
+import { SponsorTile } from "@/components/site/SponsorTile";
 import { SPONSORSHIPS } from "@/content/sponsorships";
 import { dayNumber, pickSponsorships } from "@/lib/sponsorship/sponsorship";
 import styles from "./editor.module.css";
@@ -29,27 +29,11 @@ export function SideColumn({ onPrivacySettings }: { onPrivacySettings: () => voi
     <aside className={styles.side} aria-label="Sponsorship and privacy" data-testid="editor-side">
       <div className={styles.sideSlots}>
         {ads.map((ad, i) => (
-          <div
-            key={`${i}-${ad.id}`}
-            className={`${styles.sideSlot} ${i === 0 ? styles.sideSlotFirst : ""}`}
-            data-testid="side-slot"
-          >
-            <SponsorCard
-              ad={ad}
-              mediaSize={ad.video ? 200 : 48}
-              styles={{
-                card: styles.sideSponsor,
-                label: styles.sponsorLabel,
-                title: styles.sponsorTitle,
-                text: styles.muted,
-              }}
-            />
+          <div key={`${i}-${ad.id}`} className={styles.sideSlot} data-testid="side-slot">
+            <SponsorTile ad={ad} />
           </div>
         ))}
       </div>
-      <a className={styles.sideLink} href="/sponsorship" target="_blank" rel="noopener">
-        Advertise here
-      </a>
       <button type="button" className={styles.sideButton} onClick={onPrivacySettings}>
         Privacy settings
       </button>

@@ -3,6 +3,19 @@
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.31.0] — 2026-10-19
+
+### Changed
+
+- **Sponsorships beside the canvas are just the ad.** There's no card, title or description,
+  just a small "Sponsored" label over the image or video. Empty slots are short "Your ad here"
+  tiles, so the column takes much less space.
+- **The website uses the editor's dark theme**: About, Blog, Docs and every other page.
+
+### Fixed
+
+- Going online again after working offline no longer logs an error for the sponsor's image.
+
 ## [0.30.0] — 2026-10-19
 
 ### Added
