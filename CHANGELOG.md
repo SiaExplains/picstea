@@ -3,6 +3,26 @@
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.33.0] — 2026-10-19
+
+### Added
+
+- **The full Filter menu**, laid out like Photoshop and Photopea. Filter Gallery, Lens
+  Correction and Camera Raw sit at the top, followed by the 3D, Blur, Blur Gallery, Distort,
+  Noise, Pixelate, Render, Sharpen, Stylize, Other and Fourier submenus. That's more than 60
+  filters, all with a live preview, and all usable as smart filters.
+- **Liquify**: push, twirl, pucker and bloat pixels with a brush in its own preview. Reconstruct
+  and Smooth soften the change.
+- **Vanishing Point**: mark a flat surface in perspective, then clone inside it. The copy
+  shrinks as it moves into the distance.
+- Filter dialogs can offer a list of options (for example Spin or Zoom for Radial Blur). Long
+  dialogs such as Camera Raw now scroll on small screens.
+
+### Changed
+
+- Filter → Pixelate → Pixelate is now called **Mosaic**, as in Photoshop. Smart filters that
+  already use it keep working.
+
 ## [0.32.0] — 2026-10-19
 
 ### Added

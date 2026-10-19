@@ -50,7 +50,7 @@ const FACTS = [
   "Selections: rectangular and elliptical marquee, freehand and polygonal lasso, magic wand, Color Range, select layer pixels, feather/expand/contract, transform selection.",
   "Painting and retouching: brush, pencil, eraser, background and magic eraser, paint bucket, gradient, colour replacement, clone stamp, healing and spot healing brush, red eye, dodge, burn, sponge, blur, sharpen and smudge.",
   "Vector tools: pen with add/delete/convert anchor point, path and direct selection, rectangle, rounded rectangle, ellipse, polygon and line shapes, editable text.",
-  "Smart objects with non-destructive smart filters; filters such as Gaussian, box and motion blur, Unsharp Mask, noise and pixelate with live preview.",
+  "Smart objects with non-destructive smart filters; Photoshop's full Filter menu with live preview: blurs and Blur Gallery, Distort, Noise, Pixelate, Render, Sharpen, Stylize, Other and Fourier, plus Filter Gallery, Lens Correction, Camera Raw, Liquify and Vanishing Point.",
   "Actions (record and replay edits), batch processing of many files into a ZIP, history panel, swatches, colour sampler and ruler, rulers, guides, grid and snapping.",
   "Opens PNG, JPEG, WebP, GIF, SVG, PSD (8-bit RGB and greyscale) and .picstea projects; exports PNG, JPEG, WebP, SVG, PDF and layered PSD.",
   "PSD import keeps layers, groups, masks, blend modes, editable text, adjustment layers, shapes, smart objects, clipping and vector masks and common layer styles.",

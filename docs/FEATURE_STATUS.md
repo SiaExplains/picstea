@@ -189,6 +189,9 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 | Layer → Align to canvas or selection | ✅ | Several layers and Distribute ✅ (9g) |
 | Filter framework (catalogue, dialog, live preview, worker job, selection blending) | ✅ | Destructive on pixel layers; smart filters come with 9c |
 | Filters: Gaussian, Box and Motion Blur, Unsharp Mask, Add Noise, Pixelate, Emboss, Find Edges | ✅ | Last Filter (Mod+Alt+F) |
+| Full Filter menu (Photopea parity): Filter Gallery, Lens Correction, Camera Raw, 3D, Blur, Blur Gallery, Distort, Noise, Pixelate, Render, Sharpen, Stylize, Other, Fourier | ✅ | ADR-0036; `choice` parameters; Blur Gallery pins set by sliders |
+| Liquify (Forward Warp, Reconstruct, Smooth, Twirl, Pucker, Bloat) | ✅ | ADR-0036; pixel layers; worker render at full size |
+| Vanishing Point (perspective plane + clone stamp) | ✅ | ADR-0036; one plane; no paste/marquee into the plane yet |
 | Levels and Curves adjustment layers (RGB + per channel, histogram) | ✅ | Composite only in PSD export |
 | View preferences remembered per browser | ✅ | `picstea.view` in local storage |
 

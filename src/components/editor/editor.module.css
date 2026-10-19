@@ -2010,6 +2010,12 @@
   gap: 8px;
 }
 
+/* Filters with many settings (Camera Raw) scroll instead of running off the screen. */
+.previewDialog {
+  max-height: calc(100vh - 32px);
+  overflow: auto;
+}
+
 /* Dialogs that preview on the canvas (filters) must not dim it. */
 .previewDialog::backdrop {
   background: transparent;
@@ -2387,4 +2393,115 @@
   grid-template-columns: 36px minmax(0, 1fr) 40px 24px;
   align-items: center;
   gap: 6px;
+}
+
+/* ---------- Liquify / Vanishing Point (ADR-0036) ---------- */
+
+.pixelEditor {
+  width: min(1100px, calc(100vw - 32px));
+  max-height: calc(100vh - 32px);
+  overflow: auto;
+}
+
+.pixelEditorBody {
+  display: grid;
+  grid-template-columns: 200px minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+@media (max-width: 640px) {
+  .pixelEditorBody {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.pixelEditorSide {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.toolList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.toolList .button {
+  text-align: left;
+}
+
+.toolList .button[aria-checked="true"],
+.pixelEditorSide .button[aria-pressed="true"] {
+  background: var(--ed-accent-strong);
+  border-color: var(--ed-accent-strong);
+  color: #fff;
+}
+
+.pixelStage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 240px;
+  background: var(--ed-bg);
+  border: 1px solid var(--ed-border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.pixelCanvasWrap {
+  position: relative;
+  display: inline-block;
+  line-height: 0;
+  /* Drawing, not scrolling, on touch screens. */
+  touch-action: none;
+}
+
+.pixelCanvas {
+  display: block;
+  max-width: 100%;
+  max-height: 65vh;
+  cursor: crosshair;
+  background-image: conic-gradient(#666 25%, #999 0 50%, #666 0 75%, #999 0);
+  background-size: 16px 16px;
+}
+
+.pixelOverlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: visible;
+}
+
+.planeGrid,
+.planeGridBad {
+  fill: none;
+  stroke-width: 1.5px;
+  vector-effect: non-scaling-stroke;
+}
+
+.planeGrid {
+  stroke: #4cc2ff;
+}
+
+.planeGridBad {
+  stroke: #ff5a5a;
+}
+
+.planeHandle {
+  fill: #fff;
+  stroke: #1478d4;
+  stroke-width: 1.5px;
+  vector-effect: non-scaling-stroke;
+}
+
+.brushCursor {
+  position: absolute;
+  border: 1px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.6);
+  pointer-events: none;
 }

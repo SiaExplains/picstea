@@ -129,6 +129,24 @@ export function FilterDialog({
               />
               {p.label}
             </label>
+          ) : p.kind === "choice" ? (
+            <div key={p.key} className={styles.field}>
+              <label className={styles.fieldLabel} htmlFor={`filter-${p.key}`}>
+                {p.label}
+              </label>
+              <select
+                id={`filter-${p.key}`}
+                className={styles.input}
+                value={values[p.key] as number}
+                onChange={(e) => set(p.key, Number(e.target.value))}
+              >
+                {p.options.map((option, index) => (
+                  <option key={option} value={index}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+            </div>
           ) : (
             <div key={p.key} className={styles.field}>
               <label className={styles.fieldLabel} htmlFor={`filter-${p.key}`}>

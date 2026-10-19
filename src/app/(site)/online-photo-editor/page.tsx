@@ -71,7 +71,10 @@ export default function OnlinePhotoEditor() {
         <li>
           Adjustment layers — including Levels and Curves — that never change the original pixels.
         </li>
-        <li>Filters such as blur, sharpen, noise and pixelate; smart objects and smart filters.</li>
+        <li>
+          Photoshop&apos;s full Filter menu, including Camera Raw, Liquify and Vanishing Point;
+          smart objects and smart filters.
+        </li>
         <li>Marquee, lasso and magic-wand selections; feather, expand, contract, transform.</li>
         <li>Brush, pencil, eraser, paint bucket, gradient, shapes and text.</li>
         <li>

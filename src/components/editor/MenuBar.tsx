@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useEffect, useId, useLayoutEffect, useRef, useState, type KeyboardEvent } from "react";
 import { ADJUSTMENTS } from "@/editor/adjustments/registry";
-import { FILTERS } from "@/editor/filters/registry";
+import { FILTER_GROUPS, FILTERS, type FilterGroup } from "@/editor/filters/registry";
 import { DEFAULT_KEYMAP, formatBinding } from "@/editor/core/shortcuts/shortcuts";
 import { useIsMac } from "./editor-context";
 import styles from "./editor.module.css";
@@ -20,13 +20,22 @@ const sub = (label: string, items: readonly MenuEntry[]): Submenu => ({ label, i
 
 const ADJUSTMENT_ITEMS: MenuEntry[] = ADJUSTMENTS.map((a) => `adjust.${a.type}` as const);
 
-/** Filters grouped by kind (Blur, Sharpen…), one submenu each. */
-const FILTER_GROUPS: MenuEntry[] = [...new Set(FILTERS.map((f) => f.group))].map((group) =>
-  sub(
-    group,
-    FILTERS.filter((f) => f.group === group).map((f) => `filter.${f.id}` as const),
-  ),
-);
+/**
+ * Filter menu in Photopea/Photoshop order: the top-level filters (with Liquify and Vanishing
+ * Point, which have their own editors), then one submenu per group.
+ */
+const filterItems = (group: FilterGroup) =>
+  FILTERS.filter((f) => f.group === group).map((f) => `filter.${f.id}` as const);
+
+const FILTER_MENU: MenuEntry[] = [
+  "filter.last",
+  "-",
+  ...filterItems("Top"),
+  "filter.liquify",
+  "filter.vanishingPoint",
+  "-",
+  ...FILTER_GROUPS.filter((g) => g !== "Top").map((group) => sub(group, filterItems(group))),
+];
 
 const MENUS: readonly Submenu[] = [
   sub("File", [
@@ -159,7 +168,7 @@ const MENUS: readonly Submenu[] = [
     "path.makeSelection",
     "path.fromSelection",
   ]),
-  sub("Filter", ["filter.last", "-", ...FILTER_GROUPS]),
+  sub("Filter", FILTER_MENU),
   sub("View", [
     "view.zoomIn",
     "view.zoomOut",

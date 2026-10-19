@@ -59,8 +59,8 @@ export const DOCS: readonly DocPage[] = [
             <strong>Menu bar</strong> — File, Edit, Image, Layer, Select, Filter, View, Window and
             Help. Items marked › open a submenu: point at them, or press Arrow Right (Arrow Left or
             Escape goes back). Adjustment layers are under Layer → New Adjustment Layer and Image →
-            Adjustments; filters are grouped by kind (Blur, Sharpen…). Window brings the Layers,
-            Properties, History, Swatches and Actions panels forward.
+            Adjustments; filters are grouped by kind (Blur, Distort, Stylize…). Window brings the
+            Layers, Properties, History, Swatches and Actions panels forward.
           </li>
           <li>
             <strong>Tool options</strong> — settings for the active tool, such as brush size or
@@ -558,44 +558,85 @@ export const DOCS: readonly DocPage[] = [
   },
   {
     slug: "filters",
-    title: "Filters: blur, sharpen, noise and more",
+    title: "Filters: blur, distort, stylize, Liquify and more",
     description:
-      "Apply filters to a pixel layer in Picstea with a live preview: Gaussian, box and motion blur, Unsharp Mask, Add Noise, Pixelate, Emboss and Find Edges.",
-    updated: "2026-10-09",
+      "Use Picstea's 60+ filters with a live preview: blurs, distortions, noise, stylize and more, plus Camera Raw, Lens Correction, Liquify and Vanishing Point.",
+    updated: "2026-10-19",
     body: () => (
       <>
         <p>
           Filters change the pixels of the active pixel layer. Choose one from the Filter menu,
           adjust its settings and watch the result on the canvas, then press OK. Every filter is one
           undo step. With a selection, only the selected area changes (feathered edges blend
-          smoothly).
+          smoothly). The menu follows Photoshop and Photopea, so filters are where you expect them.
         </p>
-        <h2>Available filters</h2>
+        <h2>At the top of the menu</h2>
         <ul>
           <li>
-            <strong>Gaussian Blur</strong> — a smooth, natural blur. Radius 0.1–250 px.
+            <strong>Filter Gallery</strong> — artistic effects: Cutout, Dry Brush, Poster Edges,
+            Watercolor, Ink Outlines, Glowing Edges, Film Grain and Sponge.
           </li>
           <li>
-            <strong>Box Blur</strong> — an even blur over a square area.
+            <strong>Lens Correction</strong> — remove barrel or pincushion distortion, colour
+            fringes and vignetting; rotate and scale.
           </li>
           <li>
-            <strong>Motion Blur</strong> — a streak in one direction, set by angle and distance.
+            <strong>Camera Raw</strong> — white balance, exposure, contrast, highlights, shadows,
+            whites, blacks, clarity, dehaze, vibrance and saturation in one dialog.
           </li>
           <li>
-            <strong>Unsharp Mask</strong> — sharpens edges. Amount sets the strength, radius the
-            size of the edges, and threshold leaves smooth areas (and noise) alone.
+            <strong>Liquify</strong> — push, twirl, pucker and bloat pixels with a brush;
+            Reconstruct and Smooth undo it locally. [ and ] change the brush size.
           </li>
           <li>
-            <strong>Add Noise</strong> — grain, uniform or Gaussian, in colour or monochrome.
+            <strong>Vanishing Point</strong> — click the four corners of a flat surface (a wall, a
+            floor), then Stamp: Alt-click a source and paint. The copy shrinks into the distance.
+          </li>
+        </ul>
+        <h2>Submenus</h2>
+        <ul>
+          <li>
+            <strong>3D</strong> — Normal Map, Texture Dilation.
           </li>
           <li>
-            <strong>Pixelate</strong> — a mosaic of square cells.
+            <strong>Blur</strong> — Average, Blur, Blur More, Box, Gaussian, Lens (bokeh), Motion,
+            Radial (spin or zoom) and Surface (keeps edges).
           </li>
           <li>
-            <strong>Emboss</strong> — a grey relief lit from the chosen angle.
+            <strong>Blur Gallery</strong> — Field, Iris, Tilt-Shift, Path and Spin. Where Photoshop
+            uses pins on the canvas, Picstea sets the centre and size with sliders.
           </li>
           <li>
-            <strong>Find Edges</strong> — outlines edges as dark lines on white.
+            <strong>Distort</strong> — Displace, Kaleidoscope, Pinch, Polar Coordinates, Ripple,
+            Shear, Spherize, Twirl, Wave, ZigZag and Dents.
+          </li>
+          <li>
+            <strong>Noise</strong> — Add Noise, Despeckle, Dust &amp; Scratches, Median and Reduce
+            Noise.
+          </li>
+          <li>
+            <strong>Pixelate</strong> — Color Halftone, Crystallize, Fragment, Mezzotint, Mosaic,
+            Pointillize and Shape Mosaic.
+          </li>
+          <li>
+            <strong>Render</strong> — Clouds, Difference Clouds, Fibers and Lens Flare.
+          </li>
+          <li>
+            <strong>Sharpen</strong> — Sharpen, Sharpen Edges, Sharpen More, Smart Sharpen and
+            Unsharp Mask.
+          </li>
+          <li>
+            <strong>Stylize</strong> — Diffuse, Emboss, Find Edges, Oil Paint, Solarize, Trace
+            Contour, Wind and Chromatic Aberration.
+          </li>
+          <li>
+            <strong>Other</strong> — High Pass, HSB/HSL, Maximum, Minimum, Offset, Repeat, Color to
+            Alpha, Dither and Particles.
+          </li>
+          <li>
+            <strong>Fourier</strong> — Fourier Transform shows each channel&apos;s frequencies;
+            paint over the bright spots of a repeating pattern, then Inverse Fourier Transform. The
+            round trip is close but not exact.
           </li>
         </ul>
         <p>
@@ -614,6 +655,13 @@ export const DOCS: readonly DocPage[] = [
             its pixels, use an adjustment layer (Levels, Curves and others) instead.
           </li>
           <li>Shape and text layers can&apos;t be filtered yet; filters work on pixel layers.</li>
+          <li>
+            Displace uses the layer&apos;s brightness, clouds or waves as its map (no file is
+            loaded), and Clouds and Fibers render in black and white.
+          </li>
+          <li>
+            Liquify and Vanishing Point change pixels directly; they can&apos;t be smart filters.
+          </li>
         </ul>
       </>
     ),
