@@ -20,6 +20,9 @@ test("installable: the manifest describes a standalone app", async ({ request })
 
 test("after one online visit the editor opens and works offline", async ({ page, context }) => {
   const errors = trackErrors(page);
+  // Which requests failed, to name them if the check below fails.
+  const failed: string[] = [];
+  page.on("requestfailed", (r) => failed.push(`${r.url()} ${r.failure()?.errorText}`));
   await openEditor(page);
   // The worker installs, takes control and caches what this page loaded.
   await page.waitForFunction(() => navigator.serviceWorker?.controller !== null, null, {
@@ -58,7 +61,10 @@ test("after one online visit the editor opens and works offline", async ({ page,
   await expect(page.getByTestId("canvas-viewport")).toBeVisible();
   await context.setOffline(false);
   // Going offline makes the browser log failed network requests; nothing else may fail.
-  expect(errors.filter((e) => !/ERR_INTERNET_DISCONNECTED|Failed to fetch/.test(e))).toEqual([]);
+  expect(
+    errors.filter((e) => !/ERR_INTERNET_DISCONNECTED|Failed to fetch/.test(e)),
+    failed.join("\n"),
+  ).toEqual([]);
 });
 
 test("pages never visited show a small offline page instead of a browser error", async ({

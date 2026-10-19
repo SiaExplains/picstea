@@ -1,0 +1,69 @@
+/* A sponsorship as media only, with the "Sponsored" label laid over it (ADR-0035). */
+
+.tile {
+  position: relative;
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  border-radius: 6px;
+  background: #26272b;
+  color: inherit;
+  text-decoration: none;
+  line-height: 0;
+}
+
+.tile:focus-visible {
+  outline: 2px solid #8fd3c9;
+  outline-offset: 2px;
+}
+
+.tile video,
+.tile img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1;
+  object-fit: cover;
+}
+
+.label {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  padding: 2px 5px;
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.75);
+  color: #fff;
+  font:
+    600 9px/1.3 system-ui,
+    sans-serif;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  pointer-events: none;
+}
+
+/* An empty slot: a quiet invitation to sponsor, much shorter than a booked one. */
+.placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  height: 88px;
+  border: 1px dashed #3a3b40;
+  border-radius: 6px;
+  color: #a4a5ab;
+  font:
+    13px/1.3 system-ui,
+    sans-serif;
+  text-align: center;
+}
+
+.placeholder strong {
+  color: #e6e6e8;
+  font-weight: 600;
+}
+
+.tile:hover .placeholder {
+  border-color: #4da297;
+}

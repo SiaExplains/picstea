@@ -1590,71 +1590,28 @@
   }
 
   /* The column carries the editor's sponsorship; the start screen doesn't repeat it. */
-  .root .sponsor {
+  .root .startSponsor {
     display: none;
   }
 }
 
-/* A fixed 280 × 250 box (IAB medium rectangle proportions): nothing shifts when it fills. */
-/* Three slots: the first holds a square image or video; all shrink on short screens. */
+/* Three slots, media only (ADR-0035): a booked one is square; empty ones are short. */
 .sideSlots {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
   min-height: 0;
   overflow-y: auto;
 }
 
 .sideSlot {
-  flex: 0 1 140px;
-  min-height: 112px;
+  flex: none;
 }
 
-.sideSlotFirst {
-  flex: 0 0 auto;
-  min-height: 0;
-}
-
-.sideSponsor video {
-  display: block;
-  width: 100%;
-  max-width: 200px;
-  height: auto;
-  aspect-ratio: 1;
-  align-self: center;
-  border-radius: 6px;
-  background: var(--ed-chrome);
-}
-
-.sideSponsor {
-  box-sizing: border-box;
-  height: 100%;
-  padding: 14px;
-  border: 1px solid var(--ed-border);
-  border-radius: 8px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 6px;
-}
-
-.sideSponsor a {
-  color: var(--ed-text);
-  text-decoration: none;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 8px;
-}
-
-.sideSponsor a:hover .sponsorTitle {
-  text-decoration: underline;
-}
-
-.sideLink {
-  align-self: flex-end;
-  font-size: 12px;
-  color: var(--ed-text-dim);
+/* The start screen's sponsorship (screens narrower than the side column). */
+.startSponsor {
+  width: 200px;
+  margin-top: 24px;
 }
 
 .sideButton {
@@ -1978,41 +1935,6 @@
 }
 
 /* ---------- start-screen sponsorship (docs/08: fixed space, clearly labelled) ---------- */
-
-.sponsor {
-  margin-top: 32px;
-  max-width: 420px;
-  min-height: 86px;
-  padding: 12px 14px;
-  border: 1px solid var(--ed-border);
-  border-radius: 8px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.sponsor a {
-  color: var(--ed-text);
-  text-decoration: none;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.sponsor a:hover .sponsorTitle {
-  text-decoration: underline;
-}
-
-.sponsorLabel {
-  font-size: 10px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--ed-text-dim);
-}
-
-.sponsorTitle {
-  font-size: 14px;
-}
 
 /* Levels / Curves */
 .histogram {

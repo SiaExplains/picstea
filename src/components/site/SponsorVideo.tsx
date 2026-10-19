@@ -51,7 +51,7 @@ export function SponsorVideo({
     return () => query?.removeEventListener("change", apply);
   }, [online]);
   if (!online) {
-    return <span aria-hidden style={{ display: "block", width: size, height: size }} />;
+    return <span aria-hidden style={{ display: "block", width: "100%", aspectRatio: "1" }} />;
   }
   return (
     <video

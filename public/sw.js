@@ -36,6 +36,8 @@ function classify(url, method, mode, origin) {
   if (u.pathname === "/sw.js" || u.pathname.startsWith("/_next/webpack-hmr")) return "skip";
   // React Server Component payloads for client-side navigation: always fresh, never cached.
   if (u.searchParams.has("_rsc")) return "skip";
+  // Sponsorship media isn't part of the app: left to the browser, never cached (ADR-0035).
+  if (u.pathname.startsWith("/sponsors/")) return "skip";
   if (u.pathname.startsWith("/_next/static/")) return "static";
   if (mode === "navigate") return "page";
   if (u.pathname === "/manifest.webmanifest" || STATIC_FILE.test(u.pathname)) return "static";
