@@ -3,6 +3,14 @@
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.31.2] — 2026-10-19
+
+### Fixed
+
+- **Offline, the editor no longer logs a failed image request.** A file that started loading just
+  before the offline support took over (the Picstea logo in the menu bar) sometimes wasn't saved
+  for offline use; now every file the page loads on the first visit is saved.
+
 ## [0.31.1] — 2026-10-19
 
 ### Added
