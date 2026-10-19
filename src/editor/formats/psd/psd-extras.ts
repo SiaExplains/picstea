@@ -1,10 +1,24 @@
-import { checkEffect, EFFECT_LIMITS, normalizeEffect } from "../../core/commands/effect-commands";
+import {
+  LINEAR_CONTOUR,
+  MAX_CONTOUR_POINTS,
+  contourPreset,
+  maxCopies,
+  type Contour,
+  type ContourPreset,
+  type EffectByKind,
+  type EffectKind,
+  type GlowFill,
+  type GradientStyle,
+  type LayerEffects,
+  type PatternId,
+} from "../../core/effects/model";
+import { EFFECT_LIMITS, parseEffect } from "../../core/effects/parse";
 import {
   FONT_FAMILIES,
   type Adjustment,
+  type BlendMode,
   type FontFamily,
-  type EffectKind,
-  type LayerEffects,
+  type GradientStop,
   type TextAlign,
 } from "../../core/document/types";
 import { ByteReader } from "../binary/bytes";
@@ -19,6 +33,7 @@ import {
   getString,
   readVersionedDescriptor,
   type Descriptor,
+  type DescriptorValue,
 } from "./descriptor";
 import { enginePath, parseEngineData, type EngineValue } from "./engine-data";
 import { ADJUSTMENT_KEYS, decodeAdjustment, UNSUPPORTED_ADJUSTMENTS } from "./psd-adjustments";
@@ -32,6 +47,8 @@ import { decodeVectorMask, type PsdVectorMask } from "./psd-paths";
 export interface PsdExtras {
   readonly adjustment?: Adjustment;
   readonly effects?: LayerEffects;
+  /** Blending Options → Fill (`iOpa`), 0…1. */
+  readonly fillOpacity?: number;
   readonly vectorMask?: PsdVectorMask;
   /** Solid colour fill layer (`SoCo`), `#rrggbb`. */
   readonly fill?: string;
@@ -67,6 +84,7 @@ export const EXTRA_KEYS = new Set<string>([
   ...ADJUSTMENT_KEYS,
   ...Object.keys(UNSUPPORTED_ADJUSTMENTS),
   "lfx2",
+  "iOpa",
   "vmsk",
   "vsms",
   "SoCo",
@@ -80,19 +98,196 @@ export const EXTRA_KEYS = new Set<string>([
 /** Clamp, treating NaN and infinities from damaged files as the lower bound. */
 const clamp = (v: number, min: number, max: number) =>
   Number.isFinite(v) ? Math.min(max, Math.max(min, v)) : min;
-const opacity = (d: Descriptor | undefined) => clamp((getNumber(d, "Opct") ?? 100) / 100, 0, 1);
 
-/** The first enabled entry of an effect: newer files use `…Multi` lists. */
-function effect(fx: Descriptor, key: string, multi: string): Descriptor | undefined {
+// ---------------------------------------------------------------------------------------------
+// Layer styles (`lfx2`, ADR-0030)
+
+const BLEND_ENUMS: Record<string, BlendMode> = {
+  Nrml: "normal",
+  Mltp: "multiply",
+  Scrn: "screen",
+  Ovrl: "overlay",
+  Drkn: "darken",
+  Lghn: "lighten",
+  CDdg: "color-dodge",
+  CBrn: "color-burn",
+  HrdL: "hard-light",
+  SftL: "soft-light",
+  Dfrn: "difference",
+  Xclu: "exclusion",
+  "H   ": "hue",
+  Strt: "saturation",
+  "Clr ": "color",
+  Lmns: "luminosity",
+};
+
+const CONTOUR_BY_NAME: Record<string, Exclude<ContourPreset, "custom">> = {
+  linear: "linear",
+  cone: "cone",
+  "cone - inverted": "cone-inverted",
+  "cove - deep": "cove-deep",
+  "cove - shallow": "cove-shallow",
+  gaussian: "gaussian",
+  "half round": "half-round",
+  ring: "ring",
+  "ring - double": "ring-double",
+  "rolling slope - descending": "rolling-slope",
+  "rounded steps": "rounded-steps",
+  "sawtooth 1": "sawtooth",
+};
+
+const PATTERN_WORDS: [RegExp, PatternId][] = [
+  [/checker/i, "checker"],
+  [/diagonal/i, "diagonal-stripes"],
+  [/stripe|line/i, "stripes"],
+  [/dot|halftone/i, "dots"],
+  [/grid/i, "grid"],
+  [/brick|tile/i, "bricks"],
+  [/wave/i, "waves"],
+  [/cross|hatch/i, "crosshatch"],
+  [/diamond/i, "diamonds"],
+];
+
+const descriptors = (list: DescriptorValue[] | undefined): Descriptor[] =>
+  (list ?? []).filter(
+    (v): v is Descriptor =>
+      !!v && typeof v === "object" && !Array.isArray(v) && !(v instanceof Uint8Array),
+  );
+
+/** Every copy of an effect: newer files use `…Multi` lists, older ones a single descriptor. */
+function copies(fx: Descriptor, key: string, multi: string): Descriptor[] {
   const list = getList(fx, multi);
-  if (list) {
-    const items = list.filter(
-      (v): v is Descriptor => !!v && typeof v === "object" && !Array.isArray(v),
-    );
-    return items.find((d) => getBool(d, "enab") !== false) ?? items[0];
-  }
-  return getDescriptor(fx, key);
+  if (list) return descriptors(list);
+  const one = getDescriptor(fx, key);
+  return one ? [one] : [];
 }
+
+/** Reads one effect descriptor with clamping, so damaged values still give a valid effect. */
+class EffectReader {
+  constructor(
+    readonly d: Descriptor,
+    private readonly notes: Set<string>,
+    private readonly light: { angle: number },
+  ) {}
+
+  num = (key: string, fallback: number, [min, max]: readonly [number, number]) =>
+    clamp(getNumber(this.d, key) ?? fallback, min, max);
+  pct = (key: string, fallback: number) => clamp((getNumber(this.d, key) ?? fallback) / 100, 0, 1);
+  bool = (key: string, fallback: boolean) => getBool(this.d, key) ?? fallback;
+  color = (key = "Clr ", fallback = "#000000") => getColor(this.d, key) ?? fallback;
+
+  mode(key = "Md  ", fallback: BlendMode = "normal"): BlendMode {
+    const value = getEnum(this.d, key);
+    if (value === undefined) return fallback;
+    const mode = BLEND_ENUMS[value];
+    if (!mode)
+      this.notes.add("Some layer style blend modes are not available and were set to Normal.");
+    return mode ?? "normal";
+  }
+
+  base(modeFallback: BlendMode, opacityFallback = 75) {
+    return {
+      enabled: this.bool("enab", true),
+      blendMode: this.mode("Md  ", modeFallback),
+      opacity: this.pct("Opct", opacityFallback),
+    };
+  }
+
+  angle() {
+    const global = this.bool("uglg", false);
+    return {
+      useGlobalLight: global,
+      angle: clamp(
+        global ? this.light.angle : (getNumber(this.d, "lagl") ?? this.light.angle),
+        ...EFFECT_LIMITS.angle,
+      ),
+    };
+  }
+
+  contour(key: string): Contour {
+    const c = getDescriptor(this.d, key);
+    if (!c) return LINEAR_CONTOUR;
+    const name = (getString(c, "Nm  ") ?? "").trim().toLowerCase();
+    const preset = CONTOUR_BY_NAME[name];
+    if (preset) return contourPreset(preset);
+    const raw = descriptors(getList(c, "Crv "))
+      .map((p) => ({
+        x: clamp((getNumber(p, "Hrzn") ?? 0) / 255, 0, 1),
+        y: clamp((getNumber(p, "Vrtc") ?? 0) / 255, 0, 1),
+      }))
+      .sort((a, b) => a.x - b.x);
+    if (raw.length < 2) return LINEAR_CONTOUR;
+    const points =
+      raw.length > MAX_CONTOUR_POINTS
+        ? [...raw.slice(0, MAX_CONTOUR_POINTS - 1), raw[raw.length - 1]]
+        : raw;
+    // The first and last points sit on the edges.
+    return {
+      preset: "custom",
+      points: points.map((p, i) => ({
+        x: i === 0 ? 0 : i === points.length - 1 ? 1 : p.x,
+        y: p.y,
+      })),
+    };
+  }
+
+  stops(key = "Grad"): GradientStop[] | null {
+    const gradient = getDescriptor(this.d, key);
+    if (!gradient) return null;
+    if (getEnum(gradient, "GrdF") === "ClNs") {
+      this.notes.add("Noise gradients in layer styles were not imported.");
+      return null;
+    }
+    const stops = descriptors(getList(gradient, "Clrs"))
+      .map((stop) => ({
+        position: clamp((getNumber(stop, "Lctn") ?? 0) / 4096, 0, 1),
+        color: getColor(stop) ?? "#000000",
+      }))
+      .sort((a, b) => a.position - b.position);
+    if (stops.length > 16) {
+      // Keep both ends; drop stops from the middle.
+      stops.splice(15, stops.length - 16);
+      this.notes.add("Gradients in layer styles were limited to 16 colours.");
+    }
+    return stops.length >= 2 ? stops : null;
+  }
+
+  gradientStyle(): GradientStyle {
+    const type = getEnum(this.d, "Type");
+    return type === "Rdl "
+      ? "radial"
+      : type === "Angl"
+        ? "angle"
+        : type === "Rflc"
+          ? "reflected"
+          : type === "Dmnd"
+            ? "diamond"
+            : "linear";
+  }
+
+  pattern(key = "Ptrn"): PatternId {
+    const name = getString(getDescriptor(this.d, key), "Nm  ") ?? "";
+    this.notes.add("Photoshop patterns were replaced by the closest built-in pattern.");
+    return PATTERN_WORDS.find(([re]) => re.test(name))?.[1] ?? "noise";
+  }
+
+  offset(key: string, scale: number, [min, max]: readonly [number, number]) {
+    const o = getDescriptor(this.d, key);
+    return {
+      x: clamp((getNumber(o, "Hrzn") ?? 0) * scale, min, max),
+      y: clamp((getNumber(o, "Vrtc") ?? 0) * scale, min, max),
+    };
+  }
+
+  glowFill(): GlowFill {
+    const stops = getDescriptor(this.d, "Grad") ? this.stops() : null;
+    return stops
+      ? { kind: "gradient", stops, reverse: false }
+      : { kind: "color", color: this.color("Clr ", "#ffffbe") };
+  }
+}
+
+const L = EFFECT_LIMITS;
 
 function decodeEffects(
   body: Uint8Array,
@@ -103,123 +298,196 @@ function decodeEffects(
   r.u32(); // object effects version
   const fx = readVersionedDescriptor(r);
   if (getBool(fx, "masterFXSwitch") === false) return undefined;
-  const out: { -readonly [K in keyof LayerEffects]: LayerEffects[K] } = {};
-  const shadow = effect(fx, "DrSh", "dropShadowMulti");
-  if (shadow) {
-    const angle = getBool(shadow, "uglg")
-      ? globalAngle
-      : (getNumber(shadow, "lagl") ?? globalAngle);
-    out.dropShadow = {
-      enabled: getBool(shadow, "enab") ?? true,
-      color: getColor(shadow) ?? "#000000",
-      opacity: opacity(shadow),
-      angle: clamp(angle, ...EFFECT_LIMITS.angle),
-      distance: clamp(getNumber(shadow, "Dstn") ?? 5, ...EFFECT_LIMITS.distance),
-      blur: clamp(getNumber(shadow, "blur") ?? 5, ...EFFECT_LIMITS.blur),
-    };
-  }
-  const glow = effect(fx, "OrGl", "outerGlowMulti");
-  if (glow) {
-    out.outerGlow = {
-      enabled: getBool(glow, "enab") ?? true,
-      color: getColor(glow) ?? "#ffffbe",
-      opacity: opacity(glow),
-      size: clamp(getNumber(glow, "blur") ?? 5, ...EFFECT_LIMITS.size),
-    };
-  }
-  const stroke = effect(fx, "FrFX", "frameFXMulti");
-  if (stroke) {
-    const style = getEnum(stroke, "Styl");
-    if (style && style !== "OutF")
-      notes.add("Inside and centred strokes were imported as outside strokes.");
-    out.stroke = {
-      enabled: getBool(stroke, "enab") ?? true,
-      color: getColor(stroke) ?? "#000000",
-      opacity: opacity(stroke),
-      size: clamp(getNumber(stroke, "Sz  ") ?? 3, ...EFFECT_LIMITS.size),
-    };
-  }
-  const overlay = effect(fx, "SoFi", "solidFillMulti");
-  if (overlay) {
-    out.colorOverlay = {
-      enabled: getBool(overlay, "enab") ?? true,
-      color: getColor(overlay) ?? "#ff0000",
-      opacity: opacity(overlay),
-    };
-  }
-  const inner = effect(fx, "IrSh", "innerShadowMulti");
-  if (inner) {
-    const angle = getBool(inner, "uglg") ? globalAngle : (getNumber(inner, "lagl") ?? globalAngle);
-    out.innerShadow = {
-      enabled: getBool(inner, "enab") ?? true,
-      color: getColor(inner) ?? "#000000",
-      opacity: opacity(inner),
-      angle: clamp(angle, ...EFFECT_LIMITS.angle),
-      distance: clamp(getNumber(inner, "Dstn") ?? 5, ...EFFECT_LIMITS.distance),
-      blur: clamp(getNumber(inner, "blur") ?? 5, ...EFFECT_LIMITS.blur),
-    };
-  }
-  const bevel = getDescriptor(fx, "ebbl");
-  if (bevel) {
-    const style = getEnum(bevel, "bvlS");
-    if (style && style !== "InrB") {
-      notes.add("Outer bevels and embossing were imported as inner bevels.");
+  const light = { angle: globalAngle };
+  const raw: Partial<Record<EffectKind, unknown[]>> = {};
+  const each = (
+    kind: EffectKind,
+    key: string,
+    multi: string,
+    read: (e: EffectReader) => unknown,
+  ) => {
+    let list = copies(fx, key, multi);
+    if (list.length > maxCopies(kind)) {
+      list = list.slice(0, maxCopies(kind));
+      notes.add(
+        "Some layer styles had more copies than Picstea supports; extra copies were left out.",
+      );
     }
-    const angle = getBool(bevel, "uglg") ? globalAngle : (getNumber(bevel, "lagl") ?? globalAngle);
-    out.bevel = {
-      enabled: getBool(bevel, "enab") ?? true,
-      color: getColor(bevel, "hglC") ?? "#ffffff",
-      opacity: clamp((getNumber(bevel, "hglO") ?? 75) / 100, 0, 1),
-      shadowColor: getColor(bevel, "sdwC") ?? "#000000",
-      shadowOpacity: clamp((getNumber(bevel, "sdwO") ?? 75) / 100, 0, 1),
-      angle: clamp(angle, ...EFFECT_LIMITS.angle),
-      size: clamp(getNumber(bevel, "blur") ?? 5, ...EFFECT_LIMITS.size),
-      direction: getEnum(bevel, "bvlD") === "Out " ? "down" : "up",
+    const out = list.map((d) => read(new EffectReader(d, notes, light))).filter(Boolean);
+    if (out.length) raw[kind] = out;
+  };
+
+  each("dropShadow", "DrSh", "dropShadowMulti", (e) => ({
+    ...e.base("multiply"),
+    color: e.color(),
+    ...e.angle(),
+    distance: e.num("Dstn", 5, L.distance),
+    spread: e.pct("Ckmt", 0),
+    size: e.num("blur", 5, L.size),
+    noise: e.pct("Nose", 0),
+    contour: e.contour("TrnS"),
+    antiAlias: e.bool("AntA", false),
+    knockout: e.bool("layerConceals", true),
+  }));
+  each("innerShadow", "IrSh", "innerShadowMulti", (e) => ({
+    ...e.base("multiply"),
+    color: e.color(),
+    ...e.angle(),
+    distance: e.num("Dstn", 5, L.distance),
+    choke: e.pct("Ckmt", 0),
+    size: e.num("blur", 5, L.size),
+    noise: e.pct("Nose", 0),
+    contour: e.contour("TrnS"),
+    antiAlias: e.bool("AntA", false),
+  }));
+  const glow = (e: EffectReader) => ({
+    ...e.base("screen"),
+    fill: e.glowFill(),
+    noise: e.pct("Nose", 0),
+    technique: getEnum(e.d, "GlwT") === "PrBL" ? "precise" : "softer",
+    size: e.num("blur", 5, L.size),
+    contour: e.contour("TrnS"),
+    antiAlias: e.bool("AntA", false),
+    range: clamp(e.pct("Inpr", 50), ...L.range),
+    jitter: e.pct("ShdN", 0),
+  });
+  each("outerGlow", "OrGl", "outerGlowMulti", (e) => ({ ...glow(e), spread: e.pct("Ckmt", 0) }));
+  each("innerGlow", "IrGl", "innerGlowMulti", (e) => ({
+    ...glow(e),
+    source: getEnum(e.d, "glwS") === "SrcC" ? "center" : "edge",
+    choke: e.pct("Ckmt", 0),
+  }));
+  each("satin", "ChFX", "satinMulti", (e) => ({
+    ...e.base("multiply", 50),
+    color: e.color(),
+    angle: e.num("lagl", 19, L.angle),
+    distance: e.num("Dstn", 11, L.distance),
+    size: e.num("blur", 14, L.size),
+    contour: e.contour("MpgS"),
+    antiAlias: e.bool("AntA", false),
+    invert: e.bool("Invr", true),
+  }));
+  each("colorOverlay", "SoFi", "solidFillMulti", (e) => ({
+    ...e.base("normal", 100),
+    color: e.color("Clr ", "#ff0000"),
+  }));
+  each("gradientOverlay", "GrFl", "gradientFillMulti", (e) => {
+    const stops = e.stops();
+    if (!stops) return null;
+    const method = getEnum(e.d, "gradientsInterpolationMethod");
+    const offset = e.offset("Ofst", 1 / 100, L.offset);
+    return {
+      ...e.base("normal", 100),
+      stops,
+      reverse: e.bool("Rvrs", false),
+      style: e.gradientStyle(),
+      method: method === "Perc" ? "perceptual" : method === "Lnr " ? "linear" : "classic",
+      align: e.bool("Algn", true),
+      angle: e.num("Angl", 90, L.angle),
+      scale: clamp(e.num("Scl ", 100, [10, 150]) / 100, ...L.gradientScale),
+      offsetX: offset.x,
+      offsetY: offset.y,
+      dither: e.bool("Dthr", false),
     };
-  }
-  const fill = effect(fx, "GrFl", "gradientFillMulti");
-  if (fill) {
-    const gradient = getDescriptor(fill, "Grad");
-    const stops = (getList(gradient, "Clrs") ?? [])
-      .filter((v): v is Descriptor => !!v && typeof v === "object" && !Array.isArray(v))
-      .map((stop) => ({
-        position: clamp((getNumber(stop, "Lctn") ?? 0) / 4096, 0, 1),
-        color: getColor(stop) ?? "#000000",
-      }))
-      .sort((a, b) => a.position - b.position);
-    if (stops.length > 16) {
-      // Keep both ends; drop stops from the middle.
-      stops.splice(15, stops.length - 16);
-      notes.add("Gradient overlays were limited to 16 colours.");
-    }
-    const type = getEnum(fill, "Type");
-    if (type && type !== "Lnr ")
-      notes.add("Radial and other gradient overlays were imported as linear.");
-    if (getEnum(gradient, "GrdF") === "ClNs" || stops.length < 2) {
-      notes.add("Noise gradient overlays were not imported.");
-    } else {
-      out.gradientOverlay = {
-        enabled: getBool(fill, "enab") ?? true,
-        opacity: opacity(fill),
-        angle: clamp(getNumber(fill, "Angl") ?? 90, ...EFFECT_LIMITS.angle),
-        stops,
-        reverse: getBool(fill, "Rvrs") ?? false,
-      };
-    }
-  }
+  });
+  each("patternOverlay", "patternFill", "patternFillMulti", (e) => {
+    const phase = e.offset("phase", 1, L.patternOffset);
+    return {
+      ...e.base("normal", 100),
+      pattern: e.pattern(),
+      angle: e.num("Angl", 0, L.angle),
+      scale: clamp(e.num("Scl ", 100, [1, 1000]) / 100, ...L.patternScale),
+      align: e.bool("Algn", true),
+      offsetX: phase.x,
+      offsetY: phase.y,
+    };
+  });
+  each("stroke", "FrFX", "frameFXMulti", (e) => {
+    const style = getEnum(e.d, "Styl");
+    const paint = getEnum(e.d, "PntT");
+    const stops = paint === "GrFl" ? e.stops() : null;
+    if (paint === "Ptrn") notes.add("Pattern strokes were imported as colour strokes.");
+    return {
+      ...e.base("normal", 100),
+      size: e.num("Sz  ", 3, L.strokeSize),
+      position: style === "InsF" ? "inside" : style === "CtrF" ? "center" : "outside",
+      fill: stops
+        ? {
+            kind: "gradient",
+            stops,
+            reverse: e.bool("Rvrs", false),
+            style: e.gradientStyle(),
+            angle: e.num("Angl", 90, L.angle),
+            scale: clamp(e.num("Scl ", 100, [10, 150]) / 100, ...L.gradientScale),
+          }
+        : { kind: "color", color: e.color() },
+      overprint: e.bool("overprint", false),
+    };
+  });
+  each("bevel", "ebbl", "bevelEmbossMulti", (e) => {
+    const d = e.d;
+    const style = getEnum(d, "bvlS");
+    const technique = getEnum(d, "bvlT");
+    const phase = e.offset("phase", 1, L.patternOffset);
+    return {
+      enabled: e.bool("enab", true),
+      style:
+        style === "OtrB"
+          ? "outer"
+          : style === "Embs"
+            ? "emboss"
+            : style === "PlEb"
+              ? "pillow"
+              : style === "strokeEmboss"
+                ? "stroke"
+                : "inner",
+      technique:
+        technique === "PrBL" ? "chisel-hard" : technique === "Slmt" ? "chisel-soft" : "smooth",
+      depth: clamp(e.num("srgR", 100, [1, 1000]) / 100, ...L.depth),
+      direction: getEnum(d, "bvlD") === "Out " ? "down" : "up",
+      size: e.num("blur", 5, L.size),
+      soften: e.num("Sftn", 0, L.soften),
+      ...e.angle(),
+      altitude: e.num("Lald", 30, L.altitude),
+      glossContour: e.contour("TrnS"),
+      glossAntiAlias: e.bool("antialiasGloss", false),
+      highlightMode: e.mode("hglM", "screen"),
+      highlightColor: e.color("hglC", "#ffffff"),
+      highlightOpacity: e.pct("hglO", 75),
+      shadowMode: e.mode("sdwM", "multiply"),
+      shadowColor: e.color("sdwC", "#000000"),
+      shadowOpacity: e.pct("sdwO", 75),
+      contour: {
+        enabled: e.bool("useShape", false),
+        contour: e.contour("MpgS"),
+        antiAlias: e.bool("AntA", false),
+        range: clamp(e.pct("Inpr", 50), ...L.range),
+      },
+      texture: {
+        enabled: e.bool("useTexture", false),
+        pattern: e.bool("useTexture", false) ? e.pattern() : "noise",
+        scale: clamp(e.num("Scl ", 100, [1, 1000]) / 100, ...L.patternScale),
+        depth: clamp(e.num("textureDepth", 100, [-1000, 1000]) / 100, ...L.textureDepth),
+        invert: e.bool("InvT", false),
+        align: e.bool("Algn", true),
+        offsetX: phase.x,
+        offsetY: phase.y,
+      },
+    };
+  });
+
   // Everything goes through the same checks as edits and saved projects.
-  for (const kind of Object.keys(out) as EffectKind[]) {
-    const value = out[kind] as unknown as Record<string, unknown>;
-    if (checkEffect(kind, value)) {
-      delete out[kind];
-      notes.add("Some layer styles could not be read and were left out.");
-    } else {
-      (out as Record<string, unknown>)[kind] = normalizeEffect(kind, value);
+  const out: { [K in EffectKind]?: EffectByKind[K][] } = {};
+  for (const kind of Object.keys(raw) as EffectKind[]) {
+    const valid: unknown[] = [];
+    for (const value of raw[kind]!) {
+      try {
+        valid.push(parseEffect(kind, value));
+      } catch {
+        notes.add("Some layer styles could not be read and were left out.");
+      }
     }
-  }
-  const others = ["IrGl", "ChFX", "patternFill"];
-  if (others.some((k) => fx[k] !== undefined && fx[k] !== null)) {
-    notes.add("Some layer styles (inner glow, satin or pattern) were not imported.");
+    if (valid.length) (out as Record<string, unknown>)[kind] = valid;
   }
   return Object.keys(out).length ? out : undefined;
 }
@@ -421,6 +689,9 @@ export function decodeExtras(
   const lfx2 = blocks.get("lfx2");
   if (lfx2)
     attempt("layer styles", () => (out.effects = decodeEffects(lfx2, ctx.globalAngle, warnings)));
+  const iOpa = blocks.get("iOpa");
+  if (iOpa && iOpa.length >= 1 && iOpa[0] < 255)
+    out.fillOpacity = Math.round((iOpa[0] / 255) * 100) / 100;
   const vmsk = blocks.get("vmsk") ?? blocks.get("vsms");
   if (vmsk) {
     attempt("vector masks", () => {

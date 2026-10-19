@@ -1,6 +1,7 @@
 import { FormatError } from "../binary/bytes";
 import { cropToContent } from "../crop";
 import type { RgbaPixels } from "../../selection/flood";
+import type { PsdBlending } from "./psd-blending";
 import type { PsdBlock, PsdFile, PsdMask, PsdNode } from "./psd-model";
 
 /**
@@ -22,6 +23,7 @@ interface DraftBase {
   readonly mask?: DraftMask;
   readonly clipping?: boolean;
   readonly colorLabel?: number;
+  readonly blending?: PsdBlending;
   /** Photoshop tagged blocks written as they are (adjustment and vector mask data). */
   readonly blocks?: readonly PsdBlock[];
 }
@@ -102,6 +104,7 @@ export function resolveDraft(draft: PsdDraft): PsdFile {
         mask: toMask(node.mask),
         ...(node.clipping ? { clipping: true } : {}),
         ...(node.colorLabel ? { colorLabel: node.colorLabel } : {}),
+        ...(node.blending ? { blending: node.blending } : {}),
       };
       if (node.kind === "group") {
         return { ...base, kind: "group", open: node.open, children: convert(node.children) };

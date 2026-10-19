@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { adjustmentDefinition } from "../../adjustments/registry";
 import type { Adjustment } from "../../core/document/types";
+import { DEFAULT_EFFECTS } from "../../core/effects/model";
 import {
   gradientMapBlock,
   innerStylesBlock,
   photoFilterBlock,
+  proStylesBlock,
 } from "../../test-utils/psd-fixtures";
 import { ByteWriter } from "../binary/bytes";
 import { decodeAdjustment, encodeAdjustment, labToHex } from "./psd-adjustments";
@@ -131,34 +133,38 @@ describe("Gate 9h PSD layer styles", () => {
       ctx,
       warnings,
     );
-    expect(extras.effects?.innerShadow).toEqual({
-      enabled: true,
-      color: "#112233",
-      opacity: 0.5,
-      angle: 90,
-      distance: 4,
-      blur: 6,
-    });
-    expect(extras.effects?.bevel).toEqual({
-      enabled: true,
-      color: "#ffeedd",
-      opacity: 0.8,
-      shadowColor: "#000000",
-      shadowOpacity: 0.6,
-      angle: 135,
-      size: 7,
-      direction: "up",
-    });
-    expect(extras.effects?.gradientOverlay).toEqual({
-      enabled: true,
-      opacity: 1,
-      angle: 0,
-      stops: [
-        { position: 0, color: "#ff0000" },
-        { position: 1, color: "#0000ff" },
-      ],
-      reverse: false,
-    });
+    expect(extras.effects?.innerShadow).toEqual([
+      {
+        ...DEFAULT_EFFECTS.innerShadow,
+        color: "#112233",
+        opacity: 0.5,
+        angle: 90,
+        useGlobalLight: false,
+        distance: 4,
+        size: 6,
+      },
+    ]);
+    expect(extras.effects?.bevel).toEqual([
+      {
+        ...DEFAULT_EFFECTS.bevel,
+        highlightColor: "#ffeedd",
+        highlightOpacity: 0.8,
+        shadowOpacity: 0.6,
+        angle: 135,
+        useGlobalLight: false,
+        size: 7,
+      },
+    ]);
+    expect(extras.effects?.gradientOverlay).toEqual([
+      {
+        ...DEFAULT_EFFECTS.gradientOverlay,
+        angle: 0,
+        stops: [
+          { position: 0, color: "#ff0000" },
+          { position: 1, color: "#0000ff" },
+        ],
+      },
+    ]);
     expect([...warnings].join(" ")).not.toMatch(/bevel|inner shadow|gradient/i);
   });
 });
@@ -185,7 +191,7 @@ describe("Gate 9h PSD robustness", () => {
     const warnings = new Set<string>();
     const extras = decodeExtras(new Map([["lfx2", bytes]]), ctx, warnings);
     // The colour falls back to black: a valid stop.
-    expect(extras.effects?.gradientOverlay?.stops[0].color).toBe("#000000");
+    expect(extras.effects?.gradientOverlay?.[0].stops[0].color).toBe("#000000");
     expect(extras.effects?.innerShadow).toBeDefined();
   });
 
@@ -208,5 +214,88 @@ describe("Gate 9h PSD robustness", () => {
     const warnings = new Set<string>();
     decodeExtras(new Map([["phfl", new ByteWriter().u16(9).toBytes()]]), ctx, warnings);
     expect([...warnings].join(" ")).toMatch(/adjustment layers could not be read/);
+  });
+});
+
+describe("Layer Style PSD import (ADR-0030)", () => {
+  it("reads every option, copies and contours", () => {
+    const warnings = new Set<string>();
+    const fx = decodeExtras(new Map([["lfx2", proStylesBlock()]]), ctx, warnings).effects!;
+    expect(fx.dropShadow).toHaveLength(2);
+    expect(fx.dropShadow![1]).toMatchObject({
+      blendMode: "screen",
+      color: "#00ff00",
+      opacity: 0.4,
+      useGlobalLight: true,
+      angle: 120,
+      distance: 12,
+      spread: 0.2,
+      size: 9,
+      noise: 0.1,
+      antiAlias: true,
+      knockout: false,
+      contour: { preset: "cone" },
+    });
+    expect(fx.outerGlow![0]).toMatchObject({
+      blendMode: "normal",
+      technique: "precise",
+      spread: 0.3,
+      size: 12,
+      range: 0.7,
+      jitter: 0.15,
+      fill: { kind: "gradient", stops: [{ color: "#ffffff" }, { color: "#0000ff" }] },
+      contour: { preset: "custom" },
+    });
+    expect(fx.outerGlow![0].contour.points.map((p) => [p.x, Math.round(p.y * 255)])).toEqual([
+      [0, 0],
+      [128 / 255, 200],
+      [1, 64],
+    ]);
+    expect(fx.innerGlow![0]).toMatchObject({ blendMode: "overlay", source: "center", size: 7 });
+    expect(fx.satin![0]).toMatchObject({ color: "#220044", angle: 45, distance: 6, invert: false });
+    expect(fx.patternOverlay![0]).toMatchObject({
+      pattern: "diagonal-stripes",
+      scale: 2,
+      align: false,
+      offsetX: 5,
+      offsetY: -3,
+    });
+    expect(fx.stroke![0]).toMatchObject({
+      position: "inside",
+      size: 6,
+      fill: { kind: "gradient", style: "radial", angle: 30, scale: 0.8 },
+    });
+    expect(fx.gradientOverlay![0]).toMatchObject({
+      blendMode: "soft-light",
+      style: "diamond",
+      method: "perceptual",
+      scale: 1.2,
+      offsetX: 0.1,
+      offsetY: -0.2,
+      dither: true,
+    });
+    expect(fx.bevel![0]).toMatchObject({
+      style: "emboss",
+      technique: "chisel-soft",
+      direction: "down",
+      depth: 2.5,
+      soften: 3,
+      angle: 60,
+      altitude: 45,
+      highlightMode: "color-dodge",
+      shadowMode: "normal",
+      contour: { enabled: true, range: 0.8, contour: { preset: "ring" } },
+      texture: { enabled: true, pattern: "bricks", depth: -1.5, invert: true },
+    });
+    const notes = [...warnings].join(" ");
+    expect(notes).toMatch(/closest built-in pattern/);
+    expect(notes).toMatch(/blend modes/);
+  });
+
+  it("reads fill opacity", () => {
+    const extras = decodeExtras(new Map([["iOpa", new Uint8Array([51, 0, 0, 0])]]), ctx, new Set());
+    expect(extras.fillOpacity).toBe(0.2);
+    const full = decodeExtras(new Map([["iOpa", new Uint8Array([255, 0, 0, 0])]]), ctx, new Set());
+    expect(full.fillOpacity).toBeUndefined();
   });
 });

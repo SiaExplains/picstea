@@ -1,9 +1,7 @@
 import { applyAdjustment } from "../../adjustments/pixel-ops";
 import type {
   AdjustmentLayer,
-  BlendMode,
   EditorDocument,
-  GroupBlendMode,
   Layer,
   LayerMask,
   ShapeLayer,
@@ -11,7 +9,16 @@ import type {
 } from "../../core/document/types";
 import { insertLayerAt, locateLayer } from "../../core/document/tree";
 import type { Anchor, VectorPath } from "../../core/path/path";
-import { hasActiveEffects, renderWithEffects } from "./effects";
+import { compositeOperation } from "./blend";
+import { mixAdvancedBlending } from "./blend-if";
+import { hasAdvancedBlending } from "../../core/document/blending";
+import {
+  flattenStyle,
+  hasActiveEffects,
+  releaseStyle,
+  renderLayerStyle,
+  type EffectEnv,
+} from "./effects";
 import { renderSmartObject, smartLevel } from "./smart-render";
 import { boundsOf, layerCorners, type ContentSizer } from "../../core/geometry/layer-geometry";
 import { applyTextStyle, lineAdvance, textLines } from "../text/text-layout";
@@ -168,28 +175,7 @@ export interface CompositeOptions {
   readonly target?: Surface;
 }
 
-const COMPOSITE_OPERATION: Record<BlendMode, GlobalCompositeOperation> = {
-  normal: "source-over",
-  multiply: "multiply",
-  screen: "screen",
-  overlay: "overlay",
-  darken: "darken",
-  lighten: "lighten",
-  "color-dodge": "color-dodge",
-  "color-burn": "color-burn",
-  "hard-light": "hard-light",
-  "soft-light": "soft-light",
-  difference: "difference",
-  exclusion: "exclusion",
-  hue: "hue",
-  saturation: "saturation",
-  color: "color",
-  luminosity: "luminosity",
-};
-
-export function compositeOperation(mode: GroupBlendMode): GlobalCompositeOperation {
-  return mode === "pass-through" ? "source-over" : COMPOSITE_OPERATION[mode];
-}
+export { compositeOperation } from "./blend";
 
 export interface CompositeResult {
   /** Raster layers whose bitmaps were not ready; the caller should re-composite when they are. */
@@ -440,17 +426,23 @@ function applyMasks(ctx: CompositeContext, layer: Layer, env: Env): void {
 }
 
 /** Draw an isolated surface onto the target with the layer's opacity and blend mode. */
-function drawIsolated(target: CompositeContext, surface: Surface, layer: Layer, env: Env): void {
+function drawIsolated(
+  target: CompositeContext,
+  surface: Surface,
+  layer: Layer,
+  env: Env,
+  fill = 1,
+): void {
   inSurfacePixels(target, env, () => {
     target.save();
-    target.globalAlpha = layer.opacity;
+    target.globalAlpha = layer.opacity * fill;
     target.globalCompositeOperation = compositeOperation(layer.blendMode);
     target.drawImage(surface, 0, 0);
     target.restore();
   });
 }
 
-/** The layer's bounding box on the render-space surface (for gradient overlays). */
+/** The layer's bounding box on the render-space surface (gradients and patterns). */
 function layerBoxInSpace(layer: Layer, env: Env) {
   const b = boundsOf(layerCorners(layer, env.doc, env.options.sizer));
   const { x, y, scale } = env.space;
@@ -462,6 +454,71 @@ function layerBoxInSpace(layer: Layer, env: Env) {
   };
 }
 
+function styleEnv(layer: Layer, env: Env): EffectEnv {
+  const { x, y, scale } = env.space;
+  return {
+    createSurface: env.options.createSurface!,
+    scale,
+    box: layerBoxInSpace(layer, env),
+    canvasBox: {
+      x: -x * scale,
+      y: -y * scale,
+      width: env.doc.width * scale,
+      height: env.doc.height * scale,
+    },
+    light: env.doc.globalLight,
+    fillOpacity: layer.fillOpacity,
+  };
+}
+
+/**
+ * Draw an isolated layer surface with its effects (ADR-0030). At full opacity, shadows and glows
+ * blend with what is beneath using their own blend modes, as in Photoshop; a faded layer fades
+ * as one image, so its effects are flattened with it first.
+ */
+function drawStyled(target: CompositeContext, surface: Surface, layer: Layer, env: Env): void {
+  if (!hasActiveEffects(layer.effects)) {
+    drawIsolated(target, surface, layer, env, layer.fillOpacity ?? 1);
+    return;
+  }
+  const styled = renderLayerStyle(surface, layer.effects!, styleEnv(layer, env));
+  if (layer.opacity === 1) {
+    inSurfacePixels(target, env, () => {
+      for (const pass of styled.below) {
+        target.save();
+        target.globalAlpha = pass.opacity;
+        target.globalCompositeOperation = compositeOperation(pass.blendMode);
+        target.drawImage(pass.surface, 0, 0);
+        target.restore();
+      }
+    });
+    drawIsolated(target, styled.body, layer, env);
+    releaseStyle(styled);
+  } else {
+    const flat = flattenStyle(styled, env.options.createSurface!);
+    drawIsolated(target, flat, layer, env);
+    release(flat);
+  }
+}
+
+/**
+ * Draw a styled layer, then apply Blend If and channel restrictions (ADR-0031): the result is
+ * mixed back towards the backdrop pixel by pixel. Only layers that use them pay for the reads.
+ */
+function drawBlended(target: CompositeContext, surface: Surface, layer: Layer, env: Env): void {
+  if (!hasAdvancedBlending(layer) || !target.getImageData || !target.putImageData) {
+    drawStyled(target, surface, layer, env);
+    return;
+  }
+  const { width, height } = env.space;
+  const before = target.getImageData(0, 0, width, height);
+  drawStyled(target, surface, layer, env);
+  const after = target.getImageData(0, 0, width, height);
+  const own = context2d(surface, true).getImageData!(0, 0, width, height);
+  mixAdvancedBlending(before.data, after.data, own.data, layer.blendIf, layer.channels);
+  target.putImageData(after, 0, 0);
+}
+
 /** Finish an isolated layer surface: masks, then effects, then draw onto the target. */
 function finishIsolated(
   target: CompositeContext,
@@ -471,19 +528,7 @@ function finishIsolated(
   masked = false,
 ): void {
   if (!masked) applyMasks(context2d(surface), layer, env);
-  if (hasActiveEffects(layer.effects)) {
-    const withEffects = renderWithEffects(
-      surface,
-      layer.effects!,
-      env.options.createSurface!,
-      env.space.scale,
-      layer.effects!.gradientOverlay?.enabled ? layerBoxInSpace(layer, env) : undefined,
-    );
-    drawIsolated(target, withEffects, layer, env);
-    release(withEffects);
-  } else {
-    drawIsolated(target, surface, layer, env);
-  }
+  drawBlended(target, surface, layer, env);
 }
 
 function compositeAdjustment(
@@ -590,7 +635,9 @@ function compositeOne(target: CompositeContext, layer: Layer, env: Env, drawn: L
       layer.blendMode === "pass-through" &&
       layer.opacity === 1 &&
       !hasMask(layer, env) &&
-      !hasActiveEffects(layer.effects);
+      !hasActiveEffects(layer.effects) &&
+      (layer.fillOpacity ?? 1) === 1 &&
+      !hasAdvancedBlending(layer);
     if (passThrough || !createSurface) {
       compositeList(target, layer.children, env, drawn);
     } else {
@@ -609,7 +656,9 @@ function compositeOne(target: CompositeContext, layer: Layer, env: Env, drawn: L
     return;
   }
 
-  const isolated = createSurface && (hasMask(layer, env) || hasActiveEffects(layer.effects));
+  const isolated =
+    createSurface &&
+    (hasMask(layer, env) || hasActiveEffects(layer.effects) || hasAdvancedBlending(layer));
   if (isolated) {
     const { surface, ctx: sctx } = spaceSurface(env);
     sctx.save();
@@ -619,7 +668,7 @@ function compositeOne(target: CompositeContext, layer: Layer, env: Env, drawn: L
     release(surface);
   } else {
     target.save();
-    target.globalAlpha = layer.opacity;
+    target.globalAlpha = layer.opacity * (layer.fillOpacity ?? 1);
     target.globalCompositeOperation = compositeOperation(layer.blendMode);
     drawLayer(target, env.doc, layer, env.assets, env.options, env.pending);
     target.restore();
@@ -670,18 +719,7 @@ function compositeClippingGroup(
         ctx.drawImage(baseSurface, 0, 0);
         ctx.restore();
       });
-      if (hasActiveEffects(layer.effects)) {
-        const withEffects = renderWithEffects(
-          surface,
-          layer.effects!,
-          env.options.createSurface!,
-          env.space.scale,
-        );
-        drawIsolated(bctx, withEffects, layer, env);
-        release(withEffects);
-      } else {
-        drawIsolated(bctx, surface, layer, env);
-      }
+      drawBlended(bctx, surface, layer, env);
       release(surface);
     }
     below.push(layer);

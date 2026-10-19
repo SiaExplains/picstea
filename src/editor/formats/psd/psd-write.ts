@@ -1,4 +1,5 @@
 import { ByteWriter } from "../binary/bytes";
+import { encodeRestrictedChannels, writeBlendingRanges, type PsdBlending } from "./psd-blending";
 import { packBits } from "./packbits";
 import {
   rectHeight,
@@ -79,6 +80,7 @@ interface Record {
   readonly blendKey: string;
   readonly clipping?: boolean;
   readonly colorLabel?: number;
+  readonly blending?: PsdBlending;
   readonly channels: readonly Channel[];
   /** Extra tagged blocks (adjustment data, vector masks). */
   readonly blocks?: readonly PsdBlock[];
@@ -133,6 +135,7 @@ function records(nodes: readonly PsdNode[], out: Record[] = []): Record[] {
       opacity: node.opacity,
       clipping: node.clipping,
       colorLabel: node.colorLabel,
+      blending: node.blending,
       visible: node.visible,
       blendKey: node.blendKey,
       channels: withMask(emptyChannels(), node.mask),
@@ -165,11 +168,16 @@ function writeRecord(w: ByteWriter, r: Record): void {
   } else {
     extra.u32(0);
   }
-  extra.u32(0); // blending ranges
+  writeBlendingRanges(extra, r.blending);
   pascalName(extra, r.name);
   block(extra, "luni", unicodeName(r.name));
   // Layers-panel colour: a 2-byte index followed by 6 bytes of padding.
   if (r.colorLabel) block(extra, "lclr", Uint8Array.of(0, r.colorLabel, 0, 0, 0, 0, 0, 0));
+  if (r.blending?.restricted.length) {
+    const restricted = new ByteWriter();
+    encodeRestrictedChannels(r.blending.restricted, restricted);
+    block(extra, "brst", restricted.toBytes());
+  }
   for (const b of r.blocks ?? []) block(extra, b.key, b.data);
   if (r.section) {
     const s = new ByteWriter();

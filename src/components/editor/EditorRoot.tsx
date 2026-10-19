@@ -8,6 +8,7 @@ import { parseStoredActions } from "@/editor/automation/actions";
 import { createId } from "@/editor/core/ids";
 import type { Observable } from "@/editor/core/observable";
 import { DEFAULT_SWATCHES, parseSwatches } from "@/editor/core/swatches";
+import { parseStylePresets } from "@/editor/core/effects/presets";
 import { parseRecentSizes } from "@/editor/core/document/presets";
 import {
   IndexedDbProjectStorage,
@@ -96,11 +97,14 @@ function getBrowserController(): EditorController {
   persist(c.swatches, "picstea.swatches", (v) => parseSwatches(v) ?? DEFAULT_SWATCHES);
   persist(c.actions, "picstea.actions", (v) => parseStoredActions(v, () => createId("action")));
   persist(c.recentSizes, "picstea.recentSizes", parseRecentSizes);
+  persist(c.layerStyles, "picstea.layerStyles", (v) =>
+    parseStylePresets(v, () => createId("style")),
+  );
   return c;
 }
 
 /**
- * Per-browser preferences (view settings, swatches, actions, recent sizes) live in local storage, which may be
+ * Per-browser preferences (view settings, swatches, actions, recent sizes, layer styles) live in local storage, which may be
  * unavailable (private mode, blocked storage): then they just aren't remembered.
  */
 function persist<T>(observable: Observable<T>, key: string, parse: (value: unknown) => T): void {

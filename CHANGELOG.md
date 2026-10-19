@@ -3,6 +3,46 @@
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.27.0] — 2026-10-19
+
+### Added
+
+- **Blend If.** In Layer Style → Blending Options, two sliders hide a layer's pixels by their own
+  brightness (This Layer) or by what is beneath them (Underlying Layer), for grey or for red,
+  green or blue. Alt-drag splits a slider for a smooth transition.
+- **Channels.** Turn off R, G or B so the layer only changes the channels you choose.
+- Photoshop files keep both settings on import and on export.
+
+### Changed
+
+- Saved projects use format version 8.
+
+## [0.26.0] — 2026-10-19
+
+### Added
+
+- **The full Layer Style dialog.** All ten Photoshop effects, with their full options:
+  - **New effects:** Inner Glow, Satin and Pattern Overlay.
+  - **Options on every effect:** its own blend mode, spread or choke, contours, noise, range and jitter.
+  - **Gradients:** five gradient styles, with perceptual and linear blending.
+  - **Strokes:** inside, center or outside, filled with a colour or a gradient.
+  - **Bevel & Emboss:** outer bevel, emboss, pillow and stroke emboss, with Contour and Texture.
+- **Several copies of an effect.** The + button adds another Drop Shadow, Inner Shadow, Stroke,
+  Color Overlay or Gradient Overlay. Copies can be reordered or deleted.
+- **Fill Opacity and Global Light** in Blending Options.
+- **Saved styles.** New Style… keeps a style in this browser. The Styles page applies a saved or
+  built-in style, or clears the layer's style.
+- **A live preview** in the dialog, an angle dial and an editable contour curve.
+- **Photoshop files:** every layer style setting and copy is now imported, including Inner Glow,
+  Satin, Pattern Overlay, Fill and the global light.
+
+### Changed
+
+- **Saved projects use format version 7.** Older projects open and look the same.
+- **Bevel highlights now face the light,** as in Photoshop.
+- **New effects start from Photoshop's defaults.** For example, a 5 px drop shadow in Multiply.
+- **Groups can have layer styles too.**
+
 ## [0.25.0] — 2026-10-19
 
 ### Added

@@ -25,7 +25,7 @@ function richDocument(): EditorDocument {
       name: "s",
     }),
     mask: { ...createMask(base), assetId: "mask_1", linked: false },
-    effects: { dropShadow: DEFAULT_EFFECTS.dropShadow, stroke: DEFAULT_EFFECTS.stroke },
+    effects: { dropShadow: [DEFAULT_EFFECTS.dropShadow], stroke: [DEFAULT_EFFECTS.stroke] },
   };
   const adjustment = createAdjustmentLayer(
     base,
@@ -63,7 +63,7 @@ describe("schema v3", () => {
 
   it("rejects out-of-range effects and malformed masks", () => {
     const r1 = raw(richDocument());
-    r1.document.layers[1].children[0].effects.stroke.size = 1e9;
+    r1.document.layers[1].children[0].effects.stroke[0].size = 1e9;
     expect(deserializeProject(r1).ok).toBe(false);
     const r2 = raw(richDocument());
     r2.document.layers[1].children[0].mask.width = 0;
@@ -72,12 +72,12 @@ describe("schema v3", () => {
 
   it("drops unknown effect fields", () => {
     const r = raw(richDocument());
-    r.document.layers[1].children[0].effects.dropShadow.script = "alert(1)";
+    r.document.layers[1].children[0].effects.dropShadow[0].script = "alert(1)";
     const result = deserializeProject(r);
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     const shape = (result.document.layers[1] as Layer & { children: Layer[] }).children[0];
-    expect(Object.keys(shape.effects!.dropShadow!)).not.toContain("script");
+    expect(Object.keys(shape.effects!.dropShadow![0])).not.toContain("script");
   });
 
   it("rejects duplicate ids across the tree and excessive nesting", () => {

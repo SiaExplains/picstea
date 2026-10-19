@@ -1,7 +1,14 @@
 import { isHexColor } from "../core/document/factory";
 import { checkDimensions, MAX_DIMENSION } from "../core/document/limits";
 import { MAX_GROUP_DEPTH, walkLayers } from "../core/document/tree";
-import { checkEffect, normalizeEffect } from "../core/commands/effect-commands";
+import { EffectError, parseGlobalLight, parseLayerEffects } from "../core/effects/parse";
+import {
+  BlendingError,
+  hasBlendIf,
+  hasChannelLimits,
+  parseBlendIf,
+  parseChannels,
+} from "../core/document/blending";
 import { parseAdjustment } from "../adjustments/registry";
 import { MAX_GUIDES } from "../core/commands/guide-commands";
 import { filterById, parseFilterValues } from "../filters/registry";
@@ -17,6 +24,7 @@ import {
   type EditorDocument,
   type Guide,
   type Layer,
+  type GlobalLight,
   type LayerEffects,
   type LayerMask,
   type Transform,
@@ -137,28 +145,39 @@ function mask(value: unknown, path: string): LayerMask {
   };
 }
 
-const EFFECT_KINDS = [
-  "dropShadow",
-  "outerGlow",
-  "innerShadow",
-  "bevel",
-  "gradientOverlay",
-  "stroke",
-  "colorOverlay",
-] as const;
-
 function effects(value: unknown, path: string): LayerEffects {
-  const o = obj(value, path);
-  const out: Record<string, unknown> = {};
-  for (const kind of EFFECT_KINDS) {
-    if (o[kind] === undefined) continue;
-    const e = obj(o[kind], `${path}.${kind}`);
-    const error = checkEffect(kind, e);
-    if (error) fail(`${path}.${kind}`, error);
-    // Rebuild with known fields only.
-    out[kind] = normalizeEffect(kind, e);
+  try {
+    return parseLayerEffects(value, path);
+  } catch (error) {
+    if (error instanceof EffectError) fail(error.path, error.message);
+    throw error;
   }
-  return out as LayerEffects;
+}
+
+/** Blend If and channels; values that change nothing are left out. */
+function advancedBlending(o: Record<string, unknown>, path: string) {
+  try {
+    const blendIf =
+      o.blendIf !== undefined ? parseBlendIf(o.blendIf, `${path}.blendIf`) : undefined;
+    const channels =
+      o.channels !== undefined ? parseChannels(o.channels, `${path}.channels`) : undefined;
+    return {
+      ...(hasBlendIf(blendIf) ? { blendIf } : {}),
+      ...(hasChannelLimits(channels) ? { channels } : {}),
+    };
+  } catch (error) {
+    if (error instanceof BlendingError) fail(error.path, error.message);
+    throw error;
+  }
+}
+
+function globalLight(value: unknown, path: string): GlobalLight {
+  try {
+    return parseGlobalLight(value, path);
+  } catch (error) {
+    if (error instanceof EffectError) fail(error.path, error.message);
+    throw error;
+  }
 }
 
 function layer(value: unknown, path: string, depth: number, budget: Budget): Layer {
@@ -177,6 +196,10 @@ function layer(value: unknown, path: string, depth: number, budget: Budget): Lay
     transform: transform(o.transform, `${path}.transform`),
     ...(o.mask !== undefined ? { mask: mask(o.mask, `${path}.mask`) } : {}),
     ...(o.effects !== undefined ? { effects: effects(o.effects, `${path}.effects`) } : {}),
+    ...(o.fillOpacity !== undefined
+      ? { fillOpacity: num(o.fillOpacity, `${path}.fillOpacity`, 0, 1) }
+      : {}),
+    ...advancedBlending(o, path),
     ...(o.vectorMask !== undefined
       ? (() => {
           const v = obj(o.vectorMask, `${path}.vectorMask`);
@@ -372,6 +395,9 @@ function documentAt(value: unknown, at: string, budget: Budget): EditorDocument 
     guides: o.guides.map((g, i) => guide(g, `${at}.guides[${i}]`)),
     ...(o.workPath !== undefined && o.workPath !== null
       ? { workPath: vectorPath(o.workPath, `${at}.workPath`, budget) }
+      : {}),
+    ...(o.globalLight !== undefined
+      ? { globalLight: globalLight(o.globalLight, `${at}.globalLight`) }
       : {}),
     metadata: {
       createdAt: isoDate(metadata.createdAt, `${at}.metadata.createdAt`),

@@ -909,26 +909,34 @@
   font-size: 16px;
 }
 
-/* ---------- Layer Style dialog ---------- */
+/* ---------- Layer Style dialog (ADR-0030) ---------- */
 
 .layerStyleDialog {
-  width: min(720px, calc(100vw - 32px));
+  width: min(980px, calc(100vw - 32px));
 }
 
 .layerStyleBody {
   display: grid;
-  grid-template-columns: 210px minmax(0, 1fr);
+  grid-template-columns: 210px minmax(0, 1fr) 120px;
   gap: 14px;
-  min-height: 340px;
+  height: min(620px, calc(100vh - 140px));
+}
+
+.layerStyleSide {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
 .layerStyleList {
+  flex: 1;
+  min-height: 0;
   margin: 0;
   padding: 0;
   list-style: none;
   border: 1px solid var(--ed-border);
-  border-radius: 6px;
-  overflow: hidden;
+  border-radius: 6px 6px 0 0;
+  overflow-y: auto;
 }
 
 .layerStyleList > li {
@@ -946,12 +954,18 @@
   padding-left: 8px;
 }
 
+.layerStyleSub {
+  padding-left: 26px;
+}
+
 .layerStylePage {
   flex: 1;
   width: 100%;
-  padding: 8px 10px;
+  padding: 7px 10px;
   border: 0;
   background: none;
+  color: inherit;
+  font: inherit;
   text-align: left;
   cursor: pointer;
 }
@@ -964,9 +978,46 @@
   background: var(--ed-accent-soft);
 }
 
+.layerStyleAdd {
+  width: 26px;
+  height: 26px;
+  margin-right: 4px;
+  border: 1px solid var(--ed-border);
+  border-radius: 4px;
+  background: var(--ed-chrome);
+  color: inherit;
+  font:
+    600 15px/1 system-ui,
+    sans-serif;
+  cursor: pointer;
+}
+
+.layerStyleAdd:hover {
+  background: var(--ed-chrome-2);
+}
+
+.layerStyleTools {
+  display: flex;
+  gap: 4px;
+  justify-content: flex-end;
+  padding: 4px;
+  border: 1px solid var(--ed-border);
+  border-top: 0;
+  border-radius: 0 0 6px 6px;
+}
+
 .layerStyleSettings {
   min-width: 0;
-  padding: 4px 4px 4px 0;
+  min-height: 0;
+  padding: 0 6px 8px 0;
+  overflow-y: auto;
+}
+
+.layerStyleActions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: stretch;
 }
 
 .layerStyleDialog input[type="checkbox"],
@@ -974,13 +1025,299 @@
   accent-color: var(--ed-accent);
 }
 
-.layerStyleSettings input[type="range"] {
-  width: 100%;
+.styleGroupTitle {
+  margin: 14px 0 6px;
+  padding-bottom: 3px;
+  border-bottom: 1px solid var(--ed-border);
+  color: var(--ed-text-dim);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
-@media (max-width: 600px) {
+.styleRow {
+  display: grid;
+  grid-template-columns: 118px minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+  margin: 5px 0;
+}
+
+.styleRowLabel {
+  color: var(--ed-text-dim);
+}
+
+.styleRowControls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  min-width: 0;
+}
+
+.styleRowControls > .select {
+  width: auto;
+  flex: 1;
+}
+
+.styleRange {
+  flex: 1;
+  min-width: 80px;
+}
+
+.styleNumber {
+  width: 64px;
+  padding: 2px 4px;
+  background: var(--ed-bg);
+  border: 1px solid var(--ed-border);
+  border-radius: 4px;
+  color: inherit;
+  font: inherit;
+}
+
+.styleUnit {
+  min-width: 14px;
+  color: var(--ed-text-dim);
+}
+
+.styleCheck {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin: 5px 0;
+}
+
+.angleDial {
+  width: 38px;
+  height: 38px;
+  flex: none;
+  cursor: grab;
+  touch-action: none;
+  border-radius: 50%;
+}
+
+.angleDial:focus-visible {
+  outline: 2px solid var(--ed-focus);
+}
+
+.angleDial svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  fill: var(--ed-text);
+  stroke: var(--ed-text);
+  stroke-width: 1.2;
+}
+
+.angleDialFace {
+  fill: var(--ed-bg);
+  stroke: var(--ed-border);
+}
+
+.contourCurve {
+  width: 64px;
+  height: 64px;
+  flex: none;
+  touch-action: none;
+  background: var(--ed-bg);
+  border: 1px solid var(--ed-border);
+  border-radius: 4px;
+}
+
+.contourFrame {
+  fill: none;
+  stroke: var(--ed-border);
+  stroke-width: 1;
+}
+
+.contourLine {
+  fill: none;
+  stroke: var(--ed-text);
+  stroke-width: 3;
+}
+
+.contourPoint {
+  fill: var(--ed-accent);
+  cursor: move;
+}
+
+.patternGrid {
+  display: grid;
+  grid-template-columns: repeat(5, 36px);
+  gap: 4px;
+}
+
+.patternOption {
+  padding: 1px;
+  border: 1px solid var(--ed-border);
+  border-radius: 4px;
+  background: none;
+  cursor: pointer;
+}
+
+.patternOption[aria-checked="true"] {
+  border-color: var(--ed-accent);
+  box-shadow: 0 0 0 1px var(--ed-accent);
+}
+
+.patternSwatch {
+  display: block;
+  width: 32px;
+  height: 32px;
+}
+
+.stylePreview {
+  display: block;
+  width: 96px;
+  height: 96px;
+  margin: 6px auto 0;
+  border: 1px solid var(--ed-border);
+  border-radius: 4px;
+  background: repeating-conic-gradient(#dcdcdc 0 25%, #fff 0 50%) 0 0 / 12px 12px;
+}
+
+.newStyleForm {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.newStyleButtons {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.styleGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
+  gap: 8px;
+  margin: 0 0 10px;
+  padding: 0;
+  list-style: none;
+}
+
+.styleCard {
+  position: relative;
+}
+
+.styleCard > .iconButton {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+}
+
+.styleCardButton {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: center;
+  width: 100%;
+  padding: 6px;
+  border: 1px solid var(--ed-border);
+  border-radius: 6px;
+  background: var(--ed-chrome);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.styleCardButton:hover {
+  border-color: var(--ed-accent);
+}
+
+.styleCardButton .stylePreview {
+  width: 72px;
+  height: 72px;
+  margin: 0;
+}
+
+.blendIf {
+  margin: 10px 0;
+}
+
+.blendIfHead {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 4px;
+  color: var(--ed-text-dim);
+}
+
+.blendIfValues {
+  font-variant-numeric: tabular-nums;
+}
+
+.blendIfBar {
+  position: relative;
+  height: 12px;
+  margin: 0 7px 14px;
+  border: 1px solid var(--ed-border);
+  border-radius: 2px;
+}
+
+.blendIfThumb {
+  position: absolute;
+  top: 12px;
+  width: 12px;
+  height: 12px;
+  margin-left: -6px;
+  background: #fff;
+  border: 1px solid var(--ed-border);
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+  cursor: ew-resize;
+  touch-action: none;
+}
+
+/* A split thumb is two half-triangles side by side, like Photoshop's. */
+.blendIfHalfLow {
+  width: 6px;
+  margin-left: -6px;
+  clip-path: polygon(100% 0, 100% 100%, 0 100%);
+}
+
+.blendIfHalfHigh {
+  width: 6px;
+  margin-left: 0;
+  clip-path: polygon(0 0, 100% 100%, 0 100%);
+}
+
+.blendIfThumbDark {
+  background: #111;
+  border-color: var(--ed-text-dim);
+}
+
+.blendIfThumb:focus-visible {
+  outline: 2px solid var(--ed-focus);
+}
+
+.effectToggles {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 8px;
+}
+
+@media (max-width: 760px) {
   .layerStyleBody {
     grid-template-columns: 1fr;
+    height: auto;
+  }
+
+  .layerStyleList {
+    max-height: 220px;
+  }
+
+  .layerStyleActions {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .styleRow {
+    grid-template-columns: 84px minmax(0, 1fr);
+  }
+
+  .styleRange {
+    min-width: 60px;
   }
 }
 
@@ -1498,10 +1835,6 @@
   font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-}
-
-.effectRow {
-  margin-bottom: 8px;
 }
 
 .sliderRow {

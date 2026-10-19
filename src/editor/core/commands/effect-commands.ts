@@ -1,175 +1,238 @@
-import { isHexColor } from "../document/factory";
-import { parseGradientStops } from "../../adjustments/gradient";
-import type {
-  BevelEffect,
-  ColorOverlayEffect,
-  GradientOverlayEffect,
-  InnerShadowEffect,
-  DropShadowEffect,
-  EffectKind,
-  Layer,
-  LayerEffects,
-  OuterGlowEffect,
-  StrokeEffect,
-} from "../document/types";
+import {
+  DEFAULT_EFFECTS,
+  effectList,
+  maxCopies,
+  type EffectByKind,
+  type EffectKind,
+  type GlobalLight,
+  type LayerEffects,
+} from "../effects/model";
+import { EffectError, parseEffect, parseGlobalLight, parseLayerEffects } from "../effects/parse";
+import {
+  BlendingError,
+  hasBlendIf,
+  hasChannelLimits,
+  parseBlendIf,
+  parseChannels,
+  type BlendIf,
+  type ChannelSet,
+} from "../document/blending";
+import type { EditorDocument, Layer } from "../document/types";
 import { CommandError, replaceLayer, requireLayer, requireUnlocked, type Command } from "./command";
 
-export const DEFAULT_EFFECTS: {
-  dropShadow: DropShadowEffect;
-  outerGlow: OuterGlowEffect;
-  innerShadow: InnerShadowEffect;
-  bevel: BevelEffect;
-  gradientOverlay: GradientOverlayEffect;
-  stroke: StrokeEffect;
-  colorOverlay: ColorOverlayEffect;
-} = {
-  innerShadow: { enabled: true, color: "#000000", opacity: 0.6, angle: 120, distance: 5, blur: 8 },
-  bevel: {
-    enabled: true,
-    color: "#ffffff",
-    opacity: 0.75,
-    shadowColor: "#000000",
-    shadowOpacity: 0.6,
-    angle: 120,
-    size: 6,
-    direction: "up",
-  },
-  gradientOverlay: {
-    enabled: true,
-    opacity: 1,
-    angle: 90,
-    stops: [
-      { position: 0, color: "#000000" },
-      { position: 1, color: "#ffffff" },
-    ],
-    reverse: false,
-  },
-  dropShadow: { enabled: true, color: "#000000", opacity: 0.6, angle: 120, distance: 10, blur: 12 },
-  outerGlow: { enabled: true, color: "#ffe680", opacity: 0.8, size: 16 },
-  stroke: { enabled: true, color: "#000000", opacity: 1, size: 3 },
-  colorOverlay: { enabled: true, color: "#ff0000", opacity: 1 },
+/** Layer style commands (ADR-0030). Every effect is validated by `parse.ts` before it is stored. */
+
+export { DEFAULT_EFFECTS } from "../effects/model";
+export { EFFECT_LIMITS } from "../effects/parse";
+
+function styledLayer(doc: EditorDocument, layerId: string): Layer {
+  const layer = requireLayer(doc, layerId);
+  requireUnlocked(layer, doc);
+  if (layer.kind === "adjustment") throw new CommandError("Adjustment layers have no effects.");
+  return layer;
+}
+
+const asCommandError = <T>(run: () => T): T => {
+  try {
+    return run();
+  } catch (error) {
+    if (error instanceof EffectError) {
+      throw new CommandError(`Layer style: ${error.path} ${error.message}.`);
+    }
+    throw error;
+  }
 };
 
-/** Ranges shared by the command, the validator and the UI. */
-export const EFFECT_LIMITS = {
-  opacity: [0, 1],
-  angle: [-360, 360],
-  distance: [0, 1000],
-  blur: [0, 250],
-  size: [0, 250],
-} as const;
-
-const inRange = (v: unknown, [min, max]: readonly [number, number]) =>
-  typeof v === "number" && Number.isFinite(v) && v >= min && v <= max;
-
-/** Validate one effect's settings; returns an error message or null. */
-export function checkEffect(kind: EffectKind, input: Record<string, unknown>): string | null {
-  // Own properties only: inherited values never count as settings.
-  const effect: Record<string, unknown> = Object.fromEntries(Object.entries(input));
-  if (typeof effect.enabled !== "boolean") return "Effect must be on or off.";
-  if (kind !== "gradientOverlay" && (typeof effect.color !== "string" || !isHexColor(effect.color)))
-    return "Effect colour must be a hex value.";
-  if (!inRange(effect.opacity, EFFECT_LIMITS.opacity))
-    return "Effect opacity must be between 0 and 100%.";
-  switch (kind) {
-    case "innerShadow":
-    case "dropShadow":
-      if (!inRange(effect.angle, EFFECT_LIMITS.angle)) return "Angle is out of range.";
-      if (!inRange(effect.distance, EFFECT_LIMITS.distance)) return "Distance is out of range.";
-      if (!inRange(effect.blur, EFFECT_LIMITS.blur)) return "Blur is out of range.";
-      return null;
-    case "outerGlow":
-    case "stroke":
-      return inRange(effect.size, EFFECT_LIMITS.size) ? null : "Size is out of range.";
-    case "colorOverlay":
-      return null;
-    case "bevel":
-      if (typeof effect.shadowColor !== "string" || !isHexColor(effect.shadowColor))
-        return "Effect colour must be a hex value.";
-      if (!inRange(effect.shadowOpacity, EFFECT_LIMITS.opacity))
-        return "Effect opacity must be between 0 and 100%.";
-      if (!inRange(effect.angle, EFFECT_LIMITS.angle)) return "Angle is out of range.";
-      if (!inRange(effect.size, EFFECT_LIMITS.size)) return "Size is out of range.";
-      if (effect.direction !== "up" && effect.direction !== "down") return "Direction is invalid.";
-      return null;
-    case "gradientOverlay":
-      if (!inRange(effect.angle, EFFECT_LIMITS.angle)) return "Angle is out of range.";
-      if (typeof effect.reverse !== "boolean") return "Reverse must be on or off.";
-      return parseGradientStops(effect.stops) ? null : "The gradient needs 2–16 valid stops.";
-  }
+/** The layer with `effects` set (or removed when empty). */
+function withEffects(doc: EditorDocument, layer: Layer, effects: LayerEffects): EditorDocument {
+  const next: Record<string, unknown> = {};
+  for (const [kind, list] of Object.entries(effects)) if (list && list.length) next[kind] = list;
+  const has = Object.keys(next).length > 0;
+  if (JSON.stringify(layer.effects ?? null) === JSON.stringify(has ? next : null)) return doc;
+  const rest: Record<string, unknown> = { ...layer };
+  delete rest.effects;
+  return replaceLayer(doc, (has ? { ...rest, effects: next } : rest) as unknown as Layer);
 }
 
 /**
- * An effect rebuilt from known fields only, colours lower-cased and gradient stops sorted.
- * Call after `checkEffect` succeeded (shared by the command and the project validator).
- */
-export function normalizeEffect<K extends EffectKind>(
-  kind: K,
-  e: Record<string, unknown>,
-): NonNullable<LayerEffects[K]> {
-  const color = () => (e.color as string).toLowerCase();
-  const base = { enabled: e.enabled, opacity: e.opacity };
-  let out: Record<string, unknown>;
-  switch (kind) {
-    case "dropShadow":
-    case "innerShadow":
-      out = { ...base, color: color(), angle: e.angle, distance: e.distance, blur: e.blur };
-      break;
-    case "outerGlow":
-    case "stroke":
-      out = { ...base, color: color(), size: e.size };
-      break;
-    case "colorOverlay":
-      out = { ...base, color: color() };
-      break;
-    case "bevel":
-      out = {
-        ...base,
-        color: color(),
-        shadowColor: (e.shadowColor as string).toLowerCase(),
-        shadowOpacity: e.shadowOpacity,
-        angle: e.angle,
-        size: e.size,
-        direction: e.direction,
-      };
-      break;
-    default:
-      out = { ...base, angle: e.angle, reverse: e.reverse, stops: parseGradientStops(e.stops) };
-  }
-  return out as unknown as NonNullable<LayerEffects[K]>;
-}
-
-/**
- * Set (or remove, with `null`) one effect on a layer. Slider drags merge into one undo step via
- * the per-layer, per-effect merge key.
+ * Set (or remove, with `null`) copy `index` of one effect. Index = current length adds a copy.
+ * Slider drags merge into one undo step per layer, effect and copy.
  */
 export function setLayerEffect<K extends EffectKind>(
   layerId: string,
   kind: K,
-  effect: LayerEffects[K] | null,
+  effect: EffectByKind[K] | null,
+  index = 0,
 ): Command {
   return {
     type: "layer.effect",
     label: "Layer Effect",
-    mergeKey: `layer.effect:${layerId}:${kind}`,
+    mergeKey: `layer.effect:${layerId}:${kind}:${index}`,
     apply(doc) {
-      const layer = requireLayer(doc, layerId);
-      requireUnlocked(layer, doc);
-      if (layer.kind === "adjustment") throw new CommandError("Adjustment layers have no effects.");
-      if (effect) {
-        const error = checkEffect(kind, effect as unknown as Record<string, unknown>);
-        if (error) throw new CommandError(error);
+      const layer = styledLayer(doc, layerId);
+      const list = [...effectList(layer.effects, kind)];
+      if (!Number.isInteger(index) || index < 0 || index > list.length) {
+        throw new CommandError("That effect no longer exists.");
       }
-      const current = layer.effects ?? {};
-      const next: Record<string, unknown> = { ...current };
-      if (effect) next[kind] = normalizeEffect(kind, effect as unknown as Record<string, unknown>);
-      else delete next[kind];
-      const same = JSON.stringify(current[kind] ?? null) === JSON.stringify(next[kind] ?? null);
-      if (same) return doc;
-      const effects = Object.keys(next).length ? (next as LayerEffects) : undefined;
-      const { effects: _old, ...rest } = layer;
-      void _old;
-      return replaceLayer(doc, (effects ? { ...rest, effects } : rest) as Layer);
+      if (effect === null) {
+        if (index === list.length) return doc;
+        list.splice(index, 1);
+      } else {
+        if (index === list.length && list.length >= maxCopies(kind)) {
+          throw new CommandError(`A layer can have at most ${maxCopies(kind)} of this effect.`);
+        }
+        list[index] = asCommandError(() => parseEffect(kind, effect));
+      }
+      return withEffects(doc, layer, { ...layer.effects, [kind]: list });
+    },
+  };
+}
+
+/** Photoshop's "+": another copy of an effect, with default settings, above copy `after`. */
+export function addEffectCopy(layerId: string, kind: EffectKind, after: number): Command {
+  return {
+    type: "layer.effect.add",
+    label: "Add Effect",
+    apply(doc) {
+      const layer = styledLayer(doc, layerId);
+      const list = [...effectList(layer.effects, kind)];
+      if (list.length >= maxCopies(kind)) {
+        throw new CommandError(`A layer can have at most ${maxCopies(kind)} of this effect.`);
+      }
+      list.splice(Math.min(list.length, Math.max(0, after + 1)), 0, DEFAULT_EFFECTS[kind] as never);
+      return withEffects(doc, layer, { ...layer.effects, [kind]: list });
+    },
+  };
+}
+
+/** Move copy `from` of an effect to position `to` (the ⇕ buttons). */
+export function moveEffectCopy(
+  layerId: string,
+  kind: EffectKind,
+  from: number,
+  to: number,
+): Command {
+  return {
+    type: "layer.effect.move",
+    label: "Reorder Effects",
+    apply(doc) {
+      const layer = styledLayer(doc, layerId);
+      const list = [...effectList(layer.effects, kind)];
+      if (!list[from] || to < 0 || to >= list.length) return doc;
+      const [moved] = list.splice(from, 1);
+      list.splice(to, 0, moved);
+      return withEffects(doc, layer, { ...layer.effects, [kind]: list });
+    },
+  };
+}
+
+/** Replace the whole style (a saved style, Clear Layer Style). `null` removes every effect. */
+export function setLayerStyle(
+  layerId: string,
+  effects: LayerEffects | null,
+  label = "Layer Style",
+): Command {
+  return {
+    type: "layer.style",
+    label,
+    apply(doc) {
+      const layer = styledLayer(doc, layerId);
+      const parsed = effects ? asCommandError(() => parseLayerEffects(effects)) : {};
+      return withEffects(doc, layer, parsed);
+    },
+  };
+}
+
+/** Blending Options → Fill: fades the layer's content but not its effects. */
+export function setFillOpacity(layerId: string, fillOpacity: number): Command {
+  return {
+    type: "layer.fill",
+    label: "Fill Opacity",
+    mergeKey: `layer.fill:${layerId}`,
+    apply(doc) {
+      const layer = styledLayer(doc, layerId);
+      if (!Number.isFinite(fillOpacity) || fillOpacity < 0 || fillOpacity > 1) {
+        throw new CommandError("Fill must be between 0 and 100%.");
+      }
+      const current = layer.fillOpacity ?? 1;
+      if (current === fillOpacity) return doc;
+      const rest: Record<string, unknown> = { ...layer };
+      delete rest.fillOpacity;
+      return replaceLayer(
+        doc,
+        (fillOpacity === 1 ? rest : { ...rest, fillOpacity }) as unknown as Layer,
+      );
+    },
+  };
+}
+
+/** The document's global light, shared by every effect with "Use global angle". */
+export function setGlobalLight(light: GlobalLight): Command {
+  return {
+    type: "document.globalLight",
+    label: "Global Light",
+    mergeKey: "document.globalLight",
+    apply(doc) {
+      const parsed = asCommandError(() => parseGlobalLight(light));
+      const current = doc.globalLight;
+      if (current && current.angle === parsed.angle && current.altitude === parsed.altitude) {
+        return doc;
+      }
+      return { ...doc, globalLight: parsed };
+    },
+  };
+}
+
+/** The layer with an optional field set, or removed when `value` is undefined. */
+function withField<K extends "blendIf" | "channels">(
+  doc: EditorDocument,
+  layer: Layer,
+  key: K,
+  value: Layer[K] | undefined,
+): EditorDocument {
+  if (JSON.stringify(layer[key] ?? null) === JSON.stringify(value ?? null)) return doc;
+  const rest: Record<string, unknown> = { ...layer };
+  delete rest[key];
+  return replaceLayer(
+    doc,
+    (value === undefined ? rest : { ...rest, [key]: value }) as unknown as Layer,
+  );
+}
+
+const asBlendingError = <T>(run: () => T): T => {
+  try {
+    return run();
+  } catch (error) {
+    if (error instanceof BlendingError) {
+      throw new CommandError(`Blending options: ${error.path} ${error.message}.`);
+    }
+    throw error;
+  }
+};
+
+/** Blending Options → Blend If (ADR-0031). `null` removes every limit. Drags merge. */
+export function setBlendIf(layerId: string, blendIf: BlendIf | null): Command {
+  return {
+    type: "layer.blendIf",
+    label: "Blend If",
+    mergeKey: `layer.blendIf:${layerId}`,
+    apply(doc) {
+      const layer = styledLayer(doc, layerId);
+      const parsed = blendIf ? asBlendingError(() => parseBlendIf(blendIf)) : undefined;
+      return withField(doc, layer, "blendIf", hasBlendIf(parsed) ? parsed : undefined);
+    },
+  };
+}
+
+/** Blending Options → Channels: which of R, G and B the layer changes. */
+export function setLayerChannels(layerId: string, channels: ChannelSet): Command {
+  return {
+    type: "layer.channels",
+    label: "Blending Channels",
+    apply(doc) {
+      const layer = styledLayer(doc, layerId);
+      const parsed = asBlendingError(() => parseChannels(channels));
+      return withField(doc, layer, "channels", hasChannelLimits(parsed) ? parsed : undefined);
     },
   };
 }

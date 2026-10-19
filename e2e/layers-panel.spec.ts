@@ -131,7 +131,7 @@ test("double-clicking a layer opens Layer Style; Cancel reverts and OK is one un
   const dialog = page.getByRole("dialog", { name: /Layer Style/ });
   await expect(dialog).toBeVisible();
 
-  await dialog.getByRole("checkbox", { name: "Use Drop shadow" }).check();
+  await dialog.getByRole("checkbox", { name: "Use Drop Shadow" }).check();
   await expect(
     dialog.getByRole("slider", { name: "Distance" }).or(dialog.getByText("Distance")).first(),
   ).toBeVisible();
@@ -143,7 +143,7 @@ test("double-clicking a layer opens Layer Style; Cancel reverts and OK is one un
   // Layer → Blending Options… opens it too.
   await page.getByRole("menuitem", { name: "Layer" }).click();
   await page.getByRole("menuitem", { name: "Blending Options…" }).click();
-  await dialog.getByRole("checkbox", { name: "Use Outer stroke" }).check();
+  await dialog.getByRole("checkbox", { name: "Use Stroke" }).check();
   await dialog.getByRole("button", { name: "Blending Options" }).click();
   await dialog.getByLabel("Blend mode").selectOption("multiply");
   await dialog.getByRole("button", { name: "OK", exact: true }).click();

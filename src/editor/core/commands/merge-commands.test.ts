@@ -3,6 +3,7 @@ import { createDocument, createShapeLayer } from "../document/factory";
 import { findLayerDeep, locateLayer } from "../document/tree";
 import type { EditorDocument, GroupLayer, Layer } from "../document/types";
 import { validateDocument } from "../../serialization/validate";
+import { DEFAULT_EFFECTS } from "../effects/model";
 import { createGroup } from "./group-commands";
 import {
   flattenImage,
@@ -108,7 +109,7 @@ describe("Rasterize Layer Style", () => {
               ...l,
               opacity: 0.7,
               effects: {
-                stroke: { enabled: true, color: "#000000", opacity: 1, size: 3 },
+                stroke: [DEFAULT_EFFECTS.stroke],
               },
             }
           : l,

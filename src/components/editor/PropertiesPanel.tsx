@@ -38,8 +38,10 @@ export const BLEND_LABELS: Record<BlendMode, string> = {
 
 export function PropertiesPanel({
   onEditSmartFilter,
+  onEditLayerStyle,
 }: {
   onEditSmartFilter: (layerId: string, filter: SmartFilter) => void;
+  onEditLayerStyle: () => void;
 }) {
   const controller = useController();
   const session = useActiveSession();
@@ -185,7 +187,9 @@ export function PropertiesPanel({
               layer.kind === "smart") &&
               doc && <TransformSection key={`transform-${layer.id}`} layer={layer} doc={doc} />}
             <MaskSection key={`mask-${layer.id}`} layer={layer} />
-            {layer.kind !== "adjustment" && <EffectsSection key={`fx-${layer.id}`} layer={layer} />}
+            {layer.kind !== "adjustment" && (
+              <EffectsSection key={`fx-${layer.id}`} layer={layer} onEdit={onEditLayerStyle} />
+            )}
           </fieldset>
         )}
       </div>

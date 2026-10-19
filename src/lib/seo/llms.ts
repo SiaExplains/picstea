@@ -41,7 +41,7 @@ const FACTS = [
   "Installable as an app (PWA) and works offline after the first visit; the service worker caches only the app's own files, never images.",
   "Layers: pixel, shape, text, fill and adjustment layers, groups, 16 blend modes, opacity, layer masks, vector masks, clipping masks, colour labels, merge down and flatten.",
   "Adjustment layers include Levels, Curves, Brightness/Contrast, Hue/Saturation, Exposure, Vibrance, Color Balance, Photo Filter, Channel Mixer, Gradient Map, Black & White, Invert, Posterize and Threshold.",
-  "Layer styles: drop shadow, outer glow, inner shadow, bevel, gradient overlay, stroke and colour overlay, in a Layer Style dialog.",
+  "Layer styles: all ten Photoshop effects (drop shadow, inner shadow, outer and inner glow, bevel and emboss with contour and texture, satin, colour, gradient and pattern overlay, stroke) with contours, several copies, Fill opacity, Blend If, channel restrictions, global light and saved styles, in a Layer Style dialog.",
   "Selections: rectangular and elliptical marquee, freehand and polygonal lasso, magic wand, Color Range, select layer pixels, feather/expand/contract, transform selection.",
   "Painting and retouching: brush, pencil, eraser, background and magic eraser, paint bucket, gradient, colour replacement, clone stamp, healing and spot healing brush, red eye, dodge, burn, sponge, blur, sharpen and smudge.",
   "Vector tools: pen with add/delete/convert anchor point, path and direct selection, rectangle, rounded rectangle, ellipse, polygon and line shapes, editable text.",
@@ -53,7 +53,7 @@ const FACTS = [
 
 const LIMITS = [
   "Cannot open PSB, 16/32-bit or CMYK PSD files, TIFF, PDF or camera RAW files yet.",
-  "Some Photoshop features open as pixels: Selective Color and Color Lookup, satin and pattern styles, warped text and Photoshop smart filters.",
+  "Some Photoshop features open as pixels: Selective Color and Color Lookup, warped text and Photoshop smart filters; Photoshop pattern images are replaced by built-in patterns.",
   "No AI generation, object selection or content-aware fill; no perspective crop or vertical text yet.",
   "Designed for a mouse or trackpad and keyboard; on phones the layout adapts but works best on larger screens.",
 ];

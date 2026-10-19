@@ -73,7 +73,7 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 | Blend modes & opacity (layers and groups) | ✅ | |
 | Raster layer masks (paint grey levels, enable/disable, linked) | ✅ | Vector & clipping masks ✅ (Gate 9b); masks don't follow scale/rotate |
 | Adjustment layers: Brightness/Contrast, Hue/Saturation, Exposure, Temperature/Tint, Black & White, Invert, Posterize, Threshold | ✅ | Levels/Curves ✅ (Gate 9a) |
-| Layer effects: drop shadow, outer glow, outer stroke, colour overlay | ✅ | Inner shadow, bevel, gradient overlay ✅ (9h) |
+| Layer effects: drop shadow, outer glow, outer stroke, colour overlay | ✅ | Inner shadow, bevel, gradient overlay ✅ (9h); all ten Photoshop effects with full options ✅ (ADR-0030) |
 
 ## Gate 5 — Selection & advanced tools
 
@@ -135,7 +135,12 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 | Google-certified CMP (IAB TCF) for personalised EU ads | ✅ | `NEXT_PUBLIC_ADSENSE_CMP=google` (ADR-0024); default stays own banner |
 | Editor side column: own sponsorship, Privacy settings, website links (≥ 1280 px) | ✅ | ADR-0025; Google ads in the editor 📋 (needs a new ADR) |
 | Layers right-click menu (styles, select pixels, merge, flatten, rasterize style, colour labels) | ✅ | ADR-0026; Duplicate Into, Convert to Shape/Point Text 📋 |
-| Layer Style dialog (double-click a layer / Blending Options…) | ✅ | Live, one undo step; inner glow, satin, pattern overlay 📋 |
+| Layer Style dialog (double-click a layer / Blending Options…) | ✅ | Live, one undo step; full Photoshop options (ADR-0030) |
+| Layer Style: inner glow, satin, pattern overlay; every option (contours, noise, spread/choke, blend modes, gradient styles and methods, stroke position and gradient, bevel styles, contour and texture) | ✅ | ADR-0030; schema v7. Bevel, satin and texture approximate Photoshop |
+| Several copies of shadows, strokes and overlays (+, ▲ ▼, delete) | ✅ | Up to 10 each |
+| Fill opacity, global light | ✅ | |
+| Saved layer styles (New Style…, built-ins, apply, delete, clear) | ✅ | `picstea.layerStyles`, this browser only |
+| Layer Style: Channels and Blend If (split sliders, per channel) | ✅ | ADR-0031; schema v8; PSD blending ranges and `brst` read and written |
 | Drag layers onto trash / New Layer; resizable, remembered panels | ✅ | `picstea.panelSizes` |
 | Toolbar groups with flyouts (right-click / hold), Shift+key cycling, reset colours (D) button | ✅ | ADR-0027 |
 | Spot Healing, Red Eye, Background / Magic Eraser, Color Replacement | ✅ | ADR-0027 |
@@ -208,7 +213,7 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 |---|---|---|
 | Hardened descriptor and EngineData parsers | ✅ | Bounded, null-prototype; ADR-0017 |
 | Import: adjustment layers (9 kinds) | ✅ | Vibrance, Color Balance, Photo Filter, Channel Mixer, Gradient Map ✅ (9h); Selective Color, Color Lookup 📋 |
-| Import: layer styles → drop shadow, outer glow, stroke, colour overlay | ✅ | Bevel, inner shadow, gradient overlay ✅ (9h); satin, pattern overlay 📋 (kept in pixels) |
+| Import: layer styles → drop shadow, outer glow, stroke, colour overlay | ✅ | Bevel, inner shadow, gradient overlay ✅ (9h); every effect, copy and option, Fill and global light ✅ (ADR-0030); Photoshop pattern pixels replaced by the closest built-in pattern |
 | Import: vector masks, shape layers (fill + stroke), solid fills | ✅ | Inverted vector masks lose inversion |
 | Import: editable text (first style run, mapped fonts) | ✅ | Mixed styles, warps, paragraph boxes simplified |
 | Import: smart objects with embedded PNG/JPEG/WebP/GIF/PSD | ✅ | Warped, perspective, smart-filtered and linked ones open as pixels |
@@ -255,7 +260,7 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 | Inner shadow, bevel (inner), gradient overlay effects | ✅ | Bevel is an approximation; overlay spans the layer box |
 | PSD import of the above (`vibA`, `blnc`, `phfl`, `mixr`, `grdm`, `IrSh`, `ebbl`, `GrFl`) | ✅ | Noise gradients, other bevel styles noted |
 | PSD export of Vibrance, Color Balance, Channel Mixer | ✅ | Photo Filter, Gradient Map flattened; Photoshop check pending |
-| Selective Color, Color Lookup; inner glow, satin, pattern overlay | 📋 | |
+| Selective Color, Color Lookup | 📋 | Inner glow, satin, pattern overlay ✅ (ADR-0030) |
 
 ### 9i
 

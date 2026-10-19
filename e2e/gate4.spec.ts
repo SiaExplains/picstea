@@ -144,11 +144,14 @@ test("drop shadow and outer stroke render around the layer", async ({ page }) =>
   await rectangle(page, [100, 100], [200, 200]);
 
   await page.getByRole("checkbox", { name: "Drop shadow" }).check();
-  // Default: light from 120°, 10 px away → shadow below-right of the shape.
-  expect(luminance(await pixel(page, 204, 207))).toBeLessThan(220);
+  // Photoshop's default: light from 120°, 5 px away → shadow below-right of the shape.
+  expect(luminance(await pixel(page, 202, 204))).toBeLessThan(220);
   expect(isWhite(await pixel(page, 96, 96))).toBe(true);
 
-  await page.getByRole("checkbox", { name: "Outer stroke" }).check();
+  await page
+    .getByRole("group", { name: "Layer effects" })
+    .getByRole("checkbox", { name: "Stroke" })
+    .check();
   expect(luminance(await pixel(page, 98, 150))).toBeLessThan(60);
   await expect(row(page, "Rectangle 1").getByText("fx")).toBeVisible();
   // Shortcuts keep working while a checkbox in the panel has focus.

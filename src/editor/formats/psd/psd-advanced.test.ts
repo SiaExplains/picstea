@@ -289,13 +289,13 @@ describe("layer extras", () => {
       ctx,
       warnings,
     );
-    expect(extras.effects?.dropShadow).toMatchObject({
+    expect(extras.effects?.dropShadow?.[0]).toMatchObject({
       enabled: true,
       color: "#336699",
       opacity: 0.75,
       angle: 120,
       distance: 8,
-      blur: 4,
+      size: 4,
     });
     expect(extras.fill).toBe("#ff8800");
     expect(extras.text).toMatchObject({
@@ -392,5 +392,37 @@ describe("PSD files with extras", () => {
     const embedded = read.linked?.[0];
     if (embedded?.kind !== "psd") throw new Error("expected an embedded PSD");
     expect(embedded.file.width).toBe(30);
+  });
+});
+
+describe("Blend If in PSD records (ADR-0031)", () => {
+  it("writes and reads blending ranges and channel restrictions", async () => {
+    const blending = {
+      ranges: [
+        [
+          [0, 0, 255, 255],
+          [0, 20, 180, 230],
+        ],
+        [
+          [0, 0, 255, 255],
+          [0, 0, 255, 255],
+        ],
+        [
+          [40, 40, 255, 255],
+          [0, 0, 255, 255],
+        ],
+        [
+          [0, 0, 255, 255],
+          [0, 0, 255, 255],
+        ],
+      ],
+      restricted: [2],
+    } as const;
+    const { file: read } = await readPsd(
+      writePsd(file([{ ...layer("Blended", []), blending }, layer("Plain", [])])),
+    );
+    const [blended, plain] = read.layers as PsdPixelLayer[];
+    expect(blended.blending).toEqual(blending);
+    expect(plain.blending).toBeUndefined();
   });
 });
