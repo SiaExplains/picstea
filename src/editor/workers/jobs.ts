@@ -10,6 +10,12 @@ import { writePsd } from "../formats/psd/psd-write";
 import { writePdf } from "../formats/pdf/pdf-write";
 import { blendByCoverage } from "../filters/kernels";
 import { runFilter } from "../filters/registry";
+import { parseLiquifyField, renderLiquify, type LiquifyField } from "../filters/liquify";
+import {
+  parseVanishingPointEdit,
+  renderVanishingPoint,
+  type VanishingPointEdit,
+} from "../filters/vanishing-point";
 import { histogram } from "../adjustments/tone";
 import type { ToneChannel } from "../core/document/types";
 import { colorRange, floodRegion, type Rgba, type RgbaPixels } from "../selection/flood";
@@ -53,6 +59,16 @@ export interface JobTypes {
       seed: number;
       coverage: Uint8Array | null;
     };
+    output: RgbaPixels;
+  };
+  /** Render a Liquify displacement field at full size (ADR-0036); `coverage` as for `filter`. */
+  liquify: {
+    input: { pixels: RgbaPixels; field: LiquifyField; coverage: Uint8Array | null };
+    output: RgbaPixels;
+  };
+  /** Paint Vanishing Point clone dabs at full size (ADR-0036); `coverage` as for `filter`. */
+  vanishingPoint: {
+    input: { pixels: RgbaPixels; edit: VanishingPointEdit; coverage: Uint8Array | null };
     output: RgbaPixels;
   };
   /** 256-bin histogram of pixels (Levels/Curves panel). */
@@ -116,6 +132,17 @@ function drawDocument(
   }
 }
 
+/** Mix a job's result into the original by a selection's coverage (when there is one). */
+function withCoverage(
+  pixels: RgbaPixels,
+  out: RgbaPixels,
+  coverage: Uint8Array | null,
+): RgbaPixels {
+  if (!coverage) return out;
+  if (coverage.length !== pixels.width * pixels.height) throw new Error("Invalid selection.");
+  return { ...out, data: blendByCoverage(pixels.data, out.data, coverage) };
+}
+
 export type JobName = keyof JobTypes;
 export type JobInput<K extends JobName> = JobTypes[K]["input"];
 export type JobOutput<K extends JobName> = JobTypes[K]["output"];
@@ -132,11 +159,17 @@ export const JOBS: {
   flood: ({ pixels, x, y, tolerance, contiguous }) =>
     floodRegion(pixels, x, y, tolerance, contiguous),
   colorRange: ({ pixels, color, fuzziness }) => colorRange(pixels, color, fuzziness),
-  filter: ({ pixels, filterId, values, seed, coverage }) => {
-    const out = runFilter(filterId, pixels, values, { seed });
-    if (!coverage) return out;
-    if (coverage.length !== pixels.width * pixels.height) throw new Error("Invalid selection.");
-    return { ...out, data: blendByCoverage(pixels.data, out.data, coverage) };
+  filter: ({ pixels, filterId, values, seed, coverage }) =>
+    withCoverage(pixels, runFilter(filterId, pixels, values, { seed }), coverage),
+  liquify: ({ pixels, field, coverage }) => {
+    const parsed = parseLiquifyField(field);
+    if (!parsed) throw new Error("Invalid Liquify settings.");
+    return withCoverage(pixels, renderLiquify(pixels, parsed), coverage);
+  },
+  vanishingPoint: ({ pixels, edit, coverage }) => {
+    const parsed = parseVanishingPointEdit(edit);
+    if (!parsed) throw new Error("Invalid Vanishing Point settings.");
+    return withCoverage(pixels, renderVanishingPoint(pixels, parsed), coverage);
   },
   histogram: ({ pixels, channel }) => histogram(pixels.data, channel),
   exportDocument: async ({ doc, request, bitmaps }) => {
@@ -182,6 +215,8 @@ export function outputTransfer(name: JobName, output: unknown): Transferable[] {
     case "colorRangeRelease":
       return [];
     case "filter":
+    case "liquify":
+    case "vanishingPoint":
       return [(output as RgbaPixels).data.buffer];
     case "histogram":
       return [(output as Uint32Array).buffer];

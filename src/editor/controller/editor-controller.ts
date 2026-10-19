@@ -188,6 +188,8 @@ import {
   type FilterId,
   type FilterValues,
 } from "../filters/registry";
+import { isLiquifyFieldEmpty, type LiquifyField } from "../filters/liquify";
+import type { VanishingPointEdit } from "../filters/vanishing-point";
 import { ToolManager } from "./tool-manager";
 import { MemoryProjectStorage } from "../persistence/memory/memory-project-storage";
 import {
@@ -1364,39 +1366,92 @@ export class EditorController {
     const seed = this.filterSession?.seed ?? Math.floor(Math.random() * 2 ** 31);
     this.endFilter();
     const filter = filterById(id);
+    if (!filter) return false;
+    const changed = await this.applyPixelJob(filter.name, (pixels, coverage, transfer) =>
+      this.jobs.run("filter", { pixels, filterId: id, values, seed, coverage }, transfer),
+    );
+    if (changed === null) return false;
+    this.lastFilter.set({ id, values });
+    this.record({ type: "filter", filterId: id, values });
+    return changed;
+  }
+
+  /**
+   * Run a pixel job on the active layer at full resolution (in the worker), limited to the
+   * selection when there is one, and commit it as one undo step named `label`. Null when it
+   * could not run or was dropped; otherwise whether the layer changed.
+   */
+  private async applyPixelJob(
+    label: string,
+    run: (
+      pixels: RgbaPixels,
+      coverage: Uint8Array | null,
+      transfer: Transferable[],
+    ) => Promise<RgbaPixels>,
+  ): Promise<boolean | null> {
     const layer = this.filterableLayer();
     const doc = this.store.getSession()?.document;
-    if (!filter || !layer || !doc) return false;
+    if (!layer || !doc) return null;
     const pixels = readLayerPixels(this, layer);
-    if (!pixels) return false;
+    if (!pixels) return null;
     const coverage = doc.selection ? layerSelectionCoverage(this, layer, doc.selection) : null;
     try {
-      const out = await this.withBusy(`Applying ${filter.name}…`, () =>
-        this.jobs.run(
-          "filter",
-          { pixels, filterId: id, values, seed, coverage },
+      const out = await this.withBusy(`Applying ${label}…`, () =>
+        run(
+          pixels,
+          coverage,
           coverage ? [pixels.data.buffer, coverage.buffer] : [pixels.data.buffer],
         ),
       );
-      // The document may have changed while the filter ran.
+      // The document may have changed while the job ran.
       const now = this.store.getSession()?.document;
       const current = now && findLayer(now, layer.id);
       if (now?.id !== doc.id || current?.kind !== "raster" || current.assetId !== layer.assetId) {
-        this.notify("info", `${filter.name} was not applied because the layer changed.`);
-        return false;
+        this.notify("info", `${label} was not applied because the layer changed.`);
+        return null;
       }
       const surface = rgbaToSurface(this, out.data, out.width, out.height);
       const asset = this.assets.addBitmap(surface, out.width, out.height);
-      const changed = this.execute(setRasterContent(layer.id, asset.id, filter.name));
+      const changed = this.execute(setRasterContent(layer.id, asset.id, label));
       this.enforcePixelBudget();
-      this.lastFilter.set({ id, values });
-      this.record({ type: "filter", filterId: id, values });
       return changed;
     } catch (error) {
-      this.logger.warn("filter failed", describeError(error));
-      this.notify("error", `${filter.name} could not be applied. Try a smaller setting.`);
-      return false;
+      this.logger.warn("pixel job failed", describeError(error));
+      this.notify("error", `${label} could not be applied. Try a smaller setting.`);
+      return null;
     }
+  }
+
+  // ---------------------------------------------------------------- Liquify, Vanishing Point (ADR-0036)
+
+  /**
+   * Reduced pixels of the active layer for an interactive editor (Liquify, Vanishing Point),
+   * at most `maxPixels`; null (with a notice) when the layer can't be edited.
+   */
+  beginPixelEditor(maxPixels: number): RgbaPixels | null {
+    this.endFilter();
+    const layer = this.filterableLayer();
+    if (!layer) return null;
+    const scale = Math.min(1, Math.sqrt(maxPixels / (layer.width * layer.height)));
+    return readLayerPixels(this, layer, scale);
+  }
+
+  /** Liquify the active layer through `field` (one undo step). */
+  async applyLiquify(field: LiquifyField): Promise<boolean> {
+    if (isLiquifyFieldEmpty(field)) return false;
+    const changed = await this.applyPixelJob("Liquify", (pixels, coverage, transfer) =>
+      this.jobs.run("liquify", { pixels, field, coverage }, transfer),
+    );
+    return changed ?? false;
+  }
+
+  /** Paint Vanishing Point clone strokes on the active layer (one undo step). */
+  async applyVanishingPoint(edit: VanishingPointEdit): Promise<boolean> {
+    if (edit.dabs.length === 0) return false;
+    const changed = await this.applyPixelJob("Vanishing Point", (pixels, coverage, transfer) =>
+      this.jobs.run("vanishingPoint", { pixels, edit, coverage }, transfer),
+    );
+    return changed ?? false;
   }
 
   /** Filter → Last Filter: run the previous filter again with the same settings. */

@@ -1,258 +1,50 @@
 import type { RgbaPixels } from "../selection/flood";
-import {
-  addNoise,
-  boxBlur,
-  emboss,
-  findEdges,
-  gaussianBlur,
-  motionBlur,
-  pixelate,
-  unsharpMask,
-} from "./filters";
+import { BLUR_FILTERS } from "./catalogue/blur";
+import { BLUR_GALLERY_FILTERS } from "./catalogue/blur-gallery";
+import { DISTORT_FILTERS } from "./catalogue/distort";
+import { FOURIER_FILTERS } from "./catalogue/fourier";
+import { NOISE_FILTERS } from "./catalogue/noise";
+import { OTHER_FILTERS } from "./catalogue/other";
+import { PIXELATE_FILTERS } from "./catalogue/pixelate";
+import { RENDER_FILTERS } from "./catalogue/render";
+import { SHARPEN_FILTERS } from "./catalogue/sharpen";
+import { STYLIZE_FILTERS } from "./catalogue/stylize";
+import { THREE_D_FILTERS } from "./catalogue/three-d";
+import { TOP_FILTERS } from "./catalogue/top";
+import type { FilterContext, FilterDefinition, FilterValues } from "./types";
+
+export type { FilterContext, FilterGroup, FilterParam, FilterValues } from "./types";
+export { FILTER_GROUPS } from "./types";
 
 /**
- * Filter catalogue (docs/05 Phase 8, ADR-0014). A filter is described by data (id, name,
- * parameters) plus one pure function, so the menu, the dialog, validation and the worker job all
- * come from this list. Adding a filter means one entry here.
+ * Filter catalogue (docs/05 Phase 8, ADR-0014, ADR-0036). A filter is described by data (id,
+ * name, parameters) plus one pure function, so the menu, the dialog, validation and the worker
+ * job all come from this list. Adding a filter means one entry in its group's
+ * `catalogue/*.ts` file.
  *
  * `apply` is synchronous and pure: it runs inside the worker job; the asynchronous part of the
  * docs/05 interface lives in the job runner.
  */
 
-export type FilterParam =
-  | {
-      readonly kind: "range";
-      readonly key: string;
-      readonly label: string;
-      readonly min: number;
-      readonly max: number;
-      readonly step: number;
-      readonly unit?: string;
-      readonly default: number;
-    }
-  | {
-      readonly kind: "toggle";
-      readonly key: string;
-      readonly label: string;
-      readonly default: boolean;
-    };
+const CATALOGUE = [
+  ...TOP_FILTERS,
+  ...THREE_D_FILTERS,
+  ...BLUR_FILTERS,
+  ...BLUR_GALLERY_FILTERS,
+  ...DISTORT_FILTERS,
+  ...NOISE_FILTERS,
+  ...PIXELATE_FILTERS,
+  ...RENDER_FILTERS,
+  ...SHARPEN_FILTERS,
+  ...STYLIZE_FILTERS,
+  ...OTHER_FILTERS,
+  ...FOURIER_FILTERS,
+] as const;
 
-export type FilterValues = Readonly<Record<string, number | boolean>>;
+export type FilterId = (typeof CATALOGUE)[number]["id"];
+export type Filter = FilterDefinition<FilterId>;
 
-export interface FilterContext {
-  /** Seed for filters with randomness, so a preview and the applied result match. */
-  readonly seed: number;
-}
-
-export interface Filter {
-  readonly id: FilterId;
-  readonly name: string;
-  readonly group: "Blur" | "Sharpen" | "Noise" | "Pixelate" | "Stylize";
-  readonly parameters: readonly FilterParam[];
-  apply(pixels: RgbaPixels, values: FilterValues, context: FilterContext): RgbaPixels;
-}
-
-export type FilterId =
-  | "gaussian-blur"
-  | "box-blur"
-  | "motion-blur"
-  | "unsharp-mask"
-  | "add-noise"
-  | "pixelate"
-  | "emboss"
-  | "find-edges";
-
-const num = (v: FilterValues, k: string) => v[k] as number;
-const bool = (v: FilterValues, k: string) => v[k] as boolean;
-
-export const FILTERS: readonly Filter[] = [
-  {
-    id: "gaussian-blur",
-    name: "Gaussian Blur",
-    group: "Blur",
-    parameters: [
-      {
-        kind: "range",
-        key: "radius",
-        label: "Radius",
-        min: 0.1,
-        max: 250,
-        step: 0.1,
-        unit: "px",
-        default: 4,
-      },
-    ],
-    apply: (p, v) => gaussianBlur(p, num(v, "radius")),
-  },
-  {
-    id: "box-blur",
-    name: "Box Blur",
-    group: "Blur",
-    parameters: [
-      {
-        kind: "range",
-        key: "radius",
-        label: "Radius",
-        min: 1,
-        max: 250,
-        step: 1,
-        unit: "px",
-        default: 5,
-      },
-    ],
-    apply: (p, v) => boxBlur(p, num(v, "radius")),
-  },
-  {
-    id: "motion-blur",
-    name: "Motion Blur",
-    group: "Blur",
-    parameters: [
-      {
-        kind: "range",
-        key: "angle",
-        label: "Angle",
-        min: -180,
-        max: 180,
-        step: 1,
-        unit: "°",
-        default: 0,
-      },
-      {
-        kind: "range",
-        key: "distance",
-        label: "Distance",
-        min: 1,
-        max: 200,
-        step: 1,
-        unit: "px",
-        default: 20,
-      },
-    ],
-    apply: (p, v) => motionBlur(p, num(v, "angle"), num(v, "distance")),
-  },
-  {
-    id: "unsharp-mask",
-    name: "Unsharp Mask",
-    group: "Sharpen",
-    parameters: [
-      {
-        kind: "range",
-        key: "amount",
-        label: "Amount",
-        min: 1,
-        max: 500,
-        step: 1,
-        unit: "%",
-        default: 100,
-      },
-      {
-        kind: "range",
-        key: "radius",
-        label: "Radius",
-        min: 0.1,
-        max: 100,
-        step: 0.1,
-        unit: "px",
-        default: 1.5,
-      },
-      {
-        kind: "range",
-        key: "threshold",
-        label: "Threshold",
-        min: 0,
-        max: 255,
-        step: 1,
-        unit: "levels",
-        default: 0,
-      },
-    ],
-    apply: (p, v) => unsharpMask(p, num(v, "amount"), num(v, "radius"), num(v, "threshold")),
-  },
-  {
-    id: "add-noise",
-    name: "Add Noise",
-    group: "Noise",
-    parameters: [
-      {
-        kind: "range",
-        key: "amount",
-        label: "Amount",
-        min: 0,
-        max: 100,
-        step: 0.5,
-        unit: "%",
-        default: 10,
-      },
-      { kind: "toggle", key: "gaussian", label: "Gaussian distribution", default: false },
-      { kind: "toggle", key: "monochromatic", label: "Monochromatic", default: false },
-    ],
-    apply: (p, v, ctx) =>
-      addNoise(p, num(v, "amount"), bool(v, "gaussian"), bool(v, "monochromatic"), ctx.seed),
-  },
-  {
-    id: "pixelate",
-    name: "Pixelate",
-    group: "Pixelate",
-    parameters: [
-      {
-        kind: "range",
-        key: "size",
-        label: "Cell size",
-        min: 2,
-        max: 200,
-        step: 1,
-        unit: "px",
-        default: 10,
-      },
-    ],
-    apply: (p, v) => pixelate(p, num(v, "size")),
-  },
-  {
-    id: "emboss",
-    name: "Emboss",
-    group: "Stylize",
-    parameters: [
-      {
-        kind: "range",
-        key: "angle",
-        label: "Angle",
-        min: -180,
-        max: 180,
-        step: 1,
-        unit: "°",
-        default: 135,
-      },
-      {
-        kind: "range",
-        key: "height",
-        label: "Height",
-        min: 1,
-        max: 10,
-        step: 1,
-        unit: "px",
-        default: 3,
-      },
-      {
-        kind: "range",
-        key: "amount",
-        label: "Amount",
-        min: 1,
-        max: 500,
-        step: 1,
-        unit: "%",
-        default: 100,
-      },
-    ],
-    apply: (p, v) => emboss(p, num(v, "angle"), num(v, "height"), num(v, "amount")),
-  },
-  {
-    id: "find-edges",
-    name: "Find Edges",
-    group: "Stylize",
-    parameters: [],
-    apply: (p) => findEdges(p),
-  },
-];
+export const FILTERS: readonly Filter[] = CATALOGUE;
 
 export function filterById(id: string): Filter | undefined {
   return FILTERS.find((f) => f.id === id);
@@ -270,6 +62,10 @@ export function parseFilterValues(filter: Filter, value: unknown): FilterValues 
     const v = (value as Record<string, unknown>)[p.key];
     if (p.kind === "toggle") {
       if (typeof v !== "boolean") return null;
+    } else if (p.kind === "choice") {
+      if (typeof v !== "number" || !Number.isInteger(v) || v < 0 || v >= p.options.length) {
+        return null;
+      }
     } else if (typeof v !== "number" || !Number.isFinite(v) || v < p.min || v > p.max) {
       return null;
     }

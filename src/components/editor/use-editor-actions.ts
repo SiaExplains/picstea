@@ -35,6 +35,8 @@ export type UiActionId =
   | ActionId
   | `adjust.${AdjustmentType}`
   | `filter.${FilterId}`
+  | "filter.liquify"
+  | "filter.vanishingPoint"
   | `align.${AlignEdge}`
   | `distribute.${DistributeMode}`
   | "select.deselectLayers"
@@ -117,6 +119,8 @@ export interface ActionHosts {
   openColorRangeDialog: () => void;
   pickImage: (mode: "open" | "place" | "placeEmbedded") => void;
   openFilterDialog: (id: FilterId) => void;
+  /** Filter → Liquify… / Vanishing Point…: interactive editors with their own dialogs. */
+  openPixelEditor: (kind: "liquify" | "vanishingPoint") => void;
   openGuideDialog: () => void;
   openGridDialog: () => void;
   openWorkPathDialog: () => void;
@@ -721,6 +725,16 @@ export function useEditorActions(hosts: ActionHosts): Record<UiActionId, UiActio
           },
         ]),
       ) as Record<`filter.${FilterId}`, UiAction>),
+      "filter.liquify": {
+        label: "Liquify…",
+        enabled: layer?.kind === "raster" && !layer.locked,
+        run: () => hosts.openPixelEditor("liquify"),
+      },
+      "filter.vanishingPoint": {
+        label: "Vanishing Point…",
+        enabled: layer?.kind === "raster" && !layer.locked,
+        run: () => hosts.openPixelEditor("vanishingPoint"),
+      },
       "filter.last": {
         label: lastFilter
           ? `Last Filter (${FILTERS.find((f) => f.id === lastFilter.id)?.name})`

@@ -24,6 +24,7 @@ import {
   WorkPathDialog,
 } from "./SelectionDialogs";
 import { FilterDialog, type SmartFilterTarget } from "./FilterDialog";
+import { LiquifyDialog, VanishingPointDialog } from "./PixelEditorDialogs";
 import { GridDialog, GuideDialog } from "./ViewDialogs";
 import type { FilterId } from "@/editor/filters/registry";
 import { activeLayer } from "@/editor/core/document/queries";
@@ -57,6 +58,8 @@ export function EditorShell() {
   const [colorRangeOpen, setColorRangeOpen] = useState(false);
   const [filterId, setFilterId] = useState<FilterId | null>(null);
   const [smartTarget, setSmartTarget] = useState<SmartFilterTarget | undefined>(undefined);
+  const [pixelEditor, setPixelEditor] = useState<"liquify" | "vanishingPoint" | null>(null);
+  const closePixelEditor = useCallback(() => setPixelEditor(null), []);
   const [guideDialogOpen, setGuideDialogOpen] = useState(false);
   const [gridDialogOpen, setGridDialogOpen] = useState(false);
   const [workPathDialogOpen, setWorkPathDialogOpen] = useState(false);
@@ -91,6 +94,7 @@ export function EditorShell() {
         setSmartTarget(undefined);
         if (controller.beginFilter()) setFilterId(id);
       },
+      openPixelEditor: (kind) => setPixelEditor(kind),
       openSmartFilterDialog: (layerId, entry) => {
         setSmartTarget({ layerId, entryId: entry.id, values: entry.values });
         setFilterId(entry.filterId as FilterId);
@@ -280,6 +284,8 @@ export function EditorShell() {
           onClose={() => setFilterId(null)}
         />
       )}
+      {pixelEditor === "liquify" && <LiquifyDialog onClose={closePixelEditor} />}
+      {pixelEditor === "vanishingPoint" && <VanishingPointDialog onClose={closePixelEditor} />}
       {guideDialogOpen && <GuideDialog onClose={() => setGuideDialogOpen(false)} />}
       {gridDialogOpen && <GridDialog onClose={() => setGridDialogOpen(false)} />}
       {workPathDialogOpen && <WorkPathDialog onClose={() => setWorkPathDialogOpen(false)} />}
