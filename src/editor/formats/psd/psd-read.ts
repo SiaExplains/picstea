@@ -1,4 +1,6 @@
 import { checkDimensions, MAX_DIMENSION, MAX_PIXELS } from "../../core/document/limits";
+import type { BlendRange } from "../../core/document/blending";
+import { readBlendingRanges, readRestrictedChannels } from "./psd-blending";
 import { ByteReader, FormatError } from "../binary/bytes";
 import { inflate } from "../binary/compression";
 import { unpackBits } from "./packbits";
@@ -60,6 +62,8 @@ interface RawRecord {
   readonly clipping: boolean;
   readonly colorLabel: number;
   readonly name: string;
+  readonly blendRanges: [BlendRange, BlendRange][];
+  readonly restricted: number[];
   readonly mask?: { rect: PsdRect; defaultColor: number; disabled: boolean };
   readonly section?: { type: number; blendKey?: string };
   readonly source?: PsdPixelLayer["source"];
@@ -117,7 +121,8 @@ function readRecord(r: ByteReader): RawRecord {
     mask = { rect: maskRect, defaultColor, disabled: (maskFlags & 2) !== 0 };
     maskFromVector = (maskFlags & 8) !== 0;
   }
-  extra.skip(extra.u32()); // blending ranges
+  const blendRanges = readBlendingRanges(extra.sub(extra.u32()));
+  let restricted: number[] = [];
   let name = pascal(extra, 4);
   let section: RawRecord["section"];
   let colorLabel = 0;
@@ -141,6 +146,9 @@ function readRecord(r: ByteReader): RawRecord {
       }
       case "lclr":
         if (body.remaining >= 2) colorLabel = body.u16();
+        break;
+      case "brst":
+        restricted = readRestrictedChannels(body);
         break;
       case "lsct":
       case "lsdk": {
@@ -199,6 +207,8 @@ function readRecord(r: ByteReader): RawRecord {
     clipping: clipping !== 0,
     colorLabel,
     name,
+    blendRanges,
+    restricted,
     mask,
     section,
     source,
@@ -401,6 +411,9 @@ async function readPsdFile(
           mask,
           ...(rec.clipping ? { clipping: true } : {}),
           ...(rec.colorLabel >= 1 && rec.colorLabel <= 7 ? { colorLabel: rec.colorLabel } : {}),
+          ...(rec.blendRanges.length || rec.restricted.length
+            ? { blending: { ranges: rec.blendRanges, restricted: rec.restricted } }
+            : {}),
         };
         if (rec.section?.type === 3) {
           decoded.push({ kind: "divider" });

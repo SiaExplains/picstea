@@ -312,9 +312,9 @@ describe("schema v7", () => {
     const migrated = findLayerDeep(result.document.layers, "a")!;
     expect(migrated.effects?.dropShadow?.[0]).toMatchObject({ size: 4, blendMode: "normal" });
     expect(Array.isArray(migrated.effects?.bevel)).toBe(true);
-    // Saved again, it is a version-7 project that loads unchanged.
+    // Saved again, it is a current-version project that loads unchanged.
     const again = JSON.parse(JSON.stringify(serializeDocument(result.document)));
-    expect(again.schemaVersion).toBe(7);
+    expect(again.schemaVersion).toBe(8);
     expect(deserializeProject(again)).toMatchObject({ ok: true, migratedFrom: null });
     // Smart object contents are upgraded by the same step.
     const step = MIGRATIONS[6]({ layers: [smart] }) as {

@@ -10,6 +10,8 @@ import type {
 import { insertLayerAt, locateLayer } from "../../core/document/tree";
 import type { Anchor, VectorPath } from "../../core/path/path";
 import { compositeOperation } from "./blend";
+import { mixAdvancedBlending } from "./blend-if";
+import { hasAdvancedBlending } from "../../core/document/blending";
 import {
   flattenStyle,
   hasActiveEffects,
@@ -499,6 +501,24 @@ function drawStyled(target: CompositeContext, surface: Surface, layer: Layer, en
   }
 }
 
+/**
+ * Draw a styled layer, then apply Blend If and channel restrictions (ADR-0031): the result is
+ * mixed back towards the backdrop pixel by pixel. Only layers that use them pay for the reads.
+ */
+function drawBlended(target: CompositeContext, surface: Surface, layer: Layer, env: Env): void {
+  if (!hasAdvancedBlending(layer) || !target.getImageData || !target.putImageData) {
+    drawStyled(target, surface, layer, env);
+    return;
+  }
+  const { width, height } = env.space;
+  const before = target.getImageData(0, 0, width, height);
+  drawStyled(target, surface, layer, env);
+  const after = target.getImageData(0, 0, width, height);
+  const own = context2d(surface, true).getImageData!(0, 0, width, height);
+  mixAdvancedBlending(before.data, after.data, own.data, layer.blendIf, layer.channels);
+  target.putImageData(after, 0, 0);
+}
+
 /** Finish an isolated layer surface: masks, then effects, then draw onto the target. */
 function finishIsolated(
   target: CompositeContext,
@@ -508,7 +528,7 @@ function finishIsolated(
   masked = false,
 ): void {
   if (!masked) applyMasks(context2d(surface), layer, env);
-  drawStyled(target, surface, layer, env);
+  drawBlended(target, surface, layer, env);
 }
 
 function compositeAdjustment(
@@ -616,7 +636,8 @@ function compositeOne(target: CompositeContext, layer: Layer, env: Env, drawn: L
       layer.opacity === 1 &&
       !hasMask(layer, env) &&
       !hasActiveEffects(layer.effects) &&
-      (layer.fillOpacity ?? 1) === 1;
+      (layer.fillOpacity ?? 1) === 1 &&
+      !hasAdvancedBlending(layer);
     if (passThrough || !createSurface) {
       compositeList(target, layer.children, env, drawn);
     } else {
@@ -635,7 +656,9 @@ function compositeOne(target: CompositeContext, layer: Layer, env: Env, drawn: L
     return;
   }
 
-  const isolated = createSurface && (hasMask(layer, env) || hasActiveEffects(layer.effects));
+  const isolated =
+    createSurface &&
+    (hasMask(layer, env) || hasActiveEffects(layer.effects) || hasAdvancedBlending(layer));
   if (isolated) {
     const { surface, ctx: sctx } = spaceSurface(env);
     sctx.save();
@@ -696,7 +719,7 @@ function compositeClippingGroup(
         ctx.drawImage(baseSurface, 0, 0);
         ctx.restore();
       });
-      drawStyled(bctx, surface, layer, env);
+      drawBlended(bctx, surface, layer, env);
       release(surface);
     }
     below.push(layer);

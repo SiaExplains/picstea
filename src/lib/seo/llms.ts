@@ -41,7 +41,7 @@ const FACTS = [
   "Installable as an app (PWA) and works offline after the first visit; the service worker caches only the app's own files, never images.",
   "Layers: pixel, shape, text, fill and adjustment layers, groups, 16 blend modes, opacity, layer masks, vector masks, clipping masks, colour labels, merge down and flatten.",
   "Adjustment layers include Levels, Curves, Brightness/Contrast, Hue/Saturation, Exposure, Vibrance, Color Balance, Photo Filter, Channel Mixer, Gradient Map, Black & White, Invert, Posterize and Threshold.",
-  "Layer styles: all ten Photoshop effects (drop shadow, inner shadow, outer and inner glow, bevel and emboss with contour and texture, satin, colour, gradient and pattern overlay, stroke) with contours, several copies, Fill opacity, global light and saved styles, in a Layer Style dialog.",
+  "Layer styles: all ten Photoshop effects (drop shadow, inner shadow, outer and inner glow, bevel and emboss with contour and texture, satin, colour, gradient and pattern overlay, stroke) with contours, several copies, Fill opacity, Blend If, channel restrictions, global light and saved styles, in a Layer Style dialog.",
   "Selections: rectangular and elliptical marquee, freehand and polygonal lasso, magic wand, Color Range, select layer pixels, feather/expand/contract, transform selection.",
   "Painting and retouching: brush, pencil, eraser, background and magic eraser, paint bucket, gradient, colour replacement, clone stamp, healing and spot healing brush, red eye, dodge, burn, sponge, blur, sharpen and smudge.",
   "Vector tools: pen with add/delete/convert anchor point, path and direct selection, rectangle, rounded rectangle, ellipse, polygon and line shapes, editable text.",

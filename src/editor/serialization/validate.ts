@@ -2,6 +2,13 @@ import { isHexColor } from "../core/document/factory";
 import { checkDimensions, MAX_DIMENSION } from "../core/document/limits";
 import { MAX_GROUP_DEPTH, walkLayers } from "../core/document/tree";
 import { EffectError, parseGlobalLight, parseLayerEffects } from "../core/effects/parse";
+import {
+  BlendingError,
+  hasBlendIf,
+  hasChannelLimits,
+  parseBlendIf,
+  parseChannels,
+} from "../core/document/blending";
 import { parseAdjustment } from "../adjustments/registry";
 import { MAX_GUIDES } from "../core/commands/guide-commands";
 import { filterById, parseFilterValues } from "../filters/registry";
@@ -147,6 +154,23 @@ function effects(value: unknown, path: string): LayerEffects {
   }
 }
 
+/** Blend If and channels; values that change nothing are left out. */
+function advancedBlending(o: Record<string, unknown>, path: string) {
+  try {
+    const blendIf =
+      o.blendIf !== undefined ? parseBlendIf(o.blendIf, `${path}.blendIf`) : undefined;
+    const channels =
+      o.channels !== undefined ? parseChannels(o.channels, `${path}.channels`) : undefined;
+    return {
+      ...(hasBlendIf(blendIf) ? { blendIf } : {}),
+      ...(hasChannelLimits(channels) ? { channels } : {}),
+    };
+  } catch (error) {
+    if (error instanceof BlendingError) fail(error.path, error.message);
+    throw error;
+  }
+}
+
 function globalLight(value: unknown, path: string): GlobalLight {
   try {
     return parseGlobalLight(value, path);
@@ -175,6 +199,7 @@ function layer(value: unknown, path: string, depth: number, budget: Budget): Lay
     ...(o.fillOpacity !== undefined
       ? { fillOpacity: num(o.fillOpacity, `${path}.fillOpacity`, 0, 1) }
       : {}),
+    ...advancedBlending(o, path),
     ...(o.vectorMask !== undefined
       ? (() => {
           const v = obj(o.vectorMask, `${path}.vectorMask`);

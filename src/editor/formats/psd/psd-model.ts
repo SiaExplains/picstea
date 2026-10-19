@@ -1,3 +1,4 @@
+import type { PsdBlending } from "./psd-blending";
 import type { PsdExtras } from "./psd-extras";
 
 /**
@@ -37,6 +38,8 @@ interface PsdNodeBase {
   readonly clipping?: boolean;
   /** Layers-panel colour (`lclr`): 1 red … 7 grey; absent or 0 = none. */
   readonly colorLabel?: number;
+  /** Blend If ranges and channel restrictions (ADR-0031). */
+  readonly blending?: PsdBlending;
 }
 
 export interface PsdPixelLayer extends PsdNodeBase {

@@ -1233,6 +1233,64 @@
   margin: 0;
 }
 
+.blendIf {
+  margin: 10px 0;
+}
+
+.blendIfHead {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 4px;
+  color: var(--ed-text-dim);
+}
+
+.blendIfValues {
+  font-variant-numeric: tabular-nums;
+}
+
+.blendIfBar {
+  position: relative;
+  height: 12px;
+  margin: 0 7px 14px;
+  border: 1px solid var(--ed-border);
+  border-radius: 2px;
+}
+
+.blendIfThumb {
+  position: absolute;
+  top: 12px;
+  width: 12px;
+  height: 12px;
+  margin-left: -6px;
+  background: #fff;
+  border: 1px solid var(--ed-border);
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+  cursor: ew-resize;
+  touch-action: none;
+}
+
+/* A split thumb is two half-triangles side by side, like Photoshop's. */
+.blendIfHalfLow {
+  width: 6px;
+  margin-left: -6px;
+  clip-path: polygon(100% 0, 100% 100%, 0 100%);
+}
+
+.blendIfHalfHigh {
+  width: 6px;
+  margin-left: 0;
+  clip-path: polygon(0 0, 100% 100%, 0 100%);
+}
+
+.blendIfThumbDark {
+  background: #111;
+  border-color: var(--ed-text-dim);
+}
+
+.blendIfThumb:focus-visible {
+  outline: 2px solid var(--ed-focus);
+}
+
 .effectToggles {
   display: grid;
   grid-template-columns: 1fr 1fr;

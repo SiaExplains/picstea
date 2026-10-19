@@ -8,7 +8,7 @@ import { ValidationError, validateDocument } from "./validate";
  * To change the stored shape: bump CURRENT_SCHEMA_VERSION, add a migration from the previous
  * version, and update the validator. Never edit a released migration.
  */
-export const CURRENT_SCHEMA_VERSION = 7;
+export const CURRENT_SCHEMA_VERSION = 8;
 
 export interface SerializedProject {
   readonly schemaVersion: number;
@@ -51,6 +51,11 @@ export const MIGRATIONS: Readonly<Record<number, Migration>> = {
    * Old single effects become one-item lists whose new options reproduce the old look.
    */
   6: (document) => upgradeEffectsIn(document),
+  /*
+   * v8 (0.27.0) added Blend If and channel restrictions (ADR-0031). Every v7 document is a valid
+   * v8 document.
+   */
+  7: (document) => document,
 };
 
 /** Recursively upgrade `effects` on every layer, including groups and smart object contents. */

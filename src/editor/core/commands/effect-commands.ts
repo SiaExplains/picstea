@@ -8,6 +8,15 @@ import {
   type LayerEffects,
 } from "../effects/model";
 import { EffectError, parseEffect, parseGlobalLight, parseLayerEffects } from "../effects/parse";
+import {
+  BlendingError,
+  hasBlendIf,
+  hasChannelLimits,
+  parseBlendIf,
+  parseChannels,
+  type BlendIf,
+  type ChannelSet,
+} from "../document/blending";
 import type { EditorDocument, Layer } from "../document/types";
 import { CommandError, replaceLayer, requireLayer, requireUnlocked, type Command } from "./command";
 
@@ -170,6 +179,60 @@ export function setGlobalLight(light: GlobalLight): Command {
         return doc;
       }
       return { ...doc, globalLight: parsed };
+    },
+  };
+}
+
+/** The layer with an optional field set, or removed when `value` is undefined. */
+function withField<K extends "blendIf" | "channels">(
+  doc: EditorDocument,
+  layer: Layer,
+  key: K,
+  value: Layer[K] | undefined,
+): EditorDocument {
+  if (JSON.stringify(layer[key] ?? null) === JSON.stringify(value ?? null)) return doc;
+  const rest: Record<string, unknown> = { ...layer };
+  delete rest[key];
+  return replaceLayer(
+    doc,
+    (value === undefined ? rest : { ...rest, [key]: value }) as unknown as Layer,
+  );
+}
+
+const asBlendingError = <T>(run: () => T): T => {
+  try {
+    return run();
+  } catch (error) {
+    if (error instanceof BlendingError) {
+      throw new CommandError(`Blending options: ${error.path} ${error.message}.`);
+    }
+    throw error;
+  }
+};
+
+/** Blending Options → Blend If (ADR-0031). `null` removes every limit. Drags merge. */
+export function setBlendIf(layerId: string, blendIf: BlendIf | null): Command {
+  return {
+    type: "layer.blendIf",
+    label: "Blend If",
+    mergeKey: `layer.blendIf:${layerId}`,
+    apply(doc) {
+      const layer = styledLayer(doc, layerId);
+      const parsed = blendIf ? asBlendingError(() => parseBlendIf(blendIf)) : undefined;
+      return withField(doc, layer, "blendIf", hasBlendIf(parsed) ? parsed : undefined);
+    },
+  };
+}
+
+/** Blending Options → Channels: which of R, G and B the layer changes. */
+export function setLayerChannels(layerId: string, channels: ChannelSet): Command {
+  return {
+    type: "layer.channels",
+    label: "Blending Channels",
+    apply(doc) {
+      const layer = styledLayer(doc, layerId);
+      const parsed = asBlendingError(() => parseChannels(channels));
+      return withField(doc, layer, "channels", hasChannelLimits(parsed) ? parsed : undefined);
     },
   };
 }

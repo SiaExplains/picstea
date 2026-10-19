@@ -140,7 +140,7 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 | Several copies of shadows, strokes and overlays (+, ▲ ▼, delete) | ✅ | Up to 10 each |
 | Fill opacity, global light | ✅ | |
 | Saved layer styles (New Style…, built-ins, apply, delete, clear) | ✅ | `picstea.layerStyles`, this browser only |
-| Layer Style: Channels and Blend If | 📋 | Planned (E2) |
+| Layer Style: Channels and Blend If (split sliders, per channel) | ✅ | ADR-0031; schema v8; PSD blending ranges and `brst` read and written |
 | Drag layers onto trash / New Layer; resizable, remembered panels | ✅ | `picstea.panelSizes` |
 | Toolbar groups with flyouts (right-click / hold), Shift+key cycling, reset colours (D) button | ✅ | ADR-0027 |
 | Spot Healing, Red Eye, Background / Magic Eraser, Color Replacement | ✅ | ADR-0027 |

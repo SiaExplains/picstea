@@ -224,6 +224,13 @@ export const DOCS: readonly DocPage[] = [
             document: change it in one effect, or under Blending Options, and they all follow.
           </li>
           <li>
+            <strong>Blend If</strong> (Blending Options) hides a layer&apos;s pixels by their own
+            brightness (This Layer) or by what is beneath them (Underlying Layer), for grey or one
+            colour channel. Alt-drag a slider to split it for a smooth transition; double-click a
+            split half to join it again. <strong>Channels</strong> R, G and B choose which colour
+            channels the layer changes.
+          </li>
+          <li>
             <strong>Fill Opacity</strong> (Blending Options) fades the layer&apos;s own pixels but
             not its effects, for a glass or outline look.
           </li>
