@@ -188,6 +188,34 @@
   opacity: 0.7;
 }
 
+/* Submenus open to the side, fixed so a scrolling parent never clips them (ADR-0032). */
+.submenu {
+  position: relative;
+}
+
+.submenuPopup {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 51;
+}
+
+.submenuArrow {
+  opacity: 0.7;
+}
+
+/* On the highlighted (teal) row, dimmed text would fall below 4.5:1 contrast. */
+.menuItem:hover:not(:disabled) .shortcut,
+.menuItem:focus-visible .shortcut,
+.menuItem:hover:not(:disabled) .submenuArrow,
+.menuItem:focus-visible .submenuArrow {
+  opacity: 1;
+}
+
+.menuItem[aria-expanded="true"] {
+  background: var(--ed-chrome-2);
+}
+
 .menuSeparator {
   height: 1px;
   margin: 4px 6px;
@@ -1291,6 +1319,27 @@
   outline: 2px solid var(--ed-focus);
 }
 
+/* Canvas Size anchor: a 3 × 3 grid of positions. */
+.anchorGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 28px);
+  gap: 3px;
+}
+
+.anchorCell {
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--ed-border);
+  border-radius: 4px;
+  background: var(--ed-bg);
+  cursor: pointer;
+}
+
+.anchorCell[aria-checked="true"] {
+  background: var(--ed-accent-strong);
+  border-color: var(--ed-accent);
+}
+
 .effectToggles {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -1547,9 +1596,34 @@
 }
 
 /* A fixed 280 × 250 box (IAB medium rectangle proportions): nothing shifts when it fills. */
+/* Three slots: the first holds a square image or video; all shrink on short screens. */
+.sideSlots {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
+  overflow-y: auto;
+}
+
 .sideSlot {
-  height: 250px;
-  flex: none;
+  flex: 0 1 140px;
+  min-height: 112px;
+}
+
+.sideSlotFirst {
+  flex: 0 0 auto;
+  min-height: 0;
+}
+
+.sideSponsor video {
+  display: block;
+  width: 100%;
+  max-width: 200px;
+  height: auto;
+  aspect-ratio: 1;
+  align-self: center;
+  border-radius: 6px;
+  background: var(--ed-chrome);
 }
 
 .sideSponsor {

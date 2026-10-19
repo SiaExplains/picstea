@@ -1,10 +1,17 @@
 import { expect, test, type Page } from "@playwright/test";
-import { at, drag, isBlue, layerNames, MOD, newDocument, pixel, trackErrors } from "./helpers";
+import {
+  at,
+  drag,
+  isBlue,
+  layerNames,
+  MOD,
+  newDocument,
+  pixel,
+  trackErrors,
+  pickMenu,
+} from "./helpers";
 
-async function menu(page: Page, name: string, item: string) {
-  await page.getByRole("menuitem", { name, exact: true }).click();
-  await page.getByRole("menuitem", { name: item, exact: true }).click();
-}
+const menu = (page: Page, name: string, item: string) => pickMenu(page, name, item);
 
 /** Rectangles drawn with the Shape tool (default blue fill); snapping off for exact positions. */
 async function rectangles(page: Page, boxes: [number, number, number, number][]) {

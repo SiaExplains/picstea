@@ -1,5 +1,15 @@
 import { expect, test, type Page } from "@playwright/test";
-import { drag, isBlue, isWhite, layerNames, MOD, newDocument, pixel, trackErrors } from "./helpers";
+import {
+  drag,
+  isBlue,
+  isWhite,
+  layerNames,
+  MOD,
+  newDocument,
+  pixel,
+  trackErrors,
+  pickMenu,
+} from "./helpers";
 
 const rows = (page: Page) => page.getByTestId("layer-row");
 const row = (page: Page, name: string) =>
@@ -115,8 +125,7 @@ test("an Invert adjustment changes only the layers below it", async ({ page }) =
   const errors = trackErrors(page);
   await newDocument(page, "Adjust");
   await rectangle(page, [50, 50], [150, 150]);
-  await page.getByRole("menuitem", { name: "Adjustments" }).click();
-  await page.getByRole("menuitem", { name: "Invert…" }).click();
+  await pickMenu(page, "Layer", "Invert…");
   expect(await layerNames(page)).toEqual(["Invert", "Rectangle 1", "Background"]);
 
   const inverted = await pixel(page, 100, 100);
@@ -129,8 +138,7 @@ test("an Invert adjustment changes only the layers below it", async ({ page }) =
   expect(isBlue(await pixel(page, 350, 300))).toBe(true);
 
   // Hue/Saturation with saturation −100 turns everything below it grey.
-  await page.getByRole("menuitem", { name: "Adjustments" }).click();
-  await page.getByRole("menuitem", { name: "Hue/Saturation…" }).click();
+  await pickMenu(page, "Layer", "Hue/Saturation…");
   const saturation = page.getByRole("slider", { name: "Saturation" });
   await saturation.fill("-100");
   const grey = await pixel(page, 350, 300);
@@ -181,8 +189,7 @@ test("a full composition survives reload and sends nothing over the network", as
   await drag(page, [100, 100], [300, 100]);
   await page.keyboard.press(`${MOD}+g`);
   await page.getByRole("checkbox", { name: "Drop shadow" }).check();
-  await page.getByRole("menuitem", { name: "Adjustments" }).click();
-  await page.getByRole("menuitem", { name: "Black & White…" }).click();
+  await pickMenu(page, "Layer", "Black & White…");
 
   const before = await layerNames(page);
   const maskedPixel = await pixel(page, 200, 100);

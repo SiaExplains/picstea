@@ -1,5 +1,15 @@
 import { expect, test, type Page } from "@playwright/test";
-import { drag, isDark, isWhite, layerNames, MOD, newDocument, pixel, trackErrors } from "./helpers";
+import {
+  drag,
+  isDark,
+  isWhite,
+  layerNames,
+  MOD,
+  newDocument,
+  pixel,
+  trackErrors,
+  pickMenu,
+} from "./helpers";
 
 const luminance = (rgba: number[]) => (rgba[0] + rgba[1] + rgba[2]) / 3;
 /** Distance from pure shape blue (#4c8dff). */
@@ -7,10 +17,7 @@ const fromBlue = (rgba: number[]) =>
   Math.abs(rgba[0] - 0x4c) + Math.abs(rgba[1] - 0x8d) + Math.abs(rgba[2] - 0xff);
 const fromWhite = (rgba: number[]) => 765 - rgba[0] - rgba[1] - rgba[2];
 
-async function menu(page: Page, name: string, item: string) {
-  await page.getByRole("menuitem", { name, exact: true }).click();
-  await page.getByRole("menuitem", { name: item, exact: true }).click();
-}
+const menu = (page: Page, name: string, item: string) => pickMenu(page, name, item);
 
 /** A black square (100,100)–(200,200) on a new pixel layer. */
 async function blackSquare(page: Page) {
@@ -142,9 +149,8 @@ test("Place Embedded makes a smart object; Rasterize turns it into pixels", asyn
     ctx.fillRect(0, 0, 50, 40);
     return canvas.toDataURL("image/png").split(",")[1];
   });
-  await page.getByRole("menuitem", { name: "File", exact: true }).click();
   const chooser = page.waitForEvent("filechooser");
-  await page.getByRole("menuitem", { name: "Place Embedded…", exact: true }).click();
+  await pickMenu(page, "File", "Place Embedded…");
   await (
     await chooser
   ).setFiles({ name: "badge.png", mimeType: "image/png", buffer: Buffer.from(base64, "base64") });

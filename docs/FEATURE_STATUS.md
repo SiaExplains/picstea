@@ -135,6 +135,13 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 | Google-certified CMP (IAB TCF) for personalised EU ads | ✅ | `NEXT_PUBLIC_ADSENSE_CMP=google` (ADR-0024); default stays own banner |
 | Editor side column: own sponsorship, Privacy settings, website links (≥ 1280 px) | ✅ | ADR-0025; Google ads in the editor 📋 (needs a new ADR) |
 | Layers right-click menu (styles, select pixels, merge, flatten, rasterize style, colour labels) | ✅ | ADR-0026; Duplicate Into, Convert to Shape/Point Text 📋 |
+| Menu bar with submenus (keyboard and pointer), Window menu | ✅ | ADR-0032 |
+| Copy Merged, Edit → Stroke…, Select → Grow / Similar, Layer → Colour Label | ✅ | ADR-0032 |
+| About page (`/about`) | ✅ | ADR-0032 |
+| Three sponsorship slots in the editor column; silent looping video sponsorships (FocusCrew) | ✅ | ADR-0034; reduced motion shows the still frame |
+| Image Size…, Canvas Size… (9 anchors, relative), Image Rotation (90°/180°, flip canvas) | ✅ | ADR-0033; layers transformed, not resampled; arbitrary angle 📋 |
+| Trim…, Reveal All, Duplicate document | ✅ | ADR-0033 |
+| Auto Tone, Auto Contrast, Auto Color (as a Levels adjustment layer) | ✅ | ADR-0033 |
 | Layer Style dialog (double-click a layer / Blending Options…) | ✅ | Live, one undo step; full Photoshop options (ADR-0030) |
 | Layer Style: inner glow, satin, pattern overlay; every option (contours, noise, spread/choke, blend modes, gradient styles and methods, stroke position and gradient, bevel styles, contour and texture) | ✅ | ADR-0030; schema v7. Bevel, satin and texture approximate Photoshop |
 | Several copies of shadows, strokes and overlays (+, ▲ ▼, delete) | ✅ | Up to 10 each |

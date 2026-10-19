@@ -8,6 +8,8 @@ const LABELS: Record<ActionId, string> = {
   "file.save": "Save to browser",
   "file.saveProject": "Save project as .picstea",
   "file.export": "Export",
+  "image.autoTone": "Auto Tone (Levels adjustment layer)",
+  "image.autoContrast": "Auto Contrast (Levels adjustment layer)",
   "edit.undo": "Undo",
   "edit.redo": "Redo",
   "edit.cut": "Cut selected pixels",

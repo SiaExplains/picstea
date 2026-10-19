@@ -32,6 +32,11 @@ const LANDING_PAGES: readonly [path: string, title: string, summary: string][] =
     "How Picstea compares with Photopea, including what Photopea does that Picstea doesn't.",
   ],
   ["/faq", "Frequently asked questions", "Short answers about price, privacy, files and devices."],
+  [
+    "/about",
+    "About Picstea",
+    "What Picstea is, how it keeps images on the device and how it is funded.",
+  ],
 ];
 
 const FACTS = [

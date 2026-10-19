@@ -16,7 +16,13 @@ import { MenuBar } from "./MenuBar";
 import { NewDocumentDialog } from "./NewDocumentDialog";
 import { BusyOverlay, Notices } from "./Notices";
 import { PropertiesPanel } from "./PropertiesPanel";
-import { ColorRangeDialog, ModifySelectionDialog, WorkPathDialog } from "./SelectionDialogs";
+import { CanvasSizeDialog, ImageSizeDialog, TrimDialog } from "./ImageDialogs";
+import {
+  ColorRangeDialog,
+  ModifySelectionDialog,
+  StrokeDialog,
+  WorkPathDialog,
+} from "./SelectionDialogs";
 import { FilterDialog, type SmartFilterTarget } from "./FilterDialog";
 import { GridDialog, GuideDialog } from "./ViewDialogs";
 import type { FilterId } from "@/editor/filters/registry";
@@ -46,6 +52,8 @@ export function EditorShell() {
   const [newDialogOpen, setNewDialogOpen] = useState(false);
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const [modifyKind, setModifyKind] = useState<SelectionModification | null>(null);
+  const [strokeOpen, setStrokeOpen] = useState(false);
+  const [imageDialog, setImageDialog] = useState<"size" | "canvas" | "trim" | null>(null);
   const [colorRangeOpen, setColorRangeOpen] = useState(false);
   const [filterId, setFilterId] = useState<FilterId | null>(null);
   const [smartTarget, setSmartTarget] = useState<SmartFilterTarget | undefined>(undefined);
@@ -65,6 +73,10 @@ export function EditorShell() {
       openNewDocumentDialog: () => setNewDialogOpen(true),
       openExportDialog: () => setExportDialogOpen(true),
       openModifySelectionDialog: (kind) => setModifyKind(kind),
+      openStrokeDialog: () => setStrokeOpen(true),
+      openImageSizeDialog: () => setImageDialog("size"),
+      openCanvasSizeDialog: () => setImageDialog("canvas"),
+      openTrimDialog: () => setImageDialog("trim"),
       openColorRangeDialog: () => setColorRangeOpen(true),
       // The dialog only opens when the active layer can be filtered (otherwise a notice says why).
       openFilterDialog: (id) => {
@@ -255,6 +267,10 @@ export function EditorShell() {
       <NewDocumentDialog open={newDialogOpen} onClose={() => setNewDialogOpen(false)} />
       <ExportDialog open={exportDialogOpen} onClose={() => setExportDialogOpen(false)} />
       <ModifySelectionDialog kind={modifyKind} onClose={() => setModifyKind(null)} />
+      {strokeOpen && <StrokeDialog open onClose={() => setStrokeOpen(false)} />}
+      {imageDialog === "size" && <ImageSizeDialog onClose={() => setImageDialog(null)} />}
+      {imageDialog === "canvas" && <CanvasSizeDialog onClose={() => setImageDialog(null)} />}
+      {imageDialog === "trim" && <TrimDialog onClose={() => setImageDialog(null)} />}
       {colorRangeOpen && <ColorRangeDialog open onClose={() => setColorRangeOpen(false)} />}
       {filterId && (
         <FilterDialog

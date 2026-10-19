@@ -1,9 +1,13 @@
 import { describe, expect, it } from "vitest";
+import { SPONSORSHIPS } from "@/content/sponsorships";
 import {
   HOUSE_AD,
+  HOUSE_ADS,
   isSafeImage,
   isSafeTarget,
+  isSafeVideo,
   pickSponsorship,
+  pickSponsorships,
   type Advertisement,
 } from "./sponsorship";
 
@@ -46,5 +50,46 @@ describe("sponsorships", () => {
     expect(
       pickSponsorship([ad("x", { targetUrl: "javascript:alert(1)" })], "site-sidebar", 0),
     ).toBe(HOUSE_AD);
+  });
+});
+
+describe("several slots (ADR-0034)", () => {
+  const side = (id: string, extra: Partial<Advertisement> = {}) =>
+    ad(id, { placement: "editor-side", ...extra });
+
+  it("fills three slots: booked first, then distinct house ads", () => {
+    const picked = pickSponsorships([side("a")], "editor-side", 0, 3);
+    expect(picked.map((p) => p.id)).toEqual(["a", HOUSE_ADS[0].id, HOUSE_ADS[1].id]);
+    expect(pickSponsorships([], "editor-side", 0, 3).map((p) => p.id)).toEqual(
+      HOUSE_ADS.map((h) => h.id),
+    );
+  });
+
+  it("rotates the first slot daily and never shows more than the slots", () => {
+    const ads = [side("a"), side("b"), side("c"), side("d")];
+    expect(pickSponsorships(ads, "editor-side", 0, 3).map((p) => p.id)).toEqual(["a", "b", "c"]);
+    expect(pickSponsorships(ads, "editor-side", 1, 3).map((p) => p.id)).toEqual(["b", "c", "d"]);
+    expect(pickSponsorships(ads, "editor-side", 3, 3).map((p) => p.id)).toEqual(["d", "a", "b"]);
+  });
+
+  it("accepts only self-hosted MP4 or WebM videos", () => {
+    expect(isSafeVideo("/sponsors/focuscrew.mp4")).toBe(true);
+    expect(isSafeVideo("https://cdn.example.com/a.mp4")).toBe(false);
+    expect(isSafeVideo("/sponsors/../secret.mp4")).toBe(false);
+    expect(isSafeVideo("/sponsors/a.mov")).toBe(false);
+    // Protocol-relative paths point at another site.
+    expect(isSafeVideo("//evil.example/x.mp4")).toBe(false);
+    expect(isSafeImage("//evil.example/x.png")).toBe(false);
+    const bad = side("v", { video: "https://evil.example/x.mp4" });
+    expect(pickSponsorships([bad], "editor-side", 0, 1)[0].id).toBe(HOUSE_ADS[0].id);
+  });
+
+  it("the booked sponsorships are all valid", () => {
+    for (const booked of SPONSORSHIPS) {
+      expect(isSafeTarget(booked.targetUrl)).toBe(true);
+      expect(isSafeImage(booked.image)).toBe(true);
+      expect(isSafeVideo(booked.video)).toBe(true);
+    }
+    expect(pickSponsorships(SPONSORSHIPS, "editor-side", 0, 3)[0].id).toBe("focuscrew");
   });
 });

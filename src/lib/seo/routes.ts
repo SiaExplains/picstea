@@ -20,6 +20,7 @@ export function publicRoutes(): PublicRoute[] {
     { path: "/photoshop-alternative", priority: 0.8 },
     { path: "/photopea-alternative", priority: 0.8 },
     { path: "/faq", priority: 0.7 },
+    { path: "/about", priority: 0.5 },
     { path: "/docs", priority: 0.7 },
     ...DOCS.map((d) => ({ path: `/docs/${d.slug}`, priority: 0.6, lastModified: d.updated })),
     { path: "/blog", priority: 0.6 },

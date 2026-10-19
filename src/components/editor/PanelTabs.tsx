@@ -1,10 +1,11 @@
 "use client";
 
-import { useId, useRef, useState, type KeyboardEvent } from "react";
+import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
 import { ActionsPanel } from "./ActionsPanel";
 import styles from "./editor.module.css";
 import { HistoryPanel } from "./HistoryPanel";
 import { SwatchesPanel } from "./SwatchesPanel";
+import { onShowTab } from "./show-panel";
 
 const TABS = [
   { id: "history", label: "History", Panel: HistoryPanel },
@@ -17,6 +18,17 @@ export function PanelTabs() {
   const [active, setActive] = useState(0);
   const prefix = useId();
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  // Window → History / Swatches / Actions.
+  useEffect(
+    () =>
+      onShowTab((tab) => {
+        const index = TABS.findIndex((t) => t.id === tab);
+        setActive(index);
+        tabRefs.current[index]?.scrollIntoView({ block: "nearest" });
+        tabRefs.current[index]?.focus();
+      }),
+    [],
+  );
 
   const onKeyDown = (event: KeyboardEvent) => {
     const delta = event.key === "ArrowRight" ? 1 : event.key === "ArrowLeft" ? -1 : 0;

@@ -555,7 +555,11 @@ export function LayersPanel({ actions }: { actions: Record<UiActionId, UiAction>
   };
 
   return (
-    <section className={`${styles.panel} ${styles.panelGrow}`} aria-labelledby="layers-heading">
+    <section
+      className={`${styles.panel} ${styles.panelGrow}`}
+      aria-labelledby="layers-heading"
+      data-panel="layers"
+    >
       <h2 id="layers-heading" className={styles.panelHeader}>
         Layers
       </h2>

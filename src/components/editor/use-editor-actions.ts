@@ -11,7 +11,13 @@ import { ADJUSTMENTS } from "@/editor/adjustments/registry";
 import { activeLayer } from "@/editor/core/document/queries";
 import { flattenTopFirst, locateLayer } from "@/editor/core/document/tree";
 import type { SelectionModification } from "@/editor/core/commands";
-import type { AdjustmentType, SmartFilter } from "@/editor/core/document/types";
+import {
+  LAYER_LABELS,
+  type AdjustmentType,
+  type LayerLabel,
+  type SmartFilter,
+} from "@/editor/core/document/types";
+import { showPanel, type PanelName } from "./show-panel";
 import { isTransformable } from "@/editor/core/geometry/layer-geometry";
 import type { ActionId } from "@/editor/core/shortcuts/shortcuts";
 import { DEFAULT_COLORS } from "@/editor/core/tool-settings";
@@ -75,7 +81,26 @@ export type UiActionId =
   | "help.blog"
   | "help.shortcuts"
   | "help.privacy"
-  | "help.install";
+  | "help.install"
+  | "help.about"
+  | "layer.viaCopy"
+  | `label.${LayerLabel | "none"}`
+  | "edit.copyMerged"
+  | "edit.stroke"
+  | "select.grow"
+  | "select.similar"
+  | `window.${PanelName}`
+  | "image.size"
+  | "image.canvasSize"
+  | "image.rotateCw"
+  | "image.rotateCcw"
+  | "image.rotate180"
+  | "image.flipH"
+  | "image.flipV"
+  | "image.trim"
+  | "image.revealAll"
+  | "image.autoColor"
+  | "image.duplicate";
 
 export interface UiAction {
   readonly label: string;
@@ -101,6 +126,10 @@ export interface ActionHosts {
   openLayerStyle: () => void;
   /** Help → Install Picstea… when the browser has no install prompt to show. */
   openInstallDialog: () => void;
+  openStrokeDialog: () => void;
+  openImageSizeDialog: () => void;
+  openCanvasSizeDialog: () => void;
+  openTrimDialog: () => void;
 }
 
 /** Download the active document as a portable `.picstea` file (File → Save Project As…). */
@@ -188,6 +217,20 @@ export function useEditorActions(hosts: ActionHosts): Record<UiActionId, UiActio
       };
     };
 
+    // Layer → Colour Label: tags the selected layers in the Layers panel.
+    const labelActions = () =>
+      Object.fromEntries(
+        (["none", ...LAYER_LABELS] as const).map((label) => [
+          `label.${label}`,
+          {
+            label: label === "none" ? "No Colour" : label[0].toUpperCase() + label.slice(1),
+            enabled: selectedCount > 0,
+            checked: (layer?.label ?? "none") === label,
+            run: () => controller.setSelectedLayersLabel(label === "none" ? null : label),
+          },
+        ]),
+      ) as Record<`label.${LayerLabel | "none"}`, UiAction>;
+
     return {
       "file.new": { label: "New…", enabled: true, run: hosts.openNewDocumentDialog },
       "file.open": { label: "Open Image…", enabled: true, run: () => hosts.pickImage("open") },
@@ -238,6 +281,98 @@ export function useEditorActions(hosts: ActionHosts): Record<UiActionId, UiActio
         enabled: hasSelection && !!layer,
         run: () => void controller.copySelection(),
       },
+      "image.size": { label: "Image Size…", enabled: hasDoc, run: hosts.openImageSizeDialog },
+      "image.canvasSize": {
+        label: "Canvas Size…",
+        enabled: hasDoc,
+        run: hosts.openCanvasSizeDialog,
+      },
+      "image.rotateCw": {
+        label: "90° Clockwise",
+        enabled: hasDoc,
+        run: () => void controller.transformImage({ kind: "rotate", turns: 1 }),
+      },
+      "image.rotateCcw": {
+        label: "90° Counter-Clockwise",
+        enabled: hasDoc,
+        run: () => void controller.transformImage({ kind: "rotate", turns: 3 }),
+      },
+      "image.rotate180": {
+        label: "180°",
+        enabled: hasDoc,
+        run: () => void controller.transformImage({ kind: "rotate", turns: 2 }),
+      },
+      "image.flipH": {
+        label: "Flip Canvas Horizontal",
+        enabled: hasDoc,
+        run: () => void controller.transformImage({ kind: "flip", axis: "horizontal" }),
+      },
+      "image.flipV": {
+        label: "Flip Canvas Vertical",
+        enabled: hasDoc,
+        run: () => void controller.transformImage({ kind: "flip", axis: "vertical" }),
+      },
+      "image.trim": { label: "Trim…", enabled: hasDoc, run: hosts.openTrimDialog },
+      "image.revealAll": {
+        label: "Reveal All",
+        enabled: hasDoc,
+        run: () => controller.revealAll(),
+      },
+      "image.autoTone": {
+        label: "Auto Tone",
+        enabled: hasDoc,
+        run: () => controller.autoAdjust("tone"),
+      },
+      "image.autoContrast": {
+        label: "Auto Contrast",
+        enabled: hasDoc,
+        run: () => controller.autoAdjust("contrast"),
+      },
+      "image.autoColor": {
+        label: "Auto Color",
+        enabled: hasDoc,
+        run: () => controller.autoAdjust("color"),
+      },
+      "image.duplicate": {
+        label: "Duplicate",
+        enabled: hasDoc,
+        run: () => controller.duplicateDocument(),
+      },
+      "edit.copyMerged": {
+        label: "Copy Merged",
+        enabled: hasSelection,
+        run: () => void controller.copyMerged(),
+      },
+      "edit.stroke": {
+        label: "Stroke…",
+        enabled: !!onPixels,
+        run: hosts.openStrokeDialog,
+      },
+      "select.grow": {
+        label: "Grow",
+        enabled: hasSelection,
+        run: () => controller.growSelection(true),
+      },
+      "select.similar": {
+        label: "Similar",
+        enabled: hasSelection,
+        run: () => controller.growSelection(false),
+      },
+      "layer.viaCopy": {
+        label: "Layer via Copy",
+        enabled: hasSelection && !!layer && layer.kind !== "adjustment" && layer.kind !== "group",
+        run: () => controller.layerViaCopy(),
+      },
+      ...labelActions(),
+      "window.layers": { label: "Layers", enabled: true, run: () => showPanel("layers") },
+      "window.properties": {
+        label: "Properties",
+        enabled: true,
+        run: () => showPanel("properties"),
+      },
+      "window.history": { label: "History", enabled: true, run: () => showPanel("history") },
+      "window.swatches": { label: "Swatches", enabled: true, run: () => showPanel("swatches") },
+      "window.actions": { label: "Actions", enabled: true, run: () => showPanel("actions") },
       "edit.paste": {
         // The clipboard is not React state, so Paste stays enabled and explains when it is empty.
         label: "Paste",
@@ -594,6 +729,11 @@ export function useEditorActions(hosts: ActionHosts): Record<UiActionId, UiActio
         run: () => void controller.repeatLastFilter(),
       },
       "help.welcome": { label: "Welcome to Picstea", enabled: true, run: openWelcome },
+      "help.about": {
+        label: "About Picstea",
+        enabled: true,
+        run: () => window.open("/about", "_blank", "noopener"),
+      },
       // The website opens in a new tab so the editor and its work stay where they are.
       "help.docs": {
         label: "Documentation",

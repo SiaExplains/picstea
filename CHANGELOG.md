@@ -3,6 +3,62 @@
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.30.0] — 2026-10-19
+
+### Added
+
+- **Three sponsorship slots** in the editor's side column on wide screens. The first sponsor,
+  FocusCrew, is shown with a short silent video. Empty slots invite sponsors.
+- Sponsorships can be short, silent, looping videos, hosted on Picstea's own site. They stay
+  still when your device asks for reduced motion.
+
+### Changed
+
+- The FAQ, About, privacy and sponsorship pages now describe the sponsorships beside the
+  canvas.
+
+## [0.29.0] — 2026-10-19
+
+### Added
+
+- **Image → Image Size…** scales the whole image. Layers keep their original pixels, so
+  shrinking and enlarging again loses nothing.
+- **Image → Canvas Size…** adds or removes canvas around the image. Pick one of nine anchors, or
+  add a relative amount.
+- **Image → Image Rotation** turns or flips the whole canvas, with every layer, mask, path and
+  guide.
+- **Image → Trim… and Reveal All.**
+- **Image → Auto Tone, Auto Contrast and Auto Color** add a Levels adjustment layer set from the
+  image, so the result stays editable. Shortcuts: Cmd/Ctrl+Shift+L and Cmd/Ctrl+Alt+Shift+L.
+- **Image → Duplicate** opens a copy of the document in a new tab.
+
+## [0.28.0] — 2026-10-19
+
+### Added
+
+- **Submenus in the menu bar.** Related commands are grouped, as in Photoshop. Examples:
+  - Layer → New, Arrange, Align and Colour Label;
+  - Filter → Blur;
+  - View → Guides.
+
+  Long menus no longer scroll. Arrow Right opens a submenu, and Arrow Left or Escape goes back.
+
+- **Edit → Copy Merged** copies what you see in the selection, from every layer.
+- **Edit → Stroke…** paints a line along the selection: inside, centered or outside, any width,
+  in any colour.
+- **Select → Grow and Similar** add pixels of matching colours, using the Magic Wand's tolerance.
+- **Window menu** to bring the Layers, Properties, History, Swatches or Actions panel forward.
+- **Layer → Colour Label** and **Layer → New → Layer via Copy** in the menu bar.
+- **An About page** (`/about`), linked from Help → About Picstea, the menu bar and the site
+  footer.
+
+### Changed
+
+- **Adjustment layers moved.** They are now under Layer → New Adjustment Layer and
+  Image → Adjustments, instead of their own menu.
+- **Flip moved** to Edit → Transform.
+- **Highlighted menu items** show their shortcuts at full contrast.
+
 ## [0.27.0] — 2026-10-19
 
 ### Added

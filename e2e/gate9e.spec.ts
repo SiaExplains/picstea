@@ -9,12 +9,10 @@ import {
   pixel,
   setForegroundColor,
   trackErrors,
+  pickMenu,
 } from "./helpers";
 
-async function menu(page: Page, name: string, item: string) {
-  await page.getByRole("menuitem", { name, exact: true }).click();
-  await page.getByRole("menuitem", { name: item, exact: true }).click();
-}
+const menu = (page: Page, name: string, item: string) => pickMenu(page, name, item);
 
 async function panelTab(page: Page, name: "History" | "Swatches" | "Actions") {
   await page.getByRole("tablist", { name: "Panels" }).getByRole("tab", { name }).click();
@@ -58,7 +56,7 @@ test("records an action and plays it back as one undo step", async ({ page }) =>
   await naming.getByRole("button", { name: "Record" }).click();
   await expect(page.getByRole("status").filter({ hasText: "Recording" })).toBeVisible();
 
-  await menu(page, "Layer", "Flip Horizontal");
+  await menu(page, "Edit", "Flip Horizontal");
   await menu(page, "Filter", "Gaussian Blur…");
   const blur = page.getByRole("dialog", { name: "Gaussian Blur" });
   await blur.getByLabel("Radius (px)").fill("4");

@@ -7,6 +7,7 @@ import {
   pixel,
   trackErrors,
   setForegroundColor,
+  pickMenu,
 } from "./helpers";
 
 const close = (a: number[], b: number[], tolerance = 10) =>
@@ -50,8 +51,7 @@ test("a zoomed-out view renders the same colours as 100%", async ({ page }) => {
   await page.keyboard.press("u");
   await drag(page, [50, 50], [250, 250]);
   await page.getByRole("checkbox", { name: "Drop shadow" }).check();
-  await page.getByRole("menuitem", { name: "Adjustments" }).click();
-  await page.getByRole("menuitem", { name: "Black & White…" }).click();
+  await pickMenu(page, "Layer", "Black & White…");
   await setForegroundColor(page, "#e01010");
   await page.keyboard.press("u");
   await page.getByLabel("Fill colour").fill("#e01010");

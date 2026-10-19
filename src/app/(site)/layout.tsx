@@ -51,6 +51,7 @@ export default function SiteLayout({ children }: LayoutProps<"/">) {
               <Link href="/photoshop-alternative">Photoshop alternative</Link>
               <Link href="/photopea-alternative">Photopea alternative</Link>
               <Link href="/faq">FAQ</Link>
+              <Link href="/about">About</Link>
               <Link href="/docs">Documentation</Link>
               <Link href="/blog">Blog</Link>
               <Link href="/privacy">Privacy</Link>

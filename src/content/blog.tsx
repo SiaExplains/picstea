@@ -223,7 +223,7 @@ export const POSTS: readonly BlogPost[] = [
           <li>
             Open a photo in <EditorLink>Picstea</EditorLink>.
           </li>
-          <li>Choose Adjustments → Black &amp; White.</li>
+          <li>Choose Layer → New Adjustment Layer → Black &amp; White.</li>
           <li>Click the adjustment layer&apos;s mask thumbnail and paint black over one object.</li>
           <li>That object is in colour again; everything else stays black and white.</li>
         </ol>
@@ -300,10 +300,10 @@ export const POSTS: readonly BlogPost[] = [
             Open a photo in <EditorLink>Picstea</EditorLink>.
           </li>
           <li>
-            Choose Adjustments → Levels and drag the black and white inputs to the ends of the
-            histogram.
+            Choose Layer → New Adjustment Layer → Levels and drag the black and white inputs to the
+            ends of the histogram.
           </li>
-          <li>Add Adjustments → Curves above it and make a gentle S-curve.</li>
+          <li>Add Layer → New Adjustment Layer → Curves above it and make a gentle S-curve.</li>
           <li>Toggle the layers&apos; eye icons to compare before and after.</li>
         </ol>
         <p>
@@ -359,8 +359,8 @@ export const POSTS: readonly BlogPost[] = [
             Cmd/Ctrl+Enter to turn the path into a selection with clean edges.
           </li>
           <li>
-            <strong>A mask</strong>: Layer → Add Vector Mask from Path hides everything outside the
-            outline, without deleting anything.
+            <strong>A mask</strong>: Layer → Vector Mask → Add Vector Mask from Path hides
+            everything outside the outline, without deleting anything.
           </li>
         </ul>
         <h2>Try it</h2>
@@ -414,10 +414,13 @@ export const POSTS: readonly BlogPost[] = [
         <h2>Try it</h2>
         <ol>
           <li>
-            In <EditorLink>Picstea</EditorLink>, choose File → Place Embedded… and pick a photo.
+            In <EditorLink>Picstea</EditorLink>, choose File → Place → Place Embedded… and pick a
+            photo.
           </li>
           <li>Scale it down with the Move tool, then scale it back up — it stays sharp.</li>
-          <li>Add Filter → Gaussian Blur, then hide or change it in the Properties panel.</li>
+          <li>
+            Add Filter → Blur → Gaussian Blur, then hide or change it in the Properties panel.
+          </li>
         </ol>
         <p>
           More in{" "}
@@ -512,9 +515,9 @@ export const POSTS: readonly BlogPost[] = [
         </p>
         <h2>Batch a whole folder</h2>
         <p>
-          File → Batch… applies an action to many files at once and saves the results as one ZIP
-          file — PNG, JPEG or WebP. Everything happens in your browser tab: the photos are not
-          uploaded and not stored.
+          File → Automate → Batch… applies an action to many files at once and saves the results as
+          one ZIP file — PNG, JPEG or WebP. Everything happens in your browser tab: the photos are
+          not uploaded and not stored.
         </p>
         <h2>Also new</h2>
         <ul>
