@@ -3,6 +3,14 @@
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.31.4] — 2026-10-19
+
+### Fixed
+
+- **CI checks pass again.** `pnpm typecheck` failed on a fresh checkout because the route types
+  Next.js generates (`PageProps`, `LayoutProps`) only existed after a build. It now runs
+  `next typegen` first. This failure had kept the GitHub `verify` check red.
+
 ## [0.31.3] — 2026-10-19
 
 ### Fixed
