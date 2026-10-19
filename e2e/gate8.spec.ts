@@ -120,7 +120,7 @@ test("the editor stays free of third-party code even with ads configured", async
   );
   await openEditor(page);
   // …the editor shows only Picstea's own sponsorship, in its side column on wide screens.
-  const sponsor = page.getByTestId("editor-side").getByTestId("sponsor-card");
+  const sponsor = page.getByTestId("editor-side").getByTestId("sponsor-card").first();
   await expect(sponsor).toBeVisible();
   await expect(sponsor.getByText("Sponsored")).toBeVisible();
   await expect(page.getByRole("region", { name: "Privacy choices" })).toHaveCount(0);

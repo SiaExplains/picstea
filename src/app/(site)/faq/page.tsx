@@ -19,7 +19,7 @@ export const metadata: Metadata = {
 const FAQS: Faq[] = [
   {
     q: "Is Picstea free?",
-    a: "Yes. Picstea is free to use with no account, no watermark and no limit on exports. It is funded by advertising on the website and blog, never inside the editor.",
+    a: "Yes. Picstea is free to use with no account, no watermark and no limit on exports. It is funded by advertising on the website and blog, and by clearly labelled sponsorships beside the canvas — never over your work, and without tracking.",
   },
   {
     q: "Are my images uploaded?",

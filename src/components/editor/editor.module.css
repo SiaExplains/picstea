@@ -1596,9 +1596,34 @@
 }
 
 /* A fixed 280 × 250 box (IAB medium rectangle proportions): nothing shifts when it fills. */
+/* Three slots: the first holds a square image or video; all shrink on short screens. */
+.sideSlots {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
+  overflow-y: auto;
+}
+
 .sideSlot {
-  height: 250px;
-  flex: none;
+  flex: 0 1 140px;
+  min-height: 112px;
+}
+
+.sideSlotFirst {
+  flex: 0 0 auto;
+  min-height: 0;
+}
+
+.sideSponsor video {
+  display: block;
+  width: 100%;
+  max-width: 200px;
+  height: auto;
+  aspect-ratio: 1;
+  align-self: center;
+  border-radius: 6px;
+  background: var(--ed-chrome);
 }
 
 .sideSponsor {
