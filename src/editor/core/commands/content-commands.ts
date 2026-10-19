@@ -229,15 +229,18 @@ export function updateShapeLayer(
  * Crop the canvas to a rectangle in document pixels. Non-destructive: layers are shifted, and
  * content outside the new canvas is kept (it can be revealed again by moving or undoing).
  */
-export function cropDocument(rect: {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}): Command {
+export function cropDocument(
+  rect: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  },
+  label = "Crop",
+): Command {
   return {
     type: "document.crop",
-    label: "Crop",
+    label,
     apply(doc) {
       const { x, y, width, height } = rect;
       if (![x, y].every(Number.isInteger)) throw new CommandError("Crop must be on whole pixels.");

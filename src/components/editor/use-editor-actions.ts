@@ -89,7 +89,18 @@ export type UiActionId =
   | "edit.stroke"
   | "select.grow"
   | "select.similar"
-  | `window.${PanelName}`;
+  | `window.${PanelName}`
+  | "image.size"
+  | "image.canvasSize"
+  | "image.rotateCw"
+  | "image.rotateCcw"
+  | "image.rotate180"
+  | "image.flipH"
+  | "image.flipV"
+  | "image.trim"
+  | "image.revealAll"
+  | "image.autoColor"
+  | "image.duplicate";
 
 export interface UiAction {
   readonly label: string;
@@ -116,6 +127,9 @@ export interface ActionHosts {
   /** Help → Install Picstea… when the browser has no install prompt to show. */
   openInstallDialog: () => void;
   openStrokeDialog: () => void;
+  openImageSizeDialog: () => void;
+  openCanvasSizeDialog: () => void;
+  openTrimDialog: () => void;
 }
 
 /** Download the active document as a portable `.picstea` file (File → Save Project As…). */
@@ -266,6 +280,63 @@ export function useEditorActions(hosts: ActionHosts): Record<UiActionId, UiActio
         label: "Copy",
         enabled: hasSelection && !!layer,
         run: () => void controller.copySelection(),
+      },
+      "image.size": { label: "Image Size…", enabled: hasDoc, run: hosts.openImageSizeDialog },
+      "image.canvasSize": {
+        label: "Canvas Size…",
+        enabled: hasDoc,
+        run: hosts.openCanvasSizeDialog,
+      },
+      "image.rotateCw": {
+        label: "90° Clockwise",
+        enabled: hasDoc,
+        run: () => void controller.transformImage({ kind: "rotate", turns: 1 }),
+      },
+      "image.rotateCcw": {
+        label: "90° Counter-Clockwise",
+        enabled: hasDoc,
+        run: () => void controller.transformImage({ kind: "rotate", turns: 3 }),
+      },
+      "image.rotate180": {
+        label: "180°",
+        enabled: hasDoc,
+        run: () => void controller.transformImage({ kind: "rotate", turns: 2 }),
+      },
+      "image.flipH": {
+        label: "Flip Canvas Horizontal",
+        enabled: hasDoc,
+        run: () => void controller.transformImage({ kind: "flip", axis: "horizontal" }),
+      },
+      "image.flipV": {
+        label: "Flip Canvas Vertical",
+        enabled: hasDoc,
+        run: () => void controller.transformImage({ kind: "flip", axis: "vertical" }),
+      },
+      "image.trim": { label: "Trim…", enabled: hasDoc, run: hosts.openTrimDialog },
+      "image.revealAll": {
+        label: "Reveal All",
+        enabled: hasDoc,
+        run: () => controller.revealAll(),
+      },
+      "image.autoTone": {
+        label: "Auto Tone",
+        enabled: hasDoc,
+        run: () => controller.autoAdjust("tone"),
+      },
+      "image.autoContrast": {
+        label: "Auto Contrast",
+        enabled: hasDoc,
+        run: () => controller.autoAdjust("contrast"),
+      },
+      "image.autoColor": {
+        label: "Auto Color",
+        enabled: hasDoc,
+        run: () => controller.autoAdjust("color"),
+      },
+      "image.duplicate": {
+        label: "Duplicate",
+        enabled: hasDoc,
+        run: () => controller.duplicateDocument(),
       },
       "edit.copyMerged": {
         label: "Copy Merged",

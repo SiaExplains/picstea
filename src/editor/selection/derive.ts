@@ -135,3 +135,38 @@ export function maskedPixels(
   }
   return { x: b.x, y: b.y, width: b.width, height: b.height, data: out };
 }
+
+/**
+ * Image → Trim: the box of pixels that differ from the background — transparent pixels, or the
+ * colour of the top-left or bottom-right corner. Null when every pixel matches.
+ */
+export function trimBounds(
+  pixels: RgbaPixels,
+  basedOn: "transparent" | "top-left" | "bottom-right",
+): { x: number; y: number; width: number; height: number } | null {
+  const { width, height, data } = pixels;
+  const ref = basedOn === "top-left" ? 0 : (width * height - 1) * 4;
+  const keep =
+    basedOn === "transparent"
+      ? (i: number) => data[i + 3] !== 0
+      : (i: number) =>
+          data[i] !== data[ref] ||
+          data[i + 1] !== data[ref + 1] ||
+          data[i + 2] !== data[ref + 2] ||
+          data[i + 3] !== data[ref + 3];
+  let x0 = width;
+  let y0 = height;
+  let x1 = -1;
+  let y1 = -1;
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      if (!keep((y * width + x) * 4)) continue;
+      if (x < x0) x0 = x;
+      if (x > x1) x1 = x;
+      if (y < y0) y0 = y;
+      if (y > y1) y1 = y;
+    }
+  }
+  if (x1 < 0) return null;
+  return { x: x0, y: y0, width: x1 - x0 + 1, height: y1 - y0 + 1 };
+}

@@ -79,6 +79,32 @@ export const DOCS: readonly DocPage[] = [
             resize them; Picstea remembers the sizes in this browser.
           </li>
         </ul>
+        <h2>Size, rotate and trim the image</h2>
+        <ul>
+          <li>
+            Image → Image Size… scales the whole image. Pixel layers keep their original pixels and
+            are drawn at the new size, so making an image smaller and then larger again loses
+            nothing.
+          </li>
+          <li>
+            Image → Canvas Size… adds or removes canvas around the image without scaling it; choose
+            the anchor to say which side grows. Tick Relative to type how much to add.
+          </li>
+          <li>
+            Image → Image Rotation turns the canvas 90° or 180°, or flips it, with every layer,
+            mask, path and guide.
+          </li>
+          <li>
+            Image → Trim… crops away transparent edges or edges the colour of a corner; Reveal All
+            grows the canvas to show layers that reach past it.
+          </li>
+          <li>
+            Image → Auto Tone (Cmd/Ctrl+Shift+L), Auto Contrast (Cmd/Ctrl+Alt+Shift+L) and Auto
+            Color add a Levels adjustment layer set from the image, so you can still adjust or
+            remove it.
+          </li>
+          <li>Image → Duplicate opens a copy of the document in a new tab.</li>
+        </ul>
         <h2>Save and export</h2>
         <ul>
           <li>Work is saved in this browser automatically; File → Save to Browser saves now.</li>

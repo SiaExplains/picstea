@@ -138,6 +138,9 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 | Menu bar with submenus (keyboard and pointer), Window menu | ✅ | ADR-0032 |
 | Copy Merged, Edit → Stroke…, Select → Grow / Similar, Layer → Colour Label | ✅ | ADR-0032 |
 | About page (`/about`) | ✅ | ADR-0032 |
+| Image Size…, Canvas Size… (9 anchors, relative), Image Rotation (90°/180°, flip canvas) | ✅ | ADR-0033; layers transformed, not resampled; arbitrary angle 📋 |
+| Trim…, Reveal All, Duplicate document | ✅ | ADR-0033 |
+| Auto Tone, Auto Contrast, Auto Color (as a Levels adjustment layer) | ✅ | ADR-0033 |
 | Layer Style dialog (double-click a layer / Blending Options…) | ✅ | Live, one undo step; full Photoshop options (ADR-0030) |
 | Layer Style: inner glow, satin, pattern overlay; every option (contours, noise, spread/choke, blend modes, gradient styles and methods, stroke position and gradient, bevel styles, contour and texture) | ✅ | ADR-0030; schema v7. Bevel, satin and texture approximate Photoshop |
 | Several copies of shadows, strokes and overlays (+, ▲ ▼, delete) | ✅ | Up to 10 each |

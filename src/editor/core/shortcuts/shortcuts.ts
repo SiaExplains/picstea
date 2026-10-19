@@ -7,6 +7,8 @@
 
 export type ActionId =
   | "file.new"
+  | "image.autoTone"
+  | "image.autoContrast"
   | "file.open"
   | "file.save"
   | "file.saveProject"
@@ -90,6 +92,8 @@ export interface KeyEventLike {
 
 export const DEFAULT_KEYMAP: Readonly<Record<ActionId, readonly string[]>> = {
   "file.new": ["Mod+Alt+N"],
+  "image.autoTone": ["Mod+Shift+L"],
+  "image.autoContrast": ["Mod+Alt+Shift+L"],
   "file.open": ["Mod+O"],
   "file.save": ["Mod+S"],
   "file.saveProject": ["Mod+Shift+S"],
