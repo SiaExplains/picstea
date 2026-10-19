@@ -10,6 +10,14 @@ All notable changes to this project are documented here. The format follows
 - **WikiDigit is Picstea's second sponsor.** Its short silent video appears beside the canvas
   and on the start screen. FocusCrew and WikiDigit take turns in the top slot each day.
 
+## [0.31.4] — 2026-10-19
+
+### Fixed
+
+- **CI checks pass again.** `pnpm typecheck` failed on a fresh checkout because the route types
+  Next.js generates (`PageProps`, `LayoutProps`) only existed after a build. It now runs
+  `next typegen` first. This failure had kept the GitHub `verify` check red.
+
 ## [0.31.3] — 2026-10-19
 
 ### Fixed
