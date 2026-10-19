@@ -17,6 +17,17 @@ export const SPONSORSHIPS: readonly Advertisement[] = [
     active: true,
   },
   {
+    id: "emojar",
+    sponsor: "Emojar",
+    title: "Emojar — 288 free online tools",
+    description: "Small task, easy win: free tools with no sign-up at emojar.com.",
+    video: "/sponsors/emojar.mp4",
+    image: "/sponsors/emojar-poster.png",
+    targetUrl: "https://emojar.com",
+    placement: ["editor-side", "editor-start"],
+    active: true,
+  },
+  {
     id: "wikidigit",
     sponsor: "WikiDigit",
     title: "WikiDigit — tech news for the curious",

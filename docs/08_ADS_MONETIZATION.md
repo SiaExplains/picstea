@@ -72,8 +72,8 @@ Custom ads should be clearly identified as sponsored content.
 
 - **Slots.** `pickSponsorships(ads, placement, day, count)` fills the editor column's three slots:
   booked sponsorships first, rotated by one each day (the same for everyone, no user data), then
-  house ads for empty slots (ADR-0034). Booked today: FocusCrew and WikiDigit, which take turns in
-  the first slot; the third slot is a house ad.
+  house ads for empty slots (ADR-0034). Booked today: FocusCrew, Emojar and WikiDigit, in that
+  order, rotated by one each day, so every slot is booked and no house ad shows in the column.
 - **Formats.** An image, or a short, silent, muted, looping video with no controls. With "reduce
   motion" the video stays on its still frame; it is rendered only while online and loads with
   `preload="metadata"` (ADR-0034).

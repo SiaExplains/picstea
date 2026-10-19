@@ -3,6 +3,18 @@
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.34.0] — 2026-10-20
+
+### Added
+
+- **Emojar is the third sponsor.** Its short silent video joins FocusCrew's and WikiDigit's
+  beside the canvas, second in the daily rotation, so all three sponsorship slots are booked.
+
+### Changed
+
+- Sponsorship tiles in the side column shrink to fit the screen's height, so all three videos
+  always show in full and stay square.
+
 ## [0.33.1] — 2026-10-20
 
 ### Changed

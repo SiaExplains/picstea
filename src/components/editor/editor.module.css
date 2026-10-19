@@ -1598,14 +1598,37 @@
 /* Three slots, media only (ADR-0035): a booked one is square; empty ones are short. */
 .sideSlots {
   display: flex;
+  flex: 1;
   flex-direction: column;
   gap: 8px;
   min-height: 0;
-  overflow-y: auto;
 }
 
+/*
+ * Each slot takes a third of the column's height; a booked tile is the largest square that fits
+ * (never wider than the column), so three videos always show in full.
+ */
 .sideSlot {
-  flex: none;
+  display: flex;
+  flex: 0 1 auto;
+  justify-content: center;
+  min-height: 0;
+}
+
+.sideSlot:has(video, img) {
+  flex: 1 1 0;
+  container-type: size;
+}
+
+.sideSlot > a:has(video, img) {
+  width: min(100cqw, 100cqh);
+  height: min(100cqw, 100cqh);
+}
+
+.sideSlot > a video,
+.sideSlot > a img {
+  width: 100%;
+  height: 100%;
 }
 
 /* The start screen's sponsorship (screens narrower than the side column). */

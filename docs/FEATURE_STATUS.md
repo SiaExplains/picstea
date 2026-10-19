@@ -138,7 +138,7 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 | Menu bar with submenus (keyboard and pointer), Window menu | ✅ | ADR-0032 |
 | Copy Merged, Edit → Stroke…, Select → Grow / Similar, Layer → Colour Label | ✅ | ADR-0032 |
 | About page (`/about`) | ✅ | ADR-0032 |
-| Three sponsorship slots in the editor column; silent looping video sponsorships (FocusCrew, WikiDigit; rotating daily) | ✅ | ADR-0034; reduced motion shows the still frame |
+| Three sponsorship slots in the editor column; silent looping video sponsorships (FocusCrew, Emojar, WikiDigit; rotating daily) | ✅ | ADR-0034; reduced motion shows the still frame |
 | Media-only sponsor tiles with an overlaid "Sponsored" label; compact empty slots | ✅ | ADR-0035 |
 | Website in the editor's dark theme | ✅ | ADR-0035 |
 | Image Size…, Canvas Size… (9 anchors, relative), Image Rotation (90°/180°, flip canvas) | ✅ | ADR-0033; layers transformed, not resampled; arbitrary angle 📋 |

@@ -12,12 +12,12 @@ test("wide screens get the sponsorship column, privacy settings and website link
 
   const side = page.getByTestId("editor-side");
   await expect(side).toBeVisible();
-  // Three slots: FocusCrew's and WikiDigit's videos (taking turns at the top each day), then a
-  // house ad until the last one is booked.
+  // Three slots, all booked: FocusCrew, Emojar and WikiDigit, rotating by one each day.
   const slots = side.getByTestId("side-slot");
   await expect(slots).toHaveCount(3);
   for (const [name, href, src] of [
     [/FocusCrew/, "https://focus-crew.com", "/sponsors/focuscrew-tabs.mp4"],
+    [/Emojar/, "https://emojar.com", "/sponsors/emojar.mp4"],
     [/WikiDigit/, "https://wikidigit.com", "/sponsors/wikidigit.mp4"],
   ] as const) {
     const link = side.getByRole("link", { name });
@@ -29,11 +29,10 @@ test("wide screens get the sponsorship column, privacy settings and website link
       .toBe(true);
   }
   const first = slots.first();
-  // Media only, with the label over it; empty slots invite sponsors.
+  // Media only, with the label over it; no house ad while every slot is booked.
   await expect(first.getByText("Sponsored")).toBeVisible();
-  await expect(first.getByText(/your productivity|tech news/i)).toHaveCount(0);
-  await expect(slots.nth(2)).toContainText("Your ad here");
-  await expect(slots.nth(2).getByRole("link")).toHaveAttribute("href", "/sponsorship");
+  await expect(first.getByText(/your productivity|tech news|free online tools/i)).toHaveCount(0);
+  await expect(side.getByText("Your ad here")).toHaveCount(0);
   // The start screen doesn't repeat the sponsorship while the column shows it.
   await expect(page.getByTestId("sponsor-card")).toHaveCount(4);
   await expect(page.getByTestId("sponsor-card").first()).toBeHidden();
@@ -64,7 +63,7 @@ test("narrower screens keep the sponsorship on the start screen instead", async 
   await expect(page.getByTestId("editor-side")).toBeHidden();
   await expect(page.getByTestId("sponsor-card").first()).toBeVisible();
   await expect(page.getByTestId("sponsor-card").first()).toHaveAccessibleName(
-    /FocusCrew|WikiDigit/,
+    /FocusCrew|Emojar|WikiDigit/,
   );
 });
 
