@@ -31,4 +31,5 @@ export const POST_SLUGS: Readonly<Record<string, "draft" | "published">> = {
   "remove-blemishes-and-retouch-photos-in-your-browser": "published",
   "select-align-and-distribute-several-layers": "published",
   "vibrance-color-balance-gradient-map-and-more": "published",
+  "layer-styles-blend-if-and-the-image-menu": "published",
 };

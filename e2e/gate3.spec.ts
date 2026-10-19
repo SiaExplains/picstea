@@ -12,6 +12,7 @@ import {
   newDocument,
   pixel,
   trackErrors,
+  watchNetwork,
 } from "./helpers";
 
 test("brush paints on a new pixel layer and undo restores it", async ({ page }) => {
@@ -104,17 +105,7 @@ test("exports PNG and JPEG files locally and restores everything after reload", 
   page,
 }) => {
   const errors = trackErrors(page);
-  const offending: string[] = [];
-  page.on("request", (r) => {
-    const url = new URL(r.url());
-    if (
-      url.protocol !== "blob:" &&
-      url.protocol !== "data:" &&
-      (r.method() !== "GET" || url.port !== "3100")
-    ) {
-      offending.push(`${r.method()} ${r.url()}`);
-    }
-  });
+  const offending = watchNetwork(page);
 
   await newDocument(page, "Export me");
   await page.keyboard.press(`${MOD}+Shift+n`);

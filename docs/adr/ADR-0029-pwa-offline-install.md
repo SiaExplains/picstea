@@ -24,7 +24,9 @@ and browsers didn't offer to install it. Comparable editors offer an Install but
   - RSC payloads (`?_rsc=`), `/sw.js` itself and other files are not handled.
 - **Warm-up:** after registering, the page sends the URLs of the app files it already loaded and
   its own address, so the second visit works offline even for files loaded before the worker
-  took control.
+  took control. A `PerformanceObserver` keeps reporting files as they finish loading: a file
+  still in flight when the worker took control is in neither the first list nor the worker's
+  cache (v0.31.2: the menu bar logo, which then failed offline).
 - **Updates:** `skipWaiting` and `clients.claim`. Safe because HTML is network-first and old static
   files remain cached; no "reload to update" prompt is needed.
 - **Install:** Chromium's `beforeinstallprompt` is kept (`src/lib/pwa/pwa.ts`) so the start screen
