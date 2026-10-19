@@ -12,6 +12,7 @@ import {
   trackErrors,
   setForegroundColor,
   pickMenu,
+  watchNetwork,
 } from "./helpers";
 
 const luminance = (rgba: number[]) => (rgba[0] + rgba[1] + rgba[2]) / 3;
@@ -231,17 +232,7 @@ test("polygonal lasso, Color Range and Transform Selection, all without network"
   page,
 }) => {
   const errors = trackErrors(page);
-  const offending: string[] = [];
-  page.on("request", (r) => {
-    const url = new URL(r.url());
-    if (
-      url.protocol !== "blob:" &&
-      url.protocol !== "data:" &&
-      (r.method() !== "GET" || url.port !== "3100")
-    ) {
-      offending.push(`${r.method()} ${r.url()}`);
-    }
-  });
+  const offending = watchNetwork(page);
   await newDocument(page, "Lasso");
 
   // Polygonal lasso: a right triangle with legs of 100 px.

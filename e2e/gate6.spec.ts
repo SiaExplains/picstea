@@ -10,22 +10,8 @@ import {
   openEditor,
   pixel,
   trackErrors,
+  watchNetwork,
 } from "./helpers";
-
-function watchNetwork(page: Page): string[] {
-  const offending: string[] = [];
-  page.on("request", (r) => {
-    const url = new URL(r.url());
-    if (
-      url.protocol !== "blob:" &&
-      url.protocol !== "data:" &&
-      (r.method() !== "GET" || url.port !== "3100")
-    ) {
-      offending.push(`${r.method()} ${r.url()}`);
-    }
-  });
-  return offending;
-}
 
 async function exportAs(
   page: Page,

@@ -1,4 +1,4 @@
-import { expect, type Locator, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 
 export const MOD = process.platform === "darwin" ? "Meta" : "Control";
 export const DOC = { width: 600, height: 400 };
@@ -9,6 +9,28 @@ export function trackErrors(page: Page): string[] {
   page.on("console", (msg) => msg.type() === "error" && errors.push(msg.text()));
   page.on("pageerror", (err) => errors.push(err.message));
   return errors;
+}
+
+/** Origin of the app under test: the configured baseURL, so it follows E2E_PORT. */
+export function appOrigin(): string {
+  return new URL(test.info().project.use.baseURL!).origin;
+}
+
+/** Record every request that leaves the app: anything but a GET to its own origin, blob: or data:. */
+export function watchNetwork(page: Page): string[] {
+  const origin = appOrigin();
+  const offending: string[] = [];
+  page.on("request", (r) => {
+    const url = new URL(r.url());
+    if (
+      url.protocol !== "blob:" &&
+      url.protocol !== "data:" &&
+      (r.method() !== "GET" || url.origin !== origin)
+    ) {
+      offending.push(`${r.method()} ${r.url()}`);
+    }
+  });
+  return offending;
 }
 
 /** Open the editor (the home page) with the first-visit welcome dialog already dismissed. */
