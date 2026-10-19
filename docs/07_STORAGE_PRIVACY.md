@@ -44,6 +44,19 @@ Use IndexedDB for:
 
 Do not store huge transient rendering buffers unnecessarily.
 
+## Browser storage in use
+
+The cookie policy (`src/content/legal.tsx`) lists every entry and must change with them:
+
+- IndexedDB `picstea`: projects and images.
+- Local storage: `picstea.consent`, `picstea.welcomeSeen`, `picstea.view`, `picstea.swatches`,
+  `picstea.actions`, `picstea.recentSizes`, `picstea.layerStyles` (saved layer styles, settings
+  only, validated on load, ADR-0030) and `picstea.panelSizes`.
+- Cache storage `picstea-static-v1` and `picstea-pages-v1` (service worker, ADR-0029): Picstea's
+  own code, styles, icons and pages, never user images. Files that were still loading when the
+  worker took control on the first visit are cached too (`src/lib/pwa/pwa.ts`). Sponsorship media
+  under `/sponsors/` is never cached (ADR-0035).
+
 ## Browser storage limits
 
 The application must gracefully handle:

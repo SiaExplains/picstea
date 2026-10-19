@@ -1,6 +1,6 @@
 # Feature status
 
-Last updated: 2026-10-09 · version 0.15.1 · current step: **launch-readiness pass — awaiting review** (report: `docs/audits/2026-10-launch-readiness.md`)
+Last updated: 2026-10-20 · version 0.33.1 · live at https://www.picstea.com · see `CHANGELOG.md` for each release and `docs/adr/` (ADR-0001 to ADR-0036) for decisions
 
 Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ deferred
 
@@ -16,14 +16,14 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 | Error boundaries | ✅ | `error.tsx`, `global-error.tsx`, editor boundary |
 | Logging strategy | ✅ | `src/lib/logging` — primitives only, no document data |
 | Security headers / CSP | ✅ | ADR-0006 |
-| Vercel deployment | ⛔ | Needs the product owner to import the GitHub repo in Vercel |
+| Vercel deployment | ✅ | Production at https://www.picstea.com; previews for every PR |
 
 ## Gate 1 — Editor shell
 
 | Feature | Status | Notes |
 |---|---|---|
 | Editor at `/` with first-visit welcome dialog (`/editor` → 308 to `/`) | ✅ | ADR-0009 |
-| Menu bar (File, Edit, Image, Layer, Adjustments, Filter, Select, View, Help) | ✅ | WAI-ARIA menubar, keyboard navigable |
+| Menu bar (File, Edit, Image, Layer, Select, Filter, View, Window, Help) | ✅ | WAI-ARIA menubar, keyboard navigable; submenus since ADR-0032 (adjustment layers moved to Layer → New Adjustment Layer and Image → Adjustments) |
 | Toolbar | ✅ | 24 tools (selection, crop, painting, retouching, shapes, pen, text, navigation) + colour picker |
 | Tool options bar | ✅ | |
 | Canvas viewport | ✅ | Canvas 2D, checkerboard, crisp pixels above 200% |
@@ -39,7 +39,7 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 
 | Feature | Status | Notes |
 |---|---|---|
-| Document & layer model | ✅ | Raster, fill, shape and text layers (schema v2). Group/adjustment kinds are extension points |
+| Document & layer model | ✅ | Raster, fill, shape, text, group, adjustment and smart object layers; schema v8 (v7 layer styles ADR-0030, v8 Blend If ADR-0031) |
 | Command system | ✅ | ADR-0003 |
 | Undo/redo history with merging | ✅ | |
 | Versioned serialization + migrations + validation | ✅ | ADR-0005 |
@@ -138,7 +138,7 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 | Menu bar with submenus (keyboard and pointer), Window menu | ✅ | ADR-0032 |
 | Copy Merged, Edit → Stroke…, Select → Grow / Similar, Layer → Colour Label | ✅ | ADR-0032 |
 | About page (`/about`) | ✅ | ADR-0032 |
-| Three sponsorship slots in the editor column; silent looping video sponsorships (FocusCrew, WikiDigit; rotating daily) | ✅ | ADR-0034; reduced motion shows the still frame |
+| Three sponsorship slots in the editor column; silent looping video sponsorships (FocusCrew, Emojar, WikiDigit; rotating daily) | ✅ | ADR-0034; reduced motion shows the still frame |
 | Media-only sponsor tiles with an overlaid "Sponsored" label; compact empty slots | ✅ | ADR-0035 |
 | Website in the editor's dark theme | ✅ | ADR-0035 |
 | Image Size…, Canvas Size… (9 anchors, relative), Image Rotation (90°/180°, flip canvas) | ✅ | ADR-0033; layers transformed, not resampled; arbitrary angle 📋 |

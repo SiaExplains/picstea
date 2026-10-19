@@ -39,6 +39,9 @@ Examples:
 
 Picstea's own sponsorship technology must have a documented privacy basis and should not silently become behavioral tracking.
 
+Today sponsorships are static, self-hosted images or silent videos with a plain link: no scripts,
+no cookies, no impression or click tracking, so they need no consent (ADR-0013, ADR-0034).
+
 ## Consent UI
 
 Implement:

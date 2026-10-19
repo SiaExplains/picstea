@@ -7,19 +7,24 @@ The editor should feel immediately familiar to Photopea/Photoshop users without 
 ## Desktop layout
 
 ```text
-┌─────────────────────────────────────────────────────────┐
-│ Picstea / File Edit Image Layer Type Select Filter View │
-├─────────────────────────────────────────────────────────┤
-│ Tool Options                                            │
-├───────┬───────────────────────────────────────┬─────────┤
-│       │                                       │         │
-│ Tools │             Canvas                    │ Layers  │
-│       │                                       │         │
-│       │                                       │         │
-├───────┴───────────────────────────────────────┴─────────┤
-│ Status / Zoom / Document information                    │
-└─────────────────────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────────────────┐
+│ Picstea  File Edit Image Layer Select Filter View Window Help      │
+├────────────────────────────────────────────────────────────────────┤
+│ Tool Options                                                       │
+├───────┬─────────────────────────────────┬────────────┬─────────────┤
+│       │                                 │ Properties │ Sponsorship │
+│ Tools │             Canvas              │ Layers     │ slots (3)   │
+│       │                                 │ History …  │ Privacy     │
+│       │                                 │            │ (≥ 1280 px) │
+├───────┴─────────────────────────────────┴────────────┴─────────────┤
+│ Status / Zoom / Document information                               │
+└────────────────────────────────────────────────────────────────────┘
 ```
+
+Menus open submenus to the side and follow the WAI-ARIA menu keyboard pattern; adjustment layers
+live under Layer → New Adjustment Layer and Image → Adjustments, and Window brings a panel forward
+(ADR-0032). The side column appears only on screens 1280 px and wider (ADR-0025, ADR-0034); its
+sponsorship tiles never cover the canvas.
 
 ## Responsive behavior
 
@@ -56,6 +61,9 @@ The editor should default to a neutral professional dark interface.
 Avoid excessive gradients, colorful UI chrome, or game-like styling.
 
 The image itself must remain visually dominant.
+
+The website (About, Blog, Docs, legal pages) uses the same dark palette at all times, whatever the
+system setting, with text contrast of at least 4.5:1 (ADR-0035).
 
 ## Accessibility
 

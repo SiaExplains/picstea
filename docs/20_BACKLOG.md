@@ -2,38 +2,40 @@
 
 This is intentionally not a commitment that every item will be implemented.
 
+Items marked ✅ are built; the ADR records how. Details: `FEATURE_STATUS.md`.
+
 ## Editing
 
-- liquify
+- liquify ✅ (ADR-0036)
 - perspective warp
 - puppet warp
 - content-aware operations
-- advanced healing
-- advanced cloning
-- dodge/burn
-- smudge
-- channel mixer
-- curves
-- levels
-- color balance
+- advanced healing ✅ healing brush, spot healing (ADR-0019, ADR-0027); content-aware fill not built
+- advanced cloning ✅ clone stamp (ADR-0019), Vanishing Point (ADR-0036)
+- dodge/burn ✅ (ADR-0019)
+- smudge ✅ (ADR-0019)
+- channel mixer ✅ (ADR-0021)
+- curves ✅ (ADR-0014)
+- levels ✅ (ADR-0014; Auto Tone/Contrast/Color add Levels layers, ADR-0033)
+- color balance ✅ (ADR-0021)
 - selective color
 - HDR-oriented workflows
 
 ## Design
 
-- smart guides
+- smart guides ✅ (ADR-0014)
 - component-like reusable elements
 - templates
 - artboards
 - multiple canvases
 - symbols
-- reusable styles
+- reusable styles ✅ saved layer styles (ADR-0030)
 
 ## Automation
 
-- action recording
-- batch processing
-- macros
+- action recording ✅ (ADR-0018)
+- batch processing ✅ (ADR-0018)
+- macros ✅ actions (ADR-0018)
 - scripting API
 
 ## AI — optional future

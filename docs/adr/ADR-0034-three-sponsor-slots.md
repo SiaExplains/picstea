@@ -42,3 +42,29 @@ product owner asked for this video in the first slot, and for three slots in tot
 WikiDigit is booked for the same placements as FocusCrew, with a 9.6-second, silent,
 256 × 256 H.264 video (242 KB) linking to `https://wikidigit.com`. The two take turns in the
 first slot by day, as decided above; the third slot stays a house ad. No logic changed.
+
+## Addendum — 2026-10-20: new FocusCrew creative
+
+FocusCrew replaced its video with a new 12-second, silent, 256 × 256 H.264 cut (154 KB) that
+opens with "Too many tabs?". It is served as `/sponsors/focuscrew-tabs.mp4` with the still frame
+`/sponsors/focuscrew-tabs-poster.png` (its end card). The old `focuscrew.mp4` and its poster were
+removed. New file names, rather than the same names, mean no browser or CDN cache can keep
+showing the old video. The link, placements and rotation are unchanged.
+
+## Addendum — 2026-10-20: third sponsor
+
+Emojar is booked for the same placements, second in the list (FocusCrew, Emojar, WikiDigit). It
+has a 10-second, silent, 256 × 256 H.264 video (316 KB, `/sponsors/emojar.mp4`) whose end card
+is its still frame (`/sponsors/emojar-poster.png`), and links to `https://emojar.com`. The product
+owner chose to keep the daily rotation, so with three bookings every slot is booked:
+
+- Emojar is second on the first day of the cycle.
+- Each sponsor takes every slot in turn over three days.
+- The editor column shows no house ad while all three are booked.
+
+No logic changed.
+
+With three booked videos the side column could no longer fit three full-width squares on
+screens below about 900 px tall. Each slot now takes a third of the free height. Its tile is the
+largest square that fits (`min(100cqw, 100cqh)` in a size container), so all three show in full:
+185 px squares at 720 px tall, up to the column width (279 px) on tall screens.

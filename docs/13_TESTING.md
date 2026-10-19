@@ -41,6 +41,15 @@ Use browser E2E tests for:
 - reopen
 - export
 
+E2E tests run with Playwright (`pnpm build:e2e && pnpm test:e2e`) on port 3100, or on `E2E_PORT`
+when set; network checks compare requests against the configured base URL, not a fixed port.
+Choose menu items through `pickMenu` (`e2e/helpers.ts`), which opens submenus as needed
+(ADR-0032).
+
+`pnpm typecheck` runs `next typegen && tsc --noEmit`, so the route types Next.js generates exist
+on a fresh checkout. CI runs lint, format check, typecheck, unit tests, the E2E build and tests,
+and a production dependency audit.
+
 ## Visual regression
 
 The editor UI should have visual regression tests for:

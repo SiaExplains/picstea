@@ -73,7 +73,7 @@ describe("several slots (ADR-0034)", () => {
   });
 
   it("accepts only self-hosted MP4 or WebM videos", () => {
-    expect(isSafeVideo("/sponsors/focuscrew.mp4")).toBe(true);
+    expect(isSafeVideo("/sponsors/focuscrew-tabs.mp4")).toBe(true);
     expect(isSafeVideo("https://cdn.example.com/a.mp4")).toBe(false);
     expect(isSafeVideo("/sponsors/../secret.mp4")).toBe(false);
     expect(isSafeVideo("/sponsors/a.mov")).toBe(false);
@@ -90,10 +90,13 @@ describe("several slots (ADR-0034)", () => {
       expect(isSafeImage(booked.image)).toBe(true);
       expect(isSafeVideo(booked.video)).toBe(true);
     }
-    // Two bookings take turns in the first slot; the third is a house ad.
-    const today = pickSponsorships(SPONSORSHIPS, "editor-side", 0, 3).map((ad) => ad.id);
-    expect(today).toEqual(["focuscrew", "wikidigit", HOUSE_ADS[0].id]);
-    const tomorrow = pickSponsorships(SPONSORSHIPS, "editor-side", 1, 3).map((ad) => ad.id);
-    expect(tomorrow).toEqual(["wikidigit", "focuscrew", HOUSE_ADS[0].id]);
+    // Three bookings fill the three slots, in list order rotated by one each day; Emojar is
+    // second in the list. No house ad is left in the column.
+    const day = (n: number) =>
+      pickSponsorships(SPONSORSHIPS, "editor-side", n, 3).map((ad) => ad.id);
+    expect(day(0)).toEqual(["focuscrew", "emojar", "wikidigit"]);
+    expect(day(1)).toEqual(["emojar", "wikidigit", "focuscrew"]);
+    expect(day(2)).toEqual(["wikidigit", "focuscrew", "emojar"]);
+    expect(day(3)).toEqual(day(0));
   });
 });

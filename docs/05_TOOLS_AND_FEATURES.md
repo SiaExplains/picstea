@@ -2,6 +2,8 @@
 
 The target is a serious browser image editor comparable in workflow and breadth to Photopea/Photoshop.
 
+What is built today, phase by phase, is tracked in `FEATURE_STATUS.md` and the ADRs.
+
 ## Phase 1 — Editor Foundation
 
 Implement:
@@ -143,6 +145,9 @@ Implement:
 - crop
 - canvas resize
 
+Status: Image Size, Canvas Size, canvas rotation/flip, Trim and Reveal All are in the Image menu
+(ADR-0033).
+
 ---
 
 ## Phase 7 — Image Adjustments
@@ -189,6 +194,10 @@ interface Filter {
   apply(context: FilterContext): Promise<void>
 }
 ```
+
+Status: the catalogue is data, one file per menu group (`src/editor/filters/catalogue/`), with
+more than 60 filters in Photopea's submenus; `apply` is a pure, synchronous function of the
+pixels and settings so it can run in the worker and as a smart filter (ADR-0014, ADR-0036).
 
 ---
 
@@ -262,6 +271,10 @@ Potential features:
 - histograms
 
 Some of these may require sophisticated GPU or worker implementations.
+
+Status: clone stamp, healing, dodge/burn and smudge (ADR-0019), Levels and Curves with
+histograms (ADR-0014), Liquify and Vanishing Point (ADR-0036) are built, in workers where heavy.
+There is no Channels panel yet; a layer can be limited to R, G or B (ADR-0031).
 
 ---
 
