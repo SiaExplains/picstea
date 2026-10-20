@@ -44,7 +44,10 @@ Built: `/online-photo-editor`, `/psd-editor`, `/png-editor`, `/jpeg-editor`, `/w
 `/image-resizer`, `/image-compressor`, `/photo-filters` (each lists the others through
 `RelatedTools`). Converters: `/convert` and one page per pair (`/convert/webp-to-png`, …) in
 `src/content/converters.tsx`. Their button opens the editor at `/?convert=<pair>`; the converting
-itself never happens on a website page, which may run ad code (ADR-0037). Not built: `/background-remover` (needs the feature first), `/learn/`.
+itself never happens on a website page, which may run ad code (ADR-0037). How-to pages (one edit each, `HOW_TO_PAGES` in `RelatedTools.tsx`): `/blur-background`,
+`/make-background-transparent`, `/add-text-to-photo`, `/black-and-white-photo`, `/sharpen-image`,
+`/liquify`. Don't add a how-to page for a topic that already has a blog post (curves, masks,
+blemishes, batch): two pages for one search compete. Not built: `/background-remover` (needs the feature first), `/learn/`.
 
 Only create pages when they contain genuinely useful content/functionality.
 

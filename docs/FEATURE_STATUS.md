@@ -1,6 +1,6 @@
 # Feature status
 
-Last updated: 2026-10-20 · version 0.38.0 · live at https://www.picstea.com · see `CHANGELOG.md` for each release and `docs/adr/` (ADR-0001 to ADR-0038) for decisions
+Last updated: 2026-10-20 · version 0.39.0 · live at https://www.picstea.com · see `CHANGELOG.md` for each release and `docs/adr/` (ADR-0001 to ADR-0038) for decisions
 
 Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ deferred
 
@@ -126,6 +126,7 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 | Website (separate layout, static pages, no editor bundle) | ✅ | Links to the editor don't prefetch it |
 | Landing pages: /online-photo-editor, /psd-editor | ✅ | Direct answers, how-to, limitations, FAQ |
 | Landing pages: /png-editor, /jpeg-editor, /webp-editor, /image-resizer, /image-compressor, /photo-filters | ✅ | 0.36.0; linked from a Tools row in the footer, the home page and each other (`RelatedTools`). Editor deep links 📋 |
+| How-to pages: /blur-background, /make-background-transparent, /add-text-to-photo, /black-and-white-photo, /sharpen-image, /liquify | ✅ | 0.39.0; footer "How-to guides" row; topics with a blog post (curves, masks, blemishes, batch) left to the blog |
 | Docs (7 pages incl. generated shortcut table) | ✅ | |
 | Blog (index, posts, Article data) | ✅ | 11 posts published (2026-10-18) |
 | Structured data: WebSite, Organization, SoftwareApplication, BreadcrumbList, Article, FAQPage | ✅ | No ratings/reviews |

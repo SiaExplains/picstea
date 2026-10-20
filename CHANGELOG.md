@@ -3,6 +3,15 @@
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.39.0] — 2026-10-20
+
+### Added
+
+- **Six how-to guides:** blur a photo background, make a background transparent, add text to a
+  photo, make a photo black and white, sharpen an image, and Liquify. Each one has step-by-step
+  instructions with the exact menus, tips, honest limits and a short FAQ. They're linked from a
+  new "How-to guides" row in the site footer and from every guide and converter page.
+
 ## [0.38.0] — 2026-10-20
 
 ### Added
