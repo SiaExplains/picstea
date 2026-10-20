@@ -9,6 +9,15 @@ describe("public routes", () => {
     const paths = publicRoutes().map((r) => r.path);
     expect(paths).toContain("/");
     expect(paths).toContain("/psd-editor");
+    for (const tool of [
+      "/png-editor",
+      "/jpeg-editor",
+      "/webp-editor",
+      "/image-resizer",
+      "/image-compressor",
+      "/photo-filters",
+    ])
+      expect(paths).toContain(tool);
     expect(paths).toContain("/docs/keyboard-shortcuts");
     for (const post of POSTS.filter((p) => p.draft))
       expect(paths).not.toContain(`/blog/${post.slug}`);

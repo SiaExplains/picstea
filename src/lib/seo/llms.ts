@@ -22,6 +22,36 @@ const LANDING_PAGES: readonly [path: string, title: string, summary: string][] =
     "Photoshop files in the browser: what opens editable, what becomes pixels.",
   ],
   [
+    "/png-editor",
+    "Free online PNG editor with transparency",
+    "Edit PNG images with layers and transparent backgrounds; lossless PNG export.",
+  ],
+  [
+    "/jpeg-editor",
+    "Free online JPEG editor",
+    "Fix light and colour, retouch and export JPEG photos at a chosen quality.",
+  ],
+  [
+    "/webp-editor",
+    "Free online WebP editor and converter",
+    "Open, edit and convert WebP to PNG or JPEG and back, in the browser.",
+  ],
+  [
+    "/image-resizer",
+    "Resize an image online",
+    "Image Size, Canvas Size, crop and trim; one image at a time (no batch resizing yet).",
+  ],
+  [
+    "/image-compressor",
+    "Compress an image online without uploading it",
+    "Make files smaller by resizing and exporting JPEG or WebP at a lower quality; no target-size option.",
+  ],
+  [
+    "/photo-filters",
+    "Free photo filters and effects online",
+    "60+ filters with live preview, incl. Camera Raw, Liquify and the Filter Gallery.",
+  ],
+  [
     "/photoshop-alternative",
     "A free Photoshop alternative in the browser",
     "How Picstea compares with desktop Photoshop, honestly.",

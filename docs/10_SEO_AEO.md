@@ -40,6 +40,10 @@ Create indexable pages for meaningful search intent:
  /docs/
 ```
 
+Built: `/online-photo-editor`, `/psd-editor`, `/png-editor`, `/jpeg-editor`, `/webp-editor`,
+`/image-resizer`, `/image-compressor`, `/photo-filters` (each lists the others through
+`RelatedTools`). Not built: `/background-remover` (needs the feature first), `/learn/`.
+
 Only create pages when they contain genuinely useful content/functionality.
 
 ## AEO

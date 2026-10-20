@@ -39,6 +39,12 @@ const FAQ = [
 const LANDING_LINKS = [
   ["/online-photo-editor", "Free online photo editor with layers"],
   ["/psd-editor", "Open and edit PSD files online"],
+  ["/png-editor", "PNG editor"],
+  ["/jpeg-editor", "JPEG editor"],
+  ["/webp-editor", "WebP editor and converter"],
+  ["/image-resizer", "Resize an image"],
+  ["/image-compressor", "Compress an image"],
+  ["/photo-filters", "Photo filters"],
   ["/photoshop-alternative", "A free Photoshop alternative"],
   ["/photopea-alternative", "Picstea as a Photopea alternative"],
   ["/docs", "Documentation"],

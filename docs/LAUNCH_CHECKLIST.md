@@ -16,11 +16,12 @@ details. The code side is finished unless a step says otherwise. Last checked: 2
 
 - [x] Domain property `picstea.com` verified.
 - [ ] Remove the `https://picstea.com/sitemap.xml` row (it redirects, so it can't be fetched).
-- [ ] Resubmit `https://www.picstea.com/sitemap.xml` and check it reads 34 URLs without errors.
+- [ ] Resubmit `https://www.picstea.com/sitemap.xml` and check it reads 40 URLs without errors.
 - [ ] After the mylper.com redirect is live: in the old `mylper.com` property, Settings →
       Change of address → `picstea.com`.
 - [ ] URL Inspection → Request indexing for `/`, `/online-photo-editor`, `/psd-editor`,
-      `/photoshop-alternative`, `/photopea-alternative`, `/faq`.
+      `/photoshop-alternative`, `/photopea-alternative`, `/faq`, `/png-editor`, `/jpeg-editor`,
+      `/webp-editor`, `/image-resizer`, `/image-compressor`, `/photo-filters`.
 
 ## Bing Webmaster Tools (feeds ChatGPT search and Copilot)
 
