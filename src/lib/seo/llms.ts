@@ -57,6 +57,36 @@ const LANDING_PAGES: readonly [path: string, title: string, summary: string][] =
     "Converts PNG, JPEG, WebP, GIF, SVG, HEIC and PSD files to PNG, JPG or WebP in the browser; one page per conversion under /convert/ (e.g. /convert/webp-to-png).",
   ],
   [
+    "/blur-background",
+    "How to blur a photo background online",
+    "Select the subject and blur the rest with Lens Blur, or use Tilt-Shift / Iris Blur; no AI subject selection.",
+  ],
+  [
+    "/make-background-transparent",
+    "How to make a background transparent online",
+    "Magic Eraser, Background Eraser or a selection, then PNG/WebP; manual, no automatic background removal.",
+  ],
+  [
+    "/add-text-to-photo",
+    "How to add text to a photo online",
+    "Type tool, common system fonts, drop shadow and stroke styles; point text only, no wrapping.",
+  ],
+  [
+    "/black-and-white-photo",
+    "How to make a photo black and white online",
+    "Black & White adjustment layer, Channel Mixer (Monochrome), Gradient Map duotones, keep one colour with a mask.",
+  ],
+  [
+    "/sharpen-image",
+    "How to sharpen an image online",
+    "Unsharp Mask, Smart Sharpen and High Pass; can't recover badly blurred photos (no AI unblur).",
+  ],
+  [
+    "/liquify",
+    "Liquify a photo online",
+    "Forward Warp, Twirl, Pucker, Bloat, Reconstruct and Smooth; no face-aware Liquify.",
+  ],
+  [
     "/photoshop-alternative",
     "A free Photoshop alternative in the browser",
     "How Picstea compares with desktop Photoshop, honestly.",

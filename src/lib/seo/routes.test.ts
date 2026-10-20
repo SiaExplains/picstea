@@ -16,6 +16,8 @@ describe("public routes", () => {
       "/image-resizer",
       "/image-compressor",
       "/photo-filters",
+      "/liquify",
+      "/sharpen-image",
     ])
       expect(paths).toContain(tool);
     expect(paths).toContain("/docs/keyboard-shortcuts");

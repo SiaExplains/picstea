@@ -46,6 +46,8 @@ const LANDING_LINKS = [
   ["/image-compressor", "Compress an image"],
   ["/photo-filters", "Photo filters"],
   ["/convert", "Convert images (HEIC, WebP, PNG, JPG, SVG, PSD)"],
+  ["/blur-background", "How to blur a photo background"],
+  ["/make-background-transparent", "How to make a background transparent"],
   ["/photoshop-alternative", "A free Photoshop alternative"],
   ["/photopea-alternative", "Picstea as a Photopea alternative"],
   ["/docs", "Documentation"],
