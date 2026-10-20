@@ -5,8 +5,10 @@ import type { SelectionModification } from "@/editor/core/commands";
 import type { SelectionMask } from "@/editor/selection/mask";
 import { MAX_MODIFY_RADIUS } from "@/editor/selection/modify";
 import { MAX_STROKE_WIDTH, type StrokeLocation } from "@/editor/selection/derive";
+import { N_ } from "@/i18n/editor/catalog";
 import { useController, useEditorState } from "./editor-context";
 import styles from "./editor.module.css";
+import { useMessage, useT } from "./i18n";
 
 /** Show a native modal <dialog> while `open`. */
 export function useModal(open: boolean) {
@@ -21,9 +23,15 @@ export function useModal(open: boolean) {
 }
 
 const MODIFY_TITLES: Record<SelectionModification, string> = {
-  feather: "Feather Selection",
-  expand: "Expand Selection",
-  contract: "Contract Selection",
+  feather: N_("Feather Selection"),
+  expand: N_("Expand Selection"),
+  contract: N_("Contract Selection"),
+};
+
+const STROKE_LOCATIONS: Record<StrokeLocation, string> = {
+  inside: N_("Inside"),
+  center: N_("Center"),
+  outside: N_("Outside"),
 };
 
 /** Select → Modify: feather, expand or contract by a radius in pixels. */
@@ -35,17 +43,19 @@ export function ModifySelectionDialog({
   onClose: () => void;
 }) {
   const controller = useController();
+  const t = useT();
+  const message = useMessage();
   const ref = useModal(kind !== null);
   const [radius, setRadius] = useState("5");
   const [error, setError] = useState<string | null>(null);
-  const title = kind ? MODIFY_TITLES[kind] : "";
+  const title = kind ? t(MODIFY_TITLES[kind]) : "";
 
   const submit = (event: FormEvent) => {
     event.preventDefault();
     if (!kind) return;
     const result = controller.modifySelection(kind, Number(radius));
     if (!result.ok) {
-      setError(result.error);
+      setError(message(result.error, result.template));
       return;
     }
     setError(null);
@@ -67,7 +77,7 @@ export function ModifySelectionDialog({
         </h2>
         <div className={styles.field}>
           <label className={styles.fieldLabel} htmlFor="modify-radius">
-            {kind === "feather" ? "Feather radius (px)" : "By (px)"}
+            {kind === "feather" ? t("Feather radius (px)") : t("By (px)")}
           </label>
           <input
             id="modify-radius"
@@ -87,10 +97,10 @@ export function ModifySelectionDialog({
         )}
         <div className={styles.dialogActions}>
           <button type="button" className={styles.button} onClick={onClose}>
-            Cancel
+            {t("Cancel")}
           </button>
           <button type="submit" className={`${styles.button} ${styles.primary}`}>
-            OK
+            {t("OK")}
           </button>
         </div>
       </form>
@@ -105,6 +115,7 @@ export function ModifySelectionDialog({
  */
 export function ColorRangeDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   const controller = useController();
+  const t = useT();
   const foreground = useEditorState((s) => s.colors.foreground);
   const ref = useModal(open);
   const [color, setColor] = useState(foreground);
@@ -126,15 +137,19 @@ export function ColorRangeDialog({ open, onClose }: { open: boolean; onClose: ()
       })
       .catch(() => {
         if (id === request.current)
-          controller.notify("error", "Color Range did not work. Try again.");
+          controller.notify("error", t("Color Range did not work. Try again."));
       });
-  }, [controller, open, color, fuzziness, sampleAll]);
+  }, [controller, open, color, fuzziness, sampleAll, t]);
   const { mask } = preview;
   const count = !preview.ready
-    ? "Working…"
+    ? t("Working…")
     : mask?.bounds
-      ? `${mask.bounds.width} × ${mask.bounds.height} px area`
-      : "Nothing matches";
+      ? // Strings, not numbers: the size reads as before ("1200", not "1,200").
+        t("{width} × {height} px area", {
+          width: String(mask.bounds.width),
+          height: String(mask.bounds.height),
+        })
+      : t("Nothing matches");
 
   // Show the candidate as marching ants behind the dialog.
   useEffect(() => {
@@ -155,7 +170,7 @@ export function ColorRangeDialog({ open, onClose }: { open: boolean; onClose: ()
     try {
       final = await controller.colorRangePreview(color, fuzziness, sampleAll);
     } catch {
-      controller.notify("error", "Color Range did not work. Try again.");
+      controller.notify("error", t("Color Range did not work. Try again."));
       return;
     }
     if (id !== request.current) return;
@@ -175,11 +190,11 @@ export function ColorRangeDialog({ open, onClose }: { open: boolean; onClose: ()
     >
       <form className={styles.dialogForm} onSubmit={submit} noValidate>
         <h2 id="color-range-title" className={styles.dialogTitle}>
-          Color Range
+          {t("Color Range")}
         </h2>
         <div className={styles.field}>
           <label className={styles.fieldLabel} htmlFor="cr-color">
-            Colour
+            {t("Colour")}
           </label>
           <input
             id="cr-color"
@@ -190,7 +205,7 @@ export function ColorRangeDialog({ open, onClose }: { open: boolean; onClose: ()
         </div>
         <div className={styles.field}>
           <label className={styles.fieldLabel} htmlFor="cr-fuzz">
-            Fuzziness: {fuzziness}
+            {t("Fuzziness: {value}", { value: fuzziness })}
           </label>
           <input
             id="cr-fuzz"
@@ -207,17 +222,17 @@ export function ColorRangeDialog({ open, onClose }: { open: boolean; onClose: ()
             checked={sampleAll}
             onChange={(e) => setSampleAll(e.target.checked)}
           />
-          Sample all layers
+          {t("Sample all layers")}
         </label>
         <p className={styles.muted} aria-live="polite">
           {count}
         </p>
         <div className={styles.dialogActions}>
           <button type="button" className={styles.button} onClick={close}>
-            Cancel
+            {t("Cancel")}
           </button>
           <button type="submit" className={`${styles.button} ${styles.primary}`}>
-            OK
+            {t("OK")}
           </button>
         </div>
       </form>
@@ -228,6 +243,8 @@ export function ColorRangeDialog({ open, onClose }: { open: boolean; onClose: ()
 /** Select → Make Work Path from Selection: trace the selection with a tolerance. Mounted while open. */
 export function WorkPathDialog({ onClose }: { onClose: () => void }) {
   const controller = useController();
+  const t = useT();
+  const message = useMessage();
   const ref = useModal(true);
   const [tolerance, setTolerance] = useState("1");
   const [error, setError] = useState<string | null>(null);
@@ -236,12 +253,12 @@ export function WorkPathDialog({ onClose }: { onClose: () => void }) {
     event.preventDefault();
     const value = Number(tolerance);
     if (!Number.isFinite(value) || value < 0.5 || value > 10) {
-      setError("Enter a tolerance between 0.5 and 10 pixels.");
+      setError(t("Enter a tolerance between 0.5 and 10 pixels."));
       return;
     }
     const result = controller.workPathFromSelection(value);
     if (!result.ok) {
-      setError(result.error);
+      setError(message(result.error, result.template));
       return;
     }
     onClose();
@@ -258,11 +275,11 @@ export function WorkPathDialog({ onClose }: { onClose: () => void }) {
     >
       <form className={styles.dialogForm} onSubmit={submit} noValidate>
         <h2 id="work-path-title" className={styles.dialogTitle}>
-          Make Work Path
+          {t("Make Work Path")}
         </h2>
         <div className={styles.field}>
           <label className={styles.fieldLabel} htmlFor="work-path-tolerance">
-            Tolerance (px)
+            {t("Tolerance (px)")}
           </label>
           <input
             id="work-path-tolerance"
@@ -276,7 +293,7 @@ export function WorkPathDialog({ onClose }: { onClose: () => void }) {
             onChange={(e) => setTolerance(e.target.value)}
           />
         </div>
-        <p className={styles.muted}>Lower values follow the selection more closely.</p>
+        <p className={styles.muted}>{t("Lower values follow the selection more closely.")}</p>
         {error && (
           <p className={styles.error} role="alert">
             {error}
@@ -284,10 +301,10 @@ export function WorkPathDialog({ onClose }: { onClose: () => void }) {
         )}
         <div className={styles.dialogActions}>
           <button type="button" className={styles.button} onClick={onClose}>
-            Cancel
+            {t("Cancel")}
           </button>
           <button type="submit" className={`${styles.button} ${styles.primary}`}>
-            OK
+            {t("OK")}
           </button>
         </div>
       </form>
@@ -298,6 +315,7 @@ export function WorkPathDialog({ onClose }: { onClose: () => void }) {
 /** Edit → Stroke: paint a band of the foreground colour along the selection's edge. */
 export function StrokeDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   const controller = useController();
+  const t = useT();
   const foreground = useEditorState((s) => s.colors.foreground);
   const ref = useModal(open);
   const [width, setWidth] = useState("3");
@@ -324,11 +342,11 @@ export function StrokeDialog({ open, onClose }: { open: boolean; onClose: () => 
     >
       <form className={styles.dialogForm} onSubmit={submit} noValidate>
         <h2 id="stroke-title" className={styles.dialogTitle}>
-          Stroke
+          {t("Stroke")}
         </h2>
         <div className={styles.field}>
           <label className={styles.fieldLabel} htmlFor="stroke-width">
-            Width (px)
+            {t("Width (px)")}
           </label>
           <input
             id="stroke-width"
@@ -343,7 +361,7 @@ export function StrokeDialog({ open, onClose }: { open: boolean; onClose: () => 
         </div>
         <div className={styles.field}>
           <label className={styles.fieldLabel} htmlFor="stroke-color">
-            Colour
+            {t("Colour")}
           </label>
           <input
             id="stroke-color"
@@ -354,7 +372,7 @@ export function StrokeDialog({ open, onClose }: { open: boolean; onClose: () => 
           />
         </div>
         <fieldset className={styles.field}>
-          <legend className={styles.fieldLabel}>Location</legend>
+          <legend className={styles.fieldLabel}>{t("Location")}</legend>
           {(["inside", "center", "outside"] as const).map((value) => (
             <label key={value} className={styles.smallLabel}>
               <input
@@ -363,21 +381,21 @@ export function StrokeDialog({ open, onClose }: { open: boolean; onClose: () => 
                 checked={location === value}
                 onChange={() => setLocation(value)}
               />
-              <span>{value[0].toUpperCase() + value.slice(1)}</span>
+              <span>{t(STROKE_LOCATIONS[value])}</span>
             </label>
           ))}
         </fieldset>
         {!valid && (
           <p className={styles.error} role="alert">
-            Width must be a whole number from 1 to {MAX_STROKE_WIDTH}.
+            {t("Width must be a whole number from 1 to {max}.", { max: MAX_STROKE_WIDTH })}
           </p>
         )}
         <div className={styles.dialogActions}>
           <button type="button" className={styles.button} onClick={onClose}>
-            Cancel
+            {t("Cancel")}
           </button>
           <button type="submit" className={`${styles.button} ${styles.primary}`} disabled={!valid}>
-            OK
+            {t("OK")}
           </button>
         </div>
       </form>

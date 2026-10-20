@@ -2,7 +2,9 @@
 
 import { useState, type FormEvent } from "react";
 import { MAX_DIMENSION } from "@/editor/core/document/limits";
+import { N_ } from "@/i18n/editor/catalog";
 import { useActiveSession, useController } from "./editor-context";
+import { useT } from "./i18n";
 import { useModal } from "./SelectionDialogs";
 import styles from "./editor.module.css";
 
@@ -12,6 +14,9 @@ const whole = (text: string) => {
   const n = Number(text);
   return Number.isInteger(n) && n >= 1 && n <= MAX_DIMENSION ? n : null;
 };
+
+// Numbers in these messages are passed as strings so they read as before ("12000", not "12,000").
+const MAX_TEXT = String(MAX_DIMENSION);
 
 function DialogFrame({
   id,
@@ -30,6 +35,7 @@ function DialogFrame({
   error: string | null;
   children: React.ReactNode;
 }) {
+  const t = useT();
   const ref = useModal(true);
   return (
     <dialog
@@ -59,10 +65,10 @@ function DialogFrame({
         )}
         <div className={styles.dialogActions}>
           <button type="button" className={styles.button} onClick={onClose}>
-            Cancel
+            {t("Cancel")}
           </button>
           <button type="submit" className={`${styles.button} ${styles.primary}`} disabled={!valid}>
-            OK
+            {t("OK")}
           </button>
         </div>
       </form>
@@ -106,6 +112,7 @@ function NumberField({
  */
 export function ImageSizeDialog({ onClose }: { onClose: () => void }) {
   const controller = useController();
+  const t = useT();
   const doc = useActiveSession()?.document;
   const [width, setWidth] = useState(String(doc?.width ?? 1));
   const [height, setHeight] = useState(String(doc?.height ?? 1));
@@ -120,14 +127,14 @@ export function ImageSizeDialog({ onClose }: { onClose: () => void }) {
   return (
     <DialogFrame
       id="image-size-title"
-      title="Image Size"
+      title={t("Image Size")}
       onClose={onClose}
       valid={!!w && !!h && ppiOk}
       error={
         !w || !h
-          ? `Width and height must be whole numbers from 1 to ${MAX_DIMENSION}.`
+          ? t("Width and height must be whole numbers from 1 to {max}.", { max: MAX_TEXT })
           : !ppiOk
-            ? "Resolution must be between 1 and 100000 pixels/inch."
+            ? t("Resolution must be between 1 and 100000 pixels/inch.")
             : null
       }
       onSubmit={() => {
@@ -137,11 +144,14 @@ export function ImageSizeDialog({ onClose }: { onClose: () => void }) {
       }}
     >
       <p className={styles.muted}>
-        Currently {doc.width} × {doc.height} px.
+        {t("Currently {width} × {height} px.", {
+          width: String(doc.width),
+          height: String(doc.height),
+        })}
       </p>
       <NumberField
         id="image-width"
-        label="Width (px)"
+        label={t("Width (px)")}
         value={width}
         onChange={(v) => {
           setWidth(v);
@@ -151,7 +161,7 @@ export function ImageSizeDialog({ onClose }: { onClose: () => void }) {
       />
       <NumberField
         id="image-height"
-        label="Height (px)"
+        label={t("Height (px)")}
         value={height}
         onChange={(v) => {
           setHeight(v);
@@ -165,11 +175,11 @@ export function ImageSizeDialog({ onClose }: { onClose: () => void }) {
           checked={constrain}
           onChange={(e) => setConstrain(e.target.checked)}
         />
-        <span>Constrain proportions</span>
+        <span>{t("Constrain proportions")}</span>
       </label>
       <div className={styles.field}>
         <label className={styles.fieldLabel} htmlFor="image-resolution">
-          Resolution (pixels/inch)
+          {t("Resolution (pixels/inch)")}
         </label>
         <input
           id="image-resolution"
@@ -186,14 +196,15 @@ export function ImageSizeDialog({ onClose }: { onClose: () => void }) {
 
 const ANCHORS = [0, 0.5, 1] as const;
 const ANCHOR_NAMES = [
-  ["Top left", "Top", "Top right"],
-  ["Left", "Centre", "Right"],
-  ["Bottom left", "Bottom", "Bottom right"],
+  [N_("Top left"), N_("Top"), N_("Top right")],
+  [N_("Left"), N_("Centre"), N_("Right")],
+  [N_("Bottom left"), N_("Bottom"), N_("Bottom right")],
 ];
 
 /** Canvas Size: add or remove canvas around the image, anchored on one of nine positions. */
 export function CanvasSizeDialog({ onClose }: { onClose: () => void }) {
   const controller = useController();
+  const t = useT();
   const doc = useActiveSession()?.document;
   const [width, setWidth] = useState(String(doc?.width ?? 1));
   const [height, setHeight] = useState(String(doc?.height ?? 1));
@@ -210,20 +221,28 @@ export function CanvasSizeDialog({ onClose }: { onClose: () => void }) {
   return (
     <DialogFrame
       id="canvas-size-title"
-      title="Canvas Size"
+      title={t("Canvas Size")}
       onClose={onClose}
       valid={!!w && !!h}
-      error={!w || !h ? `The new size must be from 1 to ${MAX_DIMENSION} pixels.` : null}
+      error={!w || !h ? t("The new size must be from 1 to {max} pixels.", { max: MAX_TEXT }) : null}
       onSubmit={() => {
         if (w && h && controller.canvasSize(w, h, anchor[0], anchor[1])) onClose();
         else if (w === doc.width && h === doc.height) onClose();
       }}
     >
       <p className={styles.muted}>
-        Currently {doc.width} × {doc.height} px.
+        {t("Currently {width} × {height} px.", {
+          width: String(doc.width),
+          height: String(doc.height),
+        })}
       </p>
-      <NumberField id="canvas-width" label="Width (px)" value={width} onChange={setWidth} />
-      <NumberField id="canvas-height" label="Height (px)" value={height} onChange={setHeight} />
+      <NumberField id="canvas-width" label={t("Width (px)")} value={width} onChange={setWidth} />
+      <NumberField
+        id="canvas-height"
+        label={t("Height (px)")}
+        value={height}
+        onChange={setHeight}
+      />
       <label className={styles.smallLabel}>
         <input
           type="checkbox"
@@ -235,11 +254,11 @@ export function CanvasSizeDialog({ onClose }: { onClose: () => void }) {
             setHeight(on ? "0" : String(doc.height));
           }}
         />
-        <span>Relative (add to the current size)</span>
+        <span>{t("Relative (add to the current size)")}</span>
       </label>
       <fieldset className={styles.field}>
-        <legend className={styles.fieldLabel}>Anchor</legend>
-        <div className={styles.anchorGrid} role="radiogroup" aria-label="Anchor">
+        <legend className={styles.fieldLabel}>{t("Anchor")}</legend>
+        <div className={styles.anchorGrid} role="radiogroup" aria-label={t("Anchor")}>
           {ANCHORS.map((ay, row) =>
             ANCHORS.map((ax, col) => (
               <button
@@ -247,7 +266,7 @@ export function CanvasSizeDialog({ onClose }: { onClose: () => void }) {
                 type="button"
                 role="radio"
                 aria-checked={anchor[0] === ax && anchor[1] === ay}
-                aria-label={ANCHOR_NAMES[row][col]}
+                aria-label={t(ANCHOR_NAMES[row][col])}
                 className={styles.anchorCell}
                 onClick={() => setAnchor([ax, ay])}
               />
@@ -262,18 +281,19 @@ export function CanvasSizeDialog({ onClose }: { onClose: () => void }) {
 /** Trim: crop away transparent pixels or pixels the colour of a corner. */
 export function TrimDialog({ onClose }: { onClose: () => void }) {
   const controller = useController();
+  const t = useT();
   const [basedOn, setBasedOn] = useState<"transparent" | "top-left" | "bottom-right">(
     "transparent",
   );
   const options = [
-    ["transparent", "Transparent pixels"],
-    ["top-left", "Top left pixel colour"],
-    ["bottom-right", "Bottom right pixel colour"],
+    ["transparent", N_("Transparent pixels")],
+    ["top-left", N_("Top left pixel colour")],
+    ["bottom-right", N_("Bottom right pixel colour")],
   ] as const;
   return (
     <DialogFrame
       id="trim-title"
-      title="Trim"
+      title={t("Trim")}
       onClose={onClose}
       valid
       error={null}
@@ -283,7 +303,7 @@ export function TrimDialog({ onClose }: { onClose: () => void }) {
       }}
     >
       <fieldset className={styles.field}>
-        <legend className={styles.fieldLabel}>Based on</legend>
+        <legend className={styles.fieldLabel}>{t("Based on")}</legend>
         {options.map(([value, label]) => (
           <label key={value} className={styles.smallLabel}>
             <input
@@ -292,7 +312,7 @@ export function TrimDialog({ onClose }: { onClose: () => void }) {
               checked={basedOn === value}
               onChange={() => setBasedOn(value)}
             />
-            <span>{label}</span>
+            <span>{t(label)}</span>
           </label>
         ))}
       </fieldset>

@@ -2,24 +2,11 @@
 
 import Image from "next/image";
 import { useEffect, useRef, type ReactNode } from "react";
+import type { WelcomeText } from "@/content/pages/home/types";
 import { SITE } from "@/lib/seo/site";
 import styles from "./welcome.module.css";
 import { initialConversion } from "@/components/editor/convert-link";
 import { OPEN_WELCOME_EVENT, WELCOME_SEEN_KEY } from "./welcome";
-
-/* Only features that exist today are listed (docs/10_SEO_AEO.md: no filler, no overclaiming). */
-const HIGHLIGHTS = [
-  ["Private by design", "Editing happens in your browser. Your images are never uploaded."],
-  ["Layers that stay editable", "Groups, masks, 16 blend modes, adjustment layers and effects."],
-  [
-    "Select, paint and type",
-    "Marquee, lasso and magic wand, brushes, gradients, shapes and text on the canvas.",
-  ],
-  [
-    "Open and export",
-    "PNG, JPEG, WebP, GIF, SVG and layered PSD in; PSD, SVG, PDF and images out.",
-  ],
-] as const;
 
 function hasSeenWelcome(): boolean {
   try {
@@ -42,7 +29,16 @@ function rememberWelcomeSeen(): void {
  * the server-rendered page, so it also describes the app to search engines and AI assistants.
  * `children` is the longer, server-only description (WelcomeAbout), shown under the highlights.
  */
-export function WelcomeDialog({ children }: { children?: ReactNode }) {
+export function WelcomeDialog({
+  text,
+  links,
+  children,
+}: {
+  text: WelcomeText;
+  /** text.links with each path already in the page's language. */
+  links: readonly (readonly [href: string, label: string])[];
+  children?: ReactNode;
+}) {
   const dialogRef = useRef<HTMLDialogElement>(null);
 
   useEffect(() => {
@@ -77,13 +73,13 @@ export function WelcomeDialog({ children }: { children?: ReactNode }) {
           unoptimized
         />
         <h1 id="welcome-title" className={styles.title}>
-          A free image editor that keeps your images on your device
+          {text.title}
         </h1>
         <p className={styles.lead}>
-          {SITE.slogan} Picstea is a layer-based image editor that runs entirely in your browser.
+          {SITE.slogan} {text.lead}
         </p>
         <ul className={styles.highlights}>
-          {HIGHLIGHTS.map(([title, body]) => (
+          {text.highlights.map(([title, body]) => (
             <li key={title}>
               <strong>{title}</strong>
               <span>{body}</span>
@@ -92,33 +88,23 @@ export function WelcomeDialog({ children }: { children?: ReactNode }) {
         </ul>
         {children}
         <p className={styles.lead}>
-          New here? Read the{" "}
+          {text.newHere.split("{link}")[0]}
           <a href="/docs/getting-started" target="_blank" rel="noopener">
-            getting started guide
+            {text.gettingStarted}
           </a>
-          .
+          {text.newHere.split("{link}")[1]}
         </p>
         {/* The home page is the editor; these links also let search engines find the website. */}
-        <nav aria-label="Learn more" className={styles.links}>
-          <a href="/docs" target="_blank" rel="noopener">
-            Documentation
-          </a>
-          <a href="/blog" target="_blank" rel="noopener">
-            Guides
-          </a>
-          <a href="/faq" target="_blank" rel="noopener">
-            FAQ
-          </a>
-          <a href="/photoshop-alternative" target="_blank" rel="noopener">
-            Photoshop alternative
-          </a>
-          <a href="/psd-editor" target="_blank" rel="noopener">
-            PSD editor
-          </a>
+        <nav aria-label={text.learnMore} className={styles.links}>
+          {links.map(([href, label]) => (
+            <a key={href} href={href} target="_blank" rel="noopener">
+              {label}
+            </a>
+          ))}
         </nav>
         <div className={styles.actions}>
           <button type="submit" className={styles.primary} autoFocus>
-            Start editing
+            {text.start}
           </button>
         </div>
       </form>

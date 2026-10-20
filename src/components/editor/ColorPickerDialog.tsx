@@ -11,6 +11,7 @@ import {
 } from "@/editor/core/color";
 import { addSwatch } from "@/editor/core/swatches";
 import { useController, useEditorState } from "./editor-context";
+import { useT } from "./i18n";
 import styles from "./editor.module.css";
 import { useModal } from "./SelectionDialogs";
 
@@ -30,6 +31,7 @@ export function ColorPickerDialog({
   onClose: () => void;
 }) {
   const controller = useController();
+  const t = useT();
   const current = useEditorState((s) => s.colors[target]);
   const ref = useModal(true);
   const fieldRef = useRef<HTMLDivElement>(null);
@@ -40,7 +42,7 @@ export function ColorPickerDialog({
 
   const rgb = hsvToRgb(hsv);
   const hex = rgbToHex(...rgb);
-  const title = target === "foreground" ? "Foreground Colour" : "Background Colour";
+  const title = target === "foreground" ? t("Foreground Colour") : t("Background Colour");
 
   const update = (next: Hsv) => {
     setHsv(next);
@@ -131,11 +133,14 @@ export function ColorPickerDialog({
               style={{ backgroundColor: `hsl(${hsv.h} 100% 50%)` }}
               role="slider"
               tabIndex={0}
-              aria-label="Saturation and brightness"
+              aria-label={t("Saturation and brightness")}
               aria-valuemin={0}
               aria-valuemax={100}
               aria-valuenow={Math.round(hsv.s * 100)}
-              aria-valuetext={`Saturation ${Math.round(hsv.s * 100)}%, brightness ${Math.round(hsv.v * 100)}%`}
+              aria-valuetext={t("Saturation {saturation}%, brightness {brightness}%", {
+                saturation: Math.round(hsv.s * 100),
+                brightness: Math.round(hsv.v * 100),
+              })}
               onKeyDown={onFieldKey}
               onPointerDown={(e) => {
                 e.currentTarget.setPointerCapture(e.pointerId);
@@ -156,21 +161,21 @@ export function ColorPickerDialog({
               min={0}
               max={359}
               value={Math.round(hsv.h) % 360}
-              aria-label="Hue"
+              aria-label={t("Hue")}
               onChange={(e) => update({ ...hsv, h: Number(e.target.value) })}
             />
           </div>
           <div className={styles.pickerValues}>
             <div className={styles.pickerPreview}>
-              <span style={{ background: hex }} title="New" data-testid="picker-new" />
-              <span style={{ background: current }} title="Current" />
+              <span style={{ background: hex }} title={t("New")} data-testid="picker-new" />
+              <span style={{ background: current }} title={t("Current")} />
             </div>
             <label className={styles.pickerNumber}>
               <span>#</span>
               <input
                 className={styles.input}
                 value={hexText.replace(/^#/, "")}
-                aria-label="Hex"
+                aria-label={t("Hex")}
                 spellCheck={false}
                 maxLength={7}
                 onChange={(e) => {
@@ -190,13 +195,13 @@ export function ColorPickerDialog({
                 onBlur={() => setHexText(hex)}
               />
             </label>
-            {number("R", "Red", rgb[0], 255, (v) => setFromRgb(v, rgb[1], rgb[2]))}
-            {number("G", "Green", rgb[1], 255, (v) => setFromRgb(rgb[0], v, rgb[2]))}
-            {number("B", "Blue", rgb[2], 255, (v) => setFromRgb(rgb[0], rgb[1], v))}
-            {number("H", "Hue value", hsv.h, 359, (v) => update({ ...hsv, h: v }), "°")}
+            {number("R", t("Red"), rgb[0], 255, (v) => setFromRgb(v, rgb[1], rgb[2]))}
+            {number("G", t("Green"), rgb[1], 255, (v) => setFromRgb(rgb[0], v, rgb[2]))}
+            {number("B", t("Blue"), rgb[2], 255, (v) => setFromRgb(rgb[0], rgb[1], v))}
+            {number("H", t("Hue value"), hsv.h, 359, (v) => update({ ...hsv, h: v }), "°")}
             {number(
               "S",
-              "Saturation",
+              t("Saturation"),
               hsv.s * 100,
               100,
               (v) => update({ ...hsv, s: v / 100 }),
@@ -204,7 +209,7 @@ export function ColorPickerDialog({
             )}
             {number(
               "B",
-              "Brightness",
+              t("Brightness"),
               hsv.v * 100,
               100,
               (v) => update({ ...hsv, v: v / 100 }),
@@ -222,13 +227,13 @@ export function ColorPickerDialog({
               setAdded(true);
             }}
           >
-            {added ? "Added to Swatches" : "Add to Swatches"}
+            {added ? t("Added to Swatches") : t("Add to Swatches")}
           </button>
           <button type="button" className={styles.button} onClick={onClose}>
-            Cancel
+            {t("Cancel")}
           </button>
           <button type="submit" className={`${styles.button} ${styles.primary}`}>
-            OK
+            {t("OK")}
           </button>
         </div>
       </form>

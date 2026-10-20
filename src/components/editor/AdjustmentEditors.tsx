@@ -11,7 +11,9 @@ import type {
   GradientStop,
   MixerRow,
 } from "@/editor/core/document/types";
+import { N_ } from "@/i18n/editor/catalog";
 import { useController } from "./editor-context";
+import { useT } from "./i18n";
 import styles from "./editor.module.css";
 import { Slider } from "./StyleSections";
 
@@ -60,11 +62,12 @@ function Segments<T extends string>({
   options: readonly (readonly [T, string])[];
   onChange: (value: T) => void;
 }) {
+  const t = useT();
   return (
     <div className={styles.segmented} role="group" aria-label={label} style={{ marginBottom: 6 }}>
       {options.map(([v, text]) => (
         <button key={v} type="button" aria-pressed={value === v} onClick={() => onChange(v)}>
-          {text}
+          {t(text)}
         </button>
       ))}
     </div>
@@ -72,9 +75,9 @@ function Segments<T extends string>({
 }
 
 const RANGES = [
-  ["shadows", "Shadows"],
-  ["midtones", "Midtones"],
-  ["highlights", "Highlights"],
+  ["shadows", N_("Shadows")],
+  ["midtones", N_("Midtones")],
+  ["highlights", N_("Highlights")],
 ] as const;
 
 export function ColorBalanceEditor({
@@ -85,37 +88,38 @@ export function ColorBalanceEditor({
   adjustment: Of<"color-balance">;
 }) {
   const apply = useApply(layer);
+  const t = useT();
   const [range, setRange] = useState<(typeof RANGES)[number][0]>("midtones");
   const values = adjustment[range];
   const set = (patch: Partial<ColorBalanceRange>) =>
     apply({ ...adjustment, [range]: { ...values, ...patch } });
   return (
     <div className={styles.subsection}>
-      <div className={styles.subsectionTitle}>Color Balance</div>
-      <Segments label="Tonal range" value={range} options={RANGES} onChange={setRange} />
+      <div className={styles.subsectionTitle}>{t("Color Balance")}</div>
+      <Segments label={t("Tonal range")} value={range} options={RANGES} onChange={setRange} />
       <Slider
-        label="Cyan – Red"
+        label={t("Cyan – Red")}
         value={values.cyanRed}
         min={-100}
         max={100}
         onChange={(v) => set({ cyanRed: v })}
       />
       <Slider
-        label="Magenta – Green"
+        label={t("Magenta – Green")}
         value={values.magentaGreen}
         min={-100}
         max={100}
         onChange={(v) => set({ magentaGreen: v })}
       />
       <Slider
-        label="Yellow – Blue"
+        label={t("Yellow – Blue")}
         value={values.yellowBlue}
         min={-100}
         max={100}
         onChange={(v) => set({ yellowBlue: v })}
       />
       <Toggle
-        label="Preserve luminosity"
+        label={t("Preserve luminosity")}
         checked={adjustment.preserveLuminosity}
         onChange={(preserveLuminosity) => apply({ ...adjustment, preserveLuminosity })}
       />
@@ -131,15 +135,16 @@ export function PhotoFilterEditor({
   adjustment: Of<"photo-filter">;
 }) {
   const apply = useApply(layer);
+  const t = useT();
   const controller = useController();
   return (
     <div className={styles.subsection}>
-      <div className={styles.subsectionTitle}>Photo Filter</div>
+      <div className={styles.subsectionTitle}>{t("Photo Filter")}</div>
       <label className={styles.smallLabel}>
-        <span>Filter colour</span>
+        <span>{t("Filter colour")}</span>
         <input
           type="color"
-          aria-label="Filter colour"
+          aria-label={t("Filter colour")}
           className={styles.colorInput}
           style={{ width: 48 }}
           value={adjustment.color}
@@ -148,7 +153,7 @@ export function PhotoFilterEditor({
         />
       </label>
       <Slider
-        label="Density"
+        label={t("Density")}
         value={adjustment.density}
         min={1}
         max={100}
@@ -156,7 +161,7 @@ export function PhotoFilterEditor({
         onChange={(density) => apply({ ...adjustment, density })}
       />
       <Toggle
-        label="Preserve luminosity"
+        label={t("Preserve luminosity")}
         checked={adjustment.preserveLuminosity}
         onChange={(preserveLuminosity) => apply({ ...adjustment, preserveLuminosity })}
       />
@@ -165,9 +170,9 @@ export function PhotoFilterEditor({
 }
 
 const OUTPUTS = [
-  ["red", "Red"],
-  ["green", "Green"],
-  ["blue", "Blue"],
+  ["red", N_("Red")],
+  ["green", N_("Green")],
+  ["blue", N_("Blue")],
 ] as const;
 
 export function ChannelMixerEditor({
@@ -178,6 +183,7 @@ export function ChannelMixerEditor({
   adjustment: Of<"channel-mixer">;
 }) {
   const apply = useApply(layer);
+  const t = useT();
   const [output, setOutput] = useState<(typeof OUTPUTS)[number][0]>("red");
   const key = adjustment.monochrome ? "red" : output;
   const row = adjustment[key];
@@ -185,16 +191,21 @@ export function ChannelMixerEditor({
   const pct = (v: number) => `${v}%`;
   return (
     <div className={styles.subsection}>
-      <div className={styles.subsectionTitle}>Channel Mixer</div>
+      <div className={styles.subsectionTitle}>{t("Channel Mixer")}</div>
       {adjustment.monochrome ? (
         <p className={styles.muted} style={{ margin: "0 0 6px" }}>
-          Output: Gray
+          {t("Output: Gray")}
         </p>
       ) : (
-        <Segments label="Output channel" value={output} options={OUTPUTS} onChange={setOutput} />
+        <Segments
+          label={t("Output channel")}
+          value={output}
+          options={OUTPUTS}
+          onChange={setOutput}
+        />
       )}
       <Slider
-        label="Red"
+        label={t("Red")}
         value={row.red}
         min={-MIXER_LIMIT}
         max={MIXER_LIMIT}
@@ -202,7 +213,7 @@ export function ChannelMixerEditor({
         onChange={(v) => set({ red: v })}
       />
       <Slider
-        label="Green"
+        label={t("Green")}
         value={row.green}
         min={-MIXER_LIMIT}
         max={MIXER_LIMIT}
@@ -210,7 +221,7 @@ export function ChannelMixerEditor({
         onChange={(v) => set({ green: v })}
       />
       <Slider
-        label="Blue"
+        label={t("Blue")}
         value={row.blue}
         min={-MIXER_LIMIT}
         max={MIXER_LIMIT}
@@ -218,7 +229,7 @@ export function ChannelMixerEditor({
         onChange={(v) => set({ blue: v })}
       />
       <Slider
-        label="Constant"
+        label={t("Constant")}
         value={row.constant}
         min={-MIXER_LIMIT}
         max={MIXER_LIMIT}
@@ -226,7 +237,7 @@ export function ChannelMixerEditor({
         onChange={(v) => set({ constant: v })}
       />
       <Toggle
-        label="Monochrome"
+        label={t("Monochrome")}
         checked={adjustment.monochrome}
         onChange={(monochrome) => apply({ ...adjustment, monochrome })}
       />
@@ -245,6 +256,7 @@ export function GradientStopsEditor({
   label: string;
 }) {
   const controller = useController();
+  const t = useT();
   const seal = () => controller.store.sealHistory();
   const preview = `linear-gradient(to right, ${stops
     .toSorted((a, b) => a.position - b.position)
@@ -260,7 +272,7 @@ export function GradientStopsEditor({
           <li key={i} className={styles.stopRow}>
             <input
               type="color"
-              aria-label={`Stop ${i + 1} colour`}
+              aria-label={t("Stop {number} colour", { number: i + 1 })}
               className={styles.colorInput}
               style={{ width: 36 }}
               value={stop.color}
@@ -269,7 +281,7 @@ export function GradientStopsEditor({
             />
             <input
               type="range"
-              aria-label={`Stop ${i + 1} position`}
+              aria-label={t("Stop {number} position", { number: i + 1 })}
               min={0}
               max={100}
               value={Math.round(stop.position * 100)}
@@ -281,7 +293,7 @@ export function GradientStopsEditor({
             <button
               type="button"
               className={styles.iconButton}
-              aria-label={`Remove stop ${i + 1}`}
+              aria-label={t("Remove stop {number}", { number: i + 1 })}
               disabled={stops.length <= 2}
               onClick={() => onChange(stops.filter((_, j) => j !== i))}
             >
@@ -311,7 +323,7 @@ export function GradientStopsEditor({
           onChange([...stops, { position: (a.position + b.position) / 2, color: a.color }]);
         }}
       >
-        Add stop
+        {t("Add stop")}
       </button>
     </div>
   );
@@ -325,19 +337,20 @@ export function GradientMapEditor({
   adjustment: Of<"gradient-map">;
 }) {
   const apply = useApply(layer);
+  const t = useT();
   return (
     <div className={styles.subsection}>
-      <div className={styles.subsectionTitle}>Gradient Map</div>
+      <div className={styles.subsectionTitle}>{t("Gradient Map")}</div>
       <p className={styles.muted} style={{ margin: "0 0 6px" }}>
-        Shadows take the left colour, highlights the right.
+        {t("Shadows take the left colour, highlights the right.")}
       </p>
       <GradientStopsEditor
-        label="Gradient"
+        label={t("Gradient")}
         stops={adjustment.stops}
         onChange={(stops) => apply({ ...adjustment, stops })}
       />
       <Toggle
-        label="Reverse"
+        label={t("Reverse")}
         checked={adjustment.reverse}
         onChange={(reverse) => apply({ ...adjustment, reverse })}
       />

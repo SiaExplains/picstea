@@ -1,5 +1,5 @@
 import { publishedPosts } from "@/content/blog";
-import { CONVERTERS } from "@/content/converters";
+import { CONVERTER_IDS } from "@/content/converters";
 import { DOCS } from "@/content/docs";
 import { LEGAL } from "@/content/legal";
 
@@ -31,7 +31,7 @@ export function publicRoutes(): PublicRoute[] {
     { path: "/black-and-white-photo", priority: 0.7 },
     { path: "/sharpen-image", priority: 0.7 },
     { path: "/liquify", priority: 0.7 },
-    ...CONVERTERS.map((c) => ({ path: `/convert/${c.id}`, priority: 0.8 })),
+    ...CONVERTER_IDS.map((id) => ({ path: `/convert/${id}`, priority: 0.8 })),
     { path: "/photoshop-alternative", priority: 0.8 },
     { path: "/photopea-alternative", priority: 0.8 },
     { path: "/gimp-alternative", priority: 0.7 },

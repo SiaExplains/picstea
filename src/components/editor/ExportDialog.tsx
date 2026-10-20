@@ -7,12 +7,15 @@ import {
   type ExportFormat,
 } from "@/editor/formats/export/raster-export";
 import { useActiveSession, useController } from "./editor-context";
+import { useMessage, useT } from "./i18n";
 import styles from "./editor.module.css";
 import { saveFile } from "./save-file";
 
 export function ExportDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   const controller = useController();
   const session = useActiveSession();
+  const t = useT();
+  const message = useMessage();
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [format, setFormat] = useState<ExportFormat>("png");
   const [quality, setQuality] = useState(90);
@@ -36,21 +39,24 @@ export function ExportDialog({ open, onClose }: { open: boolean; onClose: () => 
     const result = await controller.exportActive({ format, quality: quality / 100 });
     if (!result.ok) {
       setBusy(false);
-      setError(result.error);
+      setError(message(result.error, result.template));
       return;
     }
     const saved = await saveFile(result.blob, result.filename, info.mime);
     setBusy(false);
     if (saved === "cancelled") return;
     if (saved === "failed") {
-      setError("The file could not be saved.");
+      setError(t("The file could not be saved."));
       return;
     }
     controller.notify(
       "info",
       result.warnings.length > 0
-        ? `Exported ${result.filename}. ${result.warnings.join(" ")}`
-        : `Exported ${result.filename}`,
+        ? t("Exported {name}. {details}", {
+            name: result.filename,
+            details: result.warnings.map((w) => t(w)).join(" "),
+          })
+        : t("Exported {name}", { name: result.filename }),
     );
     onClose();
   };
@@ -68,11 +74,11 @@ export function ExportDialog({ open, onClose }: { open: boolean; onClose: () => 
     >
       <form className={styles.dialogForm} onSubmit={submit}>
         <h2 id="export-title" className={styles.dialogTitle}>
-          Export
+          {t("Export")}
         </h2>
         <fieldset style={{ border: 0, margin: 0, padding: 0 }}>
           <legend className={styles.fieldLabel} style={{ marginBottom: 6 }}>
-            Format
+            {t("Format")}
           </legend>
           <div className={styles.radioRow}>
             {(Object.keys(EXPORT_FORMATS) as ExportFormat[]).map((f) => (
@@ -92,7 +98,7 @@ export function ExportDialog({ open, onClose }: { open: boolean; onClose: () => 
         {info.lossy && (
           <div className={styles.field} style={{ marginTop: 12 }}>
             <label className={styles.fieldLabel} htmlFor="export-quality">
-              Quality
+              {t("Quality")}
             </label>
             <div className={styles.rangeRow}>
               <input
@@ -108,7 +114,7 @@ export function ExportDialog({ open, onClose }: { open: boolean; onClose: () => 
           </div>
         )}
         <p className={styles.muted} style={{ margin: "12px 0 0" }} data-testid="export-note">
-          {info.note}
+          {t(info.note)}
         </p>
         <p className={styles.muted} style={{ margin: "6px 0 0" }}>
           {doc && (
@@ -118,7 +124,7 @@ export function ExportDialog({ open, onClose }: { open: boolean; onClose: () => 
           )}
         </p>
         <p className={styles.muted} style={{ margin: "6px 0 0" }}>
-          The file is created on your device — nothing is uploaded.
+          {t("The file is created on your device — nothing is uploaded.")}
         </p>
         {error && (
           <p className={styles.error} role="alert">
@@ -127,14 +133,14 @@ export function ExportDialog({ open, onClose }: { open: boolean; onClose: () => 
         )}
         <div className={styles.dialogActions}>
           <button type="button" className={styles.button} onClick={onClose}>
-            Cancel
+            {t("Cancel")}
           </button>
           <button
             type="submit"
             className={`${styles.button} ${styles.primary}`}
             disabled={busy || !doc}
           >
-            {busy ? "Exporting…" : "Export"}
+            {busy ? t("Exporting…") : t("Export")}
           </button>
         </div>
       </form>

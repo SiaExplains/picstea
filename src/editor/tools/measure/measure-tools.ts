@@ -1,3 +1,4 @@
+import { msg } from "../../core/message";
 import { MAX_COLOR_SAMPLERS } from "../../core/editor-store";
 import type { Point } from "../../core/viewport/viewport";
 import type { Overlay } from "../../rendering/overlay";
@@ -53,7 +54,12 @@ export class ColorSamplerTool implements Tool {
       return;
     }
     if (samplers.length >= MAX_COLOR_SAMPLERS) {
-      ctx.notify("info", `Up to ${MAX_COLOR_SAMPLERS} sample points. Alt-click one to remove it.`);
+      ctx.notify(
+        "info",
+        msg("Up to {count} sample points. Alt-click one to remove it.", {
+          count: MAX_COLOR_SAMPLERS,
+        }),
+      );
       return;
     }
     const p = clampToDocument(pointer.doc, doc.width, doc.height);

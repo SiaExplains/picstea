@@ -1,6 +1,8 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { JsonLd } from "@/components/marketing/JsonLd";
+import { localizedPath } from "@/i18n/locales";
+import { currentLocale, siteMessages } from "@/i18n/server";
 import { breadcrumbList, graph, type Crumb } from "@/lib/seo/jsonld";
 import type { Placement } from "@/lib/sponsorship/sponsorship";
 import { AdSlot } from "./AdSlot";
@@ -11,7 +13,7 @@ import styles from "./site.module.css";
  * A readable content page with breadcrumbs (visible and structured), an optional note and a
  * sidebar ad space that never overlaps the text.
  */
-export function ContentPage({
+export async function ContentPage({
   crumbs,
   title,
   lead,
@@ -30,16 +32,18 @@ export function ContentPage({
   ad?: Exclude<Placement, "editor-start"> | null;
   children: ReactNode;
 }) {
+  const t = await siteMessages();
+  const home = localizedPath("/", await currentLocale());
   return (
     <div className={styles.page}>
       <JsonLd data={graph(breadcrumbList(crumbs), ...structuredData)} />
       <article className={styles.article}>
-        <nav aria-label="Breadcrumb" className={styles.crumbs}>
+        <nav aria-label={t.page.breadcrumb} className={styles.crumbs}>
           <ol>
             {crumbs.map((c, i) => (
               <li key={c.path}>
                 {i < crumbs.length - 1 ? (
-                  c.path === "/" ? (
+                  c.path === home ? (
                     <EditorLink>{c.name}</EditorLink>
                   ) : (
                     <Link href={c.path}>{c.name}</Link>
@@ -58,7 +62,7 @@ export function ContentPage({
         <div className={styles.prose}>{children}</div>
       </article>
       {ad && (
-        <aside className={styles.sidebar} aria-label="Advertising">
+        <aside className={styles.sidebar} aria-label={t.page.advertising}>
           <AdSlot placement={ad} />
         </aside>
       )}

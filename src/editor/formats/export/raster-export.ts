@@ -1,4 +1,5 @@
 import type { EditorDocument } from "../../core/document/types";
+import { messageTemplate, messageText, type Message, type Msg, msg } from "../../core/message";
 import type { ContentSizer } from "../../core/geometry/layer-geometry";
 import type { SurfaceFactory } from "../../rendering/canvas/canvas2d-renderer";
 import {
@@ -89,6 +90,12 @@ export interface ExportOptions {
 
 export class ExportError extends Error {
   override name = "ExportError";
+  readonly template?: Msg;
+
+  constructor(message: Message) {
+    super(messageText(message));
+    this.template = messageTemplate(message);
+  }
 }
 
 type Surface = HTMLCanvasElement | OffscreenCanvas;
@@ -154,7 +161,11 @@ export async function exportDocument(
     const blob = await encodeSurface(surface, format.mime, quality);
     // Browsers silently fall back to PNG for types they cannot encode (e.g. older Safari + WebP).
     if (blob.type !== format.mime) {
-      throw new ExportError(`This browser cannot export ${format.label} images. Try PNG instead.`);
+      throw new ExportError(
+        msg("This browser cannot export {format} images. Try PNG instead.", {
+          format: format.label,
+        }),
+      );
     }
     return blob;
   } finally {

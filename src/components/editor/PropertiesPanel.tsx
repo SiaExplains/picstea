@@ -16,24 +16,26 @@ import { useActiveSession, useController } from "./editor-context";
 import styles from "./editor.module.css";
 import { ShapeSection, TextSection, TransformSection } from "./LayerSections";
 import { AdjustmentSection, EffectsSection, MaskSection } from "./StyleSections";
+import { useT } from "./i18n";
+import { N_ } from "@/i18n/editor/catalog";
 
 export const BLEND_LABELS: Record<BlendMode, string> = {
-  normal: "Normal",
-  multiply: "Multiply",
-  screen: "Screen",
-  overlay: "Overlay",
-  darken: "Darken",
-  lighten: "Lighten",
-  "color-dodge": "Color Dodge",
-  "color-burn": "Color Burn",
-  "hard-light": "Hard Light",
-  "soft-light": "Soft Light",
-  difference: "Difference",
-  exclusion: "Exclusion",
-  hue: "Hue",
-  saturation: "Saturation",
-  color: "Color",
-  luminosity: "Luminosity",
+  normal: N_("Normal"),
+  multiply: N_("Multiply"),
+  screen: N_("Screen"),
+  overlay: N_("Overlay"),
+  darken: N_("Darken"),
+  lighten: N_("Lighten"),
+  "color-dodge": N_("Color Dodge"),
+  "color-burn": N_("Color Burn"),
+  "hard-light": N_("Hard Light"),
+  "soft-light": N_("Soft Light"),
+  difference: N_("Difference"),
+  exclusion: N_("Exclusion"),
+  hue: N_("Hue"),
+  saturation: N_("Saturation"),
+  color: N_("Color"),
+  luminosity: N_("Luminosity"),
 };
 
 export function PropertiesPanel({
@@ -48,6 +50,7 @@ export function PropertiesPanel({
   const doc = session?.document;
   const layer = doc ? activeLayer(doc) : undefined;
   const selected = selectedLayerIds(session);
+  const t = useT();
 
   return (
     <section
@@ -56,10 +59,12 @@ export function PropertiesPanel({
       data-panel="properties"
     >
       <h2 id="properties-heading" className={styles.panelHeader}>
-        Properties
+        {t("Properties")}
       </h2>
       <div className={styles.panelBody}>
-        {!doc && <p className={styles.muted}>Open or create a document to see its properties.</p>}
+        {!doc && (
+          <p className={styles.muted}>{t("Open or create a document to see its properties.")}</p>
+        )}
         {doc && !layer && (
           <p className={styles.muted}>
             {doc.width} × {doc.height} px · {doc.resolution} ppi
@@ -68,10 +73,12 @@ export function PropertiesPanel({
         {selected.length > 1 && (
           <div className={styles.multiSelection} data-testid="multi-selection">
             <p>
-              <strong>{selected.length} layers selected</strong>
+              <strong>{t("{count} layers selected", { count: selected.length })}</strong>
               <span className={styles.muted}>
                 {" "}
-                · settings below are for {layer?.name ?? "the active layer"}
+                {t("· settings below are for {name}", {
+                  name: layer?.name ?? t("the active layer"),
+                })}
               </span>
             </p>
             <div className={styles.arrange}>
@@ -81,15 +88,17 @@ export function PropertiesPanel({
         )}
         {layer && (
           <fieldset disabled={layer.locked} style={{ border: 0, margin: 0, padding: 0 }}>
-            <legend className={styles.srOnly}>{layer.name} properties</legend>
+            <legend className={styles.srOnly}>
+              {t("{name} properties", { name: layer.name })}
+            </legend>
             {layer.locked && (
               <p className={styles.muted} style={{ marginTop: 0 }}>
-                Layer is locked.
+                {t("Layer is locked.")}
               </p>
             )}
             <div className={styles.field}>
               <label className={styles.fieldLabel} htmlFor="prop-opacity">
-                Opacity
+                {t("Opacity")}
               </label>
               <div className={styles.rangeRow}>
                 <input
@@ -109,7 +118,7 @@ export function PropertiesPanel({
                   type="number"
                   min={0}
                   max={100}
-                  aria-label="Opacity percent"
+                  aria-label={t("Opacity percent")}
                   value={Math.round(layer.opacity * 100)}
                   onChange={(e) => {
                     const value = Number(e.target.value);
@@ -123,7 +132,7 @@ export function PropertiesPanel({
             </div>
             <div className={styles.field}>
               <label className={styles.fieldLabel} htmlFor="prop-blend">
-                Blend
+                {t("Blend")}
               </label>
               <select
                 id="prop-blend"
@@ -133,10 +142,12 @@ export function PropertiesPanel({
                   controller.execute(setLayerBlendMode(layer.id, e.target.value as GroupBlendMode))
                 }
               >
-                {layer.kind === "group" && <option value="pass-through">Pass Through</option>}
+                {layer.kind === "group" && (
+                  <option value="pass-through">{t("Pass Through")}</option>
+                )}
                 {BLEND_MODES.map((mode) => (
                   <option key={mode} value={mode}>
-                    {BLEND_LABELS[mode]}
+                    {t(BLEND_LABELS[mode])}
                   </option>
                 ))}
               </select>
@@ -144,7 +155,7 @@ export function PropertiesPanel({
             {layer.kind === "fill" && (
               <div className={styles.field}>
                 <label className={styles.fieldLabel} htmlFor="prop-color">
-                  Color
+                  {t("Color")}
                 </label>
                 <input
                   id="prop-color"
@@ -158,7 +169,7 @@ export function PropertiesPanel({
             )}
             {layer.kind === "raster" && (
               <p className={styles.muted}>
-                {layer.assetId ? "Pixel layer" : "Empty pixel layer"} · {layer.width} ×{" "}
+                {layer.assetId ? t("Pixel layer") : t("Empty pixel layer")} · {layer.width} ×{" "}
                 {layer.height} px
               </p>
             )}
@@ -166,9 +177,11 @@ export function PropertiesPanel({
             {layer.kind === "shape" && <ShapeSection key={`shape-${layer.id}`} layer={layer} />}
             {layer.kind === "group" && (
               <p className={styles.muted}>
-                Group · {countLayers(layer.children)}{" "}
-                {countLayers(layer.children) === 1 ? "layer" : "layers"}
-                {layer.blendMode === "pass-through" ? " · blends with layers below" : " · isolated"}
+                {countLayers(layer.children) === 1
+                  ? t("Group · {count} layer", { count: countLayers(layer.children) })
+                  : t("Group · {count} layers", { count: countLayers(layer.children) })}
+                {" · "}
+                {layer.blendMode === "pass-through" ? t("blends with layers below") : t("isolated")}
               </p>
             )}
             {layer.kind === "adjustment" && (

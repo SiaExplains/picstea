@@ -1,3 +1,4 @@
+import { msg } from "../../core/message";
 import { checkDimensions, MAX_DIMENSION, MAX_PIXELS } from "../../core/document/limits";
 import type { BlendRange } from "../../core/document/blending";
 import { readBlendingRanges, readRestrictedChannels } from "./psd-blending";
@@ -273,15 +274,19 @@ function checkHeader(r: ByteReader) {
   const mode = r.u16();
   if (channels < 1 || channels > 56) throw new FormatError("The PSD file header is damaged.");
   const check = checkDimensions(width, height);
-  if (!check.ok) throw new FormatError(check.reason);
+  if (!check.ok) throw new FormatError(check.template ?? check.reason);
   if (depth !== 8) {
     throw new FormatError(
-      `This file uses ${depth}-bit colour. Only 8-bit PSD files can be opened for now.`,
+      msg("This file uses {depth}-bit colour. Only 8-bit PSD files can be opened for now.", {
+        depth,
+      }),
     );
   }
   if (mode !== RGB && mode !== GRAYSCALE) {
     throw new FormatError(
-      `This file uses ${MODE_NAMES[mode] ?? "an unsupported"} colour mode. Convert it to RGB first.`,
+      msg("This file uses {mode} colour mode. Convert it to RGB first.", {
+        mode: MODE_NAMES[mode] ?? "an unsupported",
+      }),
     );
   }
   return { channels, width, height, mode };

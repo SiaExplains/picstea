@@ -71,6 +71,11 @@ dialog: the short intro plus a collapsed "About Picstea" section (`WelcomeAbout`
 component passed in as children, so it adds no editor JavaScript). Never put text under or behind
 the editor where users can't see it. Keep its claims in line with `src/lib/seo/llms.ts`.
 
+Languages (ADR-0039): translated pages exist at `/es/…`, `/pt-br/…` and `/de/…` with hreflang
+alternates and x-default; the sitemap lists every language version. When adding or changing a
+translated page, update all four `src/content/pages/<slug>/<lang>.tsx` files (the same SEO limits
+apply in every language: description 50–160 characters, title ≤ 50 characters before " · Picstea").
+
 Machine-readable entry points for AI assistants (ADR-0028):
 
 - `/llms.txt` — what Picstea is, verified facts, current limits, every page, doc and guide.

@@ -1,3 +1,4 @@
+import { msg } from "../../core/message";
 import { setMaskContent, setRasterContent } from "../../core/commands";
 import { luminance, rgba } from "../../core/color";
 import { activeLayer } from "../../core/document/queries";
@@ -133,11 +134,14 @@ export class BrushTool implements Tool {
       return null;
     }
     if (layer.locked) {
-      ctx.notify("error", `"${layer.name}" is locked. Unlock it to paint.`);
+      ctx.notify("error", msg('"{layer}" is locked. Unlock it to paint.', { layer: layer.name }));
       return null;
     }
     if (!layer.visible) {
-      ctx.notify("error", `"${layer.name}" is hidden. Show it to paint on it.`);
+      ctx.notify(
+        "error",
+        msg('"{layer}" is hidden. Show it to paint on it.', { layer: layer.name }),
+      );
       return null;
     }
     if (ctx.store.getState().editTarget === "mask" && layer.mask) {
@@ -147,7 +151,7 @@ export class BrushTool implements Tool {
       const hint = layer.mask
         ? "Click the layer's mask thumbnail to paint on its mask, or use Layer → New Layer."
         : "Use Layer → New Layer to add a pixel layer, or add a mask to paint on.";
-      ctx.notify("error", `${tool} works on pixel layers and masks. ${hint}`);
+      ctx.notify("error", msg("{tool} works on pixel layers and masks. {hint}", { tool, hint }));
       return null;
     }
     return { kind: "content", layer };

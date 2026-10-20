@@ -22,6 +22,7 @@ import { workerRunner } from "@/editor/workers/job-runner";
 import { EditorContext } from "./editor-context";
 import styles from "./editor.module.css";
 import { EditorShell } from "./EditorShell";
+import { useT } from "./i18n";
 
 const logger = createLogger("editor");
 
@@ -152,30 +153,38 @@ class EditorErrorBoundary extends Component<
 
   render() {
     if (!this.state.failed) return this.props.children;
-    return (
-      <div className={styles.root}>
-        <div className={styles.fatal} role="alert">
-          <div>
-            <h1 className={styles.startTitle}>The editor ran into a problem</h1>
-            <p className={styles.startLead} role="status">
-              {this.state.saved === true
-                ? "Your open documents were saved in this browser. Reload to continue."
-                : this.state.saved === false
-                  ? "Your work up to the last autosave is still in this browser. Reload to continue."
-                  : "Saving your open documents…"}
-            </p>
-            <button
-              type="button"
-              className={`${styles.button} ${styles.primary}`}
-              onClick={() => window.location.reload()}
-            >
-              Reload editor
-            </button>
-          </div>
+    return <CrashScreen saved={this.state.saved} />;
+  }
+}
+
+/** What the error boundary shows (a function component, so it can translate). */
+function CrashScreen({ saved }: { saved: boolean | null }) {
+  const t = useT();
+  return (
+    <div className={styles.root}>
+      <div className={styles.fatal} role="alert">
+        <div>
+          <h1 className={styles.startTitle}>{t("The editor ran into a problem")}</h1>
+          <p className={styles.startLead} role="status">
+            {saved === true
+              ? t("Your open documents were saved in this browser. Reload to continue.")
+              : saved === false
+                ? t(
+                    "Your work up to the last autosave is still in this browser. Reload to continue.",
+                  )
+                : t("Saving your open documents…")}
+          </p>
+          <button
+            type="button"
+            className={`${styles.button} ${styles.primary}`}
+            onClick={() => window.location.reload()}
+          >
+            {t("Reload editor")}
+          </button>
         </div>
       </div>
-    );
-  }
+    </div>
+  );
 }
 
 /**
@@ -184,6 +193,7 @@ class EditorErrorBoundary extends Component<
  */
 export function EditorRoot() {
   const controller = useSyncExternalStore(subscribeNoop, getBrowserController, () => null);
+  const t = useT();
 
   // Backstop for ADR-0013: the editor must never share a page with third-party (ad) code. Website
   // links reach it with a full page load; if ad code is somehow present, start over cleanly.
@@ -201,7 +211,7 @@ export function EditorRoot() {
     return (
       <div className={styles.root} aria-busy="true">
         <div className={styles.fatal}>
-          <p className={styles.muted}>Loading editor…</p>
+          <p className={styles.muted}>{t("Loading editor…")}</p>
         </div>
       </div>
     );

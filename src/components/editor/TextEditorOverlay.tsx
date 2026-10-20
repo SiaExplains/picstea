@@ -6,6 +6,7 @@ import { fromTransform } from "@/editor/core/geometry/matrix";
 import { cssFont, lineAdvance } from "@/editor/rendering/text/text-layout";
 import { useActiveSession, useController, useIsMac } from "./editor-context";
 import styles from "./editor.module.css";
+import { useT } from "./i18n";
 
 /**
  * On-canvas text editing: a transparent <textarea> laid over the canvas with the same font and
@@ -15,6 +16,7 @@ import styles from "./editor.module.css";
 export function TextEditorOverlay() {
   const controller = useController();
   const isMac = useIsMac();
+  const t = useT();
   const session = useActiveSession();
   const edit = useSyncExternalStore(
     controller.textEdit.subscribe,
@@ -47,7 +49,7 @@ export function TextEditorOverlay() {
     <textarea
       ref={ref}
       className={styles.textEditor}
-      aria-label="Edit text on canvas"
+      aria-label={t("Edit text on canvas")}
       spellCheck={false}
       value={edit.text}
       onChange={(event) => controller.updateTextDraft({ text: event.target.value })}

@@ -2,6 +2,7 @@
 
 import { useRef, type KeyboardEvent } from "react";
 import { formatPresetSize, presetPixels, type SizePreset } from "@/editor/core/document/presets";
+import { useT } from "./i18n";
 import styles from "./editor.module.css";
 
 const THUMB = 56;
@@ -24,6 +25,7 @@ export function PresetGrid({
   selectedId: string | null;
   onPick: (preset: SizePreset) => void;
 }) {
+  const t = useT();
   const refs = useRef<(HTMLButtonElement | null)[]>([]);
   const checkedIndex = presets.findIndex((p) => p.id === selectedId);
   const tabStop = checkedIndex >= 0 ? checkedIndex : 0;
@@ -56,7 +58,7 @@ export function PresetGrid({
             type="button"
             role="radio"
             aria-checked={preset.id === selectedId}
-            aria-label={`${preset.name}, ${describePreset(preset)}`}
+            aria-label={t("{name}, {size}", { name: t(preset.name), size: describePreset(preset) })}
             tabIndex={i === tabStop ? 0 : -1}
             className={styles.presetCard}
             onClick={() => onPick(preset)}
@@ -71,7 +73,7 @@ export function PresetGrid({
                 }}
               />
             </span>
-            <span className={styles.presetName}>{preset.name}</span>
+            <span className={styles.presetName}>{t(preset.name)}</span>
             <span className={styles.presetSize}>{describePreset(preset)}</span>
           </button>
         );

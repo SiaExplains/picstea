@@ -15,6 +15,7 @@ import styles from "./editor.module.css";
 import { isTypingTarget } from "./typing-target";
 import { TextEditorOverlay } from "./TextEditorOverlay";
 import { Rulers } from "./Rulers";
+import { useT } from "./i18n";
 
 type Gesture =
   | { kind: "pan"; pointerId: number; last: Point }
@@ -27,6 +28,7 @@ type Gesture =
  */
 export function CanvasViewport() {
   const controller = useController();
+  const t = useT();
   const isMac = useIsMac();
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -348,7 +350,12 @@ export function CanvasViewport() {
     <div className={styles.viewportFrame}>
       {rulers && <Rulers viewportRef={containerRef} />}
       <div ref={containerRef} className={styles.viewport} data-testid="canvas-viewport">
-        <canvas ref={canvasRef} className={styles.canvas} role="img" aria-label="Document canvas" />
+        <canvas
+          ref={canvasRef}
+          className={styles.canvas}
+          role="img"
+          aria-label={t("Document canvas")}
+        />
         <TextEditorOverlay />
       </div>
     </div>

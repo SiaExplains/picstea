@@ -6,6 +6,7 @@ import { screenToDocument, type Viewport } from "@/editor/core/viewport/viewport
 import type { ToolPointer } from "@/editor/tools/tool";
 import { useController, useIsMac } from "./editor-context";
 import styles from "./editor.module.css";
+import { useT } from "./i18n";
 
 export const RULER_SIZE = 20;
 
@@ -90,6 +91,7 @@ function drawRuler(
 export function Rulers({ viewportRef }: { viewportRef: RefObject<HTMLDivElement | null> }) {
   const controller = useController();
   const isMac = useIsMac();
+  const t = useT();
   const topRef = useRef<HTMLCanvasElement>(null);
   const leftRef = useRef<HTMLCanvasElement>(null);
 
@@ -182,14 +184,14 @@ export function Rulers({ viewportRef }: { viewportRef: RefObject<HTMLDivElement 
         ref={topRef}
         className={`${styles.ruler} ${styles.rulerTop}`}
         data-testid="ruler-top"
-        aria-label="Horizontal ruler: drag down to add a horizontal guide"
+        aria-label={t("Horizontal ruler: drag down to add a horizontal guide")}
         role="img"
       />
       <canvas
         ref={leftRef}
         className={`${styles.ruler} ${styles.rulerLeft}`}
         data-testid="ruler-left"
-        aria-label="Vertical ruler: drag right to add a vertical guide"
+        aria-label={t("Vertical ruler: drag right to add a vertical guide")}
         role="img"
       />
     </>

@@ -1,6 +1,6 @@
 # Feature status
 
-Last updated: 2026-10-20 · version 0.40.0 · live at https://www.picstea.com · see `CHANGELOG.md` for each release and `docs/adr/` (ADR-0001 to ADR-0038) for decisions
+Last updated: 2026-10-20 · version 0.41.0 · live at https://www.picstea.com · see `CHANGELOG.md` for each release and `docs/adr/` (ADR-0001 to ADR-0039) for decisions
 
 Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ deferred
 
@@ -128,6 +128,7 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 | Landing pages: /png-editor, /jpeg-editor, /webp-editor, /image-resizer, /image-compressor, /photo-filters | ✅ | 0.36.0; linked from a Tools row in the footer, the home page and each other (`RelatedTools`). Editor deep links 📋 |
 | How-to pages: /blur-background, /make-background-transparent, /add-text-to-photo, /black-and-white-photo, /sharpen-image, /liquify | ✅ | 0.39.0; footer "How-to guides" row; topics with a blog post (curves, masks, blemishes, batch) left to the blog |
 | Comparison pages: /gimp-alternative, /pixlr-alternative, /canva-alternative, /photoshop-express-alternative (+ Photoshop, Photopea) | ✅ | 0.40.0; `ComparisonTable` with a "facts checked" month; footer "Comparisons" row. Re-check the other products' facts every few months |
+| Languages: Spanish (/es), Portuguese (Brazil) (/pt-br), German (/de) — editor UI, guide, how-to, converter and comparison pages, FAQ, About | ✅ | ADR-0039; machine-drafted, not yet reviewed by native speakers; docs, blog and legal stay English; action-step and some history labels built from values stay partly English; size-preset search matches English names |
 | Docs (7 pages incl. generated shortcut table) | ✅ | |
 | Blog (index, posts, Article data) | ✅ | 11 posts published (2026-10-18) |
 | Structured data: WebSite, Organization, SoftwareApplication, BreadcrumbList, Article, FAQPage | ✅ | No ratings/reviews |

@@ -94,7 +94,7 @@ export async function decodeHeic(
     const width = image.get_width();
     const height = image.get_height();
     const check = checkDimensions(width, height);
-    if (!check.ok) throw new FormatError(check.reason);
+    if (!check.ok) throw new FormatError(check.template ?? check.reason);
     const target = { data: new Uint8ClampedArray(width * height * 4), width, height };
     const result = await new Promise<{ data: Uint8ClampedArray } | null>((resolve) =>
       image.display(target, resolve),

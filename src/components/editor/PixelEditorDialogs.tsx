@@ -28,8 +28,10 @@ import {
   type PlaneCorners,
 } from "@/editor/filters/vanishing-point";
 import type { RgbaPixels } from "@/editor/selection/flood";
+import { N_ } from "@/i18n/editor/catalog";
 import { useController } from "./editor-context";
 import styles from "./editor.module.css";
+import { useT } from "./i18n";
 import { useModal } from "./SelectionDialogs";
 
 /**
@@ -118,18 +120,19 @@ function RangeField({
 }
 
 const LIQUIFY_LABELS: Record<LiquifyTool, string> = {
-  forwardWarp: "Forward Warp",
-  reconstruct: "Reconstruct",
-  smooth: "Smooth",
-  twirlClockwise: "Twirl Clockwise",
-  twirlCounterclockwise: "Twirl Counterclockwise",
-  pucker: "Pucker",
-  bloat: "Bloat",
+  forwardWarp: N_("Forward Warp"),
+  reconstruct: N_("Reconstruct"),
+  smooth: N_("Smooth"),
+  twirlClockwise: N_("Twirl Clockwise"),
+  twirlCounterclockwise: N_("Twirl Counterclockwise"),
+  pucker: N_("Pucker"),
+  bloat: N_("Bloat"),
 };
 
 /** Filter → Liquify…: push, twirl, pucker and bloat pixels with a brush. */
 export function LiquifyDialog({ onClose }: { onClose: () => void }) {
   const controller = useController();
+  const t = useT();
   const ref = useModal(true);
   const [source] = useState(() => controller.beginPixelEditor(LIQUIFY_PREVIEW_PIXELS));
   useCloseWhenEmpty(source, onClose);
@@ -250,27 +253,27 @@ export function LiquifyDialog({ onClose }: { onClose: () => void }) {
     >
       <form className={styles.dialogForm} onSubmit={submit} noValidate>
         <h2 id="liquify-title" className={styles.dialogTitle}>
-          Liquify
+          {t("Liquify")}
         </h2>
         <div className={styles.pixelEditorBody}>
           <div className={styles.pixelEditorSide}>
-            <div className={styles.toolList} role="radiogroup" aria-label="Liquify tool">
-              {LIQUIFY_TOOLS.map((t) => (
+            <div className={styles.toolList} role="radiogroup" aria-label={t("Liquify tool")}>
+              {LIQUIFY_TOOLS.map((id) => (
                 <button
-                  key={t}
+                  key={id}
                   type="button"
                   role="radio"
-                  aria-checked={tool === t}
+                  aria-checked={tool === id}
                   className={styles.button}
-                  onClick={() => setTool(t)}
+                  onClick={() => setTool(id)}
                 >
-                  {LIQUIFY_LABELS[t]}
+                  {t(LIQUIFY_LABELS[id])}
                 </button>
               ))}
             </div>
             <RangeField
               id="liquify-size"
-              label="Brush size (px)"
+              label={t("Brush size (px)")}
               value={size}
               min={2}
               max={Math.max(source.width, source.height)}
@@ -278,15 +281,15 @@ export function LiquifyDialog({ onClose }: { onClose: () => void }) {
             />
             <RangeField
               id="liquify-pressure"
-              label="Brush pressure (%)"
+              label={t("Brush pressure (%)")}
               value={pressure}
               min={1}
               max={100}
               onChange={setPressure}
             />
-            <p className={styles.muted}>[ and ] change the brush size.</p>
+            <p className={styles.muted}>{t("[ and ] change the brush size.")}</p>
             <button type="button" className={styles.button} onClick={reset} disabled={!edited}>
-              Restore All
+              {t("Restore All")}
             </button>
           </div>
           <div className={styles.pixelStage}>
@@ -294,7 +297,7 @@ export function LiquifyDialog({ onClose }: { onClose: () => void }) {
               <canvas
                 ref={canvas}
                 className={styles.pixelCanvas}
-                aria-label="Liquify preview: drag to apply the tool"
+                aria-label={t("Liquify preview: drag to apply the tool")}
                 onPointerDown={onPointerDown}
                 onPointerMove={onPointerMove}
                 onPointerUp={endStroke}
@@ -312,10 +315,10 @@ export function LiquifyDialog({ onClose }: { onClose: () => void }) {
         </div>
         <div className={styles.dialogActions}>
           <button type="button" className={styles.button} onClick={onClose}>
-            Cancel
+            {t("Cancel")}
           </button>
           <button type="submit" className={`${styles.button} ${styles.primary}`} disabled={!edited}>
-            OK
+            {t("OK")}
           </button>
         </div>
       </form>
@@ -328,6 +331,7 @@ type Corners = number[];
 /** Filter → Vanishing Point…: draw a perspective plane, then clone inside it in perspective. */
 export function VanishingPointDialog({ onClose }: { onClose: () => void }) {
   const controller = useController();
+  const t = useT();
   const ref = useModal(true);
   const [source] = useState(() => controller.beginPixelEditor(VANISHING_PREVIEW_PIXELS));
   useCloseWhenEmpty(source, onClose);
@@ -514,8 +518,8 @@ export function VanishingPointDialog({ onClose }: { onClose: () => void }) {
     const out = new Float64Array(2);
     const at = (u: number, v: number) => (project(toImage, u, v, out) ? `${out[0]},${out[1]}` : "");
     for (let k = 0; k <= 8; k++) {
-      const t = k / 8;
-      gridLines.push(`M${at(t, 0)} L${at(t, 1)}`, `M${at(0, t)} L${at(1, t)}`);
+      const f = k / 8;
+      gridLines.push(`M${at(f, 0)} L${at(f, 1)}`, `M${at(0, f)} L${at(1, f)}`);
     }
   }
   const sourceMark = (() => {
@@ -528,12 +532,14 @@ export function VanishingPointDialog({ onClose }: { onClose: () => void }) {
     mode === "plane"
       ? complete
         ? valid
-          ? "Drag the corners to line the grid up with a flat surface."
-          : "The corners cross. Drag them into a four-sided shape."
-        : `Click ${4 - corners.length / 2} more corner${corners.length === 6 ? "" : "s"} of a flat surface.`
+          ? t("Drag the corners to line the grid up with a flat surface.")
+          : t("The corners cross. Drag them into a four-sided shape.")
+        : corners.length === 6
+          ? t("Click 1 more corner of a flat surface.")
+          : t("Click {count} more corners of a flat surface.", { count: 4 - corners.length / 2 })
       : sourcePoint
-        ? "Paint to clone. Alt-click (or Set Source) to pick a new source."
-        : "Alt-click inside the plane, or press Set Source, to choose where to clone from.";
+        ? t("Paint to clone. Alt-click (or Set Source) to pick a new source.")
+        : t("Alt-click inside the plane, or press Set Source, to choose where to clone from.");
 
   return (
     <dialog
@@ -547,11 +553,15 @@ export function VanishingPointDialog({ onClose }: { onClose: () => void }) {
     >
       <form className={styles.dialogForm} onSubmit={submit} noValidate>
         <h2 id="vp-title" className={styles.dialogTitle}>
-          Vanishing Point
+          {t("Vanishing Point")}
         </h2>
         <div className={styles.pixelEditorBody}>
           <div className={styles.pixelEditorSide}>
-            <div className={styles.toolList} role="radiogroup" aria-label="Vanishing Point tool">
+            <div
+              className={styles.toolList}
+              role="radiogroup"
+              aria-label={t("Vanishing Point tool")}
+            >
               <button
                 type="button"
                 role="radio"
@@ -559,7 +569,7 @@ export function VanishingPointDialog({ onClose }: { onClose: () => void }) {
                 className={styles.button}
                 onClick={() => setMode("plane")}
               >
-                Edit Plane
+                {t("Edit Plane")}
               </button>
               <button
                 type="button"
@@ -569,7 +579,7 @@ export function VanishingPointDialog({ onClose }: { onClose: () => void }) {
                 disabled={!valid}
                 onClick={() => setMode("clone")}
               >
-                Stamp
+                {t("Stamp")}
               </button>
             </div>
             <p className={styles.muted} role="status">
@@ -582,13 +592,13 @@ export function VanishingPointDialog({ onClose }: { onClose: () => void }) {
                 onClick={() => setCorners([])}
                 disabled={corners.length === 0}
               >
-                Delete Plane
+                {t("Delete Plane")}
               </button>
             ) : (
               <>
                 <RangeField
                   id="vp-size"
-                  label="Brush diameter (px)"
+                  label={t("Brush diameter (px)")}
                   value={size}
                   min={2}
                   max={Math.max(source.width, source.height)}
@@ -596,7 +606,7 @@ export function VanishingPointDialog({ onClose }: { onClose: () => void }) {
                 />
                 <RangeField
                   id="vp-hardness"
-                  label="Hardness (%)"
+                  label={t("Hardness (%)")}
                   value={hardness}
                   min={0}
                   max={100}
@@ -608,7 +618,7 @@ export function VanishingPointDialog({ onClose }: { onClose: () => void }) {
                   aria-pressed={pickSource}
                   onClick={() => setPickSource((v) => !v)}
                 >
-                  Set Source
+                  {t("Set Source")}
                 </button>
                 <button
                   type="button"
@@ -616,7 +626,7 @@ export function VanishingPointDialog({ onClose }: { onClose: () => void }) {
                   disabled={strokes.length === 0}
                   onClick={() => setStrokes((list) => list.slice(0, -1))}
                 >
-                  Undo Stroke
+                  {t("Undo Stroke")}
                 </button>
               </>
             )}
@@ -626,7 +636,7 @@ export function VanishingPointDialog({ onClose }: { onClose: () => void }) {
               <canvas
                 ref={canvas}
                 className={styles.pixelCanvas}
-                aria-label="Vanishing Point preview"
+                aria-label={t("Vanishing Point preview")}
                 onPointerDown={onPointerDown}
                 onPointerMove={onPointerMove}
                 onPointerUp={onPointerUp}
@@ -679,14 +689,14 @@ export function VanishingPointDialog({ onClose }: { onClose: () => void }) {
         </div>
         <div className={styles.dialogActions}>
           <button type="button" className={styles.button} onClick={onClose}>
-            Cancel
+            {t("Cancel")}
           </button>
           <button
             type="submit"
             className={`${styles.button} ${styles.primary}`}
             disabled={strokes.length === 0}
           >
-            OK
+            {t("OK")}
           </button>
         </div>
       </form>

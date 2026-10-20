@@ -17,6 +17,7 @@ import {
   TONE_CHANNELS,
 } from "@/editor/adjustments/tone";
 import { useController } from "./editor-context";
+import { useT } from "./i18n";
 import styles from "./editor.module.css";
 import { Slider } from "./StyleSections";
 
@@ -71,10 +72,11 @@ function ChannelSelect({
   value: ToneChannel;
   onChange: (c: ToneChannel) => void;
 }) {
+  const t = useT();
   return (
     <div className={styles.field}>
       <label className={styles.fieldLabel} htmlFor={id}>
-        Channel
+        {t("Channel")}
       </label>
       <select
         id={id}
@@ -84,7 +86,7 @@ function ChannelSelect({
       >
         {TONE_CHANNELS.map((c) => (
           <option key={c} value={c}>
-            {TONE_CHANNEL_LABELS[c]}
+            {t(TONE_CHANNEL_LABELS[c])}
           </option>
         ))}
       </select>
@@ -94,6 +96,7 @@ function ChannelSelect({
 
 export function LevelsEditor({ layer }: { layer: LevelsLayer }) {
   const controller = useController();
+  const t = useT();
   const [channel, setChannel] = useState<ToneChannel>("rgb");
   const bins = useHistogram(layer.id, channel);
   const levels = layer.adjustment[channel];
@@ -104,14 +107,16 @@ export function LevelsEditor({ layer }: { layer: LevelsLayer }) {
 
   return (
     <div className={styles.subsection}>
-      <div className={styles.subsectionTitle}>Levels</div>
+      <div className={styles.subsectionTitle}>{t("Levels")}</div>
       <ChannelSelect id={`levels-channel-${layer.id}`} value={channel} onChange={setChannel} />
       <svg
         className={styles.histogram}
         viewBox="0 0 255 100"
         preserveAspectRatio="none"
         role="img"
-        aria-label={`Histogram of the ${TONE_CHANNEL_LABELS[channel]} channel beneath this layer`}
+        aria-label={t("Histogram of the {channel} channel beneath this layer", {
+          channel: t(TONE_CHANNEL_LABELS[channel]),
+        })}
       >
         <path d={histogramPath(bins)} className={styles.histogramBars} />
         <line
@@ -130,14 +135,14 @@ export function LevelsEditor({ layer }: { layer: LevelsLayer }) {
         />
       </svg>
       <Slider
-        label="Input black"
+        label={t("Input black")}
         value={levels.inBlack}
         min={0}
         max={253}
         onChange={(v) => update({ inBlack: v, inWhite: Math.max(levels.inWhite, v + 2) })}
       />
       <Slider
-        label="Gamma"
+        label={t("Gamma")}
         value={levels.gamma}
         min={0.1}
         max={9.99}
@@ -145,21 +150,21 @@ export function LevelsEditor({ layer }: { layer: LevelsLayer }) {
         onChange={(v) => update({ gamma: v })}
       />
       <Slider
-        label="Input white"
+        label={t("Input white")}
         value={levels.inWhite}
         min={2}
         max={255}
         onChange={(v) => update({ inWhite: v, inBlack: Math.min(levels.inBlack, v - 2) })}
       />
       <Slider
-        label="Output black"
+        label={t("Output black")}
         value={levels.outBlack}
         min={0}
         max={255}
         onChange={(v) => update({ outBlack: v })}
       />
       <Slider
-        label="Output white"
+        label={t("Output white")}
         value={levels.outWhite}
         min={0}
         max={255}
@@ -174,6 +179,7 @@ const REMOVE_DISTANCE = 24;
 
 export function CurvesEditor({ layer }: { layer: CurvesLayer }) {
   const controller = useController();
+  const t = useT();
   const [channel, setChannel] = useState<ToneChannel>("rgb");
   const [selected, setSelected] = useState(1);
   const svgRef = useRef<SVGSVGElement>(null);
@@ -290,14 +296,17 @@ export function CurvesEditor({ layer }: { layer: CurvesLayer }) {
 
   return (
     <div className={styles.subsection}>
-      <div className={styles.subsectionTitle}>Curves</div>
+      <div className={styles.subsectionTitle}>{t("Curves")}</div>
       <ChannelSelect id={`curves-channel-${layer.id}`} value={channel} onChange={setChannel} />
       <svg
         ref={svgRef}
         className={styles.curves}
         viewBox="-6 -6 267 267"
         data-testid="curves-graph"
-        aria-label={`${TONE_CHANNEL_LABELS[channel]} curve. Click to add a point; drag a point off the graph to remove it.`}
+        aria-label={t(
+          "{channel} curve. Click to add a point; drag a point off the graph to remove it.",
+          { channel: t(TONE_CHANNEL_LABELS[channel]) },
+        )}
         role="group"
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
@@ -328,11 +337,11 @@ export function CurvesEditor({ layer }: { layer: CurvesLayer }) {
             className={i === index ? styles.curvePointActive : styles.curvePoint}
             tabIndex={0}
             role="slider"
-            aria-label={`Curve point ${i + 1}`}
+            aria-label={t("Curve point {number}", { number: i + 1 })}
             aria-valuemin={0}
             aria-valuemax={255}
             aria-valuenow={p[1]}
-            aria-valuetext={`Input ${p[0]}, output ${p[1]}`}
+            aria-valuetext={t("Input {input}, output {output}", { input: p[0], output: p[1] })}
             onFocus={() => setSelected(i)}
             onKeyDown={(e) => onPointKeyDown(e, i)}
             onKeyUp={seal}
@@ -341,7 +350,7 @@ export function CurvesEditor({ layer }: { layer: CurvesLayer }) {
       </svg>
       <div className={styles.curveFields}>
         <label className={styles.smallLabel}>
-          Input
+          {t("Input")}
           <input
             className={styles.input}
             type="number"
@@ -353,7 +362,7 @@ export function CurvesEditor({ layer }: { layer: CurvesLayer }) {
           />
         </label>
         <label className={styles.smallLabel}>
-          Output
+          {t("Output")}
           <input
             className={styles.input}
             type="number"

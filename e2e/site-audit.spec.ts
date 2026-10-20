@@ -121,7 +121,8 @@ test("every sitemap page has complete metadata, valid links and good lab vitals"
     if (r.lcp > 2500) problems.push(`${where}: LCP ${Math.round(r.lcp)} ms`);
     if (r.cls > 0.1) problems.push(`${where}: CLS ${r.cls.toFixed(3)}`);
     // Script budget from the 2026-10 audit (editor 270 KB, site pages 145 KB) plus headroom.
-    const budget = r.path === "/" ? 350 * 1024 : 200 * 1024;
+    const editor = ["/", "/es", "/pt-br", "/de"].includes(r.path);
+    const budget = editor ? 350 * 1024 : 200 * 1024;
     if (r.scriptBytes > budget)
       problems.push(`${where}: ${Math.round(r.scriptBytes / 1024)} KB of JavaScript`);
     for (const l of r.links) links.add(new URL(l).pathname);

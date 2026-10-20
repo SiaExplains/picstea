@@ -19,6 +19,7 @@ import {
 import { fillPattern } from "@/editor/rendering/compositing/effect-paint";
 import { renderWithEffects } from "@/editor/rendering/compositing/effects";
 import { useController } from "./editor-context";
+import { useT } from "./i18n";
 import { BLEND_LABELS } from "./PropertiesPanel";
 import styles from "./editor.module.css";
 
@@ -87,6 +88,7 @@ export function NumberSlider({
   onChange: (value: number) => void;
 }) {
   const seal = useSeal();
+  const t = useT();
   const id = useId();
   const shown = Math.round(value * factor * 100) / 100;
   const [draft, setDraft] = useState<string | null>(null);
@@ -115,7 +117,7 @@ export function NumberSlider({
       />
       <input
         type="number"
-        aria-label={`${label} value`}
+        aria-label={t("{label} value", { label })}
         className={styles.styleNumber}
         min={inputMin}
         max={inputMax}
@@ -139,7 +141,7 @@ export const percentProps = { min: 0, max: 100, unit: "%", factor: 100 } as cons
 
 /** Photoshop's angle dial: drag the line, or type degrees; optionally "Use Global Light". */
 export function AngleDial({
-  label = "Angle",
+  label: labelProp,
   value,
   onChange,
   global,
@@ -150,6 +152,8 @@ export function AngleDial({
   global?: { checked: boolean; onToggle: (checked: boolean) => void };
 }) {
   const seal = useSeal();
+  const t = useT();
+  const label = labelProp ?? t("Angle");
   const dialRef = useRef<HTMLDivElement>(null);
   const fromPointer = (e: React.PointerEvent) => {
     const r = dialRef.current!.getBoundingClientRect();
@@ -165,7 +169,7 @@ export function AngleDial({
         className={styles.angleDial}
         role="slider"
         tabIndex={0}
-        aria-label={`${label} dial`}
+        aria-label={t("{label} dial", { label })}
         aria-valuemin={-180}
         aria-valuemax={180}
         aria-valuenow={value}
@@ -194,7 +198,7 @@ export function AngleDial({
       </div>
       <input
         type="number"
-        aria-label={`${label} degrees`}
+        aria-label={t("{label} degrees", { label })}
         className={styles.styleNumber}
         min={-180}
         max={180}
@@ -216,7 +220,7 @@ export function AngleDial({
               seal();
             }}
           />
-          Use Global Light
+          {t("Use Global Light")}
         </label>
       )}
     </Row>
@@ -230,7 +234,7 @@ const wrap = (a: number) => {
 
 /** Blend mode menu, with a colour swatch next to it when the effect has one colour. */
 export function BlendRow({
-  label = "Blend Mode",
+  label: labelProp,
   mode,
   onMode,
   color,
@@ -243,6 +247,8 @@ export function BlendRow({
   onColor?: (color: string) => void;
 }) {
   const seal = useSeal();
+  const t = useT();
+  const label = labelProp ?? t("Blend Mode");
   const id = useId();
   return (
     <Row label={label} htmlFor={id}>
@@ -257,12 +263,12 @@ export function BlendRow({
       >
         {BLEND_MODES.map((m) => (
           <option key={m} value={m}>
-            {BLEND_LABELS[m]}
+            {t(BLEND_LABELS[m])}
           </option>
         ))}
       </select>
       {color !== undefined && onColor && (
-        <ColorSwatch label={`${label} colour`} value={color} onChange={onColor} />
+        <ColorSwatch label={t("{label} colour", { label })} value={color} onChange={onColor} />
       )}
     </Row>
   );
@@ -360,7 +366,7 @@ const curvePath = (points: readonly ContourPoint[]) =>
  * point to remove it).
  */
 export function ContourPicker({
-  label = "Contour",
+  label: labelProp,
   contour,
   onChange,
   antiAlias,
@@ -373,6 +379,8 @@ export function ContourPicker({
   onAntiAlias?: (value: boolean) => void;
 }) {
   const seal = useSeal();
+  const t = useT();
+  const label = labelProp ?? t("Contour");
   const id = useId();
   const svgRef = useRef<SVGSVGElement>(null);
   const [drag, setDrag] = useState<number | null>(null);
@@ -393,7 +401,7 @@ export function ContourPicker({
         className={styles.contourCurve}
         viewBox="-4 -4 108 108"
         role="img"
-        aria-label={`${label} curve`}
+        aria-label={t("{label} curve", { label })}
         onPointerDown={(e) => {
           if (e.target !== e.currentTarget) return;
           if (pts.length >= MAX_CONTOUR_POINTS) return;
@@ -450,12 +458,14 @@ export function ContourPicker({
       >
         {PRESET_NAMES.map((name) => (
           <option key={name} value={name}>
-            {CONTOUR_NAMES[name]}
+            {t(CONTOUR_NAMES[name])}
           </option>
         ))}
-        {contour.preset === "custom" && <option value="custom">{CONTOUR_NAMES.custom}</option>}
+        {contour.preset === "custom" && <option value="custom">{t(CONTOUR_NAMES.custom)}</option>}
       </select>
-      {onAntiAlias && <Check label="Anti-aliased" checked={!!antiAlias} onChange={onAntiAlias} />}
+      {onAntiAlias && (
+        <Check label={t("Anti-aliased")} checked={!!antiAlias} onChange={onAntiAlias} />
+      )}
     </Row>
   );
 }
@@ -480,17 +490,18 @@ export function PatternPicker({
   onChange: (pattern: PatternId) => void;
 }) {
   const seal = useSeal();
+  const t = useT();
   return (
-    <Row label="Pattern">
-      <div className={styles.patternGrid} role="radiogroup" aria-label="Pattern">
+    <Row label={t("Pattern")}>
+      <div className={styles.patternGrid} role="radiogroup" aria-label={t("Pattern")}>
         {PATTERNS.map((p) => (
           <button
             key={p}
             type="button"
             role="radio"
             aria-checked={p === value}
-            aria-label={PATTERN_NAMES[p]}
-            title={PATTERN_NAMES[p]}
+            aria-label={t(PATTERN_NAMES[p])}
+            title={t(PATTERN_NAMES[p])}
             className={styles.patternOption}
             onClick={() => {
               onChange(p);
@@ -524,6 +535,7 @@ export function StylePreview({
   fillOpacity: number;
   light?: GlobalLight;
 }) {
+  const t = useT();
   const ref = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
     const canvas = ref.current;
@@ -556,7 +568,7 @@ export function StylePreview({
       height={96}
       className={styles.stylePreview}
       role="img"
-      aria-label="Style preview"
+      aria-label={t("Style preview")}
     />
   );
 }

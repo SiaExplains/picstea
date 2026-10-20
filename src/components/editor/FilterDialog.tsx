@@ -10,6 +10,7 @@ import {
 } from "@/editor/filters/registry";
 import { useController } from "./editor-context";
 import styles from "./editor.module.css";
+import { useT } from "./i18n";
 import { useModal } from "./SelectionDialogs";
 
 /** Wait this long after the last change before re-running the preview. */
@@ -39,6 +40,7 @@ export function FilterDialog({
   onClose: () => void;
 }) {
   const controller = useController();
+  const t = useT();
   const filter = filterById(filterId)!;
   const ref = useModal(true);
   const [values, setValues] = useState<FilterValues>(() => {
@@ -117,7 +119,7 @@ export function FilterDialog({
     >
       <form className={styles.dialogForm} onSubmit={submit} noValidate>
         <h2 id="filter-title" className={styles.dialogTitle}>
-          {filter.name}
+          {t(filter.name)}
         </h2>
         {filter.parameters.map((p) =>
           p.kind === "toggle" ? (
@@ -127,12 +129,12 @@ export function FilterDialog({
                 checked={values[p.key] as boolean}
                 onChange={(e) => set(p.key, e.target.checked)}
               />
-              {p.label}
+              {t(p.label)}
             </label>
           ) : p.kind === "choice" ? (
             <div key={p.key} className={styles.field}>
               <label className={styles.fieldLabel} htmlFor={`filter-${p.key}`}>
-                {p.label}
+                {t(p.label)}
               </label>
               <select
                 id={`filter-${p.key}`}
@@ -142,7 +144,7 @@ export function FilterDialog({
               >
                 {p.options.map((option, index) => (
                   <option key={option} value={index}>
-                    {option}
+                    {t(option)}
                   </option>
                 ))}
               </select>
@@ -150,7 +152,7 @@ export function FilterDialog({
           ) : (
             <div key={p.key} className={styles.field}>
               <label className={styles.fieldLabel} htmlFor={`filter-${p.key}`}>
-                {p.label} {p.unit ? `(${p.unit})` : ""}
+                {t(p.label)} {p.unit ? `(${p.unit})` : ""}
               </label>
               <div className={styles.rangeWithNumber}>
                 <input
@@ -176,7 +178,7 @@ export function FilterDialog({
           ),
         )}
         {smart ? (
-          <p className={styles.muted}>Smart filter: you can change or remove it later.</p>
+          <p className={styles.muted}>{t("Smart filter: you can change or remove it later.")}</p>
         ) : (
           <label className={styles.optionGroup}>
             <input
@@ -184,15 +186,15 @@ export function FilterDialog({
               checked={preview}
               onChange={(e) => setPreview(e.target.checked)}
             />
-            Preview
+            {t("Preview")}
           </label>
         )}
         <div className={styles.dialogActions}>
           <button type="button" className={styles.button} onClick={cancel}>
-            Cancel
+            {t("Cancel")}
           </button>
           <button type="submit" className={`${styles.button} ${styles.primary}`}>
-            OK
+            {t("OK")}
           </button>
         </div>
       </form>

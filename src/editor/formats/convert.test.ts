@@ -111,7 +111,11 @@ describe("convertFile", () => {
   it("reports when the browser can't encode the format instead of saving a PNG", async () => {
     const t = env({}, "image/png");
     const result = await convertFile(t.env, png(), "a.png", { to: "webp", quality: 0.9 });
-    expect(result).toEqual({ ok: false, error: "This browser cannot create WebP images." });
+    expect(result).toMatchObject({ ok: false, error: "This browser cannot create WebP images." });
+    // The template travels with it, so the UI can show it in the user's language.
+    expect(result).toMatchObject({
+      template: { text: "This browser cannot create {format} images.", params: { format: "WebP" } },
+    });
   });
 
   it("rejects images over the size limit", async () => {

@@ -3,6 +3,18 @@
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.41.0] — 2026-10-20
+
+### Added
+
+- **Picstea speaks Spanish, Portuguese (Brazil) and German.** The editor — menus, tools, panels,
+  dialogs, filters and messages — and the guide, how-to, converter and comparison pages, the FAQ
+  and the About page are available at /es, /pt-br and /de. English addresses don't change.
+- Switch languages from the site header or from Help → Language in the editor. Picstea remembers
+  a language you pick and opens the editor in it; it never guesses from your browser.
+- The translations were made with machine translation and haven't been reviewed by native
+  speakers yet; corrections are welcome. The documentation, blog and legal pages stay in English.
+
 ## [0.40.0] — 2026-10-20
 
 ### Added

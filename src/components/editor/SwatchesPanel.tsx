@@ -4,6 +4,7 @@ import type { KeyboardEvent, MouseEvent } from "react";
 import { addSwatch, DEFAULT_SWATCHES } from "@/editor/core/swatches";
 import { useController, useEditorState, useObservable } from "./editor-context";
 import styles from "./editor.module.css";
+import { useT } from "./i18n";
 
 /**
  * Swatches: click sets the foreground colour, Alt-click the background colour. Delete removes
@@ -13,6 +14,7 @@ export function SwatchesPanel() {
   const controller = useController();
   const swatches = useObservable(controller.swatches);
   const foreground = useEditorState((s) => s.colors.foreground);
+  const t = useT();
 
   const pick = (event: MouseEvent, color: string) => {
     controller.store.setColors(event.altKey ? { background: color } : { foreground: color });
@@ -33,15 +35,15 @@ export function SwatchesPanel() {
 
   return (
     <div className={styles.swatchesPanel}>
-      <div className={styles.swatchGrid} role="group" aria-label="Swatches">
+      <div className={styles.swatchGrid} role="group" aria-label={t("Swatches")}>
         {swatches.map((swatch, i) => (
           <button
             key={`${swatch.color}-${i}`}
             type="button"
             className={styles.swatchCell}
             style={{ background: swatch.color }}
-            aria-label={`Swatch ${swatch.name ?? swatch.color}`}
-            title={`${swatch.name ? `${swatch.name} ` : ""}${swatch.color} — click: foreground, Alt-click: background, Delete: remove`}
+            aria-label={t("Swatch {name}", { name: swatch.name ?? swatch.color })}
+            title={`${swatch.name ? `${swatch.name} ` : ""}${swatch.color} — ${t("click: foreground, Alt-click: background, Delete: remove")}`}
             onClick={(e) => pick(e, swatch.color)}
             onKeyDown={(e) => onKeyDown(e, i)}
           />
@@ -53,14 +55,14 @@ export function SwatchesPanel() {
           className={styles.button}
           onClick={() => controller.swatches.update((list) => addSwatch(list, foreground))}
         >
-          Add Foreground
+          {t("Add Foreground")}
         </button>
         <button
           type="button"
           className={styles.button}
           onClick={() => controller.swatches.set(DEFAULT_SWATCHES)}
         >
-          Reset
+          {t("Reset")}
         </button>
       </div>
     </div>

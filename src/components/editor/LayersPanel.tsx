@@ -44,6 +44,8 @@ import {
   PenIcon,
 } from "./icons";
 import type { UiAction, UiActionId } from "./use-editor-actions";
+import { useT } from "./i18n";
+import { N_ } from "@/i18n/editor/catalog";
 
 const DRAG_TYPE = "application/x-picstea-layer";
 
@@ -59,13 +61,13 @@ const LABEL_COLORS: Record<LayerLabel, string> = {
 };
 
 const LABEL_NAMES: Record<LayerLabel, string> = {
-  red: "Red",
-  orange: "Orange",
-  yellow: "Yellow",
-  green: "Green",
-  blue: "Blue",
-  violet: "Violet",
-  gray: "Grey",
+  red: N_("Red"),
+  orange: N_("Orange"),
+  yellow: N_("Yellow"),
+  green: N_("Green"),
+  blue: N_("Blue"),
+  violet: N_("Violet"),
+  gray: N_("Grey"),
 };
 
 /** Layers that open the Layer Style dialog on double-click. */
@@ -145,6 +147,7 @@ function LayerRow({
 }: RowProps) {
   const controller = useController();
   const editTarget = useEditorState((s) => s.editTarget);
+  const t = useT();
   const [editing, setEditing] = useState(false);
   const maskTargeted = active && editTarget === "mask" && !!layer.mask;
 
@@ -204,9 +207,13 @@ function LayerRow({
       <button
         type="button"
         className={styles.iconButton}
-        aria-label={layer.visible ? `Hide ${layer.name}` : `Show ${layer.name}`}
+        aria-label={
+          layer.visible
+            ? t("Hide {name}", { name: layer.name })
+            : t("Show {name}", { name: layer.name })
+        }
         aria-pressed={!layer.visible}
-        title={layer.visible ? "Hide layer" : "Show layer"}
+        title={layer.visible ? t("Hide layer") : t("Show layer")}
         onClick={(e) => {
           e.stopPropagation();
           controller.execute(setLayerVisibility(layer.id, !layer.visible));
@@ -215,7 +222,7 @@ function LayerRow({
         {layer.visible ? <EyeIcon /> : <EyeOffIcon />}
       </button>
       {layer.clipped && (
-        <span className={styles.clipMarker} title="Clipped to the layer below" aria-hidden>
+        <span className={styles.clipMarker} title={t("Clipped to the layer below")} aria-hidden>
           ↳
         </span>
       )}
@@ -223,7 +230,11 @@ function LayerRow({
         <button
           type="button"
           className={styles.iconButton}
-          aria-label={layer.expanded ? `Collapse ${layer.name}` : `Expand ${layer.name}`}
+          aria-label={
+            layer.expanded
+              ? t("Collapse {name}", { name: layer.name })
+              : t("Expand {name}", { name: layer.name })
+          }
           aria-expanded={layer.expanded}
           onClick={(e) => {
             e.stopPropagation();
@@ -236,10 +247,10 @@ function LayerRow({
       <button
         type="button"
         className={styles.thumbButton}
-        aria-label={`Edit ${layer.name} content`}
+        aria-label={t("Edit {name} content", { name: layer.name })}
         aria-pressed={active && !maskTargeted}
         title={
-          layer.kind === "smart" ? "Smart object · double-click to edit its contents" : undefined
+          layer.kind === "smart" ? t("Smart object · double-click to edit its contents") : undefined
         }
         onDoubleClick={(e) => {
           if (layer.kind !== "smart") return;
@@ -260,9 +271,13 @@ function LayerRow({
           className={`${styles.thumbButton} ${styles.maskThumb} ${maskTargeted ? styles.thumbTargeted : ""} ${
             layer.mask.enabled ? "" : styles.maskDisabled
           }`}
-          aria-label={`Edit ${layer.name} mask${layer.mask.enabled ? "" : " (disabled)"}`}
+          aria-label={
+            layer.mask.enabled
+              ? t("Edit {name} mask", { name: layer.name })
+              : t("Edit {name} mask (disabled)", { name: layer.name })
+          }
           aria-pressed={maskTargeted}
-          title="Click to paint on the mask · Shift-click to enable/disable it"
+          title={t("Click to paint on the mask · Shift-click to enable/disable it")}
           data-testid="mask-thumb"
           onClick={(e) => {
             e.stopPropagation();
@@ -283,8 +298,12 @@ function LayerRow({
           className={`${styles.thumbButton} ${styles.maskThumb} ${
             layer.vectorMask.enabled ? "" : styles.maskDisabled
           }`}
-          aria-label={`Edit ${layer.name} vector mask${layer.vectorMask.enabled ? "" : " (disabled)"}`}
-          title="Click to edit the vector mask path · Shift-click to enable/disable it"
+          aria-label={
+            layer.vectorMask.enabled
+              ? t("Edit {name} vector mask", { name: layer.name })
+              : t("Edit {name} vector mask (disabled)", { name: layer.name })
+          }
+          title={t("Click to edit the vector mask path · Shift-click to enable/disable it")}
           data-testid="vector-mask-thumb"
           onClick={(e) => {
             e.stopPropagation();
@@ -294,7 +313,9 @@ function LayerRow({
                   layer.id,
                   { ...layer.vectorMask!, enabled: !layer.vectorMask!.enabled },
                   {
-                    label: layer.vectorMask!.enabled ? "Disable Vector Mask" : "Enable Vector Mask",
+                    label: layer.vectorMask!.enabled
+                      ? N_("Disable Vector Mask")
+                      : N_("Enable Vector Mask"),
                   },
                 ),
               );
@@ -311,7 +332,7 @@ function LayerRow({
         <input
           className={`${styles.input} ${styles.layerRename}`}
           defaultValue={layer.name}
-          aria-label="Layer name"
+          aria-label={t("Layer name")}
           maxLength={255}
           autoFocus
           onFocus={(e) => e.currentTarget.select()}
@@ -330,7 +351,7 @@ function LayerRow({
           aria-label={layer.name}
           aria-describedby="layer-rename-hint"
           aria-current={active ? "true" : undefined}
-          title="Double-click the name to rename"
+          title={t("Double-click the name to rename")}
           onDoubleClick={(e) => {
             // The name renames; the rest of the row opens the Layer Style dialog.
             e.stopPropagation();
@@ -360,20 +381,28 @@ function LayerRow({
           }}
         >
           <span className={clipBase ? styles.clipBase : undefined}>{layer.name}</span>
-          {layer.clipped && <span className={styles.srOnly}> (clipped)</span>}
+          {layer.clipped && <span className={styles.srOnly}> {t("(clipped)")}</span>}
         </span>
       )}
       {hasActiveEffects(layer.effects) && (
-        <span className={styles.fxBadge} title="Layer effects" aria-label="Has layer effects">
+        <span
+          className={styles.fxBadge}
+          title={t("Layer effects")}
+          aria-label={t("Has layer effects")}
+        >
           fx
         </span>
       )}
       <button
         type="button"
         className={styles.iconButton}
-        aria-label={layer.locked ? `Unlock ${layer.name}` : `Lock ${layer.name}`}
+        aria-label={
+          layer.locked
+            ? t("Unlock {name}", { name: layer.name })
+            : t("Lock {name}", { name: layer.name })
+        }
         aria-pressed={layer.locked}
-        title={layer.locked ? "Unlock layer" : "Lock layer"}
+        title={layer.locked ? t("Unlock layer") : t("Lock layer")}
         onClick={(e) => {
           e.stopPropagation();
           controller.execute(setLayerLocked(layer.id, !layer.locked));
@@ -404,6 +433,7 @@ export function LayersPanel({ actions }: { actions: Record<UiActionId, UiAction>
   const [menu, setMenu] = useState<{ x: number; y: number } | null>(null);
   const [dropOn, setDropOn] = useState<"delete" | "duplicate" | null>(null);
   const closeMenu = useCallback(() => setMenu(null), []);
+  const t = useT();
 
   /** Make a dragged layer part of the selection, keeping a multi-selection it already belongs to. */
   const selectDragged = (id: string) => {
@@ -441,13 +471,13 @@ export function LayersPanel({ actions }: { actions: Record<UiActionId, UiAction>
     <button
       type="button"
       className={`${styles.iconButton} ${dropKind && dropOn === dropKind ? styles.dropTarget : ""}`}
-      aria-label={actions[id].label}
+      aria-label={t(actions[id].label)}
       title={
         dropKind === "delete"
-          ? `${actions[id].label} (or drop layers here)`
+          ? t("{label} (or drop layers here)", { label: t(actions[id].label) })
           : dropKind === "duplicate"
-            ? `${actions[id].label} (drop layers here to duplicate them)`
-            : actions[id].label
+            ? t("{label} (drop layers here to duplicate them)", { label: t(actions[id].label) })
+            : t(actions[id].label)
       }
       disabled={!actions[id].enabled && !dropKind}
       onClick={actions[id].enabled ? actions[id].run : undefined}
@@ -472,7 +502,7 @@ export function LayersPanel({ actions }: { actions: Record<UiActionId, UiAction>
 
   const item = (id: UiActionId, label = actions[id].label): ContextMenuEntry => ({
     kind: "item",
-    label,
+    label: t(label),
     enabled: actions[id].enabled,
     run: actions[id].run,
   });
@@ -485,13 +515,13 @@ export function LayersPanel({ actions }: { actions: Record<UiActionId, UiAction>
     { kind: "separator" },
     {
       kind: "item",
-      label: "Duplicate Layer",
+      label: t("Duplicate Layer"),
       enabled: !!active,
       run: () => controller.duplicateActiveLayer(),
     },
     {
       kind: "item",
-      label: "Delete",
+      label: t("Delete"),
       enabled: !!active,
       run: () => controller.deleteSelectedLayers(),
     },
@@ -509,18 +539,18 @@ export function LayersPanel({ actions }: { actions: Record<UiActionId, UiAction>
     { kind: "separator" },
     {
       kind: "submenu",
-      label: "Color",
+      label: t("Color"),
       items: [
         {
           kind: "item",
-          label: "No Color",
+          label: t("No Color"),
           enabled: true,
           checked: !active?.label,
           run: () => controller.setSelectedLayersLabel(null),
         },
         ...LAYER_LABELS.map((label): ContextMenuEntry => ({
           kind: "item",
-          label: LABEL_NAMES[label],
+          label: t(LABEL_NAMES[label]),
           enabled: true,
           checked: active?.label === label,
           icon: (
@@ -561,26 +591,25 @@ export function LayersPanel({ actions }: { actions: Record<UiActionId, UiAction>
       data-panel="layers"
     >
       <h2 id="layers-heading" className={styles.panelHeader}>
-        Layers
+        {t("Layers")}
       </h2>
       {doc && rows.length === 0 && (
-        <p className={`${styles.panelBody} ${styles.muted}`}>No layers. Add one below.</p>
+        <p className={`${styles.panelBody} ${styles.muted}`}>{t("No layers. Add one below.")}</p>
       )}
-      {!doc && <p className={`${styles.panelBody} ${styles.muted}`}>No document open.</p>}
+      {!doc && <p className={`${styles.panelBody} ${styles.muted}`}>{t("No document open.")}</p>}
       <p id="layer-rename-hint" className={styles.srOnly}>
-        Double-click the name or press F2 to rename; double-click elsewhere on the row for layer
-        styles. Drag to reorder, into a group, onto the trash to delete or onto New layer to
-        duplicate. Right-click for more. Cmd or Ctrl-click adds a layer to the selection;
-        Shift-click selects a range.
+        {t(
+          "Double-click the name or press F2 to rename; double-click elsewhere on the row for layer styles. Drag to reorder, into a group, onto the trash to delete or onto New layer to duplicate. Right-click for more. Cmd or Ctrl-click adds a layer to the selection; Shift-click selects a range.",
+        )}
       </p>
       {selected.size > 1 && (
         <p className={styles.srOnly} role="status">
-          {selected.size} layers selected
+          {t("{count} layers selected", { count: selected.size })}
         </p>
       )}
       <ul
         className={styles.layerList}
-        aria-label="Layers"
+        aria-label={t("Layers")}
         onDragEnd={() => {
           setDrop(null);
           setDropOn(null);
@@ -616,7 +645,13 @@ export function LayersPanel({ actions }: { actions: Record<UiActionId, UiAction>
         {toolbarButton("layer.delete", <TrashIcon />, "delete")}
       </div>
       {menu && doc && (
-        <ContextMenu x={menu.x} y={menu.y} label="Layer" items={menuItems} onClose={closeMenu} />
+        <ContextMenu
+          x={menu.x}
+          y={menu.y}
+          label={t("Layer")}
+          items={menuItems}
+          onClose={closeMenu}
+        />
       )}
     </section>
   );

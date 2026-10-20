@@ -11,6 +11,7 @@ import {
 import { OPEN_ACCEPT } from "@/editor/formats/open-file";
 import { useController, useObservable } from "./editor-context";
 import styles from "./editor.module.css";
+import { useMessage, useT } from "./i18n";
 import { saveFile } from "./save-file";
 import { useModal } from "./SelectionDialogs";
 
@@ -24,6 +25,8 @@ const FORMATS = (Object.keys(EXPORT_FORMATS) as (keyof typeof EXPORT_FORMATS)[])
  */
 export function BatchDialog({ onClose }: { onClose: () => void }) {
   const controller = useController();
+  const t = useT();
+  const message = useMessage();
   const actions = useObservable(controller.actions);
   const ref = useModal(true);
   const [actionId, setActionId] = useState(actions[0]?.id ?? "");
@@ -43,11 +46,11 @@ export function BatchDialog({ onClose }: { onClose: () => void }) {
   const submit = async (event: FormEvent) => {
     event.preventDefault();
     if (!action) {
-      setError("Choose an action. Record one in the Actions panel first.");
+      setError(t("Choose an action. Record one in the Actions panel first."));
       return;
     }
     if (files.length === 0) {
-      setError("Choose the files to process.");
+      setError(t("Choose the files to process."));
       return;
     }
     setError(null);
@@ -64,19 +67,27 @@ export function BatchDialog({ onClose }: { onClose: () => void }) {
     abortRef.current = null;
     setProgress(null);
     if (!result.ok) {
-      setError(result.error);
+      setError(message(result.error, result.template));
       return;
     }
     const filename = safeFilename(`${action.name} batch`, "zip");
-    const saved = await saveFile(result.blob, filename, "application/zip", "ZIP archive");
+    const saved = await saveFile(result.blob, filename, "application/zip", t("ZIP archive"));
     if (saved === "failed") {
-      setError("The ZIP file could not be saved.");
+      setError(t("The ZIP file could not be saved."));
       return;
     }
     if (saved === "saved") {
       controller.notify(
         "info",
-        `Processed ${result.processed} file(s)${result.cancelled ? " (stopped early)" : ""} into ${filename}.`,
+        result.cancelled
+          ? t("Processed {count} file(s) (stopped early) into {name}.", {
+              count: result.processed,
+              name: filename,
+            })
+          : t("Processed {count} file(s) into {name}.", {
+              count: result.processed,
+              name: filename,
+            }),
       );
     }
     onClose();
@@ -93,11 +104,11 @@ export function BatchDialog({ onClose }: { onClose: () => void }) {
     >
       <form className={styles.dialogForm} onSubmit={submit} noValidate>
         <h2 id="batch-title" className={styles.dialogTitle}>
-          Batch
+          {t("Batch")}
         </h2>
         <div className={styles.field}>
           <label className={styles.fieldLabel} htmlFor="batch-action">
-            Action
+            {t("Action")}
           </label>
           <select
             id="batch-action"
@@ -106,17 +117,17 @@ export function BatchDialog({ onClose }: { onClose: () => void }) {
             disabled={running || actions.length === 0}
             onChange={(e) => setActionId(e.target.value)}
           >
-            {actions.length === 0 && <option value="">No actions recorded yet</option>}
+            {actions.length === 0 && <option value="">{t("No actions recorded yet")}</option>}
             {actions.map((a) => (
               <option key={a.id} value={a.id}>
-                {a.name} ({a.steps.length} steps)
+                {t("{name} ({count} steps)", { name: a.name, count: a.steps.length })}
               </option>
             ))}
           </select>
         </div>
         <div className={styles.field}>
           <label className={styles.fieldLabel} htmlFor="batch-files">
-            Files (up to {MAX_BATCH_FILES})
+            {t("Files (up to {max})", { max: MAX_BATCH_FILES })}
           </label>
           <input
             id="batch-files"
@@ -128,13 +139,13 @@ export function BatchDialog({ onClose }: { onClose: () => void }) {
           />
           {files.length > 0 && (
             <p className={styles.muted} style={{ margin: "4px 0 0" }}>
-              {files.length} file(s) selected
+              {t("{count} file(s) selected", { count: files.length })}
             </p>
           )}
         </div>
         <fieldset style={{ border: 0, margin: 0, padding: 0 }}>
           <legend className={styles.fieldLabel} style={{ marginBottom: 6 }}>
-            Save as
+            {t("Save as")}
           </legend>
           <div className={styles.radioRow}>
             {FORMATS.map((f) => (
@@ -155,7 +166,7 @@ export function BatchDialog({ onClose }: { onClose: () => void }) {
         {EXPORT_FORMATS[format].lossy && (
           <div className={styles.field} style={{ marginTop: 12 }}>
             <label className={styles.fieldLabel} htmlFor="batch-quality">
-              Quality
+              {t("Quality")}
             </label>
             <div className={styles.rangeRow}>
               <input
@@ -172,19 +183,23 @@ export function BatchDialog({ onClose }: { onClose: () => void }) {
           </div>
         )}
         <p className={styles.muted} style={{ margin: "12px 0 0" }}>
-          Each file is opened, the action is played and the result is added to one ZIP file. Your
-          files stay on this device and are not saved to the browser.
+          {t(
+            "Each file is opened, the action is played and the result is added to one ZIP file. Your files stay on this device and are not saved to the browser.",
+          )}
         </p>
         {progress && (
           <div className={styles.field} style={{ marginTop: 12 }}>
             <progress
               max={progress.total}
               value={progress.done}
-              aria-label="Batch progress"
+              aria-label={t("Batch progress")}
               style={{ width: "100%" }}
             />
             <p role="status" className={styles.muted} style={{ margin: "4px 0 0" }}>
-              Processing {Math.min(progress.done + 1, progress.total)} of {progress.total}…
+              {t("Processing {current} of {total}…", {
+                current: Math.min(progress.done + 1, progress.total),
+                total: progress.total,
+              })}
             </p>
           </div>
         )}
@@ -199,10 +214,10 @@ export function BatchDialog({ onClose }: { onClose: () => void }) {
             className={styles.button}
             onClick={() => (running ? abortRef.current?.abort() : onClose())}
           >
-            {running ? "Stop" : "Cancel"}
+            {running ? t("Stop") : t("Cancel")}
           </button>
           <button type="submit" className={`${styles.button} ${styles.primary}`} disabled={running}>
-            {running ? "Processing…" : "Run"}
+            {running ? t("Processing…") : t("Run")}
           </button>
         </div>
       </form>

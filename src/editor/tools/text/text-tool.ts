@@ -1,3 +1,4 @@
+import { msg } from "../../core/message";
 import { activeLayer } from "../../core/document/queries";
 import { flattenTopFirst } from "../../core/document/tree";
 import { hitTestLayer } from "../../core/geometry/layer-geometry";
@@ -25,7 +26,10 @@ export class TextTool implements Tool {
       if (!effectivelyVisible) continue;
       if (layer.kind === "text" && hitTestLayer(layer, pointer.doc, doc, ctx.sizer, tolerance)) {
         if (layer.locked) {
-          ctx.notify("error", `"${layer.name}" is locked. Unlock it to edit the text.`);
+          ctx.notify(
+            "error",
+            msg('"{layer}" is locked. Unlock it to edit the text.', { layer: layer.name }),
+          );
           return;
         }
         ctx.store.selectLayer(layer.id);

@@ -1,4 +1,6 @@
+import { messageText, msg } from "../core/message";
 import type { BitmapDecoder } from "../assets/asset-store";
+import type { Msg } from "../core/message";
 import { checkDimensions, MAX_IMPORT_FILE_BYTES } from "../core/document/limits";
 import type { SurfaceFactory } from "../rendering/canvas/canvas2d-renderer";
 import { FormatError } from "./binary/bytes";
@@ -69,7 +71,7 @@ export interface ConvertOptions {
 }
 
 export type ConvertResult =
-  { ok: true; blob: Blob; filename: string } | { ok: false; error: string };
+  { ok: true; blob: Blob; filename: string } | { ok: false; error: string; template?: Msg };
 
 type Surface = HTMLCanvasElement | OffscreenCanvas;
 
@@ -88,7 +90,7 @@ function release(surface: Surface | null): void {
 
 function checked(width: number, height: number): void {
   const check = checkDimensions(width, height);
-  if (!check.ok) throw new FormatError(check.reason);
+  if (!check.ok) throw new FormatError(check.template ?? check.reason);
 }
 
 interface Source {
@@ -108,7 +110,7 @@ async function decodeSource(env: ConvertEnv, file: Blob, bytes: Uint8Array): Pro
   switch (kind.kind) {
     case "raster": {
       const result = await importRasterFile(file, env.decode);
-      if (!result.ok) throw new FormatError(result.error);
+      if (!result.ok) throw new FormatError(result.template ?? result.error);
       const { bitmap, width, height } = result.image;
       return { image: bitmap, width, height, dispose: () => bitmap.close?.() };
     }
@@ -177,13 +179,15 @@ export async function convertFile(
     const blob = await encodeSurface(surface, format.mime, quality);
     // Browsers silently fall back to PNG for types they cannot encode.
     if (blob.type !== format.mime) {
-      return { ok: false, error: `This browser cannot create ${format.label} images.` };
+      const error = msg("This browser cannot create {format} images.", { format: format.label });
+      return { ok: false, error: messageText(error), template: error };
     }
     return { ok: true, blob, filename: exportFilename(baseName(filename), options.to) };
   } catch (error) {
     return {
       ok: false,
       error: error instanceof FormatError ? error.message : "The file could not be converted.",
+      ...(error instanceof FormatError && error.template && { template: error.template }),
     };
   } finally {
     source?.dispose();

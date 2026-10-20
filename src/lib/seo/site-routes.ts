@@ -1,3 +1,5 @@
+import { splitLocale } from "../../i18n/locales";
+
 /**
  * Website route prefixes (src/app/(site)). They get the site Content-Security-Policy, which also
  * allows Google's ad origins when AdSense is configured; every other path — above all the editor
@@ -37,6 +39,8 @@ export const SITE_ROUTES: readonly string[] = [
   "/sponsorship",
 ];
 
-export function isSiteRoute(path: string): boolean {
+/** True for a public URL in any language: `/png-editor`, `/de/png-editor`; never the editor. */
+export function isSiteRoute(pathname: string): boolean {
+  const { path } = splitLocale(pathname);
   return SITE_ROUTES.some((route) => path === route || path.startsWith(`${route}/`));
 }

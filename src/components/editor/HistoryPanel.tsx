@@ -3,6 +3,7 @@
 import { useEffect, useRef, type KeyboardEvent } from "react";
 import { useActiveSession, useController } from "./editor-context";
 import styles from "./editor.module.css";
+import { useT } from "./i18n";
 
 /**
  * History panel: every undo step of the active document. Choosing a step undoes or redoes to it;
@@ -12,6 +13,7 @@ export function HistoryPanel() {
   const controller = useController();
   const session = useActiveSession();
   const listRef = useRef<HTMLUListElement>(null);
+  const t = useT();
   const history = session?.history;
   const current = history?.past.length ?? 0;
 
@@ -23,13 +25,13 @@ export function HistoryPanel() {
   }, [current, history]);
 
   if (!session || !history) {
-    return <p className={styles.muted}>Open a document to see its history.</p>;
+    return <p className={styles.muted}>{t("Open a document to see its history.")}</p>;
   }
 
   const rows = [
-    { label: `Opened ${session.document.name}`, key: "open" },
+    { label: t("Opened {name}", { name: session.document.name }), key: "open" },
     ...[...history.past, ...history.future].map((entry, i) => ({
-      label: entry.label,
+      label: t(entry.label),
       key: `${i}-${entry.timestamp}`,
     })),
   ];
@@ -56,7 +58,7 @@ export function HistoryPanel() {
       ref={listRef}
       className={styles.historyList}
       role="listbox"
-      aria-label="History"
+      aria-label={t("History")}
       tabIndex={0}
       aria-activedescendant={`history-row-${current}`}
       onKeyDown={onKeyDown}

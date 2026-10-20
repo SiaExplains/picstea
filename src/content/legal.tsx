@@ -174,6 +174,17 @@ export const LEGAL: Record<"privacy" | "cookies" | "terms" | "imprint" | "sponso
               </tr>
               <tr>
                 <td>
+                  <code>picstea.lang</code>
+                </td>
+                <td>Local storage</td>
+                <td>
+                  Remembers the language you chose (only when you pick one), so the editor opens in
+                  it.
+                </td>
+                <td>Until changed or cleared</td>
+              </tr>
+              <tr>
+                <td>
                   <code>picstea.view</code>
                 </td>
                 <td>Local storage</td>

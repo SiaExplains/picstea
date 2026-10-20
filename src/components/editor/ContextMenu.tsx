@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from "react";
 import styles from "./editor.module.css";
+import { useT } from "./i18n";
 
 export type ContextMenuEntry =
   | {
@@ -63,6 +64,7 @@ function MenuList({
   onClose: () => void;
   onBack?: () => void;
 }) {
+  const t = useT();
   const ref = useRef<HTMLDivElement>(null);
   const [position, setPosition] = useState({ left: x, top: y });
   const [openSub, setOpenSub] = useState<{ index: number; focus: boolean } | null>(null);
@@ -130,7 +132,7 @@ function MenuList({
     <div
       ref={ref}
       role="menu"
-      aria-label={label}
+      aria-label={t(label)}
       className={styles.contextMenu}
       style={{ left: position.left, top: position.top }}
       onKeyDown={onKeyDown}
@@ -175,7 +177,7 @@ function MenuList({
                 </span>
               )}
               {entry.icon}
-              {entry.label}
+              {t(entry.label)}
             </span>
             {entry.shortcut && <span className={styles.shortcut}>{entry.shortcut}</span>}
           </button>
@@ -200,6 +202,7 @@ function SubmenuTrigger({
   onCloseSub: () => void;
   onCloseAll: () => void;
 }) {
+  const t = useT();
   const ref = useRef<HTMLButtonElement>(null);
   // Measured when the submenu opens (in the event), so it can sit beside its trigger.
   const [rect, setRect] = useState<DOMRect | null>(null);
@@ -226,7 +229,7 @@ function SubmenuTrigger({
           }
         }}
       >
-        <span>{entry.label}</span>
+        <span>{t(entry.label)}</span>
         <span className={styles.shortcut} aria-hidden>
           ▸
         </span>
