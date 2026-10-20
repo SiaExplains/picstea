@@ -54,7 +54,7 @@ const LANDING_PAGES: readonly [path: string, title: string, summary: string][] =
   [
     "/convert",
     "Free image converter that never uploads your files",
-    "Converts PNG, JPEG, WebP, GIF, SVG and PSD files to PNG, JPG or WebP in the browser; one page per conversion under /convert/ (e.g. /convert/webp-to-png).",
+    "Converts PNG, JPEG, WebP, GIF, SVG, HEIC and PSD files to PNG, JPG or WebP in the browser; one page per conversion under /convert/ (e.g. /convert/webp-to-png).",
   ],
   [
     "/photoshop-alternative",
@@ -87,8 +87,8 @@ const FACTS = [
   "Vector tools: pen with add/delete/convert anchor point, path and direct selection, rectangle, rounded rectangle, ellipse, polygon and line shapes, editable text.",
   "Smart objects with non-destructive smart filters; Photoshop's full Filter menu with live preview: blurs and Blur Gallery, Distort, Noise, Pixelate, Render, Sharpen, Stylize, Other and Fourier, plus Filter Gallery, Lens Correction, Camera Raw, Liquify and Vanishing Point.",
   "Actions (record and replay edits), batch processing of many files into a ZIP, history panel, swatches, colour sampler and ruler, rulers, guides, grid and snapping.",
-  "Opens PNG, JPEG, WebP, GIF, SVG, PSD (8-bit RGB and greyscale) and .picstea projects; exports PNG, JPEG, WebP, SVG, PDF and layered PSD.",
-  "File → Convert… (also linked as /?convert=<pair> from the converter pages) converts up to 200 files to PNG, JPEG or WebP without opening them; several files are saved as one ZIP. PSDs use the flattened image stored in the file.",
+  "Opens PNG, JPEG, WebP, GIF, SVG, HEIC/HEIF (iPhone photos, decoded on the device with libheif), PSD (8-bit RGB and greyscale) and .picstea projects; exports PNG, JPEG, WebP, SVG, PDF and layered PSD.",
+  "File → Convert… (also linked as /?convert=<pair> from the converter pages, including /convert/heic-to-jpg) converts up to 200 files to PNG, JPEG or WebP without opening them; several files are saved as one ZIP. PSDs use the flattened image stored in the file.",
   "PSD import keeps layers, groups, masks, blend modes, editable text, adjustment layers, shapes, smart objects, clipping and vector masks and common layer styles.",
 ];
 

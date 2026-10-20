@@ -2,6 +2,7 @@ import type { EditorDocument, Layer } from "../core/document/types";
 import { FormatError } from "../formats/binary/bytes";
 import { exportAs, type ExportRequest } from "../formats/export/document-export";
 import { ExportError } from "../formats/export/raster-export";
+import { decodeHeic, type DecodedHeic } from "../formats/heic/heic";
 import { renderRgba } from "../formats/layer-render";
 import { bitmapPixels, resolveDraft, type PsdDraft } from "../formats/psd/psd-draft";
 import type { PsdFile } from "../formats/psd/psd-model";
@@ -39,6 +40,8 @@ export interface JobTypes {
   };
   psdWrite: { input: PsdFile; output: Uint8Array };
   psdRead: { input: Uint8Array; output: PsdReadResult };
+  /** HEIC/HEIF photo → RGBA through the vendored libheif (ADR-0038). */
+  heicDecode: { input: Uint8Array; output: DecodedHeic };
   flood: {
     input: { pixels: RgbaPixels; x: number; y: number; tolerance: number; contiguous: boolean };
     output: SelectionMask;
@@ -156,6 +159,7 @@ export const JOBS: {
     floodRegion(bitmapPixels(bitmap), x, y, tolerance, contiguous),
   psdWrite: (file) => writePsd(file),
   psdRead: (bytes) => readPsd(bytes),
+  heicDecode: (bytes) => decodeHeic(bytes),
   flood: ({ pixels, x, y, tolerance, contiguous }) =>
     floodRegion(pixels, x, y, tolerance, contiguous),
   colorRange: ({ pixels, color, fuzziness }) => colorRange(pixels, color, fuzziness),
@@ -220,6 +224,8 @@ export function outputTransfer(name: JobName, output: unknown): Transferable[] {
       return [(output as RgbaPixels).data.buffer];
     case "histogram":
       return [(output as Uint32Array).buffer];
+    case "heicDecode":
+      return [(output as DecodedHeic).rgba.buffer];
     case "psdRead": {
       const result = output as PsdReadResult;
       // A Set: an ArrayBuffer may only be listed once.

@@ -71,6 +71,23 @@ export default function AboutPage() {
         <small>Version {pkg.version}</small>
       </p>
 
+      <h2>Open-source software</h2>
+      <p>
+        To open HEIC photos, Picstea uses{" "}
+        <a href="https://github.com/strukturag/libheif" rel="noopener">
+          libheif
+        </a>{" "}
+        (GNU LGPL 3.0), compiled to WebAssembly by{" "}
+        <a href="https://github.com/catdad-experiments/libheif-js" rel="noopener">
+          libheif-js
+        </a>{" "}
+        1.23.5. It is served unmodified as its own file, loaded only when you open a HEIC photo, and
+        runs on your device. Licences:{" "}
+        <a href="/vendor/libheif/1.23.5/LICENSE-libheif.txt">libheif</a>,{" "}
+        <a href="/vendor/libheif/1.23.5/LICENSE-libheif-js.txt">libheif-js</a>. You can replace that
+        file with your own build of the library.
+      </p>
+
       <h2>Contact</h2>
       <p>
         Who runs Picstea and how to reach them is in the <Link href="/imprint">imprint</Link>. For

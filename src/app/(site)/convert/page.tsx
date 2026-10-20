@@ -8,7 +8,7 @@ import { CONVERTERS, conversionLabel } from "@/content/converters";
 const PATH = "/convert";
 const TITLE = "Free image converter that never uploads your files";
 const DESCRIPTION =
-  "Convert WebP, PNG, JPG, SVG and PSD images to PNG, JPG or WebP in your browser. Free, no sign-up, batch-friendly, and your files never leave your device.";
+  "Convert HEIC, WebP, PNG, JPG, SVG and PSD images to PNG, JPG or WebP in your browser. Free, no sign-up, batch-friendly; files never leave your device.";
 
 export const metadata: Metadata = {
   title: TITLE,
@@ -20,7 +20,7 @@ export const metadata: Metadata = {
 const FAQS: Faq[] = [
   {
     q: "Which formats can I convert?",
-    a: "Picstea reads PNG, JPEG, WebP, GIF (first frame), SVG and PSD files and converts them to PNG, JPG or WebP.",
+    a: "Picstea reads PNG, JPEG, WebP, GIF (first frame), SVG, HEIC (iPhone photos) and PSD files and converts them to PNG, JPG or WebP.",
   },
   {
     q: "Are my files uploaded?",
@@ -41,7 +41,7 @@ export default function ConvertHub() {
     <LandingPage
       path={PATH}
       title={TITLE}
-      lead="Picstea converts images between PNG, JPG and WebP — and turns SVG and Photoshop PSD files into PNG — right in your browser. Pick a converter below, or open the converter directly; your files never leave your device."
+      lead="Picstea converts images between PNG, JPG and WebP — and turns iPhone HEIC photos, SVG and Photoshop PSD files into JPG or PNG — right in your browser. Pick a converter below, or open the converter directly; your files never leave your device."
       faqs={FAQS}
       cta={{ href: "/?convert=images", label: "Open the converter — free" }}
     >

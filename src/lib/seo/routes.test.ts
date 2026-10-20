@@ -58,6 +58,17 @@ describe("converter pages", () => {
   });
 });
 
+describe("site routes for the Content-Security-Policy", () => {
+  it("cover every public page except the editor", async () => {
+    const { isSiteRoute } = await import("./site-routes");
+    const missing = publicRoutes()
+      .map((r) => r.path)
+      .filter((path) => path !== "/" && !isSiteRoute(path));
+    expect(missing).toEqual([]);
+    expect(isSiteRoute("/")).toBe(false);
+  });
+});
+
 describe("slug lists for the proxy", () => {
   it("match the docs and blog content exactly", async () => {
     const { DOCS } = await import("@/content/docs");

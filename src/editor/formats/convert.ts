@@ -34,6 +34,7 @@ export const CONVERSIONS: readonly Conversion[] = [
   { id: "png-to-webp", label: "PNG to WebP", to: "webp" },
   { id: "svg-to-png", label: "SVG to PNG", to: "png" },
   { id: "psd-to-png", label: "PSD to PNG", to: "png" },
+  { id: "heic-to-jpg", label: "HEIC to JPG", to: "jpeg" },
 ];
 
 /** `?convert=images`: the converter without a preset pair (the site's converter hub). */
@@ -51,6 +52,10 @@ export interface ConvertEnv {
   readonly createSurface: SurfaceFactory;
   /** Renders SVG through the browser's image decoder (never the DOM); absent outside browsers. */
   readonly rasterizeSvg?: (svg: Blob, width: number, height: number) => Promise<CanvasImageSource>;
+  /** HEIC/HEIF photos through libheif (ADR-0038); absent where it can't be loaded. */
+  readonly decodeHeic?: (
+    bytes: Uint8Array,
+  ) => Promise<{ width: number; height: number; rgba: Uint8ClampedArray }>;
   /** The flattened image stored in a PSD (null when it was saved without one). */
   readonly readPsdComposite: (
     bytes: Uint8Array,
@@ -93,6 +98,11 @@ interface Source {
   readonly dispose: () => void;
 }
 
+function heic(env: ConvertEnv, bytes: Uint8Array) {
+  if (!env.decodeHeic) throw new FormatError("HEIC files cannot be converted here.");
+  return env.decodeHeic(bytes);
+}
+
 async function decodeSource(env: ConvertEnv, file: Blob, bytes: Uint8Array): Promise<Source> {
   const kind = detectFileKind(bytes);
   switch (kind.kind) {
@@ -114,8 +124,10 @@ async function decodeSource(env: ConvertEnv, file: Blob, bytes: Uint8Array): Pro
       );
       return { image, ...size, dispose: () => {} };
     }
+    case "heic":
     case "psd": {
-      const { width, height, rgba } = await env.readPsdComposite(bytes);
+      const { width, height, rgba } =
+        kind.kind === "heic" ? await heic(env, bytes) : await env.readPsdComposite(bytes);
       if (!rgba) {
         throw new FormatError(
           "This PSD has no flattened image. Open it in the editor and export it instead.",

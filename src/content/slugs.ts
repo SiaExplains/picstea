@@ -27,6 +27,7 @@ export const CONVERTER_SLUGS: readonly string[] = [
   "png-to-webp",
   "svg-to-png",
   "psd-to-png",
+  "heic-to-jpg",
 ];
 
 /** Blog posts and whether they are published (drafts are 404 in production). */

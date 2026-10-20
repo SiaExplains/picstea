@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 import { ADSENSE_CLIENT, ADSENSE_CSP } from "./src/lib/ads/adsense";
+import { SITE_ROUTES } from "./src/lib/seo/site-routes";
 
 /*
  * Content-Security-Policy (ADR-0006, ADR-0013).
@@ -9,6 +10,9 @@ import { ADSENSE_CLIENT, ADSENSE_CSP } from "./src/lib/ads/adsense";
  * browser itself stops any attempt to send document data elsewhere. Website pages (docs, blog,
  * guides, legal) additionally allow Google's ad origins — only when an AdSense publisher ID is
  * configured, and the ad code itself only loads after consent (src/lib/consent).
+ *
+ * `'wasm-unsafe-eval'` lets the page compile WebAssembly (the HEIC decoder, ADR-0038). It does not
+ * allow `eval()` of JavaScript, and `connect-src 'self'` still keeps all data on the device.
  */
 const dev = process.env.NODE_ENV === "development";
 
@@ -30,7 +34,10 @@ function policy(
     "frame-ancestors 'none'",
     list("img-src 'self' blob: data:", extra.img),
     "worker-src 'self' blob:",
-    list("script-src 'self' 'unsafe-inline'" + (dev ? " 'unsafe-eval'" : ""), extra.script),
+    list(
+      "script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'" + (dev ? " 'unsafe-eval'" : ""),
+      extra.script,
+    ),
     "style-src 'self' 'unsafe-inline'",
     "font-src 'self'",
     ...(extra.frame ? [list("frame-src", extra.frame)] : []),
@@ -39,22 +46,6 @@ function policy(
 
 const editorPolicy = policy();
 const sitePolicy = ADSENSE_CLIENT ? policy(ADSENSE_CSP) : editorPolicy;
-
-/** Website routes (src/app/(site)); everything else, including the editor at /, stays strict. */
-const SITE_ROUTES = [
-  "/docs",
-  "/blog",
-  "/online-photo-editor",
-  "/psd-editor",
-  "/photoshop-alternative",
-  "/photopea-alternative",
-  "/faq",
-  "/privacy",
-  "/cookies",
-  "/terms",
-  "/imprint",
-  "/sponsorship",
-];
 
 const nextConfig: NextConfig = {
   cacheComponents: true,

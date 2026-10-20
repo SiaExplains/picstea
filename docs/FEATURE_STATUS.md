@@ -1,6 +1,6 @@
 # Feature status
 
-Last updated: 2026-10-20 · version 0.37.0 · live at https://www.picstea.com · see `CHANGELOG.md` for each release and `docs/adr/` (ADR-0001 to ADR-0037) for decisions
+Last updated: 2026-10-20 · version 0.38.0 · live at https://www.picstea.com · see `CHANGELOG.md` for each release and `docs/adr/` (ADR-0001 to ADR-0038) for decisions
 
 Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ deferred
 
@@ -34,7 +34,8 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 | Keyboard shortcuts | ✅ | `src/editor/core/shortcuts` |
 | Mobile/tablet layout | 🚧 | Panels stack under the canvas. A dedicated touch UI is planned |
 | Deep links to a document (e.g. `/?doc=…`) | 📋 | `/?convert=<pair>` opens File → Convert… (ADR-0037) |
-| File → Convert… (PNG/JPEG/WebP/GIF/SVG/PSD → PNG/JPEG/WebP, batch to ZIP, nothing stored) and `/convert/*` pages | ✅ | ADR-0037; HEIC 📋 (ADR-0038) |
+| File → Convert… (PNG/JPEG/WebP/GIF/SVG/PSD → PNG/JPEG/WebP, batch to ZIP, nothing stored) and `/convert/*` pages | ✅ | ADR-0037; HEIC ✅ (ADR-0038) |
+| Open, place and convert HEIC/HEIF photos (libheif WebAssembly, vendored, loaded on first use, cached offline) | ✅ | ADR-0038; primary image only (no Live Photo video, depth or bursts) |
 
 ## Gate 2 — Document engine
 

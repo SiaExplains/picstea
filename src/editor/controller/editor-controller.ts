@@ -947,6 +947,11 @@ export class EditorController {
           content = single(layer, layer.width, layer.height);
           break;
         }
+        case "heic": {
+          const layer = await this.heicLayer(bytes, name);
+          content = single(layer, layer.width, layer.height);
+          break;
+        }
         case "psd": {
           const { file: psd, warnings } = await this.jobs.run("psdRead", bytes, [bytes.buffer]);
           const imported = psdToDocument(this, psd, name, warnings);
@@ -1980,6 +1985,18 @@ export class EditorController {
           this.openSession({ ...doc, layers: [layer], activeLayerId: layer.id }, { transient });
           return { ok: true };
         }
+        case "heic": {
+          const layer = await this.heicLayer(bytes, baseName(filename));
+          const doc = createDocument({
+            name: baseName(filename),
+            width: layer.width,
+            height: layer.height,
+            background: { kind: "transparent" },
+          });
+          this.openSession({ ...doc, layers: [layer], activeLayerId: layer.id }, { transient });
+          this.enforcePixelBudget();
+          return { ok: true };
+        }
         case "psd": {
           const { file: psd, warnings } = await this.jobs.run("psdRead", bytes, [bytes.buffer]);
           const imported = psdToDocument(this, psd, baseName(filename), warnings);
@@ -2015,6 +2032,7 @@ export class EditorController {
           decode: this.decode,
           createSurface: this.createSurface,
           rasterizeSvg: this.rasterizeSvg,
+          decodeHeic: (bytes) => this.jobs.run("heicDecode", bytes, [bytes.buffer]),
           readPsdComposite: async (bytes) => {
             const { file: psd } = await this.jobs.run("psdRead", bytes, [bytes.buffer]);
             return { width: psd.width, height: psd.height, rgba: psd.composite };
@@ -2047,6 +2065,8 @@ export class EditorController {
       let layer: RasterLayer;
       if (kind.kind === "svg") {
         layer = await this.svgLayer(bytes, baseName(filename));
+      } else if (kind.kind === "heic") {
+        layer = await this.heicLayer(bytes, baseName(filename));
       } else {
         const { file: psd } = await this.jobs.run("psdRead", bytes, [bytes.buffer]);
         const flat = psd.composite;
@@ -2111,6 +2131,13 @@ export class EditorController {
     }
     const asset = this.assets.addBitmap(surface, size.width, size.height);
     return createRasterLayer({ assetId: asset.id, width: size.width, height: size.height, name });
+  }
+
+  /** Decode a HEIC photo in the worker into a new pixel layer (ADR-0038). */
+  private async heicLayer(bytes: Uint8Array, name: string): Promise<RasterLayer> {
+    const { width, height, rgba } = await this.jobs.run("heicDecode", bytes, [bytes.buffer]);
+    const asset = this.assets.addBitmap(rgbaToSurface(this, rgba, width, height), width, height);
+    return createRasterLayer({ assetId: asset.id, width, height, name });
   }
 
   private reportWarnings(title: string, warnings: readonly string[]): void {
