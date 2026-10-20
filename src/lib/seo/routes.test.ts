@@ -42,6 +42,22 @@ describe("structured data", () => {
   });
 });
 
+describe("converter pages", () => {
+  it("cover every conversion, once, with audit-friendly descriptions", async () => {
+    const { CONVERTERS } = await import("@/content/converters");
+    const { CONVERSIONS } = await import("@/editor/formats/convert");
+    const { CONVERTER_SLUGS } = await import("@/content/slugs");
+    expect(CONVERTERS.map((c) => c.id)).toEqual(CONVERSIONS.map((c) => c.id));
+    expect([...CONVERTER_SLUGS]).toEqual(CONVERSIONS.map((c) => c.id));
+    for (const c of CONVERTERS) {
+      expect(c.description.length, c.id).toBeGreaterThanOrEqual(50);
+      expect(c.description.length, c.id).toBeLessThanOrEqual(160);
+    }
+    const paths = publicRoutes().map((r) => r.path);
+    expect(paths).toContain("/convert/webp-to-png");
+  });
+});
+
 describe("slug lists for the proxy", () => {
   it("match the docs and blog content exactly", async () => {
     const { DOCS } = await import("@/content/docs");

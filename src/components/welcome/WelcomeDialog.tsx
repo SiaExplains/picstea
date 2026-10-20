@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useEffect, useRef, type ReactNode } from "react";
 import { SITE } from "@/lib/seo/site";
 import styles from "./welcome.module.css";
+import { initialConversion } from "@/components/editor/convert-link";
 import { OPEN_WELCOME_EVENT, WELCOME_SEEN_KEY } from "./welcome";
 
 /* Only features that exist today are listed (docs/10_SEO_AEO.md: no filler, no overclaiming). */
@@ -50,7 +51,8 @@ export function WelcomeDialog({ children }: { children?: ReactNode }) {
     const open = () => {
       if (!dialog.open) dialog.showModal();
     };
-    if (!hasSeenWelcome()) open();
+    // Visitors sent from a converter page came to convert a file, not to read the introduction.
+    if (!hasSeenWelcome() && !initialConversion()) open();
     window.addEventListener(OPEN_WELCOME_EVENT, open);
     return () => window.removeEventListener(OPEN_WELCOME_EVENT, open);
   }, []);

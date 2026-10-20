@@ -1,4 +1,5 @@
 import { publishedPosts } from "@/content/blog";
+import { CONVERTERS } from "@/content/converters";
 import { DOCS } from "@/content/docs";
 import { LEGAL } from "@/content/legal";
 
@@ -23,6 +24,8 @@ export function publicRoutes(): PublicRoute[] {
     { path: "/image-resizer", priority: 0.8 },
     { path: "/image-compressor", priority: 0.8 },
     { path: "/photo-filters", priority: 0.8 },
+    { path: "/convert", priority: 0.8 },
+    ...CONVERTERS.map((c) => ({ path: `/convert/${c.id}`, priority: 0.8 })),
     { path: "/photoshop-alternative", priority: 0.8 },
     { path: "/photopea-alternative", priority: 0.8 },
     { path: "/faq", priority: 0.7 },

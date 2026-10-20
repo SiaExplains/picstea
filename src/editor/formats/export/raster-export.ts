@@ -93,7 +93,7 @@ export class ExportError extends Error {
 
 type Surface = HTMLCanvasElement | OffscreenCanvas;
 
-function encode(surface: Surface, mime: string, quality: number): Promise<Blob> {
+export function encodeSurface(surface: Surface, mime: string, quality: number): Promise<Blob> {
   if ("convertToBlob" in surface) return surface.convertToBlob({ type: mime, quality });
   return new Promise((resolve, reject) =>
     surface.toBlob(
@@ -151,7 +151,7 @@ export async function exportDocument(
       throw new ExportError("Some layers are still loading. Try exporting again in a moment.");
     }
     const quality = Math.min(1, Math.max(0, options.quality));
-    const blob = await encode(surface, format.mime, quality);
+    const blob = await encodeSurface(surface, format.mime, quality);
     // Browsers silently fall back to PNG for types they cannot encode (e.g. older Safari + WebP).
     if (blob.type !== format.mime) {
       throw new ExportError(`This browser cannot export ${format.label} images. Try PNG instead.`);

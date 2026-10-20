@@ -150,6 +150,7 @@ import type { ExportRequest } from "../formats/export/document-export";
 import { ColorRangeSession, exportFile } from "../workers/offthread";
 import { exportFilename, ExportError, safeFilename } from "../formats/export/raster-export";
 import { rgbaToSurface } from "../formats/layer-render";
+import { convertFile, type ConvertOptions, type ConvertResult } from "../formats/convert";
 import { detectFileKind } from "../formats/open-file";
 import {
   PROJECT_EXTENSION,
@@ -2004,6 +2005,26 @@ export class EditorController {
         error instanceof FormatError ? error.message : "The file could not be opened.",
       );
     }
+  }
+
+  /** Convert a file to PNG, JPEG or WebP without opening it (File → Convert…, `?convert=`). */
+  convertFile(file: Blob, filename: string, options: ConvertOptions): Promise<ConvertResult> {
+    return this.withBusy("Converting…", () =>
+      convertFile(
+        {
+          decode: this.decode,
+          createSurface: this.createSurface,
+          rasterizeSvg: this.rasterizeSvg,
+          readPsdComposite: async (bytes) => {
+            const { file: psd } = await this.jobs.run("psdRead", bytes, [bytes.buffer]);
+            return { width: psd.width, height: psd.height, rgba: psd.composite };
+          },
+        },
+        file,
+        filename,
+        options,
+      ),
+    );
   }
 
   /** Add a file to the active document as a new layer (images, SVG, flattened PSD). */

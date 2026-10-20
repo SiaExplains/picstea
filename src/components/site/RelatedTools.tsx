@@ -10,6 +10,7 @@ export const TOOL_PAGES = [
   ["/image-resizer", "Image resizer"],
   ["/image-compressor", "Image compressor"],
   ["/photo-filters", "Photo filters"],
+  ["/convert", "Image converter"],
 ] as const;
 
 export function RelatedTools({ current }: { current: string }) {

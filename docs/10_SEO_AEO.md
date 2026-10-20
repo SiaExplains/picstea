@@ -42,7 +42,9 @@ Create indexable pages for meaningful search intent:
 
 Built: `/online-photo-editor`, `/psd-editor`, `/png-editor`, `/jpeg-editor`, `/webp-editor`,
 `/image-resizer`, `/image-compressor`, `/photo-filters` (each lists the others through
-`RelatedTools`). Not built: `/background-remover` (needs the feature first), `/learn/`.
+`RelatedTools`). Converters: `/convert` and one page per pair (`/convert/webp-to-png`, …) in
+`src/content/converters.tsx`. Their button opens the editor at `/?convert=<pair>`; the converting
+itself never happens on a website page, which may run ad code (ADR-0037). Not built: `/background-remover` (needs the feature first), `/learn/`.
 
 Only create pages when they contain genuinely useful content/functionality.
 

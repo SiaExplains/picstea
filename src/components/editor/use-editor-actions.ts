@@ -58,6 +58,7 @@ export type UiActionId =
   | "layer.style"
   | "file.placeEmbedded"
   | "file.batch"
+  | "file.convert"
   | "layer.toggleVectorMask"
   | "layer.newGroup"
   | "layer.addMask"
@@ -125,6 +126,8 @@ export interface ActionHosts {
   openGridDialog: () => void;
   openWorkPathDialog: () => void;
   openBatchDialog: () => void;
+  /** File → Convert…: turn image files into PNG, JPEG or WebP without opening them. */
+  openConvertDialog: () => void;
   openSmartFilterDialog: (layerId: string, filter: SmartFilter) => void;
   /** Layer → Blending Options… / double-click a layer: the Layer Style dialog. */
   openLayerStyle: () => void;
@@ -260,6 +263,7 @@ export function useEditorActions(hosts: ActionHosts): Record<UiActionId, UiActio
       },
       "file.export": { label: "Export As…", enabled: hasDoc, run: hosts.openExportDialog },
       "file.batch": { label: "Batch…", enabled: true, run: hosts.openBatchDialog },
+      "file.convert": { label: "Convert…", enabled: true, run: hosts.openConvertDialog },
       "file.close": {
         label: "Close",
         enabled: hasDoc,

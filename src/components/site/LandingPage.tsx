@@ -15,12 +15,15 @@ export function LandingPage({
   title,
   lead,
   faqs,
+  cta,
   children,
 }: {
   path: string;
   title: string;
   lead: string;
   faqs: readonly Faq[];
+  /** A different call to action, e.g. "Convert now" → `/?convert=…`. */
+  cta?: { href: `/?${string}`; label: string };
   children: ReactNode;
 }) {
   return (
@@ -33,7 +36,9 @@ export function LandingPage({
       lead={lead}
       structuredData={[softwareApplication(path), faqPage(faqs)]}
     >
-      <EditorLink className={styles.ctaLarge}>Open the editor — free, no sign-up</EditorLink>
+      <EditorLink href={cta?.href} className={styles.ctaLarge}>
+        {cta?.label ?? "Open the editor — free, no sign-up"}
+      </EditorLink>
       {children}
       <h2>Questions</h2>
       <dl>

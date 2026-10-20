@@ -31,6 +31,9 @@ import { activeLayer } from "@/editor/core/document/queries";
 import { StartScreen } from "./StartScreen";
 import { ColorPickerDialog, type ColorTarget } from "./ColorPickerDialog";
 import { BatchDialog } from "./BatchDialog";
+import { ConvertDialog } from "./ConvertDialog";
+import { clearConvertParam, initialConversion } from "./convert-link";
+import type { Conversion } from "@/editor/formats/convert";
 import { PanelTabs } from "./PanelTabs";
 import { SideColumn } from "./SideColumn";
 import { LayerStyleDialog } from "./LayerStyleDialog";
@@ -65,6 +68,11 @@ export function EditorShell() {
   const [workPathDialogOpen, setWorkPathDialogOpen] = useState(false);
   const [colorTarget, setColorTarget] = useState<ColorTarget | null>(null);
   const [batchOpen, setBatchOpen] = useState(false);
+  // `null` conversion = File → Convert… without a preset; `undefined` = closed.
+  const [convert, setConvert] = useState<{ conversion: Conversion | null } | undefined>(() => {
+    const conversion = initialConversion();
+    return conversion ? { conversion } : undefined;
+  });
   const [styleLayerId, setStyleLayerId] = useState<string | null>(null);
   const [installOpen, setInstallOpen] = useState(false);
   const [dragging, setDragging] = useState(false);
@@ -103,6 +111,7 @@ export function EditorShell() {
       openGridDialog: () => setGridDialogOpen(true),
       openWorkPathDialog: () => setWorkPathDialogOpen(true),
       openBatchDialog: () => setBatchOpen(true),
+      openConvertDialog: () => setConvert({ conversion: null }),
       openInstallDialog: () => setInstallOpen(true),
       openLayerStyle: () => {
         const doc = controller.store.getSession()?.document;
@@ -137,6 +146,9 @@ export function EditorShell() {
   );
 
   // Keyboard shortcuts.
+  // The dialog state was taken from `?convert=` above; drop it so a reload opens the plain editor.
+  useEffect(() => clearConvertParam(), []);
+
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       // Check the DOM rather than React state, which can lag a frame behind a closing dialog.
@@ -293,6 +305,9 @@ export function EditorShell() {
         <ColorPickerDialog target={colorTarget} onClose={() => setColorTarget(null)} />
       )}
       {batchOpen && <BatchDialog onClose={() => setBatchOpen(false)} />}
+      {convert && (
+        <ConvertDialog conversion={convert.conversion} onClose={() => setConvert(undefined)} />
+      )}
       {installOpen && <InstallDialog onClose={() => setInstallOpen(false)} />}
       {styleLayerId && (
         <LayerStyleDialog key={styleLayerId} layerId={styleLayerId} onClose={closeLayerStyle} />

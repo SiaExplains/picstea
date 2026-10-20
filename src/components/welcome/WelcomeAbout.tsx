@@ -45,6 +45,7 @@ const LANDING_LINKS = [
   ["/image-resizer", "Resize an image"],
   ["/image-compressor", "Compress an image"],
   ["/photo-filters", "Photo filters"],
+  ["/convert", "Convert images (WebP, PNG, JPG, SVG, PSD)"],
   ["/photoshop-alternative", "A free Photoshop alternative"],
   ["/photopea-alternative", "Picstea as a Photopea alternative"],
   ["/docs", "Documentation"],

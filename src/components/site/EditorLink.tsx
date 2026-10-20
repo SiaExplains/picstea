@@ -8,16 +8,19 @@ import type { ReactNode } from "react";
  * download the editor bundle.
  */
 export function EditorLink({
+  href = "/",
   className,
   children,
   "aria-label": ariaLabel,
 }: {
+  /** `/` or `/?convert=<id>` (converter pages); always the editor. */
+  href?: `/` | `/?${string}`;
   className?: string;
   children: ReactNode;
   "aria-label"?: string;
 }) {
   return (
-    <Link href="/" prefetch={false} className={className} aria-label={ariaLabel}>
+    <Link href={href} prefetch={false} className={className} aria-label={ariaLabel}>
       {children}
     </Link>
   );
