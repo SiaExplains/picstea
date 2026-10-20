@@ -45,7 +45,7 @@ const LANDING_LINKS = [
   ["/image-resizer", "Resize an image"],
   ["/image-compressor", "Compress an image"],
   ["/photo-filters", "Photo filters"],
-  ["/convert", "Convert images (WebP, PNG, JPG, SVG, PSD)"],
+  ["/convert", "Convert images (HEIC, WebP, PNG, JPG, SVG, PSD)"],
   ["/photoshop-alternative", "A free Photoshop alternative"],
   ["/photopea-alternative", "Picstea as a Photopea alternative"],
   ["/docs", "Documentation"],
@@ -120,9 +120,9 @@ export function WelcomeAbout() {
 
       <h2>File formats</h2>
       <p>
-        Picstea opens PNG, JPEG, WebP, GIF, SVG, Photoshop PSD (8-bit RGB and greyscale) and its own
-        .picstea projects. It exports PNG, JPEG, WebP, SVG, PDF and layered PSD. It cannot open PSB,
-        16/32-bit or CMYK PSD files, TIFF, PDF or camera RAW files yet.
+        Picstea opens PNG, JPEG, WebP, GIF, SVG, HEIC (iPhone photos), Photoshop PSD (8-bit RGB and
+        greyscale) and its own .picstea projects. It exports PNG, JPEG, WebP, SVG, PDF and layered
+        PSD. It cannot open PSB, 16/32-bit or CMYK PSD files, TIFF, PDF or camera RAW files yet.
       </p>
 
       <h2>Frequently asked questions</h2>

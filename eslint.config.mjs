@@ -35,6 +35,8 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     "test-results/**",
     "playwright-report/**",
+    // Third-party files shipped unmodified (ADR-0038).
+    "public/vendor/**",
   ]),
 ]);
 

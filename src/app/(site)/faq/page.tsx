@@ -31,7 +31,7 @@ const FAQS: Faq[] = [
   },
   {
     q: "Which files can I open?",
-    a: "PNG, JPEG, WebP, GIF, SVG, PSD (8-bit RGB and greyscale) and .picstea project files.",
+    a: "PNG, JPEG, WebP, GIF, SVG, HEIC (iPhone photos), PSD (8-bit RGB and greyscale) and .picstea project files.",
   },
   {
     q: "Which formats can I export?",

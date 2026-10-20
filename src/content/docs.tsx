@@ -24,7 +24,7 @@ export const DOCS: readonly DocPage[] = [
     title: "Getting started with Picstea",
     description:
       "Create a document, open an image or PSD, edit with layers and export — all in your browser, without uploading anything.",
-    updated: "2026-10-19",
+    updated: "2026-10-20",
     body: () => (
       <>
         <p>
@@ -45,8 +45,9 @@ export const DOCS: readonly DocPage[] = [
             Sizes you use are listed under Recent.
           </li>
           <li>
-            <strong>Open image</strong> — PNG, JPEG, WebP, GIF, SVG, PSD or a <code>.picstea</code>{" "}
-            project file. You can also drop a file anywhere on the page or paste an image.
+            <strong>Open image</strong> — PNG, JPEG, WebP, GIF, SVG, HEIC, PSD or a{" "}
+            <code>.picstea</code> project file. You can also drop a file anywhere on the page or
+            paste an image.
           </li>
           <li>
             <strong>Recent in this browser</strong> — projects you worked on before. They are saved
@@ -909,6 +910,11 @@ export const DOCS: readonly DocPage[] = [
             <strong>SVG</strong> opens as an image (pixels). Scripts in SVG files never run.
           </li>
           <li>
+            <strong>HEIC/HEIF</strong> (iPhone photos) open as a document, upright. The first one
+            loads a 2 MB decoder (libheif) from Picstea&apos;s own site; it runs on your device and
+            is kept for offline use. Only the main photo is read (no Live Photo video or depth).
+          </li>
+          <li>
             <strong>.picstea</strong> project files open exactly as they were saved.
           </li>
         </ul>
@@ -935,7 +941,7 @@ export const DOCS: readonly DocPage[] = [
         </ul>
         <h2>Converting without opening</h2>
         <p>
-          File → Convert… turns PNG, JPEG, WebP, GIF, SVG and PSD files into PNG, JPEG or WebP
+          File → Convert… turns PNG, JPEG, WebP, GIF, SVG, HEIC and PSD files into PNG, JPEG or WebP
           without opening them as documents. Pick up to 200 files: one is saved directly, several
           are saved as one ZIP file. PSD files use the flattened image stored in the file. Nothing
           is uploaded or kept in the browser.

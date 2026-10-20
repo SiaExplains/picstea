@@ -18,7 +18,7 @@ const STATIC_CACHE = "picstea-static-v1";
 const PAGE_CACHE = "picstea-pages-v1";
 const KEEP = [STATIC_CACHE, PAGE_CACHE];
 const MAX_STATIC_ENTRIES = 400;
-const STATIC_FILE = /\.(?:js|css|png|jpe?g|webp|svg|ico|woff2?|webmanifest)$/;
+const STATIC_FILE = /\.(?:m?js|css|png|jpe?g|webp|svg|ico|woff2?|webmanifest)$/;
 
 /**
  * What to do with a request: "static" (cache-first), "page" (network-first) or "skip" (leave it

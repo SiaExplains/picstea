@@ -316,6 +316,55 @@ export const CONVERTERS: readonly ConverterPage[] = [
       MANY,
     ],
   },
+  {
+    id: "heic-to-jpg",
+    title: "Convert HEIC to JPG online",
+    description:
+      "Convert iPhone HEIC photos to JPG in your browser, one at a time or in a batch. Free, no sign-up, and your photos are never uploaded to a server.",
+    lead: "To convert HEIC to JPG, click Convert now, drop your .heic photos, choose a quality and save. The JPGs open on Windows, Android and every app, and your photos never leave your device.",
+    body: () => (
+      <>
+        <h2>Why convert HEIC to JPG?</h2>
+        <p>
+          iPhones and iPads save photos as HEIC (High Efficiency Image File) to save space. Apple
+          devices open them, but many Windows PCs, Android phones, websites and upload forms
+          don&apos;t. JPG works everywhere.
+        </p>
+        <h2>What to expect</h2>
+        <ul>
+          <li>Photos are turned the right way up, as stored in the file.</li>
+          <li>Quality 85–90 keeps photos looking the same; 90 is the default.</li>
+          <li>
+            The first HEIC file loads a 2 MB decoder from Picstea&apos;s own site; after that it is
+            cached, and works offline once Picstea is installed.
+          </li>
+          <li>
+            Only the main photo is converted: Live Photo videos, depth maps and burst frames are
+            left out, and camera details such as location are not copied.
+          </li>
+          <li>
+            Need transparency or editing? Open the HEIC in the editor (File → Open) or use{" "}
+            <Link href="/convert">another converter</Link>.
+          </li>
+        </ul>
+      </>
+    ),
+    faqs: [
+      {
+        q: "Are my iPhone photos uploaded?",
+        a: "No. The HEIC file is decoded in your browser with an open-source decoder (libheif) that Picstea serves from its own site. Your photos never leave your device.",
+      },
+      {
+        q: "Can I convert HEIC to PNG instead?",
+        a: "Yes. In the converter, choose PNG under Convert to. PNG files are larger but lossless.",
+      },
+      {
+        q: "Can I edit a HEIC photo?",
+        a: "Yes. Open it with File → Open in the editor like any other photo, then export it as JPG, PNG or WebP.",
+      },
+      MANY,
+    ],
+  },
 ];
 
 export const converterById = (id: string) => CONVERTERS.find((c) => c.id === id);

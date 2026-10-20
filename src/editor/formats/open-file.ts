@@ -1,3 +1,4 @@
+import { looksLikeHeic } from "./heic/heic";
 import { looksLikeZip } from "./project/project-file";
 import { readImageHeader } from "./raster/image-header";
 import { looksLikeSvg } from "./svg/svg-import";
@@ -9,6 +10,7 @@ export type FileKind =
   | { kind: "raster" }
   | { kind: "svg" }
   | { kind: "psd" }
+  | { kind: "heic" }
   | { kind: "project" }
   | { kind: "unsupported"; message: string };
 
@@ -19,6 +21,7 @@ export function detectFileKind(bytes: Uint8Array): FileKind {
   if (bytes.length === 0) return { kind: "unsupported", message: "The file is empty." };
   if (readImageHeader(bytes)) return { kind: "raster" };
   if (ascii(bytes, 4) === "8BPS") return { kind: "psd" };
+  if (looksLikeHeic(bytes)) return { kind: "heic" };
   if (looksLikeZip(bytes)) return { kind: "project" };
   if (ascii(bytes, 5) === "%PDF-") {
     return {
@@ -36,9 +39,9 @@ export function detectFileKind(bytes: Uint8Array): FileKind {
   return {
     kind: "unsupported",
     message:
-      "This file type is not supported. Picstea opens PNG, JPEG, WebP, GIF, SVG, PSD and .picstea files.",
+      "This file type is not supported. Picstea opens PNG, JPEG, WebP, GIF, SVG, HEIC, PSD and .picstea files.",
   };
 }
 
 export const OPEN_ACCEPT =
-  ".png,.jpg,.jpeg,.webp,.gif,.svg,.psd,.picstea,image/png,image/jpeg,image/webp,image/gif,image/svg+xml,image/vnd.adobe.photoshop";
+  ".png,.jpg,.jpeg,.webp,.gif,.svg,.heic,.heif,.psd,.picstea,image/png,image/jpeg,image/webp,image/gif,image/svg+xml,image/heic,image/heif,image/vnd.adobe.photoshop";

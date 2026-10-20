@@ -3,6 +3,22 @@
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.38.0] — 2026-10-20
+
+### Added
+
+- **HEIC photos open in Picstea.** iPhone photos (.heic, .heif) open like any other image, the
+  right way up, and can be placed as layers, converted and used in batches. The first one loads a
+  2 MB decoder from Picstea's own site; it runs on your device and is then kept for offline use.
+- **Convert HEIC to JPG** at /convert/heic-to-jpg.
+- The About page lists the open-source software Picstea uses (libheif) and its licence.
+
+### Fixed
+
+- The About page and the newer guide and converter pages had the editor's stricter security
+  policy, so Google ads would have been blocked there once ads are switched on. They now get the
+  website policy like the other pages, and a test catches any page that's missed.
+
 ## [0.37.0] — 2026-10-20
 
 ### Added

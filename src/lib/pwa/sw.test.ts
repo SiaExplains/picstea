@@ -30,6 +30,10 @@ describe("service worker caching policy", () => {
       "static",
     );
     expect(classify(`${ORIGIN}/manifest.webmanifest`, "GET", "cors", ORIGIN)).toBe("static");
+    // The HEIC decoder is loaded on first use; its URL carries the version (ADR-0038).
+    expect(
+      classify(`${ORIGIN}/vendor/libheif/1.23.5/libheif-bundle.mjs`, "GET", "cors", ORIGIN),
+    ).toBe("static");
   });
 
   it("serves pages network-first", () => {
