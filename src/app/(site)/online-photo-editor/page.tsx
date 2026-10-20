@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { pageOpenGraph } from "@/lib/seo/root-metadata";
 import Link from "next/link";
 import { LandingPage, type Faq } from "@/components/site/LandingPage";
+import { RelatedTools } from "@/components/site/RelatedTools";
 
 const PATH = "/online-photo-editor";
 const TITLE = "Free online photo editor with layers";
@@ -38,7 +39,7 @@ const FAQS: Faq[] = [
   },
   {
     q: "Does it work offline?",
-    a: "Once the page has loaded, editing happens in the browser. A full offline mode is not available yet.",
+    a: "Yes. After the first visit you can install Picstea as an app and keep editing without a connection.",
   },
 ];
 
@@ -96,6 +97,7 @@ export default function OnlinePhotoEditor() {
         automatic background removal or content-aware fill. See the{" "}
         <Link href="/docs">documentation</Link> for everything that is available.
       </p>
+      <RelatedTools current={PATH} />
     </LandingPage>
   );
 }

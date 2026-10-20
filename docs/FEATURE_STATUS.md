@@ -1,6 +1,6 @@
 # Feature status
 
-Last updated: 2026-10-20 · version 0.35.0 · live at https://www.picstea.com · see `CHANGELOG.md` for each release and `docs/adr/` (ADR-0001 to ADR-0036) for decisions
+Last updated: 2026-10-20 · version 0.36.0 · live at https://www.picstea.com · see `CHANGELOG.md` for each release and `docs/adr/` (ADR-0001 to ADR-0036) for decisions
 
 Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ deferred
 
@@ -123,6 +123,7 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 |---|---|---|
 | Website (separate layout, static pages, no editor bundle) | ✅ | Links to the editor don't prefetch it |
 | Landing pages: /online-photo-editor, /psd-editor | ✅ | Direct answers, how-to, limitations, FAQ |
+| Landing pages: /png-editor, /jpeg-editor, /webp-editor, /image-resizer, /image-compressor, /photo-filters | ✅ | 0.36.0; linked from a Tools row in the footer, the home page and each other (`RelatedTools`). Editor deep links 📋 |
 | Docs (7 pages incl. generated shortcut table) | ✅ | |
 | Blog (index, posts, Article data) | ✅ | 11 posts published (2026-10-18) |
 | Structured data: WebSite, Organization, SoftwareApplication, BreadcrumbList, Article, FAQPage | ✅ | No ratings/reviews |

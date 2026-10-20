@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { TOOL_PAGES } from "@/components/site/RelatedTools";
 import { EditorLink } from "@/components/site/EditorLink";
 import { ConsentManager } from "@/components/site/ConsentManager";
 import { PwaStart } from "@/components/pwa/PwaStart";
@@ -45,9 +46,14 @@ export default function SiteLayout({ children }: LayoutProps<"/">) {
           </header>
           <div className={styles.body}>{children}</div>
           <footer className={styles.footer}>
+            <nav aria-label="Tools" className={styles.footerNav}>
+              {TOOL_PAGES.map(([path, label]) => (
+                <Link key={path} href={path}>
+                  {label}
+                </Link>
+              ))}
+            </nav>
             <nav aria-label="Footer" className={styles.footerNav}>
-              <Link href="/online-photo-editor">Online photo editor</Link>
-              <Link href="/psd-editor">PSD editor</Link>
               <Link href="/photoshop-alternative">Photoshop alternative</Link>
               <Link href="/photopea-alternative">Photopea alternative</Link>
               <Link href="/faq">FAQ</Link>

@@ -99,6 +99,8 @@ test("AI assistants and social previews: llms.txt, robots and preview images", a
   const text = await llms.text();
   expect(text).toMatch(/^# Picstea/);
   expect(text).toContain("/photopea-alternative");
+  for (const tool of ["/png-editor", "/image-resizer", "/photo-filters"])
+    expect(text).toContain(tool);
   expect((await request.get("/llms-full.txt")).status()).toBe(200);
 
   const robots = await (await request.get("/robots.txt")).text();

@@ -3,6 +3,20 @@
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.36.0] — 2026-10-20
+
+### Added
+
+- **Six new guide pages** for common jobs: editing PNG, JPEG and WebP images (including
+  converting WebP to PNG or JPEG), resizing an image, compressing an image and photo filters.
+  Each one has step-by-step instructions, honest limits and a short FAQ. They're linked from a
+  new Tools row in the site footer, from the welcome dialog and from each other.
+
+### Fixed
+
+- The online photo editor page no longer says Picstea can't work offline. It can, once it's
+  installed as an app.
+
 ## [0.35.0] — 2026-10-20
 
 ### Added
