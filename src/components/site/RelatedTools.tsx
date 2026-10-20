@@ -23,6 +23,16 @@ export const HOW_TO_PAGES = [
   ["/liquify", "Liquify a photo"],
 ] as const;
 
+/** Honest comparisons with other editors; each lists the others. */
+export const COMPARE_PAGES = [
+  ["/photoshop-alternative", "Picstea vs Photoshop"],
+  ["/photopea-alternative", "Picstea vs Photopea"],
+  ["/gimp-alternative", "Picstea vs GIMP"],
+  ["/pixlr-alternative", "Picstea vs Pixlr"],
+  ["/canva-alternative", "Picstea vs Canva"],
+  ["/photoshop-express-alternative", "Picstea vs Photoshop Express"],
+] as const;
+
 function LinkList({
   pages,
   current,
@@ -44,8 +54,15 @@ function LinkList({
 }
 
 export function RelatedTools({ current }: { current: string }) {
+  const comparing = COMPARE_PAGES.some(([path]) => path === current);
   return (
     <>
+      {comparing && (
+        <>
+          <h2>Other comparisons</h2>
+          <LinkList pages={COMPARE_PAGES} current={current} />
+        </>
+      )}
       <h2>How-to guides</h2>
       <LinkList pages={HOW_TO_PAGES} current={current} />
       <h2>Related tools</h2>

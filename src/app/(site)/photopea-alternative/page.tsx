@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { LandingPage, type Faq } from "@/components/site/LandingPage";
+import { RelatedTools } from "@/components/site/RelatedTools";
 import { pageOpenGraph } from "@/lib/seo/root-metadata";
 
 const PATH = "/photopea-alternative";
@@ -73,6 +74,7 @@ export default function PhotopeaAlternative() {
         If you need those, Photopea is a good choice. If you want a focused editor that keeps your
         work private by design, <Link href="/docs/getting-started">get started with Picstea</Link>.
       </p>
+      <RelatedTools current={PATH} />
     </LandingPage>
   );
 }

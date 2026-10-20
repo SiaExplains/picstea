@@ -96,6 +96,26 @@ const LANDING_PAGES: readonly [path: string, title: string, summary: string][] =
     "Picstea as a Photopea alternative",
     "How Picstea compares with Photopea, including what Photopea does that Picstea doesn't.",
   ],
+  [
+    "/gimp-alternative",
+    "Picstea as a GIMP alternative",
+    "Browser editor vs GIMP's desktop app: nothing to install and a Photoshop-style workflow; GIMP wins on plugins, scripting and print work.",
+  ],
+  [
+    "/pixlr-alternative",
+    "Picstea as a Pixlr alternative",
+    "No save limits, no account, no ads in the editor; Pixlr wins on AI tools and mobile apps.",
+  ],
+  [
+    "/canva-alternative",
+    "Picstea vs Canva",
+    "Photo editing (layers, masks, PSD) vs template-based design; Canva wins for templates, teams and stock assets.",
+  ],
+  [
+    "/photoshop-express-alternative",
+    "Picstea as a Photoshop Express alternative",
+    "Full layer-based editing in any browser vs quick mobile edits; Photoshop Express wins for one-tap fixes on phones.",
+  ],
   ["/faq", "Frequently asked questions", "Short answers about price, privacy, files and devices."],
   [
     "/about",

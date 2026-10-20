@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { LandingPage, type Faq } from "@/components/site/LandingPage";
+import { RelatedTools } from "@/components/site/RelatedTools";
 import { pageOpenGraph } from "@/lib/seo/root-metadata";
 
 const PATH = "/photoshop-alternative";
@@ -107,6 +108,7 @@ export default function PhotoshopAlternative() {
         <Link href="/docs/file-formats">opens and exports</Link> and the{" "}
         <Link href="/faq">frequently asked questions</Link>.
       </p>
+      <RelatedTools current={PATH} />
     </LandingPage>
   );
 }

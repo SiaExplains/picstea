@@ -50,6 +50,7 @@ const LANDING_LINKS = [
   ["/make-background-transparent", "How to make a background transparent"],
   ["/photoshop-alternative", "A free Photoshop alternative"],
   ["/photopea-alternative", "Picstea as a Photopea alternative"],
+  ["/gimp-alternative", "Picstea as a GIMP alternative"],
   ["/docs", "Documentation"],
   ["/faq", "Frequently asked questions"],
   ["/about", "About Picstea"],
