@@ -73,7 +73,9 @@ export default function WebpEditor() {
       </ul>
       <p>
         The guide <Link href="/blog/png-vs-jpeg-vs-webp">PNG vs JPEG vs WebP</Link> compares them in
-        more detail.
+        more detail. Only need to change the format? Use the{" "}
+        <Link href="/convert/webp-to-png">WebP to PNG</Link> or{" "}
+        <Link href="/convert/png-to-webp">PNG to WebP</Link> converter.
       </p>
       <h2>What you can do with a WebP image</h2>
       <ul>

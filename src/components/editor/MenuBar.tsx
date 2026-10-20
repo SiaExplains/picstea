@@ -46,6 +46,7 @@ const MENUS: readonly Submenu[] = [
     "file.save",
     "file.saveProject",
     "file.export",
+    "file.convert",
     "-",
     sub("Automate", ["file.batch", "window.actions"]),
     "-",

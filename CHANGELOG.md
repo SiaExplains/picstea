@@ -3,6 +3,17 @@
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.37.0] — 2026-10-20
+
+### Added
+
+- **File → Convert…** turns PNG, JPEG, WebP, GIF, SVG and Photoshop files into PNG, JPEG or WebP
+  without opening them. Convert one file, or up to 200 at once and get them back in one ZIP file.
+  Nothing is uploaded or kept in the browser.
+- **Converter pages** for WebP to PNG, WebP to JPG, PNG to JPG, JPG to PNG, PNG to WebP, SVG to PNG
+  and PSD to PNG, plus an overview at /convert. Their "Convert now" button opens the converter in
+  the editor, ready to go.
+
 ## [0.36.0] — 2026-10-20
 
 ### Added

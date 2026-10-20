@@ -18,6 +18,17 @@ export const DOC_SLUGS: readonly string[] = [
   "privacy-and-storage",
 ];
 
+/** Converter pages (`/convert/<id>`); a unit test keeps this in sync with `converters.tsx`. */
+export const CONVERTER_SLUGS: readonly string[] = [
+  "webp-to-png",
+  "webp-to-jpg",
+  "png-to-jpg",
+  "jpg-to-png",
+  "png-to-webp",
+  "svg-to-png",
+  "psd-to-png",
+];
+
 /** Blog posts and whether they are published (drafts are 404 in production). */
 export const POST_SLUGS: Readonly<Record<string, "draft" | "published">> = {
   "edit-psd-online-without-uploading": "published",

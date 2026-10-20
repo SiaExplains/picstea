@@ -66,7 +66,9 @@ export default function PngEditor() {
         screenshots, illustrations and anything with sharp edges or text. Photos are usually much
         smaller as JPEG or WebP; see the <Link href="/jpeg-editor">JPEG editor</Link> and{" "}
         <Link href="/webp-editor">WebP editor</Link> pages, and the guide{" "}
-        <Link href="/blog/png-vs-jpeg-vs-webp">PNG vs JPEG vs WebP</Link>.
+        <Link href="/blog/png-vs-jpeg-vs-webp">PNG vs JPEG vs WebP</Link>. To change the format
+        without editing, use the <Link href="/convert/png-to-jpg">PNG to JPG</Link> or{" "}
+        <Link href="/convert/png-to-webp">PNG to WebP</Link> converter.
       </p>
       <h2>What you can do with a PNG</h2>
       <ul>

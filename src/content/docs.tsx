@@ -885,7 +885,7 @@ export const DOCS: readonly DocPage[] = [
     title: "File formats: PSD, PNG, JPEG, WebP, SVG, PDF",
     description:
       "Which file types Picstea opens and exports, what each format keeps, and how to move projects between Picstea and other tools.",
-    updated: "2026-10-09",
+    updated: "2026-10-20",
     body: () => (
       <>
         <h2>Opening files</h2>
@@ -933,6 +933,13 @@ export const DOCS: readonly DocPage[] = [
             <strong>PDF</strong> — one page at the document&apos;s resolution.
           </li>
         </ul>
+        <h2>Converting without opening</h2>
+        <p>
+          File → Convert… turns PNG, JPEG, WebP, GIF, SVG and PSD files into PNG, JPEG or WebP
+          without opening them as documents. Pick up to 200 files: one is saved directly, several
+          are saved as one ZIP file. PSD files use the flattened image stored in the file. Nothing
+          is uploaded or kept in the browser.
+        </p>
         <h2>Not supported yet</h2>
         <p>
           Opening PDF and TIFF files, PSB (large document) files, 16/32-bit and CMYK PSDs. Picstea

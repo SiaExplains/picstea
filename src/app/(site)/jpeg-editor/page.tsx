@@ -82,7 +82,9 @@ export default function JpegEditor() {
         graphics, text or transparency use <Link href="/png-editor">PNG</Link>; for the smallest
         files on a website, try <Link href="/webp-editor">WebP</Link>. To make a JPEG smaller, see
         the <Link href="/image-compressor">image compressor</Link> guide, and to compare the
-        formats, read <Link href="/blog/png-vs-jpeg-vs-webp">PNG vs JPEG vs WebP</Link>.
+        formats, read <Link href="/blog/png-vs-jpeg-vs-webp">PNG vs JPEG vs WebP</Link>. To turn a
+        JPG into a PNG without editing it, use the{" "}
+        <Link href="/convert/jpg-to-png">JPG to PNG</Link> converter.
       </p>
       <h2>Limitations</h2>
       <p>
