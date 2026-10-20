@@ -8,6 +8,7 @@ import styles from "./editor.module.css";
 import { ChevronIcon } from "./icons";
 import { saveFile } from "./save-file";
 import { useModal } from "./SelectionDialogs";
+import { useT } from "./i18n";
 
 /**
  * Actions: record a sequence of edits once, then play it on any document (or a batch of files).
@@ -25,6 +26,7 @@ export function ActionsPanel() {
     null,
   );
   const importRef = useRef<HTMLInputElement>(null);
+  const t = useT();
 
   const selected = actions.find((a) => a.id === selectedId) ?? actions[0];
   const busy = playing !== null;
@@ -43,26 +45,29 @@ export function ActionsPanel() {
       blob,
       "picstea-actions.json",
       "application/json",
-      "Picstea actions",
+      t("Picstea actions"),
     );
-    if (saved === "failed") controller.notify("error", "The actions file could not be saved.");
+    if (saved === "failed") controller.notify("error", t("The actions file could not be saved."));
   };
 
   return (
     <div className={styles.actionsPanel}>
       {recording && (
         <p className={styles.recordingBanner} role="status">
-          <span className={styles.recordingDot} aria-hidden="true" /> Recording “
-          {actions.find((a) => a.id === recording)?.name}”
+          <span className={styles.recordingDot} aria-hidden="true" />{" "}
+          {t("Recording “{name}”", {
+            name: actions.find((a) => a.id === recording)?.name ?? "",
+          })}
         </p>
       )}
       {actions.length === 0 ? (
         <p className={styles.muted}>
-          No actions yet. Choose New, then edit as usual: filters, adjustments, selections, fills,
-          new layers, flips, alignment and crop are recorded.
+          {t(
+            "No actions yet. Choose New, then edit as usual: filters, adjustments, selections, fills, new layers, flips, alignment and crop are recorded.",
+          )}
         </p>
       ) : (
-        <ul className={styles.actionList} aria-label="Actions">
+        <ul className={styles.actionList} aria-label={t("Actions")}>
           {actions.map((action) => {
             const open = expanded.has(action.id);
             const isSelected = action.id === selected?.id;
@@ -73,7 +78,11 @@ export function ActionsPanel() {
                     type="button"
                     className={styles.iconButton}
                     aria-expanded={open}
-                    aria-label={`${open ? "Hide" : "Show"} steps of ${action.name}`}
+                    aria-label={
+                      open
+                        ? t("Hide steps of {name}", { name: action.name })
+                        : t("Show steps of {name}", { name: action.name })
+                    }
                     onClick={() => toggle(action.id)}
                   >
                     <ChevronIcon open={open} size={12} />
@@ -90,15 +99,23 @@ export function ActionsPanel() {
                   </button>
                 </div>
                 {open && (
-                  <ol className={styles.stepList} aria-label={`Steps of ${action.name}`}>
-                    {action.steps.length === 0 && <li className={styles.muted}>No steps yet</li>}
+                  <ol
+                    className={styles.stepList}
+                    aria-label={t("Steps of {name}", { name: action.name })}
+                  >
+                    {action.steps.length === 0 && (
+                      <li className={styles.muted}>{t("No steps yet")}</li>
+                    )}
                     {action.steps.map((step, i) => (
                       <li key={i} className={styles.stepRow}>
-                        <span>{stepLabel(step)}</span>
+                        <span>{t(stepLabel(step))}</span>
                         <button
                           type="button"
                           className={styles.iconButton}
-                          aria-label={`Delete step ${i + 1} (${stepLabel(step)})`}
+                          aria-label={t("Delete step {number} ({label})", {
+                            number: i + 1,
+                            label: t(stepLabel(step)),
+                          })}
                           disabled={recording === action.id}
                           onClick={() => controller.deleteActionStep(action.id, i)}
                         >
@@ -120,7 +137,7 @@ export function ActionsPanel() {
             className={`${styles.button} ${styles.primary}`}
             onClick={() => controller.stopRecording()}
           >
-            Stop
+            {t("Stop")}
           </button>
         ) : (
           <>
@@ -130,7 +147,7 @@ export function ActionsPanel() {
               disabled={!selected || !session || busy}
               onClick={() => selected && void controller.playAction(selected.id)}
             >
-              Play
+              {t("Play")}
             </button>
             <button
               type="button"
@@ -138,7 +155,7 @@ export function ActionsPanel() {
               disabled={!selected || busy}
               onClick={() => selected && controller.startRecording(selected.id)}
             >
-              Record
+              {t("Record")}
             </button>
           </>
         )}
@@ -148,7 +165,7 @@ export function ActionsPanel() {
           disabled={busy}
           onClick={() => setNaming({ mode: "new" })}
         >
-          New…
+          {t("New…")}
         </button>
         <button
           type="button"
@@ -156,7 +173,7 @@ export function ActionsPanel() {
           disabled={!selected || busy}
           onClick={() => selected && setNaming({ mode: "rename", id: selected.id })}
         >
-          Rename…
+          {t("Rename…")}
         </button>
         <button
           type="button"
@@ -164,10 +181,10 @@ export function ActionsPanel() {
           disabled={!selected || busy}
           onClick={() => selected && controller.deleteAction(selected.id)}
         >
-          Delete
+          {t("Delete")}
         </button>
         <button type="button" className={styles.button} onClick={() => importRef.current?.click()}>
-          Import…
+          {t("Import…")}
         </button>
         <button
           type="button"
@@ -175,7 +192,7 @@ export function ActionsPanel() {
           disabled={actions.length === 0}
           onClick={() => void exportAll()}
         >
-          Export…
+          {t("Export…")}
         </button>
       </div>
       <input
@@ -189,7 +206,8 @@ export function ActionsPanel() {
           e.target.value = "";
           if (!file) return;
           const result = controller.importActions(await file.text());
-          if (result.ok) controller.notify("info", `Imported ${result.count} action(s).`);
+          if (result.ok)
+            controller.notify("info", t("Imported {count} action(s).", { count: result.count }));
         }}
       />
       {naming && (
@@ -197,8 +215,8 @@ export function ActionsPanel() {
           initial={
             naming.mode === "rename" ? (actions.find((a) => a.id === naming.id)?.name ?? "") : ""
           }
-          title={naming.mode === "new" ? "New Action" : "Rename Action"}
-          submitLabel={naming.mode === "rename" ? "Rename" : session ? "Record" : "Create"}
+          title={naming.mode === "new" ? t("New Action") : t("Rename Action")}
+          submitLabel={naming.mode === "rename" ? t("Rename") : session ? t("Record") : t("Create")}
           onSubmit={(name) => {
             if (naming.mode === "rename") {
               controller.renameAction(naming.id, name);
@@ -232,13 +250,14 @@ function ActionNameDialog({
   onClose: () => void;
 }) {
   const ref = useModal(true);
-  const [name, setName] = useState(initial || "Action");
+  const t = useT();
+  const [name, setName] = useState(initial || t("Action"));
   const [error, setError] = useState<string | null>(null);
 
   const submit = (event: FormEvent) => {
     event.preventDefault();
     if (!name.trim()) {
-      setError("Enter a name.");
+      setError(t("Enter a name."));
       return;
     }
     if (onSubmit(name)) onClose();
@@ -259,7 +278,7 @@ function ActionNameDialog({
         </h2>
         <div className={styles.field}>
           <label className={styles.fieldLabel} htmlFor="action-name">
-            Name
+            {t("Name")}
           </label>
           <input
             id="action-name"
@@ -277,7 +296,7 @@ function ActionNameDialog({
         )}
         <div className={styles.dialogActions}>
           <button type="button" className={styles.button} onClick={onClose}>
-            Cancel
+            {t("Cancel")}
           </button>
           <button type="submit" className={`${styles.button} ${styles.primary}`}>
             {submitLabel}

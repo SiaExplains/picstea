@@ -1,3 +1,4 @@
+import { msg } from "../core/message";
 import { activeLayer } from "../core/document/queries";
 import type { RasterLayer } from "../core/document/types";
 import type { ToolContext } from "./tool";
@@ -14,17 +15,19 @@ export function editablePixelLayer(ctx: ToolContext, toolName: string): RasterLa
     return null;
   }
   if (layer.locked) {
-    ctx.notify("error", `"${layer.name}" is locked. Unlock it to paint.`);
+    ctx.notify("error", msg('"{layer}" is locked. Unlock it to paint.', { layer: layer.name }));
     return null;
   }
   if (!layer.visible) {
-    ctx.notify("error", `"${layer.name}" is hidden. Show it to paint on it.`);
+    ctx.notify("error", msg('"{layer}" is hidden. Show it to paint on it.', { layer: layer.name }));
     return null;
   }
   if (layer.kind !== "raster") {
     ctx.notify(
       "error",
-      `${toolName} works on pixel layers. Use Layer → New Layer to add one, then try again.`,
+      msg("{tool} works on pixel layers. Use Layer → New Layer to add one, then try again.", {
+        tool: toolName,
+      }),
     );
     return null;
   }

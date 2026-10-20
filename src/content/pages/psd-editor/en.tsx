@@ -1,0 +1,71 @@
+import { LocalLink as Link } from "@/components/site/LocalLink";
+import type { PageCopy } from "../types";
+
+const copy: PageCopy = {
+  title: "Online PSD editor: open Photoshop files",
+  description:
+    "Open and edit PSD files online with their layers, groups and masks, and save them back as PSD. The file stays on your computer — nothing is uploaded.",
+  lead: "Picstea opens Photoshop (PSD) files directly in your browser, keeps their layers, and lets you save them back as PSD — without uploading the file anywhere.",
+  faqs: [
+    {
+      q: "Can I open a PSD without Photoshop?",
+      a: "Yes. Picstea opens 8-bit RGB and greyscale PSD files in the browser, with their layers, groups, masks, blend modes, editable text, adjustment layers, shape layers, smart objects and common layer styles.",
+    },
+    {
+      q: "Is my PSD uploaded to a server?",
+      a: "No. The file is read inside your browser and never leaves your device.",
+    },
+    {
+      q: "Can I save as PSD again?",
+      a: "Yes. File → Export As… → PSD writes a layered PSD with groups, masks, vector masks, clipping masks, adjustment layers, opacity and blend modes.",
+    },
+    {
+      q: "What doesn't come across?",
+      a: "Some Photoshop features have no Picstea equivalent yet: adjustments such as Selective Color or Color Lookup, warped text and smart filters keep their look as pixels or are left out, and Photoshop pattern images are replaced by built-in patterns. Text may need a font check. Picstea lists what changed when the file opens.",
+    },
+  ],
+  body: () => (
+    <>
+      <h2>How to edit a PSD online</h2>
+      <ol>
+        <li>Open the editor and choose Open image, or drop the .psd file on the page.</li>
+        <li>Your layers appear in the Layers panel, including groups and masks.</li>
+        <li>Edit: move and transform layers, paint, mask, add adjustment layers.</li>
+        <li>Save with File → Export As… → PSD, or export PNG, JPEG, WebP or PDF.</li>
+      </ol>
+      <h2>Supported</h2>
+      <ul>
+        <li>8-bit RGB and greyscale PSD files up to 12,000 pixels per side.</li>
+        <li>Pixel layers, groups, layer names, opacity, visibility and blend modes.</li>
+        <li>Layer masks, including masks on groups; vector masks and clipping masks.</li>
+        <li>Editable text layers (first style of each layer; fonts mapped to common fonts).</li>
+        <li>
+          Adjustment layers: Levels, Curves, Brightness/Contrast, Hue/Saturation, Vibrance, Color
+          Balance, Photo Filter, Channel Mixer, Gradient Map, Exposure, Invert, Posterize,
+          Threshold, Black &amp; White.
+        </li>
+        <li>Shape and solid colour fill layers, embedded smart objects.</li>
+        <li>
+          Layer styles: all ten Photoshop effects with their settings, several copies of shadows,
+          strokes and overlays, Fill opacity and the global light.
+        </li>
+      </ul>
+      <h2>Not supported yet</h2>
+      <ul>
+        <li>PSB (large document) files, 16/32-bit colour and CMYK.</li>
+        <li>
+          Selective Color and Color Lookup adjustments; custom pattern images (the closest built-in
+          pattern is used); warped text; Photoshop smart filters and linked smart objects.
+        </li>
+        <li>
+          Saving text, shapes, smart objects and styles back to PSD keeps their look as pixels.
+        </li>
+      </ul>
+      <p>
+        More detail in <Link href="/docs/file-formats">file formats</Link>.
+      </p>
+    </>
+  ),
+};
+
+export default copy;

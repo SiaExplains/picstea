@@ -1,3 +1,4 @@
+import type { Msg } from "../../core/message";
 import type { BitmapDecoder, RasterMime } from "../../assets/asset-store";
 import { checkDimensions, MAX_IMPORT_FILE_BYTES } from "../../core/document/limits";
 import { readImageHeader } from "./image-header";
@@ -19,7 +20,8 @@ export interface ImportedRaster {
   readonly bitmap: CanvasImageSource & { close?: () => void };
 }
 
-export type ImportResult = { ok: true; image: ImportedRaster } | { ok: false; error: string };
+export type ImportResult =
+  { ok: true; image: ImportedRaster } | { ok: false; error: string; template?: Msg };
 
 function hasDimensions(value: object): value is { width: number; height: number } {
   return (
@@ -50,7 +52,8 @@ export async function importRasterFile(file: Blob, decode: BitmapDecoder): Promi
     };
   }
   const check = checkDimensions(header.width, header.height);
-  if (!check.ok) return { ok: false, error: check.reason };
+  if (!check.ok)
+    return { ok: false, error: check.reason, ...(check.template && { template: check.template }) };
 
   // Re-wrap with the sniffed type so later consumers never see an attacker-chosen MIME.
   const blob = new Blob([bytes], { type: header.mime });

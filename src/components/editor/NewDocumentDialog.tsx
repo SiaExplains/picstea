@@ -16,17 +16,19 @@ import {
   type SizePreset,
   type SizeUnit,
 } from "@/editor/core/document/presets";
+import { N_ } from "@/i18n/editor/catalog";
 import { useController, useObservable } from "./editor-context";
 import styles from "./editor.module.css";
+import { useMessage, useT, useTc } from "./i18n";
 import { PresetGrid } from "./PresetGrid";
 
 type Background = "white" | "black" | "transparent" | "custom";
 
 const UNIT_LABELS: Record<SizeUnit, string> = {
-  px: "Pixels",
-  in: "Inches",
-  cm: "Centimetres",
-  mm: "Millimetres",
+  px: N_("Pixels"),
+  in: N_("Inches"),
+  cm: N_("Centimetres"),
+  mm: N_("Millimetres"),
 };
 
 const positive = (text: string): number | null => {
@@ -36,11 +38,14 @@ const positive = (text: string): number | null => {
 
 export function NewDocumentDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   const controller = useController();
+  const t = useT();
+  const message = useMessage();
+  const tc = useTc();
   const recent = useObservable(controller.recentSizes);
   const dialogRef = useRef<HTMLDialogElement>(null);
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const prefix = useId();
-  const [name, setName] = useState("Untitled");
+  const [name, setName] = useState(() => t("Untitled"));
   const [width, setWidth] = useState("1920");
   const [height, setHeight] = useState("1080");
   const [unit, setUnit] = useState<SizeUnit>("px");
@@ -63,7 +68,7 @@ export function NewDocumentDialog({ open, onClose }: { open: boolean; onClose: (
     ? [
         {
           id: "recent",
-          label: "Recent",
+          label: N_("Recent"),
           presets: recent.map((size, i) => ({
             ...size,
             id: `recent-${i}`,
@@ -128,15 +133,17 @@ export function NewDocumentDialog({ open, onClose }: { open: boolean; onClose: (
   const submit = (event: FormEvent) => {
     event.preventDefault();
     if (ppi === null) {
-      setError(`Resolution must be between ${MIN_PPI} and ${MAX_PPI.toLocaleString("en-US")} ppi.`);
+      setError(
+        t("Resolution must be between {min} and {max} ppi.", { min: MIN_PPI, max: MAX_PPI }),
+      );
       return;
     }
     if (w === null || h === null || !pixels || !check) {
-      setError("Enter a width and a height.");
+      setError(t("Enter a width and a height."));
       return;
     }
     if (!check.ok) {
-      setError(check.reason);
+      setError(message(check.reason, check.template));
       return;
     }
     const result = controller.newDocument({
@@ -158,7 +165,7 @@ export function NewDocumentDialog({ open, onClose }: { open: boolean; onClose: (
             },
     });
     if (!result.ok) {
-      setError(result.error);
+      setError(message(result.error, result.template));
       return;
     }
     controller.recentSizes.set(addRecentSize(recent, { width: w, height: h, unit, ppi }));
@@ -181,18 +188,18 @@ export function NewDocumentDialog({ open, onClose }: { open: boolean; onClose: (
     >
       <form className={styles.dialogForm} onSubmit={submit} noValidate>
         <h2 id="new-doc-title" className={styles.dialogTitle}>
-          New document
+          {t("New document")}
         </h2>
         <div className={styles.newDocBody}>
-          <section className={styles.newDocPresets} aria-label="Size presets">
+          <section className={styles.newDocPresets} aria-label={t("Size presets")}>
             {/* Presets render only while open, so a closed dialog adds nothing to the page. */}
             {open && (
               <>
                 <input
                   type="search"
                   className={`${styles.input} ${styles.presetSearch}`}
-                  aria-label="Search sizes"
-                  placeholder="Search sizes, e.g. story, A4, 1080"
+                  aria-label={t("Search sizes")}
+                  placeholder={t("Search sizes, e.g. story, A4, 1080")}
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   // Enter searches; it must not create the document.
@@ -204,7 +211,7 @@ export function NewDocumentDialog({ open, onClose }: { open: boolean; onClose: (
                   <div
                     className={styles.panelTabs}
                     role="tablist"
-                    aria-label="Size categories"
+                    aria-label={t("Size categories")}
                     onKeyDown={onTabKeyDown}
                   >
                     {categories.map((category, i) => (
@@ -222,7 +229,7 @@ export function NewDocumentDialog({ open, onClose }: { open: boolean; onClose: (
                         className={styles.panelTab}
                         onClick={() => setTab(category.id)}
                       >
-                        {category.label}
+                        {tc("size category", category.label)}
                       </button>
                     ))}
                   </div>
@@ -236,7 +243,9 @@ export function NewDocumentDialog({ open, onClose }: { open: boolean; onClose: (
                     >
                       {i === activeIndex && (
                         <PresetGrid
-                          label={`${category.label} sizes`}
+                          label={t("{category} sizes", {
+                            category: tc("size category", category.label),
+                          })}
                           presets={category.presets}
                           selectedId={selectedId}
                           onPick={pick}
@@ -248,13 +257,15 @@ export function NewDocumentDialog({ open, onClose }: { open: boolean; onClose: (
                 {results !== null &&
                   (results.length ? (
                     <PresetGrid
-                      label="Search results"
+                      label={t("Search results")}
                       presets={results}
                       selectedId={selectedId}
                       onPick={pick}
                     />
                   ) : (
-                    <p className={styles.muted}>No sizes match “{query.trim()}”.</p>
+                    <p className={styles.muted}>
+                      {t("No sizes match “{query}”.", { query: query.trim() })}
+                    </p>
                   ))}
               </>
             )}
@@ -262,7 +273,7 @@ export function NewDocumentDialog({ open, onClose }: { open: boolean; onClose: (
           <div className={styles.newDocFields}>
             <div className={styles.field}>
               <label className={styles.fieldLabel} htmlFor="nd-name">
-                Name
+                {t("Name")}
               </label>
               <input
                 id="nd-name"
@@ -274,7 +285,7 @@ export function NewDocumentDialog({ open, onClose }: { open: boolean; onClose: (
             </div>
             <div className={styles.field}>
               <label className={styles.fieldLabel} htmlFor="nd-width">
-                Width ({unit})
+                {t("Width ({unit})", { unit })}
               </label>
               <input
                 id="nd-width"
@@ -290,7 +301,7 @@ export function NewDocumentDialog({ open, onClose }: { open: boolean; onClose: (
             </div>
             <div className={styles.field}>
               <label className={styles.fieldLabel} htmlFor="nd-height">
-                Height ({unit})
+                {t("Height ({unit})", { unit })}
               </label>
               <input
                 id="nd-height"
@@ -306,7 +317,7 @@ export function NewDocumentDialog({ open, onClose }: { open: boolean; onClose: (
             </div>
             <div className={styles.field}>
               <label className={styles.fieldLabel} htmlFor="nd-unit">
-                Units
+                {t("Units")}
               </label>
               <div className={styles.newDocUnitRow}>
                 <select
@@ -317,15 +328,15 @@ export function NewDocumentDialog({ open, onClose }: { open: boolean; onClose: (
                 >
                   {SIZE_UNITS.map((u) => (
                     <option key={u} value={u}>
-                      {UNIT_LABELS[u]}
+                      {t(UNIT_LABELS[u])}
                     </option>
                   ))}
                 </select>
                 <button
                   type="button"
                   className={styles.button}
-                  aria-label="Swap width and height"
-                  title="Swap width and height"
+                  aria-label={t("Swap width and height")}
+                  title={t("Swap width and height")}
                   onClick={() => {
                     setWidth(height);
                     setHeight(width);
@@ -338,7 +349,7 @@ export function NewDocumentDialog({ open, onClose }: { open: boolean; onClose: (
             </div>
             <div className={styles.field}>
               <label className={styles.fieldLabel} htmlFor="nd-ppi">
-                Resolution (ppi)
+                {t("Resolution (ppi)")}
               </label>
               <input
                 id="nd-ppi"
@@ -353,7 +364,7 @@ export function NewDocumentDialog({ open, onClose }: { open: boolean; onClose: (
             </div>
             <div className={styles.field}>
               <label className={styles.fieldLabel} htmlFor="nd-bg">
-                Background
+                {t("Background")}
               </label>
               <div className={styles.newDocUnitRow}>
                 <select
@@ -362,16 +373,16 @@ export function NewDocumentDialog({ open, onClose }: { open: boolean; onClose: (
                   value={background}
                   onChange={(e) => setBackground(e.target.value as Background)}
                 >
-                  <option value="white">White</option>
-                  <option value="black">Black</option>
-                  <option value="transparent">Transparent</option>
-                  <option value="custom">Colour…</option>
+                  <option value="white">{t("White")}</option>
+                  <option value="black">{t("Black")}</option>
+                  <option value="transparent">{t("Transparent")}</option>
+                  <option value="custom">{t("Colour…")}</option>
                 </select>
                 {background === "custom" && (
                   <input
                     type="color"
                     className={styles.newDocColor}
-                    aria-label="Background colour"
+                    aria-label={t("Background colour")}
                     value={customColor}
                     onChange={(e) => setCustomColor(e.target.value)}
                   />
@@ -385,7 +396,9 @@ export function NewDocumentDialog({ open, onClose }: { open: boolean; onClose: (
                   px · {(estimateBytes(pixels.width, pixels.height) / 1024 / 1024).toFixed(1)} MB
                 </>
               ) : check && !check.ok ? (
-                <span className={styles.newDocWarning}>{check.reason}</span>
+                <span className={styles.newDocWarning}>
+                  {message(check.reason, check.template)}
+                </span>
               ) : (
                 "—"
               )}
@@ -400,10 +413,10 @@ export function NewDocumentDialog({ open, onClose }: { open: boolean; onClose: (
         )}
         <div className={styles.dialogActions}>
           <button type="button" className={styles.button} onClick={onClose}>
-            Cancel
+            {t("Cancel")}
           </button>
           <button type="submit" className={`${styles.button} ${styles.primary}`}>
-            Create
+            {t("Create")}
           </button>
         </div>
       </form>

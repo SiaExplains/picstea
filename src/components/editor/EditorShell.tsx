@@ -40,6 +40,7 @@ import { LayerStyleDialog } from "./LayerStyleDialog";
 import { InstallDialog } from "@/components/pwa/InstallDialog";
 import { PANEL_LIMITS, PanelSplitter, usePanelSizes } from "./PanelSplitter";
 import { useEditorActions, type ActionHosts } from "./use-editor-actions";
+import { useT } from "./i18n";
 
 const matchShortcut = createShortcutMatcher();
 
@@ -53,6 +54,7 @@ export function EditorShell() {
   const controller = useController();
   const session = useActiveSession();
   const isMac = useIsMac();
+  const t = useT();
   const [newDialogOpen, setNewDialogOpen] = useState(false);
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const [modifyKind, setModifyKind] = useState<SelectionModification | null>(null);
@@ -243,14 +245,14 @@ export function EditorShell() {
       <MenuBar actions={actions} />
       <OptionsBar actions={actions} />
       <Toolbar actions={actions} onEditColor={setColorTarget} />
-      <main className={styles.main} aria-label="Workspace">
+      <main className={styles.main} aria-label={t("Workspace")}>
         <DocumentTabs />
         {session ? <CanvasViewport /> : <StartScreen actions={actions} />}
-        {dragging && <div className={styles.dropOverlay}>Drop an image to open it</div>}
+        {dragging && <div className={styles.dropOverlay}>{t("Drop an image to open it")}</div>}
       </main>
-      <aside ref={panelsRef} className={styles.panels} aria-label="Panels">
+      <aside ref={panelsRef} className={styles.panels} aria-label={t("Panels")}>
         <PanelSplitter
-          label="Resize panels"
+          label={t("Resize panels")}
           orientation="vertical"
           invert
           measure={() => panelsRef.current?.offsetWidth ?? 280}
@@ -262,7 +264,7 @@ export function EditorShell() {
           onEditLayerStyle={hosts.openLayerStyle}
         />
         <PanelSplitter
-          label="Resize Properties"
+          label={t("Resize Properties")}
           orientation="horizontal"
           measure={() => panelHeight("properties")}
           {...PANEL_LIMITS.properties}
@@ -270,7 +272,7 @@ export function EditorShell() {
         />
         <PanelTabs />
         <PanelSplitter
-          label="Resize History, Swatches and Actions"
+          label={t("Resize History, Swatches and Actions")}
           orientation="horizontal"
           measure={() => panelHeight("tabs")}
           {...PANEL_LIMITS.tabs}

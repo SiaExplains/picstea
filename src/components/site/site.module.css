@@ -8,9 +8,10 @@
 
 .header {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: 8px 16px;
   max-width: 1120px;
   width: 100%;
   margin: 0 auto;
@@ -244,6 +245,12 @@
   margin-bottom: 12px;
 }
 
+/* Link lists rendered by PageLinks inside a footer row. */
+.footerNav ul {
+  display: contents;
+  list-style: none;
+}
+
 .linkButton {
   background: none;
   border: 0;
@@ -351,4 +358,24 @@
   margin-top: 40px;
   padding-top: 16px;
   border-top: 1px solid var(--border);
+}
+
+/* Other languages of a translated page (ADR-0039): a quiet row under the header links. */
+.languages {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 4px 12px;
+  width: 100%;
+  font-size: 13px;
+  color: var(--muted, #a4a5ab);
+}
+
+.languages a {
+  color: inherit;
+}
+
+.languages [aria-current] {
+  color: var(--foreground);
+  font-weight: 600;
 }

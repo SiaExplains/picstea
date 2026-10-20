@@ -49,11 +49,18 @@ describe("converter pages", () => {
     const { CONVERTERS } = await import("@/content/converters");
     const { CONVERSIONS } = await import("@/editor/formats/convert");
     const { CONVERTER_SLUGS } = await import("@/content/slugs");
-    expect(CONVERTERS.map((c) => c.id)).toEqual(CONVERSIONS.map((c) => c.id));
-    expect([...CONVERTER_SLUGS]).toEqual(CONVERSIONS.map((c) => c.id));
-    for (const c of CONVERTERS) {
-      expect(c.description.length, c.id).toBeGreaterThanOrEqual(50);
-      expect(c.description.length, c.id).toBeLessThanOrEqual(160);
+    const { LOCALES } = await import("@/i18n/locales");
+    const ids = CONVERSIONS.map((c) => c.id);
+    expect([...CONVERTER_SLUGS]).toEqual(ids);
+    for (const locale of LOCALES) {
+      expect(
+        CONVERTERS[locale].map((c) => c.id),
+        locale,
+      ).toEqual(ids);
+      for (const c of CONVERTERS[locale]) {
+        expect(c.description.length, `${locale} ${c.id}`).toBeGreaterThanOrEqual(50);
+        expect(c.description.length, `${locale} ${c.id}`).toBeLessThanOrEqual(160);
+      }
     }
     const paths = publicRoutes().map((r) => r.path);
     expect(paths).toContain("/convert/webp-to-png");
@@ -68,6 +75,8 @@ describe("site routes for the Content-Security-Policy", () => {
       .filter((path) => path !== "/" && !isSiteRoute(path));
     expect(missing).toEqual([]);
     expect(isSiteRoute("/")).toBe(false);
+    expect(isSiteRoute("/de")).toBe(false);
+    expect(isSiteRoute("/de/png-editor")).toBe(true);
   });
 });
 

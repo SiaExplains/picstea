@@ -1,3 +1,4 @@
+import { msg } from "../../core/message";
 import { setRasterContent } from "../../core/commands";
 import { findLayer } from "../../core/document/queries";
 import { applyMatrix, fromTransform, invertMatrix, type Matrix } from "../../core/geometry/matrix";
@@ -325,7 +326,10 @@ export class RetouchTool implements Tool {
     ) {
       releaseSurface(active.preview);
       for (const source of active.sources) source.release();
-      ctx.notify("info", `The ${active.label} stroke was dropped because the layer changed.`);
+      ctx.notify(
+        "info",
+        msg("The {tool} stroke was dropped because the layer changed.", { tool: active.label }),
+      );
       ctx.invalidate();
       return;
     }

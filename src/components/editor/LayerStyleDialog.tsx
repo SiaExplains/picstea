@@ -33,6 +33,7 @@ import {
   type LayerStylePreset,
 } from "@/editor/core/effects/presets";
 import { createId } from "@/editor/core/ids";
+import { N_ } from "@/i18n/editor/catalog";
 import { useActiveSession, useController, useObservable } from "./editor-context";
 import {
   AngleDial,
@@ -43,6 +44,7 @@ import {
 } from "./LayerStyleControls";
 import { EffectPage, type BevelPage } from "./LayerStylePages";
 import { AdvancedBlending } from "./BlendIfControls";
+import { useT, type Translate } from "./i18n";
 import styles from "./editor.module.css";
 
 type Page =
@@ -50,8 +52,10 @@ type Page =
   | { readonly kind: "blending" }
   | { readonly kind: EffectKind; readonly index: number; readonly bevel?: BevelPage };
 
-const copyName = (kind: EffectKind, index: number, count: number) =>
-  count > 1 ? `${EFFECT_NAMES[kind]} ${index + 1}` : EFFECT_NAMES[kind];
+const copyName = (t: Translate, kind: EffectKind, index: number, count: number) =>
+  count > 1
+    ? t("{effect} {copy}", { effect: EFFECT_NAMES[kind], copy: index + 1 })
+    : t(EFFECT_NAMES[kind]);
 
 const isEffectPage = (page: Page): page is Extract<Page, { index: number }> => "index" in page;
 
@@ -63,6 +67,7 @@ const isEffectPage = (page: Page): page is Extract<Page, { index: number }> => "
 export function LayerStyleDialog({ layerId, onClose }: { layerId: string; onClose: () => void }) {
   const controller = useController();
   const session = useActiveSession();
+  const t = useT();
   const ref = useRef<HTMLDialogElement>(null);
   // Where history stood when the dialog opened, to fold or roll back everything done in it.
   const [start] = useState(() => {
@@ -89,7 +94,7 @@ export function LayerStyleDialog({ layerId, onClose }: { layerId: string; onClos
   const finish = (keep: boolean) => {
     if (start) {
       controller.store.sealHistory();
-      controller.store.collapseHistory(start.document, "Layer Style");
+      controller.store.collapseHistory(start.document, N_("Layer Style"));
       if (!keep) {
         controller.store.goToHistory(start.pastLength);
         controller.store.discardRedo();
@@ -120,7 +125,7 @@ export function LayerStyleDialog({ layerId, onClose }: { layerId: string; onClos
   };
 
   const applyStyle = (preset: LayerStylePreset) => {
-    run(setLayerStyle(layer.id, preset.effects, "Apply Style"));
+    run(setLayerStyle(layer.id, preset.effects, N_("Apply Style")));
     run(setFillOpacity(layer.id, preset.fillOpacity ?? 1));
     seal();
   };
@@ -160,18 +165,18 @@ export function LayerStyleDialog({ layerId, onClose }: { layerId: string; onClos
         }}
       >
         <h2 id="layer-style-title" className={styles.dialogTitle}>
-          Layer Style — {layer.name}
+          {t("Layer Style — {name}", { name: layer.name })}
         </h2>
         <div className={styles.layerStyleBody}>
           <div className={styles.layerStyleSide}>
-            <ul className={styles.layerStyleList} aria-label="Effects">
+            <ul className={styles.layerStyleList} aria-label={t("Effects")}>
               <PageButton
-                label="Styles"
+                label={t("Styles")}
                 current={page.kind === "styles"}
                 onClick={() => setPage({ kind: "styles" })}
               />
               <PageButton
-                label="Blending Options"
+                label={t("Blending Options")}
                 current={page.kind === "blending"}
                 onClick={() => setPage({ kind: "blending" })}
               />
@@ -179,7 +184,7 @@ export function LayerStyleDialog({ layerId, onClose }: { layerId: string; onClos
                 const list = effectList(effects, kind);
                 const rows = list.length ? list : [undefined];
                 return rows.map((effect, index) => {
-                  const name = copyName(kind, index, list.length);
+                  const name = copyName(t, kind, index, list.length);
                   const current = !!selected && selected.kind === kind && selected.index === index;
                   return (
                     <EffectRow
@@ -203,7 +208,7 @@ export function LayerStyleDialog({ layerId, onClose }: { layerId: string; onClos
                         <>
                           <EffectRow
                             sub
-                            name="Contour"
+                            name={t("Contour")}
                             checked={!!effects.bevel?.[0]?.contour.enabled}
                             current={current && selected?.bevel === "contour"}
                             onToggle={(on) => {
@@ -216,7 +221,7 @@ export function LayerStyleDialog({ layerId, onClose }: { layerId: string; onClos
                           />
                           <EffectRow
                             sub
-                            name="Texture"
+                            name={t("Texture")}
                             checked={!!effects.bevel?.[0]?.texture.enabled}
                             current={current && selected?.bevel === "texture"}
                             onToggle={(on) => {
@@ -234,12 +239,12 @@ export function LayerStyleDialog({ layerId, onClose }: { layerId: string; onClos
                 });
               })}
             </ul>
-            <div className={styles.layerStyleTools} role="toolbar" aria-label="Effect order">
+            <div className={styles.layerStyleTools} role="toolbar" aria-label={t("Effect order")}>
               <button
                 type="button"
                 className={styles.iconButton}
-                aria-label="Move effect up"
-                title="Move effect up"
+                aria-label={t("Move effect up")}
+                title={t("Move effect up")}
                 disabled={!selected || selected.index === 0}
                 onClick={() => {
                   if (!selected) return;
@@ -253,8 +258,8 @@ export function LayerStyleDialog({ layerId, onClose }: { layerId: string; onClos
               <button
                 type="button"
                 className={styles.iconButton}
-                aria-label="Move effect down"
-                title="Move effect down"
+                aria-label={t("Move effect down")}
+                title={t("Move effect down")}
                 disabled={!selected || selected.index >= selectedCount - 1}
                 onClick={() => {
                   if (!selected) return;
@@ -268,8 +273,8 @@ export function LayerStyleDialog({ layerId, onClose }: { layerId: string; onClos
               <button
                 type="button"
                 className={styles.iconButton}
-                aria-label="Delete effect"
-                title="Delete effect"
+                aria-label={t("Delete effect")}
+                title={t("Delete effect")}
                 disabled={!selected || selectedCount === 0}
                 onClick={() => {
                   if (!selected) return;
@@ -283,14 +288,14 @@ export function LayerStyleDialog({ layerId, onClose }: { layerId: string; onClos
             </div>
           </div>
 
-          <section className={styles.layerStyleSettings} aria-label="Settings">
+          <section className={styles.layerStyleSettings} aria-label={t("Settings")}>
             {page.kind === "styles" && (
               <StylesPage
                 saved={saved}
                 onApply={applyStyle}
                 onDelete={(id) => controller.layerStyles.set(saved.filter((s) => s.id !== id))}
                 onClear={() => {
-                  run(setLayerStyle(layer.id, null, "Clear Layer Style"));
+                  run(setLayerStyle(layer.id, null, N_("Clear Layer Style")));
                   run(setFillOpacity(layer.id, 1));
                   seal();
                 }}
@@ -314,23 +319,23 @@ export function LayerStyleDialog({ layerId, onClose }: { layerId: string; onClos
 
           <div className={styles.layerStyleActions}>
             <button type="submit" className={`${styles.button} ${styles.primary}`}>
-              OK
+              {t("OK")}
             </button>
             <button type="button" className={styles.button} onClick={() => finish(false)}>
-              Cancel
+              {t("Cancel")}
             </button>
             {naming === null ? (
               <button
                 type="button"
                 className={styles.button}
-                onClick={() => setNaming(`Style ${saved.length + 1}`)}
+                onClick={() => setNaming(t("Style {number}", { number: saved.length + 1 }))}
               >
-                New Style…
+                {t("New Style…")}
               </button>
             ) : (
               <div className={styles.newStyleForm}>
                 <label className={styles.fieldLabel} htmlFor="new-style-name">
-                  Style name
+                  {t("Style name")}
                 </label>
                 <input
                   id="new-style-name"
@@ -347,10 +352,10 @@ export function LayerStyleDialog({ layerId, onClose }: { layerId: string; onClos
                     onClick={() => saveStyle(naming)}
                     disabled={!naming.trim()}
                   >
-                    Save style
+                    {t("Save style")}
                   </button>
                   <button type="button" className={styles.button} onClick={() => setNaming(null)}>
-                    Don&apos;t save
+                    {t("Don't save")}
                   </button>
                 </div>
               </div>
@@ -405,12 +410,13 @@ function EffectRow({
   sub?: boolean;
   children?: React.ReactNode;
 }) {
+  const t = useT();
   return (
     <>
       <li className={`${styles.layerStyleItem} ${sub ? styles.layerStyleSub : ""}`}>
         <input
           type="checkbox"
-          aria-label={`Use ${name}`}
+          aria-label={t("Use {name}", { name })}
           checked={checked}
           onChange={(e) => onToggle(e.target.checked)}
         />
@@ -426,8 +432,8 @@ function EffectRow({
           <button
             type="button"
             className={styles.layerStyleAdd}
-            aria-label={`Add another ${name}`}
-            title={`Add another ${name}`}
+            aria-label={t("Add another {name}", { name })}
+            title={t("Add another {name}", { name })}
             onClick={onAdd}
           >
             +
@@ -458,14 +464,15 @@ function EffectSettings({
   onLight: (light: GlobalLight) => void;
   onTurnOn: () => void;
 }) {
+  const t = useT();
   const { kind, index } = page;
   const effect = effectList(effects, kind)[index];
   const title =
     page.bevel === "contour"
-      ? "Contour"
+      ? t("Contour")
       : page.bevel === "texture"
-        ? "Texture"
-        : EFFECT_NAMES[kind];
+        ? t("Texture")
+        : t(EFFECT_NAMES[kind]);
   return (
     <>
       <h3 className={styles.subsectionTitle}>{title}</h3>
@@ -480,7 +487,7 @@ function EffectSettings({
         />
       ) : (
         <button type="button" className={styles.button} onClick={onTurnOn}>
-          Turn on {EFFECT_NAMES[kind]}
+          {t("Turn on {effect}", { effect: EFFECT_NAMES[kind] })}
         </button>
       )}
     </>
@@ -497,41 +504,42 @@ function BlendingPage({
   onLight: (light: GlobalLight) => void;
 }) {
   const controller = useController();
+  const t = useT();
   return (
     <>
-      <h3 className={styles.subsectionTitle}>Blending Options</h3>
-      <h4 className={styles.styleGroupTitle}>General Blending</h4>
+      <h3 className={styles.subsectionTitle}>{t("Blending Options")}</h3>
+      <h4 className={styles.styleGroupTitle}>{t("General Blending")}</h4>
       {layer.kind !== "group" || layer.blendMode !== "pass-through" ? (
         <BlendRow
           mode={layer.blendMode as BlendMode}
           onMode={(mode) => controller.execute(setLayerBlendMode(layer.id, mode))}
         />
       ) : (
-        <p className={styles.muted}>Pass Through (change it in the Layers panel)</p>
+        <p className={styles.muted}>{t("Pass Through (change it in the Layers panel)")}</p>
       )}
       <NumberSlider
-        label="Opacity"
+        label={t("Opacity")}
         value={layer.opacity}
         {...percentProps}
         onChange={(v) => controller.execute(setLayerOpacity(layer.id, v))}
       />
-      <h4 className={styles.styleGroupTitle}>Advanced Blending</h4>
+      <h4 className={styles.styleGroupTitle}>{t("Advanced Blending")}</h4>
       <NumberSlider
-        label="Fill Opacity"
+        label={t("Fill Opacity")}
         value={layer.fillOpacity ?? 1}
         {...percentProps}
         onChange={(v) => controller.execute(setFillOpacity(layer.id, v))}
       />
-      <p className={styles.muted}>Fill fades the layer&apos;s pixels but not its effects.</p>
+      <p className={styles.muted}>{t("Fill fades the layer's pixels but not its effects.")}</p>
       <AdvancedBlending layer={layer} />
-      <h4 className={styles.styleGroupTitle}>Global Light</h4>
+      <h4 className={styles.styleGroupTitle}>{t("Global Light")}</h4>
       <AngleDial
-        label="Global angle"
+        label={t("Global angle")}
         value={light.angle}
         onChange={(angle) => onLight({ ...light, angle })}
       />
       <NumberSlider
-        label="Global altitude"
+        label={t("Global altitude")}
         value={light.altitude}
         min={0}
         max={90}
@@ -553,29 +561,32 @@ function StylesPage({
   onDelete: (id: string) => void;
   onClear: () => void;
 }) {
+  const t = useT();
   return (
     <>
-      <h3 className={styles.subsectionTitle}>Styles</h3>
-      <ul className={styles.styleGrid} aria-label="Saved styles">
+      <h3 className={styles.subsectionTitle}>{t("Styles")}</h3>
+      <ul className={styles.styleGrid} aria-label={t("Saved styles")}>
         {[...BUILT_IN_STYLES, ...saved].map((preset) => {
           const own = !preset.id.startsWith("builtin-");
+          // Built-in style names are ours to translate; saved ones are the user's own words.
+          const name = own ? preset.name : t(preset.name);
           return (
             <li key={preset.id} className={styles.styleCard}>
               <button
                 type="button"
                 className={styles.styleCardButton}
-                aria-label={`Apply ${preset.name}`}
+                aria-label={t("Apply {name}", { name })}
                 onClick={() => onApply(preset)}
               >
                 <StylePreview effects={preset.effects} fillOpacity={preset.fillOpacity ?? 1} />
-                <span>{preset.name}</span>
+                <span>{name}</span>
               </button>
               {own && (
                 <button
                   type="button"
                   className={styles.iconButton}
-                  aria-label={`Delete ${preset.name}`}
-                  title="Delete style"
+                  aria-label={t("Delete {name}", { name })}
+                  title={t("Delete style")}
                   onClick={() => onDelete(preset.id)}
                 >
                   ×
@@ -586,10 +597,10 @@ function StylesPage({
         })}
       </ul>
       <p className={styles.muted}>
-        Styles you save with New Style… stay in this browser. Nothing is uploaded.
+        {t("Styles you save with New Style… stay in this browser. Nothing is uploaded.")}
       </p>
       <button type="button" className={styles.button} onClick={onClear}>
-        Clear Layer Style
+        {t("Clear Layer Style")}
       </button>
     </>
   );

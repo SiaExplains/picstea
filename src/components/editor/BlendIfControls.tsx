@@ -9,7 +9,9 @@ import {
   type ChannelSet,
 } from "@/editor/core/document/blending";
 import type { Layer } from "@/editor/core/document/types";
+import { N_ } from "@/i18n/editor/catalog";
 import { useController } from "./editor-context";
+import { useT } from "./i18n";
 import { Check, Choice, Row } from "./LayerStyleControls";
 import styles from "./editor.module.css";
 
@@ -65,12 +67,12 @@ const splitPart = (part: Part): Part =>
   part === "black" ? "blackHigh" : part === "white" ? "whiteLow" : part;
 
 const PART_NAMES: Record<Part, string> = {
-  black: "shadows",
-  blackLow: "shadows start",
-  blackHigh: "shadows end",
-  white: "highlights",
-  whiteLow: "highlights start",
-  whiteHigh: "highlights end",
+  black: N_("shadows"),
+  blackLow: N_("shadows start"),
+  blackHigh: N_("shadows end"),
+  white: N_("highlights"),
+  whiteLow: N_("highlights start"),
+  whiteHigh: N_("highlights end"),
 };
 
 const BAR_COLORS: Record<BlendIfChannel, string> = {
@@ -92,6 +94,7 @@ export function BlendIfSlider({
   onChange: (range: BlendRange) => void;
 }) {
   const controller = useController();
+  const t = useT();
   const seal = () => controller.store.sealHistory();
   const bar = useRef<HTMLDivElement>(null);
   const [dragging, setDragging] = useState<Part | null>(null);
@@ -134,11 +137,11 @@ export function BlendIfSlider({
               }}
               role="slider"
               tabIndex={0}
-              aria-label={`${label} ${PART_NAMES[part]}`}
+              aria-label={t("{label} {part}", { label, part: t(PART_NAMES[part]) })}
               aria-valuemin={0}
               aria-valuemax={255}
               aria-valuenow={v}
-              title="Alt-drag to split"
+              title={t("Alt-drag to split")}
               className={[
                 styles.blendIfThumb,
                 part.startsWith("black") ? styles.blendIfThumbDark : "",
@@ -190,14 +193,15 @@ export function BlendIfSlider({
 }
 
 const CHANNEL_OPTIONS: readonly (readonly [BlendIfChannel, string])[] = [
-  ["gray", "Gray"],
-  ["red", "Red"],
-  ["green", "Green"],
-  ["blue", "Blue"],
+  ["gray", N_("Gray")],
+  ["red", N_("Red")],
+  ["green", N_("Green")],
+  ["blue", N_("Blue")],
 ];
 
 export function AdvancedBlending({ layer }: { layer: Layer }) {
   const controller = useController();
+  const t = useT();
   const [channel, setChannel] = useState<BlendIfChannel>("gray");
   const channels: ChannelSet = layer.channels ?? { r: true, g: true, b: true };
   const ranges = layer.blendIf?.[channel] ?? { current: FULL_RANGE, below: FULL_RANGE };
@@ -205,7 +209,7 @@ export function AdvancedBlending({ layer }: { layer: Layer }) {
     controller.execute(setBlendIf(layer.id, { ...layer.blendIf, [channel]: next }));
   return (
     <>
-      <Row label="Channels">
+      <Row label={t("Channels")}>
         {(["r", "g", "b"] as const).map((key) => (
           <Check
             key={key}
@@ -217,22 +221,28 @@ export function AdvancedBlending({ layer }: { layer: Layer }) {
           />
         ))}
       </Row>
-      <Choice label="Blend If" value={channel} options={CHANNEL_OPTIONS} onChange={setChannel} />
+      <Choice
+        label={t("Blend If")}
+        value={channel}
+        options={CHANNEL_OPTIONS.map(([value, text]) => [value, t(text)] as const)}
+        onChange={setChannel}
+      />
       <BlendIfSlider
-        label="This Layer"
+        label={t("This Layer")}
         channel={channel}
         range={ranges.current}
         onChange={(current) => setRanges({ ...ranges, current })}
       />
       <BlendIfSlider
-        label="Underlying Layer"
+        label={t("Underlying Layer")}
         channel={channel}
         range={ranges.below}
         onChange={(below) => setRanges({ ...ranges, below })}
       />
       <p className={styles.muted}>
-        Alt-drag (or Alt + arrow keys) splits a slider for a soft transition; double-click a split
-        half to join it again.
+        {t(
+          "Alt-drag (or Alt + arrow keys) splits a slider for a soft transition; double-click a split half to join it again.",
+        )}
       </p>
     </>
   );

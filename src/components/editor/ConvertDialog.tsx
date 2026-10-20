@@ -16,6 +16,7 @@ import { OPEN_ACCEPT } from "@/editor/formats/open-file";
 import { baseName } from "@/editor/formats/raster/raster-import";
 import { writeZip, type ZipInput } from "@/editor/formats/zip/zip";
 import { useController } from "./editor-context";
+import { useMessage, useT } from "./i18n";
 import styles from "./editor.module.css";
 import { saveFile } from "./save-file";
 import { useModal } from "./SelectionDialogs";
@@ -37,6 +38,8 @@ export function ConvertDialog({
   onClose: () => void;
 }) {
   const controller = useController();
+  const t = useT();
+  const message = useMessage();
   const ref = useModal(true);
   const [files, setFiles] = useState<File[]>([]);
   const [format, setFormat] = useState<RasterExportFormat>(conversion?.to ?? "png");
@@ -58,7 +61,7 @@ export function ConvertDialog({
   const submit = async (event: FormEvent) => {
     event.preventDefault();
     if (files.length === 0) {
-      setError("Choose the files to convert.");
+      setError(t("Choose the files to convert."));
       return;
     }
     setBusy(true);
@@ -69,13 +72,13 @@ export function ConvertDialog({
       if (files.length === 1) {
         const result = await controller.convertFile(files[0], files[0].name, options);
         if (!result.ok) {
-          setError(result.error);
+          setError(message(result.error, result.template));
           return;
         }
         const saved = await saveFile(result.blob, result.filename, info.mime);
-        if (saved === "failed") setError("The file could not be saved.");
+        if (saved === "failed") setError(t("The file could not be saved."));
         if (saved === "saved") {
-          controller.notify("info", `Converted ${result.filename}`);
+          controller.notify("info", t("Converted {name}", { name: result.filename }));
           onClose();
         }
         return;
@@ -87,36 +90,52 @@ export function ConvertDialog({
       for (const file of files) {
         const result = await controller.convertFile(file, file.name, options);
         if (!result.ok) {
-          failed.push(`${file.name} (${result.error})`);
+          failed.push(
+            t("{name} ({reason})", {
+              name: file.name,
+              reason: message(result.error, result.template),
+            }),
+          );
           continue;
         }
         total += result.blob.size;
         if (total > MAX_BATCH_OUTPUT_BYTES) {
-          failed.push(`${file.name} (the ZIP file would be larger than 1 GB)`);
+          failed.push(
+            t("{name} ({reason})", {
+              name: file.name,
+              reason: t("the ZIP file would be larger than 1 GB"),
+            }),
+          );
           break;
         }
         const name = uniqueEntryName(baseName(file.name), info.extension, used);
         entries.push({ name, data: new Uint8Array(await result.blob.arrayBuffer()) });
       }
       if (entries.length === 0) {
-        setError(`No files could be converted: ${failed.join("; ")}`);
+        setError(t("No files could be converted: {details}", { details: failed.join("; ") }));
         return;
       }
       const zip = new Blob([(await writeZip(entries)) as BlobPart], { type: "application/zip" });
       const filename = `converted-${info.extension}.zip`;
-      const saved = await saveFile(zip, filename, "application/zip", "ZIP archive");
+      const saved = await saveFile(zip, filename, "application/zip", t("ZIP archive"));
       if (saved === "failed") {
-        setError("The ZIP file could not be saved.");
+        setError(t("The ZIP file could not be saved."));
         return;
       }
       if (failed.length > 0) {
         controller.notify(
           "error",
-          `${failed.length} file(s) could not be converted: ${failed.join("; ")}`,
+          t("{count} file(s) could not be converted: {details}", {
+            count: failed.length,
+            details: failed.join("; "),
+          }),
         );
       }
       if (saved === "saved") {
-        controller.notify("info", `Converted ${entries.length} file(s) into ${filename}`);
+        controller.notify(
+          "info",
+          t("Converted {count} file(s) into {name}", { count: entries.length, name: filename }),
+        );
         onClose();
       }
     } finally {
@@ -124,7 +143,9 @@ export function ConvertDialog({
     }
   };
 
-  const title = conversion ? `Convert ${conversion.label}` : "Convert images";
+  const title = conversion
+    ? t("Convert {label}", { label: conversion.label })
+    : t("Convert images");
 
   return (
     <dialog
@@ -146,7 +167,7 @@ export function ConvertDialog({
           data-testid="convert-drop"
         >
           <label className={styles.fieldLabel} htmlFor="convert-files">
-            Files
+            {t("Files")}
           </label>
           <input
             id="convert-files"
@@ -158,13 +179,15 @@ export function ConvertDialog({
           />
           <p className={styles.muted} style={{ margin: "4px 0 0", gridColumn: "2" }}>
             {files.length > 0
-              ? `${files.length} file(s) selected`
-              : `PNG, JPEG, WebP, GIF, SVG, HEIC or PSD, up to ${MAX_BATCH_FILES} files. Or drop them here.`}
+              ? t("{count} file(s) selected", { count: files.length })
+              : t("PNG, JPEG, WebP, GIF, SVG, HEIC or PSD, up to {max} files. Or drop them here.", {
+                  max: MAX_BATCH_FILES,
+                })}
           </p>
         </div>
         <fieldset style={{ border: 0, margin: 0, padding: 0 }}>
           <legend className={styles.fieldLabel} style={{ marginBottom: 6 }}>
-            Convert to
+            {t("Convert to")}
           </legend>
           <div className={styles.radioRow}>
             {FORMATS.map((f) => (
@@ -185,7 +208,7 @@ export function ConvertDialog({
         {EXPORT_FORMATS[format].lossy && (
           <div className={styles.field} style={{ marginTop: 12 }}>
             <label className={styles.fieldLabel} htmlFor="convert-quality">
-              Quality
+              {t("Quality")}
             </label>
             <div className={styles.rangeRow}>
               <input
@@ -202,8 +225,8 @@ export function ConvertDialog({
           </div>
         )}
         <p className={styles.muted} style={{ margin: "12px 0 0" }}>
-          {EXPORT_FORMATS[format].note} Files are converted on this device — nothing is uploaded or
-          saved in the browser.
+          {t(EXPORT_FORMATS[format].note)}{" "}
+          {t("Files are converted on this device — nothing is uploaded or saved in the browser.")}
         </p>
         {error && (
           <p className={styles.error} role="alert">
@@ -212,10 +235,10 @@ export function ConvertDialog({
         )}
         <div className={styles.dialogActions}>
           <button type="button" className={styles.button} onClick={onClose} disabled={busy}>
-            Cancel
+            {t("Cancel")}
           </button>
           <button type="submit" className={`${styles.button} ${styles.primary}`} disabled={busy}>
-            {busy ? "Converting…" : "Convert"}
+            {busy ? t("Converting…") : t("Convert")}
           </button>
         </div>
       </form>

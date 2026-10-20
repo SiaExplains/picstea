@@ -1,3 +1,4 @@
+import { messageText, msg, type Msg } from "../message";
 /**
  * Safety limits for document and image sizes (docs/12_SECURITY.md, "Memory limits").
  *
@@ -11,11 +12,16 @@ export const BYTES_PER_PIXEL = 4;
 /** Largest image file we will read into memory for import. */
 export const MAX_IMPORT_FILE_BYTES = 200 * 1024 * 1024;
 
-export type DimensionCheck = { ok: true } | { ok: false; reason: string };
+export type DimensionCheck =
+  | { ok: true }
+  /** `template` (when the reason has values) is what the UI translates (ADR-0039). */
+  | { ok: false; reason: string; template?: Msg };
 
 export function estimateBytes(width: number, height: number): number {
   return width * height * BYTES_PER_PIXEL;
 }
+
+const limit = (m: Msg): DimensionCheck => ({ ok: false, reason: messageText(m), template: m });
 
 export function checkDimensions(width: number, height: number): DimensionCheck {
   if (!Number.isInteger(width) || !Number.isInteger(height)) {
@@ -25,14 +31,11 @@ export function checkDimensions(width: number, height: number): DimensionCheck {
     return { ok: false, reason: "Width and height must be at least 1 pixel." };
   }
   if (width > MAX_DIMENSION || height > MAX_DIMENSION) {
-    return {
-      ok: false,
-      reason: `Width and height can be at most ${MAX_DIMENSION.toLocaleString("en-US")} pixels.`,
-    };
+    return limit(msg("Width and height can be at most {max} pixels.", { max: MAX_DIMENSION }));
   }
   if (width * height > MAX_PIXELS) {
     const megapixels = Math.round(MAX_PIXELS / 1_000_000);
-    return { ok: false, reason: `Images can be at most ${megapixels} megapixels.` };
+    return limit(msg("Images can be at most {megapixels} megapixels.", { megapixels }));
   }
   return { ok: true };
 }

@@ -1,11 +1,20 @@
+import { messageTemplate, messageText, type Message, type Msg } from "../../core/message";
+
 /**
  * Bounds-checked binary reading and writing for the file-format parsers (docs/12: treat files as
  * untrusted). Every read checks the remaining length and throws `FormatError` instead of reading
  * past the end; parsers turn that into a friendly message.
  */
 
+/** A file problem the user should read. A `Msg` keeps its template for translation (ADR-0039). */
 export class FormatError extends Error {
   override name = "FormatError";
+  readonly template?: Msg;
+
+  constructor(message: Message) {
+    super(messageText(message));
+    this.template = messageTemplate(message);
+  }
 }
 
 export class ByteReader {

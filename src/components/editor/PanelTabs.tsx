@@ -6,17 +6,20 @@ import styles from "./editor.module.css";
 import { HistoryPanel } from "./HistoryPanel";
 import { SwatchesPanel } from "./SwatchesPanel";
 import { onShowTab } from "./show-panel";
+import { useT } from "./i18n";
+import { N_ } from "@/i18n/editor/catalog";
 
 const TABS = [
-  { id: "history", label: "History", Panel: HistoryPanel },
-  { id: "swatches", label: "Swatches", Panel: SwatchesPanel },
-  { id: "actions", label: "Actions", Panel: ActionsPanel },
+  { id: "history", label: N_("History"), Panel: HistoryPanel },
+  { id: "swatches", label: N_("Swatches"), Panel: SwatchesPanel },
+  { id: "actions", label: N_("Actions"), Panel: ActionsPanel },
 ] as const;
 
 /** History, Swatches and Actions share one panel (ARIA tabs). */
 export function PanelTabs() {
   const [active, setActive] = useState(0);
   const prefix = useId();
+  const t = useT();
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
   // Window → History / Swatches / Actions.
   useEffect(
@@ -43,10 +46,15 @@ export function PanelTabs() {
   return (
     <section
       className={`${styles.panel} ${styles.tabbedPanel}`}
-      aria-label="History, swatches and actions"
+      aria-label={t("History, swatches and actions")}
       data-panel="tabs"
     >
-      <div className={styles.panelTabs} role="tablist" aria-label="Panels" onKeyDown={onKeyDown}>
+      <div
+        className={styles.panelTabs}
+        role="tablist"
+        aria-label={t("Panels")}
+        onKeyDown={onKeyDown}
+      >
         {TABS.map((tab, i) => (
           <button
             key={tab.id}
@@ -59,10 +67,11 @@ export function PanelTabs() {
             aria-selected={i === active}
             aria-controls={`${prefix}-${tab.id}-panel`}
             tabIndex={i === active ? 0 : -1}
-            className={styles.panelTab}
+            className={`${styles.panelTab} ${styles.panelTabFit}`}
+            title={t(tab.label)}
             onClick={() => setActive(i)}
           >
-            {tab.label}
+            {t(tab.label)}
           </button>
         ))}
       </div>

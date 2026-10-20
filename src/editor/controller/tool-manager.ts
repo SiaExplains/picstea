@@ -1,3 +1,4 @@
+import type { Message } from "../core/message";
 import type { AssetStore } from "../assets/asset-store";
 import type { EditorStore } from "../core/editor-store";
 import type { ContentSizer } from "../core/geometry/layer-geometry";
@@ -35,7 +36,7 @@ export interface ToolManagerHost {
   sizer: ContentSizer;
   createSurface: SurfaceFactory;
   jobs: JobRunner;
-  notify(kind: "info" | "error", message: string): void;
+  notify(kind: "info" | "error", message: Message): void;
   pixelsCommitted(): void;
   beginTextEdit(request: TextEditRequest): void;
   /** View preferences: guides, grid and snapping. */

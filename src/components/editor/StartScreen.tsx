@@ -10,6 +10,7 @@ import { TrashIcon } from "./icons";
 import { useInstallState } from "@/components/pwa/PwaStart";
 import { promptInstall } from "@/lib/pwa/pwa";
 import type { UiAction, UiActionId } from "./use-editor-actions";
+import { useT } from "./i18n";
 
 const dateFormat = new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" });
 
@@ -18,18 +19,21 @@ export function StartScreen({ actions }: { actions: Record<UiActionId, UiAction>
   const recent = useAppStatus((s) => s.recentProjects);
   const persistent = useAppStatus((s) => s.storagePersistent);
   const install = useInstallState();
+  const t = useT();
 
   return (
     <div className={styles.start}>
-      <h2 className={styles.startTitle}>Start editing</h2>
+      <h2 className={styles.startTitle}>{t("Start editing")}</h2>
       <p className={styles.startLead}>
-        Create a new document, or open an image, a PSD or a .picstea project. Everything stays in
-        this browser — nothing is uploaded. You can also drop a file anywhere on this page.
+        {t(
+          "Create a new document, or open an image, a PSD or a .picstea project. Everything stays in this browser — nothing is uploaded. You can also drop a file anywhere on this page.",
+        )}
       </p>
       {!persistent && (
         <p className={styles.warning} role="alert">
-          This browser is not allowing local storage (for example in a private window). You can
-          still edit, but your work will be lost when you close the tab.
+          {t(
+            "This browser is not allowing local storage (for example in a private window). You can still edit, but your work will be lost when you close the tab.",
+          )}
         </p>
       )}
       <div className={styles.startActions}>
@@ -38,32 +42,32 @@ export function StartScreen({ actions }: { actions: Record<UiActionId, UiAction>
           className={`${styles.button} ${styles.primary}`}
           onClick={actions["file.new"].run}
         >
-          New document
+          {t("New document")}
         </button>
         <button type="button" className={styles.button} onClick={actions["file.open"].run}>
-          Open image
+          {t("Open image")}
         </button>
         {install.canPrompt && !install.installed && (
           <button
             type="button"
             className={styles.button}
-            title="Opens in its own window and works offline"
+            title={t("Opens in its own window and works offline")}
             onClick={() => void promptInstall()}
           >
-            Install Picstea
+            {t("Install Picstea")}
           </button>
         )}
       </div>
 
-      <h2 className={styles.sectionTitle}>Recent in this browser</h2>
-      {recent === null && <p className={styles.muted}>Loading…</p>}
+      <h2 className={styles.sectionTitle}>{t("Recent in this browser")}</h2>
+      {recent === null && <p className={styles.muted}>{t("Loading…")}</p>}
       {recent?.length === 0 && (
         <p className={styles.muted}>
-          No saved projects yet. Your work is saved here automatically.
+          {t("No saved projects yet. Your work is saved here automatically.")}
         </p>
       )}
       {recent && recent.length > 0 && (
-        <ul className={styles.recentList} aria-label="Recent projects">
+        <ul className={styles.recentList} aria-label={t("Recent projects")}>
           {recent.map((project) => (
             <li key={project.id} className={styles.recentItem}>
               <button
@@ -73,8 +77,10 @@ export function StartScreen({ actions }: { actions: Record<UiActionId, UiAction>
               >
                 <span className={styles.recentName}>{project.name}</span>
                 <span className={styles.recentMeta}>
-                  {project.width} × {project.height} · {project.layerCount}{" "}
-                  {project.layerCount === 1 ? "layer" : "layers"}
+                  {project.width} × {project.height} ·{" "}
+                  {project.layerCount === 1
+                    ? t("{count} layer", { count: project.layerCount })
+                    : t("{count} layers", { count: project.layerCount })}
                 </span>
                 <span className={styles.recentMeta}>
                   {dateFormat.format(new Date(project.modifiedAt))}
@@ -84,12 +90,14 @@ export function StartScreen({ actions }: { actions: Record<UiActionId, UiAction>
                 type="button"
                 className={styles.iconButton}
                 style={{ marginRight: 6 }}
-                aria-label={`Delete ${project.name} from this browser`}
-                title="Delete from this browser"
+                aria-label={t("Delete {name} from this browser", { name: project.name })}
+                title={t("Delete from this browser")}
                 onClick={() => {
                   if (
                     window.confirm(
-                      `Delete “${project.name}” from this browser? This cannot be undone.`,
+                      t("Delete “{name}” from this browser? This cannot be undone.", {
+                        name: project.name,
+                      }),
                     )
                   ) {
                     void controller.deleteProject(project.id);

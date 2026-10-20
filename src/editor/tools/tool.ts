@@ -1,3 +1,4 @@
+import type { Message } from "../core/message";
 import type { AssetStore } from "../assets/asset-store";
 import type { EditorStore } from "../core/editor-store";
 import type { ContentSizer } from "../core/geometry/layer-geometry";
@@ -49,7 +50,7 @@ export interface ToolContext {
   /** CPU-heavy work off the UI thread (ADR-0012). */
   readonly jobs: JobRunner;
   viewport(): Viewport;
-  notify(kind: "info" | "error", message: string): void;
+  notify(kind: "info" | "error", message: Message): void;
   /** Ask for a redraw because previews/overlays changed. */
   invalidate(): void;
   /** Called after new pixel assets were committed, so memory can be rebalanced. */

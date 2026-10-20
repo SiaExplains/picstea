@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 import { ADSENSE_CLIENT, ADSENSE_CSP } from "./src/lib/ads/adsense";
+import { LOCALES } from "./src/i18n/locales";
 import { SITE_ROUTES } from "./src/lib/seo/site-routes";
 
 /*
@@ -86,7 +87,11 @@ const nextConfig: NextConfig = {
         ],
       },
       // Later rules override the same header: website pages get the site policy.
-      ...SITE_ROUTES.flatMap((route) => [route, `${route}/:path*`]).map((source) => ({
+      // …in every language (`/de/png-editor`); the editor (`/`, `/de`) is never a website route.
+      ...SITE_ROUTES.flatMap((route) => {
+        const translated = `/:lang(${LOCALES.filter((l) => l !== "en").join("|")})${route}`;
+        return [route, `${route}/:path*`, translated, `${translated}/:path*`];
+      }).map((source) => ({
         source,
         headers: [{ key: "Content-Security-Policy", value: sitePolicy }],
       })),

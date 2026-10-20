@@ -2151,8 +2151,9 @@
   border-bottom: 1px solid var(--ed-border);
 }
 
+/* Tight enough for German labels in the 280 px column. */
 .panelTab {
-  padding: 7px 10px;
+  padding: 7px 7px;
   border: 0;
   border-bottom: 2px solid transparent;
   background: none;
@@ -2160,8 +2161,17 @@
   font-size: 12px;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.04em;
   cursor: pointer;
+}
+
+/* The side column's tabs share a fixed width: a label that is still too long shrinks with an
+   ellipsis (the full name is the tooltip). Other tab rows, like New Document's, scroll instead. */
+.panelTabFit {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .panelTab[aria-selected="true"] {

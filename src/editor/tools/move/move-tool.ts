@@ -1,3 +1,4 @@
+import { msg } from "../../core/message";
 import {
   setLayerTransform,
   transformLayers,
@@ -424,7 +425,7 @@ export class MoveTool implements Tool {
     }
     if (!layer) return;
     if (layer.locked) {
-      ctx.notify("error", `"${layer.name}" is locked. Unlock it to move it.`);
+      ctx.notify("error", msg('"{layer}" is locked. Unlock it to move it.', { layer: layer.name }));
       return;
     }
     const mergeKey = `transform:${layer.id}:${createId("drag")}`;

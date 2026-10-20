@@ -7,6 +7,27 @@ import { ALIGN_LABELS } from "@/editor/controller/editor-controller";
 import { mergeTarget, shiftLayer } from "@/editor/core/commands";
 import { selectedLayerIds } from "@/editor/core/editor-store";
 import { DISTRIBUTE_LABELS, type DistributeMode } from "@/editor/core/geometry/multi-transform";
+
+/** Open the editor in another language and remember the choice (the work is saved locally). */
+function switchLanguage(locale: Locale): void {
+  try {
+    window.localStorage.setItem(LANGUAGE_CHOICE_KEY, locale);
+  } catch {
+    // Storage blocked: switch anyway, just not remembered.
+  }
+  window.location.assign(localizedPath("/", locale));
+}
+
+/** Layer → Colour Label names, translated where the menu shows them. */
+const COLOUR_LABELS: Record<(typeof LAYER_LABELS)[number], string> = {
+  red: N_("Red"),
+  orange: N_("Orange"),
+  yellow: N_("Yellow"),
+  green: N_("Green"),
+  blue: N_("Blue"),
+  violet: N_("Violet"),
+  gray: N_("Gray"),
+};
 import { ADJUSTMENTS } from "@/editor/adjustments/registry";
 import { activeLayer } from "@/editor/core/document/queries";
 import { flattenTopFirst, locateLayer } from "@/editor/core/document/tree";
@@ -30,6 +51,15 @@ import type { EditorController } from "@/editor/controller/editor-controller";
 import { PROJECT_MIME } from "@/editor/formats/project/project-file";
 import { useActiveSession, useController, useEditorState } from "./editor-context";
 import { saveFile } from "./save-file";
+import { useLocale, useT, type Translate } from "./i18n";
+import { N_ } from "@/i18n/editor/catalog";
+import {
+  LANGUAGE_CHOICE_KEY,
+  LANGUAGE_NAME,
+  LOCALES,
+  localizedPath,
+  type Locale,
+} from "@/i18n/locales";
 
 export type UiActionId =
   | ActionId
@@ -80,6 +110,7 @@ export type UiActionId =
   | "select.contract"
   | "select.transform"
   | "help.welcome"
+  | `language.${Locale}`
   | "help.docs"
   | "help.blog"
   | "help.shortcuts"
@@ -140,17 +171,20 @@ export interface ActionHosts {
 }
 
 /** Download the active document as a portable `.picstea` file (File → Save Project As…). */
-async function saveProjectFile(controller: EditorController): Promise<void> {
+async function saveProjectFile(controller: EditorController, t: Translate): Promise<void> {
   const result = await controller.saveProjectFile();
   if (!result.ok) return;
-  const saved = await saveFile(result.blob, result.filename, PROJECT_MIME, "Picstea project");
-  if (saved === "saved") controller.notify("info", `Saved ${result.filename}`);
-  if (saved === "failed") controller.notify("error", "The project file could not be saved.");
+  const saved = await saveFile(result.blob, result.filename, PROJECT_MIME, t("Picstea project"));
+  if (saved === "saved")
+    controller.notify("info", t("Saved {filename}", { filename: result.filename }));
+  if (saved === "failed") controller.notify("error", t("The project file could not be saved."));
 }
 
 /** Every user-invokable editor action, shared by menus, toolbar buttons and shortcuts. */
 export function useEditorActions(hosts: ActionHosts): Record<UiActionId, UiAction> {
   const controller = useController();
+  const t = useT();
+  const locale = useLocale();
   const { installed } = useInstallState();
   const session = useActiveSession();
   const activeTool = useEditorState((s) => s.activeTool);
@@ -230,7 +264,7 @@ export function useEditorActions(hosts: ActionHosts): Record<UiActionId, UiActio
         (["none", ...LAYER_LABELS] as const).map((label) => [
           `label.${label}`,
           {
-            label: label === "none" ? "No Colour" : label[0].toUpperCase() + label.slice(1),
+            label: label === "none" ? "No Colour" : COLOUR_LABELS[label],
             enabled: selectedCount > 0,
             checked: (layer?.label ?? "none") === label,
             run: () => controller.setSelectedLayersLabel(label === "none" ? null : label),
@@ -259,7 +293,7 @@ export function useEditorActions(hosts: ActionHosts): Record<UiActionId, UiActio
       "file.saveProject": {
         label: "Save Project As…",
         enabled: hasDoc,
-        run: () => void saveProjectFile(controller),
+        run: () => void saveProjectFile(controller, t),
       },
       "file.export": { label: "Export As…", enabled: hasDoc, run: hosts.openExportDialog },
       "file.batch": { label: "Batch…", enabled: true, run: hosts.openBatchDialog },
@@ -270,12 +304,12 @@ export function useEditorActions(hosts: ActionHosts): Record<UiActionId, UiActio
         run: () => doc && void controller.closeDocument(doc.id),
       },
       "edit.undo": {
-        label: undoLabel ? `Undo ${undoLabel}` : "Undo",
+        label: undoLabel ? t("Undo {action}", { action: undoLabel }) : "Undo",
         enabled: !!undoLabel,
         run: () => controller.undo(),
       },
       "edit.redo": {
-        label: redoLabel ? `Redo ${redoLabel}` : "Redo",
+        label: redoLabel ? t("Redo {action}", { action: redoLabel }) : "Redo",
         enabled: !!redoLabel,
         run: () => controller.redo(),
       },
@@ -694,10 +728,9 @@ export function useEditorActions(hosts: ActionHosts): Record<UiActionId, UiActio
         (Object.keys(ALIGN_LABELS) as AlignEdge[]).map((edge) => [
           `align.${edge}`,
           {
-            label: ALIGN_LABELS[edge].replace(
-              "Align ",
-              hasSelection ? "Align to Selection: " : "Align ",
-            ),
+            label: hasSelection
+              ? t("Align to Selection: {edge}", { edge: ALIGN_LABELS[edge].replace("Align ", "") })
+              : ALIGN_LABELS[edge],
             enabled:
               !!layer && layer.kind !== "fill" && layer.kind !== "adjustment" && !layer.locked,
             run: () => controller.alignActiveLayer(edge),
@@ -741,12 +774,26 @@ export function useEditorActions(hosts: ActionHosts): Record<UiActionId, UiActio
       },
       "filter.last": {
         label: lastFilter
-          ? `Last Filter (${FILTERS.find((f) => f.id === lastFilter.id)?.name})`
+          ? t("Last Filter ({filter})", {
+              filter: FILTERS.find((f) => f.id === lastFilter.id)?.name ?? "",
+            })
           : "Last Filter",
         enabled: !!lastFilter && layer?.kind === "raster" && !layer.locked,
         run: () => void controller.repeatLastFilter(),
       },
       "help.welcome": { label: "Welcome to Picstea", enabled: true, run: openWelcome },
+      // Help → Language: the same editor in another language; the choice is remembered (ADR-0039).
+      ...(Object.fromEntries(
+        LOCALES.map((l) => [
+          `language.${l}`,
+          {
+            label: LANGUAGE_NAME[l],
+            enabled: true,
+            checked: l === locale,
+            run: () => switchLanguage(l),
+          },
+        ]),
+      ) as Record<`language.${Locale}`, UiAction>),
       "help.about": {
         label: "About Picstea",
         enabled: true,
@@ -783,40 +830,40 @@ export function useEditorActions(hosts: ActionHosts): Record<UiActionId, UiActio
         enabled: true,
         run: () => window.open(PRIVACY_SETTINGS_URL, "_blank", "noopener"),
       },
-      "tool.move": tool("move", "Move Tool"),
-      "tool.transform": { ...tool("move", "Free Transform"), enabled: canTransform },
-      "tool.marquee": groupTool("marquee", "Marquee Tool"),
-      "tool.lasso": groupTool("lasso", "Lasso Tool"),
-      "tool.wand": tool("wand", "Magic Wand Tool"),
-      "tool.crop": tool("crop", "Crop Tool"),
-      "tool.eyedropper": groupTool("eyedropper", "Eyedropper Tool"),
-      "tool.brush": groupTool("brush", "Brush Tool"),
-      "tool.pencil": tool("pencil", "Pencil Tool"),
-      "tool.eraser": groupTool("eraser", "Eraser Tool"),
-      "tool.clone": tool("clone", "Clone Stamp Tool"),
-      "tool.heal": groupTool("heal", "Healing Brush Tool"),
-      "tool.tone": groupTool("tone", "Dodge, Burn and Sponge Tool"),
-      "tool.focus": groupTool("focus", "Blur, Sharpen and Smudge Tool"),
-      "tool.bucket": tool("bucket", "Paint Bucket Tool"),
-      "tool.gradient": groupTool("gradient", "Gradient Tool"),
-      "tool.shape": groupTool("shape", "Shape Tool"),
-      "tool.pen": groupTool("pen", "Pen Tool"),
-      "tool.pathSelect": groupTool("path-select", "Path and Direct Selection Tools"),
-      "tool.text": tool("text", "Text Tool"),
-      "tool.hand": tool("hand", "Hand Tool"),
-      "tool.zoom": tool("zoom", "Zoom Tool"),
-      "tool.next.marquee": nextTool("marquee", "Next Marquee Tool"),
-      "tool.next.lasso": nextTool("lasso", "Next Lasso Tool"),
-      "tool.next.eyedropper": nextTool("eyedropper", "Next Eyedropper, Sampler or Ruler"),
-      "tool.next.heal": nextTool("heal", "Next Healing Tool"),
-      "tool.next.brush": nextTool("brush", "Next Brush Tool"),
-      "tool.next.eraser": nextTool("eraser", "Next Eraser Tool"),
-      "tool.next.gradient": nextTool("gradient", "Gradient or Paint Bucket"),
-      "tool.next.focus": nextTool("focus", "Next of Blur, Sharpen, Smudge"),
-      "tool.next.tone": nextTool("tone", "Next of Dodge, Burn, Sponge"),
-      "tool.next.pen": nextTool("pen", "Next Pen Tool"),
-      "tool.next.pathSelect": nextTool("path-select", "Path or Direct Selection"),
-      "tool.next.shape": nextTool("shape", "Next Shape Tool"),
+      "tool.move": tool("move", N_("Move Tool")),
+      "tool.transform": { ...tool("move", N_("Free Transform")), enabled: canTransform },
+      "tool.marquee": groupTool("marquee", N_("Marquee Tool")),
+      "tool.lasso": groupTool("lasso", N_("Lasso Tool")),
+      "tool.wand": tool("wand", N_("Magic Wand Tool")),
+      "tool.crop": tool("crop", N_("Crop Tool")),
+      "tool.eyedropper": groupTool("eyedropper", N_("Eyedropper Tool")),
+      "tool.brush": groupTool("brush", N_("Brush Tool")),
+      "tool.pencil": tool("pencil", N_("Pencil Tool")),
+      "tool.eraser": groupTool("eraser", N_("Eraser Tool")),
+      "tool.clone": tool("clone", N_("Clone Stamp Tool")),
+      "tool.heal": groupTool("heal", N_("Healing Brush Tool")),
+      "tool.tone": groupTool("tone", N_("Dodge, Burn and Sponge Tool")),
+      "tool.focus": groupTool("focus", N_("Blur, Sharpen and Smudge Tool")),
+      "tool.bucket": tool("bucket", N_("Paint Bucket Tool")),
+      "tool.gradient": groupTool("gradient", N_("Gradient Tool")),
+      "tool.shape": groupTool("shape", N_("Shape Tool")),
+      "tool.pen": groupTool("pen", N_("Pen Tool")),
+      "tool.pathSelect": groupTool("path-select", N_("Path and Direct Selection Tools")),
+      "tool.text": tool("text", N_("Text Tool")),
+      "tool.hand": tool("hand", N_("Hand Tool")),
+      "tool.zoom": tool("zoom", N_("Zoom Tool")),
+      "tool.next.marquee": nextTool("marquee", N_("Next Marquee Tool")),
+      "tool.next.lasso": nextTool("lasso", N_("Next Lasso Tool")),
+      "tool.next.eyedropper": nextTool("eyedropper", N_("Next Eyedropper, Sampler or Ruler")),
+      "tool.next.heal": nextTool("heal", N_("Next Healing Tool")),
+      "tool.next.brush": nextTool("brush", N_("Next Brush Tool")),
+      "tool.next.eraser": nextTool("eraser", N_("Next Eraser Tool")),
+      "tool.next.gradient": nextTool("gradient", N_("Gradient or Paint Bucket")),
+      "tool.next.focus": nextTool("focus", N_("Next of Blur, Sharpen, Smudge")),
+      "tool.next.tone": nextTool("tone", N_("Next of Dodge, Burn, Sponge")),
+      "tool.next.pen": nextTool("pen", N_("Next Pen Tool")),
+      "tool.next.pathSelect": nextTool("path-select", N_("Path or Direct Selection")),
+      "tool.next.shape": nextTool("shape", N_("Next Shape Tool")),
       "colors.swap": {
         label: "Swap Colors",
         enabled: true,
@@ -832,5 +879,5 @@ export function useEditorActions(hosts: ActionHosts): Record<UiActionId, UiActio
         run: () => controller.store.setColors(DEFAULT_COLORS),
       },
     };
-  }, [controller, session, hosts, activeTool, colors, view, lastFilter, installed]);
+  }, [controller, t, locale, session, hosts, activeTool, colors, view, lastFilter, installed]);
 }

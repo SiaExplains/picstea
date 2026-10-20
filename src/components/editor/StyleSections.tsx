@@ -19,6 +19,8 @@ import {
   PhotoFilterEditor,
 } from "./AdjustmentEditors";
 import styles from "./editor.module.css";
+import { useT } from "./i18n";
+import { N_ } from "@/i18n/editor/catalog";
 
 /** A labelled slider that merges a drag into one undo step and seals on release. */
 export function Slider({
@@ -61,6 +63,7 @@ export function Slider({
 
 export function AdjustmentSection({ layer }: { layer: AdjustmentLayer }) {
   const controller = useController();
+  const t = useT();
   const { adjustment } = layer;
   if (adjustment.type === "levels") return <LevelsEditor layer={{ ...layer, adjustment }} />;
   if (adjustment.type === "curves") return <CurvesEditor layer={{ ...layer, adjustment }} />;
@@ -76,12 +79,12 @@ export function AdjustmentSection({ layer }: { layer: AdjustmentLayer }) {
   const values = layer.adjustment as unknown as Record<string, number>;
   return (
     <div className={styles.subsection}>
-      <div className={styles.subsectionTitle}>{def.label}</div>
-      {def.params.length === 0 && <p className={styles.muted}>No settings.</p>}
+      <div className={styles.subsectionTitle}>{t(def.label)}</div>
+      {def.params.length === 0 && <p className={styles.muted}>{t("No settings.")}</p>}
       {def.params.map((p) => (
         <Slider
           key={p.key}
-          label={p.label}
+          label={t(p.label)}
           value={values[p.key]}
           min={p.min}
           max={p.max}
@@ -102,16 +105,16 @@ export function AdjustmentSection({ layer }: { layer: AdjustmentLayer }) {
 
 /** Short names for the Properties panel's effect switches. */
 export const EFFECT_LABELS: Record<EffectKind, string> = {
-  dropShadow: "Drop shadow",
-  outerGlow: "Outer glow",
-  innerShadow: "Inner shadow",
-  innerGlow: "Inner glow",
-  satin: "Satin",
-  bevel: "Bevel",
-  colorOverlay: "Colour overlay",
-  gradientOverlay: "Gradient overlay",
-  patternOverlay: "Pattern overlay",
-  stroke: "Stroke",
+  dropShadow: N_("Drop shadow"),
+  outerGlow: N_("Outer glow"),
+  innerShadow: N_("Inner shadow"),
+  innerGlow: N_("Inner glow"),
+  satin: N_("Satin"),
+  bevel: N_("Bevel"),
+  colorOverlay: N_("Colour overlay"),
+  gradientOverlay: N_("Gradient overlay"),
+  patternOverlay: N_("Pattern overlay"),
+  stroke: N_("Stroke"),
 };
 
 const PANEL_ORDER: readonly EffectKind[] = [
@@ -134,11 +137,12 @@ const PANEL_ORDER: readonly EffectKind[] = [
 export function EffectsSection({ layer, onEdit }: { layer: Layer; onEdit: () => void }) {
   const controller = useController();
   const effects: LayerEffects = layer.effects ?? {};
+  const t = useT();
 
   return (
     <div className={styles.subsection}>
-      <div className={styles.subsectionTitle}>Effects</div>
-      <div className={styles.effectToggles} role="group" aria-label="Layer effects">
+      <div className={styles.subsectionTitle}>{t("Effects")}</div>
+      <div className={styles.effectToggles} role="group" aria-label={t("Layer effects")}>
         {PANEL_ORDER.map((kind) => {
           const list = effectList(effects, kind);
           const on = list.some((e) => e.enabled);
@@ -163,7 +167,7 @@ export function EffectsSection({ layer, onEdit }: { layer: Layer; onEdit: () => 
                 }}
               />
               <span>
-                {EFFECT_LABELS[kind]}
+                {t(EFFECT_LABELS[kind])}
                 {extra}
               </span>
             </label>
@@ -171,7 +175,7 @@ export function EffectsSection({ layer, onEdit }: { layer: Layer; onEdit: () => 
         })}
       </div>
       <button type="button" className={styles.button} style={{ marginTop: 6 }} onClick={onEdit}>
-        Layer Style…
+        {t("Layer Style…")}
       </button>
     </div>
   );
@@ -180,17 +184,18 @@ export function EffectsSection({ layer, onEdit }: { layer: Layer; onEdit: () => 
 export function MaskSection({ layer }: { layer: Layer }) {
   const controller = useController();
   const mask = layer.mask;
+  const t = useT();
   if (!mask) return null;
   return (
     <div className={styles.subsection}>
-      <div className={styles.subsectionTitle}>Mask</div>
+      <div className={styles.subsectionTitle}>{t("Mask")}</div>
       <label className={styles.smallLabel}>
         <input
           type="checkbox"
           checked={mask.enabled}
           onChange={(e) => controller.execute(setMaskEnabled(layer.id, e.target.checked))}
         />
-        <span>Enabled</span>
+        <span>{t("Enabled")}</span>
       </label>
       <label className={styles.smallLabel} style={{ marginTop: 4 }}>
         <input
@@ -198,10 +203,12 @@ export function MaskSection({ layer }: { layer: Layer }) {
           checked={mask.linked}
           onChange={(e) => controller.execute(setMaskLinked(layer.id, e.target.checked))}
         />
-        <span>Move with layer</span>
+        <span>{t("Move with layer")}</span>
       </label>
       <p className={styles.muted} style={{ margin: "6px 0 0" }}>
-        Paint black to hide, white to reveal. Click the mask thumbnail in Layers to paint on it.
+        {t(
+          "Paint black to hide, white to reveal. Click the mask thumbnail in Layers to paint on it.",
+        )}
       </p>
       <button
         type="button"
@@ -209,7 +216,7 @@ export function MaskSection({ layer }: { layer: Layer }) {
         style={{ marginTop: 6 }}
         onClick={() => controller.deleteActiveMask()}
       >
-        Delete mask
+        {t("Delete mask")}
       </button>
     </div>
   );

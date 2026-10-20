@@ -12,6 +12,7 @@ import {
   type StrokeFill,
 } from "@/editor/core/effects/model";
 import { EFFECT_LIMITS } from "@/editor/core/effects/parse";
+import { N_ } from "@/i18n/editor/catalog";
 import { GradientStopsEditor } from "./AdjustmentEditors";
 import {
   AngleDial,
@@ -24,6 +25,7 @@ import {
   Row,
   percentProps,
 } from "./LayerStyleControls";
+import { useT, type Translate } from "./i18n";
 import styles from "./editor.module.css";
 
 /** The settings page of each effect in the Layer Style dialog (ADR-0030). */
@@ -42,18 +44,22 @@ const Heading = ({ children }: { children: string }) => (
 );
 
 const GRADIENT_STYLES: readonly (readonly [GradientStyle, string])[] = [
-  ["linear", "Linear"],
-  ["radial", "Radial"],
-  ["angle", "Angle"],
-  ["reflected", "Reflected"],
-  ["diamond", "Diamond"],
+  ["linear", N_("Linear")],
+  ["radial", N_("Radial")],
+  ["angle", N_("Angle")],
+  ["reflected", N_("Reflected")],
+  ["diamond", N_("Diamond")],
 ];
 
 const METHODS: readonly (readonly [GradientMethod, string])[] = [
-  ["perceptual", "Perceptual"],
-  ["linear", "Linear"],
-  ["classic", "Classic"],
+  ["perceptual", N_("Perceptual")],
+  ["linear", N_("Linear")],
+  ["classic", N_("Classic")],
 ];
+
+/** Option labels in the current language. */
+const translated = <T extends string>(t: Translate, options: readonly (readonly [T, string])[]) =>
+  options.map(([value, text]) => [value, t(text)] as const);
 
 const BW: readonly GradientStop[] = [
   { position: 0, color: "#000000" },
@@ -80,15 +86,17 @@ function lightAngle(
 }
 
 function Opacity({ value, onChange }: { value: number; onChange: (v: number) => void }) {
-  return <NumberSlider label="Opacity" value={value} {...percentProps} onChange={onChange} />;
+  const t = useT();
+  return <NumberSlider label={t("Opacity")} value={value} {...percentProps} onChange={onChange} />;
 }
 
 function Noise({ value, onChange }: { value: number; onChange: (v: number) => void }) {
-  return <NumberSlider label="Noise" value={value} {...percentProps} onChange={onChange} />;
+  const t = useT();
+  return <NumberSlider label={t("Noise")} value={value} {...percentProps} onChange={onChange} />;
 }
 
 function Size({
-  label = "Size",
+  label,
   value,
   onChange,
   min = 0,
@@ -98,9 +106,10 @@ function Size({
   onChange: (v: number) => void;
   min?: number;
 }) {
+  const t = useT();
   return (
     <NumberSlider
-      label={label}
+      label={label ?? t("Size")}
       value={value}
       min={min}
       max={EFFECT_LIMITS.size[1]}
@@ -110,9 +119,10 @@ function Size({
 }
 
 function Distance({ value, onChange }: { value: number; onChange: (v: number) => void }) {
+  const t = useT();
   return (
     <NumberSlider
-      label="Distance"
+      label={t("Distance")}
       value={value}
       min={0}
       max={250}
@@ -129,6 +139,7 @@ function ShadowPage<K extends "dropShadow" | "innerShadow">({
   light,
   setLight,
 }: PageProps<K> & { kind: K }) {
+  const t = useT();
   const e = effect as EffectByKind["dropShadow"] & EffectByKind["innerShadow"];
   const patch = set as (
     p: Partial<EffectByKind["dropShadow"] & EffectByKind["innerShadow"]>,
@@ -136,7 +147,7 @@ function ShadowPage<K extends "dropShadow" | "innerShadow">({
   const drop = kind === "dropShadow";
   return (
     <>
-      <Heading>Structure</Heading>
+      <Heading>{t("Structure")}</Heading>
       <BlendRow
         mode={e.blendMode}
         onMode={(blendMode) => patch({ blendMode })}
@@ -148,21 +159,21 @@ function ShadowPage<K extends "dropShadow" | "innerShadow">({
       <Distance value={e.distance} onChange={(distance) => patch({ distance })} />
       {drop ? (
         <NumberSlider
-          label="Spread"
+          label={t("Spread")}
           value={e.spread}
           {...percentProps}
           onChange={(spread) => patch({ spread })}
         />
       ) : (
         <NumberSlider
-          label="Choke"
+          label={t("Choke")}
           value={e.choke}
           {...percentProps}
           onChange={(choke) => patch({ choke })}
         />
       )}
       <Size value={e.size} onChange={(size) => patch({ size })} />
-      <Heading>Quality</Heading>
+      <Heading>{t("Quality")}</Heading>
       <ContourPicker
         contour={e.contour}
         onChange={(contour) => patch({ contour })}
@@ -172,7 +183,7 @@ function ShadowPage<K extends "dropShadow" | "innerShadow">({
       <Noise value={e.noise} onChange={(noise) => patch({ noise })} />
       {drop && (
         <Check
-          label="Layer Knocks Out Drop Shadow"
+          label={t("Layer Knocks Out Drop Shadow")}
           checked={e.knockout}
           onChange={(knockout) => patch({ knockout })}
         />
@@ -182,14 +193,15 @@ function ShadowPage<K extends "dropShadow" | "innerShadow">({
 }
 
 function GlowFillRow({ fill, onChange }: { fill: GlowFill; onChange: (fill: GlowFill) => void }) {
+  const t = useT();
   return (
     <>
       <Choice
-        label="Fill"
+        label={t("Fill")}
         value={fill.kind}
         options={[
-          ["color", "Color"],
-          ["gradient", "Gradient"],
+          ["color", t("Color")],
+          ["gradient", t("Gradient")],
         ]}
         onChange={(kind) =>
           onChange(
@@ -213,10 +225,10 @@ function GlowFillRow({ fill, onChange }: { fill: GlowFill; onChange: (fill: Glow
         }
       />
       {fill.kind === "color" ? (
-        <Row label="Color">
+        <Row label={t("Color")}>
           <input
             type="color"
-            aria-label="Glow colour"
+            aria-label={t("Glow colour")}
             className={styles.colorInput}
             style={{ width: 36 }}
             value={fill.color}
@@ -226,12 +238,12 @@ function GlowFillRow({ fill, onChange }: { fill: GlowFill; onChange: (fill: Glow
       ) : (
         <>
           <GradientStopsEditor
-            label="Glow gradient"
+            label={t("Glow gradient")}
             stops={fill.stops}
             onChange={(stops) => onChange({ ...fill, stops })}
           />
           <Check
-            label="Reverse"
+            label={t("Reverse")}
             checked={fill.reverse}
             onChange={(reverse) => onChange({ ...fill, reverse })}
           />
@@ -246,54 +258,55 @@ function GlowPage<K extends "outerGlow" | "innerGlow">({
   effect,
   set,
 }: PageProps<K> & { kind: K }) {
+  const t = useT();
   const e = effect as EffectByKind["outerGlow"] & EffectByKind["innerGlow"];
   const patch = set as (p: Partial<EffectByKind["outerGlow"] & EffectByKind["innerGlow"]>) => void;
   const inner = kind === "innerGlow";
   return (
     <>
-      <Heading>Structure</Heading>
+      <Heading>{t("Structure")}</Heading>
       <BlendRow mode={e.blendMode} onMode={(blendMode) => patch({ blendMode })} />
       <Opacity value={e.opacity} onChange={(opacity) => patch({ opacity })} />
       <Noise value={e.noise} onChange={(noise) => patch({ noise })} />
       <GlowFillRow fill={e.fill} onChange={(fill) => patch({ fill })} />
-      <Heading>Elements</Heading>
+      <Heading>{t("Elements")}</Heading>
       <Choice
-        label="Technique"
+        label={t("Technique")}
         value={e.technique}
         options={[
-          ["softer", "Softer"],
-          ["precise", "Precise"],
+          ["softer", t("Softer")],
+          ["precise", t("Precise")],
         ]}
         onChange={(technique) => patch({ technique })}
       />
       {inner && (
         <Choice
-          label="Source"
+          label={t("Source")}
           value={e.source}
           options={[
-            ["center", "Center"],
-            ["edge", "Edge"],
+            ["center", t("Center")],
+            ["edge", t("Edge")],
           ]}
           onChange={(source) => patch({ source })}
         />
       )}
       {inner ? (
         <NumberSlider
-          label="Choke"
+          label={t("Choke")}
           value={e.choke}
           {...percentProps}
           onChange={(choke) => patch({ choke })}
         />
       ) : (
         <NumberSlider
-          label="Spread"
+          label={t("Spread")}
           value={e.spread}
           {...percentProps}
           onChange={(spread) => patch({ spread })}
         />
       )}
       <Size value={e.size} onChange={(size) => patch({ size })} />
-      <Heading>Quality</Heading>
+      <Heading>{t("Quality")}</Heading>
       <ContourPicker
         contour={e.contour}
         onChange={(contour) => patch({ contour })}
@@ -301,7 +314,7 @@ function GlowPage<K extends "outerGlow" | "innerGlow">({
         onAntiAlias={(antiAlias) => patch({ antiAlias })}
       />
       <NumberSlider
-        label="Range"
+        label={t("Range")}
         value={e.range}
         min={1}
         max={100}
@@ -310,7 +323,7 @@ function GlowPage<K extends "outerGlow" | "innerGlow">({
         onChange={(range) => patch({ range })}
       />
       <NumberSlider
-        label="Jitter"
+        label={t("Jitter")}
         value={e.jitter}
         {...percentProps}
         onChange={(jitter) => patch({ jitter })}
@@ -326,12 +339,13 @@ function BevelPageView({
   setLight,
   page,
 }: PageProps<"bevel"> & { page: BevelPage }) {
+  const t = useT();
   if (page === "contour") {
     const c = e.contour;
     const patch = (p: Partial<BevelEffect["contour"]>) => set({ contour: { ...c, ...p } });
     return (
       <>
-        <Heading>Elements</Heading>
+        <Heading>{t("Elements")}</Heading>
         <ContourPicker
           contour={c.contour}
           onChange={(contour) => patch({ contour })}
@@ -339,7 +353,7 @@ function BevelPageView({
           onAntiAlias={(antiAlias) => patch({ antiAlias })}
         />
         <NumberSlider
-          label="Range"
+          label={t("Range")}
           value={c.range}
           min={1}
           max={100}
@@ -351,15 +365,15 @@ function BevelPageView({
     );
   }
   if (page === "texture") {
-    const t = e.texture;
-    const patch = (p: Partial<BevelEffect["texture"]>) => set({ texture: { ...t, ...p } });
+    const tx = e.texture;
+    const patch = (p: Partial<BevelEffect["texture"]>) => set({ texture: { ...tx, ...p } });
     return (
       <>
-        <Heading>Elements</Heading>
-        <PatternPicker value={t.pattern} onChange={(pattern) => patch({ pattern })} />
+        <Heading>{t("Elements")}</Heading>
+        <PatternPicker value={tx.pattern} onChange={(pattern) => patch({ pattern })} />
         <NumberSlider
-          label="Scale"
-          value={t.scale}
+          label={t("Scale")}
+          value={tx.scale}
           min={1}
           max={1000}
           unit="%"
@@ -367,19 +381,23 @@ function BevelPageView({
           onChange={(scale) => patch({ scale })}
         />
         <NumberSlider
-          label="Depth"
-          value={t.depth}
+          label={t("Depth")}
+          value={tx.depth}
           min={-1000}
           max={1000}
           unit="%"
           factor={100}
           onChange={(depth) => patch({ depth })}
         />
-        <Check label="Invert" checked={t.invert} onChange={(invert) => patch({ invert })} />
-        <Check label="Link with Layer" checked={t.align} onChange={(align) => patch({ align })} />
+        <Check label={t("Invert")} checked={tx.invert} onChange={(invert) => patch({ invert })} />
+        <Check
+          label={t("Link with Layer")}
+          checked={tx.align}
+          onChange={(align) => patch({ align })}
+        />
         <PatternOffsets
-          x={t.offsetX}
-          y={t.offsetY}
+          x={tx.offsetX}
+          y={tx.offsetY}
           onChange={(offsetX, offsetY) => patch({ offsetX, offsetY })}
         />
       </>
@@ -387,31 +405,31 @@ function BevelPageView({
   }
   return (
     <>
-      <Heading>Structure</Heading>
+      <Heading>{t("Structure")}</Heading>
       <Choice
-        label="Style"
+        label={t("Style")}
         value={e.style}
         options={[
-          ["outer", "Outer Bevel"],
-          ["inner", "Inner Bevel"],
-          ["emboss", "Emboss"],
-          ["pillow", "Pillow Emboss"],
-          ["stroke", "Stroke Emboss"],
+          ["outer", t("Outer Bevel")],
+          ["inner", t("Inner Bevel")],
+          ["emboss", t("Emboss")],
+          ["pillow", t("Pillow Emboss")],
+          ["stroke", t("Stroke Emboss")],
         ]}
         onChange={(style) => set({ style })}
       />
       <Choice
-        label="Technique"
+        label={t("Technique")}
         value={e.technique}
         options={[
-          ["smooth", "Smooth"],
-          ["chisel-hard", "Chisel Hard"],
-          ["chisel-soft", "Chisel Soft"],
+          ["smooth", t("Smooth")],
+          ["chisel-hard", t("Chisel Hard")],
+          ["chisel-soft", t("Chisel Soft")],
         ]}
         onChange={(technique) => set({ technique })}
       />
       <NumberSlider
-        label="Depth"
+        label={t("Depth")}
         value={e.depth}
         min={1}
         max={1000}
@@ -420,26 +438,26 @@ function BevelPageView({
         onChange={(depth) => set({ depth })}
       />
       <Choice
-        label="Direction"
+        label={t("Direction")}
         value={e.direction}
         options={[
-          ["up", "Up"],
-          ["down", "Down"],
+          ["up", t("Up")],
+          ["down", t("Down")],
         ]}
         onChange={(direction) => set({ direction })}
       />
       <Size value={e.size} onChange={(size) => set({ size })} />
       <NumberSlider
-        label="Soften"
+        label={t("Soften")}
         value={e.soften}
         min={0}
         max={EFFECT_LIMITS.soften[1]}
         onChange={(soften) => set({ soften })}
       />
-      <Heading>Shading</Heading>
+      <Heading>{t("Shading")}</Heading>
       <AngleDial {...lightAngle(e, set, light, setLight)} />
       <NumberSlider
-        label="Altitude"
+        label={t("Altitude")}
         value={e.useGlobalLight ? light.altitude : e.altitude}
         min={0}
         max={90}
@@ -449,34 +467,34 @@ function BevelPageView({
         }
       />
       <ContourPicker
-        label="Gloss Contour"
+        label={t("Gloss Contour")}
         contour={e.glossContour}
         onChange={(glossContour) => set({ glossContour })}
         antiAlias={e.glossAntiAlias}
         onAntiAlias={(glossAntiAlias) => set({ glossAntiAlias })}
       />
       <BlendRow
-        label="Highlight Mode"
+        label={t("Highlight Mode")}
         mode={e.highlightMode}
         onMode={(highlightMode) => set({ highlightMode })}
         color={e.highlightColor}
         onColor={(highlightColor) => set({ highlightColor })}
       />
       <NumberSlider
-        label="Highlight Opacity"
+        label={t("Highlight Opacity")}
         value={e.highlightOpacity}
         {...percentProps}
         onChange={(highlightOpacity) => set({ highlightOpacity })}
       />
       <BlendRow
-        label="Shadow Mode"
+        label={t("Shadow Mode")}
         mode={e.shadowMode}
         onMode={(shadowMode) => set({ shadowMode })}
         color={e.shadowColor}
         onColor={(shadowColor) => set({ shadowColor })}
       />
       <NumberSlider
-        label="Shadow Opacity"
+        label={t("Shadow Opacity")}
         value={e.shadowOpacity}
         {...percentProps}
         onChange={(shadowOpacity) => set({ shadowOpacity })}
@@ -494,11 +512,12 @@ function PatternOffsets({
   y: number;
   onChange: (x: number, y: number) => void;
 }) {
+  const t = useT();
   const [min, max] = EFFECT_LIMITS.patternOffset;
   return (
     <>
       <NumberSlider
-        label="Offset X"
+        label={t("Offset X")}
         value={x}
         min={-500}
         max={500}
@@ -507,7 +526,7 @@ function PatternOffsets({
         onChange={(v) => onChange(v, y)}
       />
       <NumberSlider
-        label="Offset Y"
+        label={t("Offset Y")}
         value={y}
         min={-500}
         max={500}
@@ -517,7 +536,7 @@ function PatternOffsets({
       />
       <Row label="">
         <button type="button" className={styles.button} onClick={() => onChange(0, 0)}>
-          Snap to Origin
+          {t("Snap to Origin")}
         </button>
       </Row>
     </>
@@ -525,9 +544,10 @@ function PatternOffsets({
 }
 
 function SatinPage({ effect: e, set }: PageProps<"satin">) {
+  const t = useT();
   return (
     <>
-      <Heading>Structure</Heading>
+      <Heading>{t("Structure")}</Heading>
       <BlendRow
         mode={e.blendMode}
         onMode={(blendMode) => set({ blendMode })}
@@ -537,7 +557,7 @@ function SatinPage({ effect: e, set }: PageProps<"satin">) {
       <Opacity value={e.opacity} onChange={(opacity) => set({ opacity })} />
       <AngleDial value={e.angle} onChange={(angle) => set({ angle })} />
       <NumberSlider
-        label="Distance"
+        label={t("Distance")}
         value={e.distance}
         min={1}
         max={250}
@@ -550,40 +570,41 @@ function SatinPage({ effect: e, set }: PageProps<"satin">) {
         antiAlias={e.antiAlias}
         onAntiAlias={(antiAlias) => set({ antiAlias })}
       />
-      <Check label="Invert" checked={e.invert} onChange={(invert) => set({ invert })} />
+      <Check label={t("Invert")} checked={e.invert} onChange={(invert) => set({ invert })} />
     </>
   );
 }
 
 function GradientOverlayPage({ effect: e, set }: PageProps<"gradientOverlay">) {
+  const t = useT();
   return (
     <>
-      <Heading>Gradient</Heading>
+      <Heading>{t("Gradient")}</Heading>
       <BlendRow mode={e.blendMode} onMode={(blendMode) => set({ blendMode })} />
-      <Check label="Dither" checked={e.dither} onChange={(dither) => set({ dither })} />
+      <Check label={t("Dither")} checked={e.dither} onChange={(dither) => set({ dither })} />
       <Opacity value={e.opacity} onChange={(opacity) => set({ opacity })} />
       <GradientStopsEditor
-        label="Overlay gradient"
+        label={t("Overlay gradient")}
         stops={e.stops}
         onChange={(stops) => set({ stops })}
       />
-      <Check label="Reverse" checked={e.reverse} onChange={(reverse) => set({ reverse })} />
+      <Check label={t("Reverse")} checked={e.reverse} onChange={(reverse) => set({ reverse })} />
       <Choice
-        label="Style"
+        label={t("Style")}
         value={e.style}
-        options={GRADIENT_STYLES}
+        options={translated(t, GRADIENT_STYLES)}
         onChange={(style) => set({ style })}
       />
       <Choice
-        label="Method"
+        label={t("Method")}
         value={e.method}
-        options={METHODS}
+        options={translated(t, METHODS)}
         onChange={(method) => set({ method })}
       />
-      <Check label="Align with Layer" checked={e.align} onChange={(align) => set({ align })} />
+      <Check label={t("Align with Layer")} checked={e.align} onChange={(align) => set({ align })} />
       <AngleDial value={e.angle} onChange={(angle) => set({ angle })} />
       <NumberSlider
-        label="Scale"
+        label={t("Scale")}
         value={e.scale}
         min={10}
         max={150}
@@ -592,7 +613,7 @@ function GradientOverlayPage({ effect: e, set }: PageProps<"gradientOverlay">) {
         onChange={(scale) => set({ scale })}
       />
       <NumberSlider
-        label="Offset X"
+        label={t("Offset X")}
         value={e.offsetX}
         min={-150}
         max={150}
@@ -601,7 +622,7 @@ function GradientOverlayPage({ effect: e, set }: PageProps<"gradientOverlay">) {
         onChange={(offsetX) => set({ offsetX })}
       />
       <NumberSlider
-        label="Offset Y"
+        label={t("Offset Y")}
         value={e.offsetY}
         min={-150}
         max={150}
@@ -615,7 +636,7 @@ function GradientOverlayPage({ effect: e, set }: PageProps<"gradientOverlay">) {
           className={styles.button}
           onClick={() => set({ offsetX: 0, offsetY: 0 })}
         >
-          Reset Alignment
+          {t("Reset Alignment")}
         </button>
       </Row>
     </>
@@ -623,15 +644,16 @@ function GradientOverlayPage({ effect: e, set }: PageProps<"gradientOverlay">) {
 }
 
 function PatternOverlayPage({ effect: e, set }: PageProps<"patternOverlay">) {
+  const t = useT();
   return (
     <>
-      <Heading>Pattern</Heading>
+      <Heading>{t("Pattern")}</Heading>
       <BlendRow mode={e.blendMode} onMode={(blendMode) => set({ blendMode })} />
       <Opacity value={e.opacity} onChange={(opacity) => set({ opacity })} />
       <PatternPicker value={e.pattern} onChange={(pattern) => set({ pattern })} />
       <AngleDial value={e.angle} onChange={(angle) => set({ angle })} />
       <NumberSlider
-        label="Scale"
+        label={t("Scale")}
         value={e.scale}
         min={1}
         max={1000}
@@ -639,7 +661,7 @@ function PatternOverlayPage({ effect: e, set }: PageProps<"patternOverlay">) {
         factor={100}
         onChange={(scale) => set({ scale })}
       />
-      <Check label="Link with Layer" checked={e.align} onChange={(align) => set({ align })} />
+      <Check label={t("Link with Layer")} checked={e.align} onChange={(align) => set({ align })} />
       <PatternOffsets
         x={e.offsetX}
         y={e.offsetY}
@@ -650,33 +672,38 @@ function PatternOverlayPage({ effect: e, set }: PageProps<"patternOverlay">) {
 }
 
 function StrokePage({ effect: e, set }: PageProps<"stroke">) {
+  const t = useT();
   const fill = e.fill;
   const setFill = (patch: Partial<Extract<StrokeFill, { kind: "gradient" }>>) =>
     fill.kind === "gradient" && set({ fill: { ...fill, ...patch } });
   return (
     <>
-      <Heading>Structure</Heading>
+      <Heading>{t("Structure")}</Heading>
       <Size value={e.size} min={1} onChange={(size) => set({ size })} />
       <Choice
-        label="Position"
+        label={t("Position")}
         value={e.position}
         options={[
-          ["outside", "Outside"],
-          ["inside", "Inside"],
-          ["center", "Center"],
+          ["outside", t("Outside")],
+          ["inside", t("Inside")],
+          ["center", t("Center")],
         ]}
         onChange={(position) => set({ position })}
       />
       <BlendRow mode={e.blendMode} onMode={(blendMode) => set({ blendMode })} />
       <Opacity value={e.opacity} onChange={(opacity) => set({ opacity })} />
-      <Check label="Overprint" checked={e.overprint} onChange={(overprint) => set({ overprint })} />
-      <Heading>Fill</Heading>
+      <Check
+        label={t("Overprint")}
+        checked={e.overprint}
+        onChange={(overprint) => set({ overprint })}
+      />
+      <Heading>{t("Fill")}</Heading>
       <Choice
-        label="Fill Type"
+        label={t("Fill Type")}
         value={fill.kind}
         options={[
-          ["color", "Color"],
-          ["gradient", "Gradient"],
+          ["color", t("Color")],
+          ["gradient", t("Gradient")],
         ]}
         onChange={(kind) =>
           set({
@@ -701,10 +728,10 @@ function StrokePage({ effect: e, set }: PageProps<"stroke">) {
         }
       />
       {fill.kind === "color" ? (
-        <Row label="Color">
+        <Row label={t("Color")}>
           <input
             type="color"
-            aria-label="Stroke colour"
+            aria-label={t("Stroke colour")}
             className={styles.colorInput}
             style={{ width: 36 }}
             value={fill.color}
@@ -714,24 +741,24 @@ function StrokePage({ effect: e, set }: PageProps<"stroke">) {
       ) : (
         <>
           <GradientStopsEditor
-            label="Stroke gradient"
+            label={t("Stroke gradient")}
             stops={fill.stops}
             onChange={(stops) => setFill({ stops })}
           />
           <Check
-            label="Reverse"
+            label={t("Reverse")}
             checked={fill.reverse}
             onChange={(reverse) => setFill({ reverse })}
           />
           <Choice
-            label="Style"
+            label={t("Style")}
             value={fill.style}
-            options={GRADIENT_STYLES}
+            options={translated(t, GRADIENT_STYLES)}
             onChange={(style) => setFill({ style })}
           />
           <AngleDial value={fill.angle} onChange={(angle) => setFill({ angle })} />
           <NumberSlider
-            label="Scale"
+            label={t("Scale")}
             value={fill.scale}
             min={10}
             max={150}
@@ -751,6 +778,7 @@ export function EffectPage<K extends EffectKind>({
   bevelPage = "structure",
   ...props
 }: PageProps<K> & { kind: K; bevelPage?: BevelPage }) {
+  const t = useT();
   const p = props as unknown as PageProps<never>;
   switch (kind) {
     case "dropShadow":
@@ -769,7 +797,7 @@ export function EffectPage<K extends EffectKind>({
       const { effect: e, set } = p as unknown as PageProps<"colorOverlay">;
       return (
         <>
-          <Heading>Color</Heading>
+          <Heading>{t("Color")}</Heading>
           <BlendRow
             mode={e.blendMode}
             onMode={(blendMode) => set({ blendMode })}

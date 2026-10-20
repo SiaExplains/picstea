@@ -66,6 +66,8 @@ import {
 } from "./icons";
 import type { UiAction, UiActionId } from "./use-editor-actions";
 import { ArrangeButtons } from "./ArrangeButtons";
+import { useT } from "./i18n";
+import { N_ } from "@/i18n/editor/catalog";
 
 /** Icon for every toolbar group member (ADR-0027). */
 const MEMBER_ICONS: Record<string, React.ReactNode> = {
@@ -120,6 +122,7 @@ function ToolGroupButton({ group }: { group: ToolGroup }) {
   const controller = useController();
   const state = useEditorState((s) => s);
   const isMac = useIsMac();
+  const t = useT();
   const [flyout, setFlyout] = useState<{ x: number; y: number } | null>(null);
   const press = useRef<number | null>(null);
   const opened = useRef(false);
@@ -143,11 +146,18 @@ function ToolGroupButton({ group }: { group: ToolGroup }) {
         type="button"
         className={`${styles.toolButton} ${many ? styles.toolGroup : ""}`}
         aria-pressed={isMemberActive(member, state)}
-        aria-label={`${member.label} tool`}
+        aria-label={t("{label} tool", { label: t(member.label) })}
         aria-haspopup={many ? "menu" : undefined}
         aria-expanded={many ? !!flyout : undefined}
         aria-keyshortcuts={shortcut || undefined}
-        title={`${member.label} (${shortcut})${many ? " · right-click or hold for more" : ""}`}
+        title={
+          many
+            ? t("{label} ({shortcut}) · right-click or hold for more", {
+                label: t(member.label),
+                shortcut,
+              })
+            : `${t(member.label)} (${shortcut})`
+        }
         data-tool-group={group.id}
         onPointerDown={(e) => {
           if (!many || e.button !== 0) return;
@@ -189,11 +199,11 @@ function ToolGroupButton({ group }: { group: ToolGroup }) {
         <ContextMenu
           x={flyout.x}
           y={flyout.y}
-          label={`${member.label} tools`}
+          label={t("{label} tools", { label: t(member.label) })}
           onClose={closeFlyout}
           items={group.members.map((m): ContextMenuEntry => ({
             kind: "item",
-            label: m.label,
+            label: t(m.label),
             enabled: true,
             checked: m === member,
             icon: <span className={styles.flyoutIcon}>{MEMBER_ICONS[m.id]}</span>,
@@ -215,8 +225,9 @@ export function Toolbar({
   onEditColor: (which: "foreground" | "background") => void;
 }) {
   const colors = useEditorState((s) => s.colors);
+  const t = useT();
   return (
-    <nav className={styles.toolbar} aria-label="Tools">
+    <nav className={styles.toolbar} aria-label={t("Tools")}>
       {TOOL_GROUPS.map((group) => (
         <ToolGroupButton key={group.id} group={group} />
       ))}
@@ -228,8 +239,12 @@ export function Toolbar({
             type="button"
             className={`${styles.swatch} ${which === "foreground" ? styles.swatchForeground : styles.swatchBackground}`}
             style={{ background: colors[which] }}
-            aria-label={which === "foreground" ? "Foreground colour" : "Background colour"}
-            title={`${which === "foreground" ? "Foreground" : "Background"} colour ${colors[which]}`}
+            aria-label={which === "foreground" ? t("Foreground colour") : t("Background colour")}
+            title={
+              which === "foreground"
+                ? t("Foreground colour {color}", { color: colors[which] })
+                : t("Background colour {color}", { color: colors[which] })
+            }
             data-color={colors[which]}
             onClick={() => onEditColor(which)}
           />
@@ -239,8 +254,8 @@ export function Toolbar({
         <button
           type="button"
           className={styles.iconButton}
-          aria-label={`${actions["colors.reset"].label} (D)`}
-          title="Default colours: black and white (D)"
+          aria-label={`${t(actions["colors.reset"].label)} (D)`}
+          title={`${t("Default colours: black and white")} (D)`}
           onClick={actions["colors.reset"].run}
         >
           <ResetColorsIcon size={12} />
@@ -248,8 +263,8 @@ export function Toolbar({
         <button
           type="button"
           className={styles.iconButton}
-          aria-label={`${actions["colors.swap"].label} (X)`}
-          title="Swap colours (X)"
+          aria-label={`${t(actions["colors.swap"].label)} (X)`}
+          title={`${t("Swap colours")} (X)`}
           onClick={actions["colors.swap"].run}
         >
           <SwapIcon size={14} />
@@ -299,12 +314,13 @@ function NumberOption({
 
 function BrushOptions({ tool }: { tool: "brush" | "pencil" | "eraser" }) {
   const controller = useController();
+  const t = useT();
   const settings = useEditorState((s) => s.toolSettings[tool]);
   const set = (patch: Partial<typeof settings>) => controller.store.updateToolSettings(tool, patch);
   return (
     <>
       <NumberOption
-        label="Size"
+        label={t("Size")}
         value={settings.size}
         min={1}
         max={1000}
@@ -313,7 +329,7 @@ function BrushOptions({ tool }: { tool: "brush" | "pencil" | "eraser" }) {
       />
       {tool !== "pencil" && (
         <NumberOption
-          label="Hardness"
+          label={t("Hardness")}
           value={Math.round(settings.hardness * 100)}
           min={0}
           max={100}
@@ -322,7 +338,7 @@ function BrushOptions({ tool }: { tool: "brush" | "pencil" | "eraser" }) {
         />
       )}
       <NumberOption
-        label="Opacity"
+        label={t("Opacity")}
         value={Math.round(settings.opacity * 100)}
         min={1}
         max={100}
@@ -331,8 +347,8 @@ function BrushOptions({ tool }: { tool: "brush" | "pencil" | "eraser" }) {
       />
       <span>
         {tool === "eraser"
-          ? "[ and ] change size"
-          : "[ and ] change size · Alt-click picks a colour"}
+          ? t("[ and ] change size")
+          : t("[ and ] change size · Alt-click picks a colour")}
       </span>
     </>
   );
@@ -347,10 +363,11 @@ function TipOptions({
   const controller = useController();
   const size = useEditorState((s) => s.toolSettings[tool].size);
   const hardness = useEditorState((s) => s.toolSettings[tool].hardness);
+  const t = useT();
   return (
     <>
       <NumberOption
-        label="Size"
+        label={t("Size")}
         value={size}
         min={1}
         max={1000}
@@ -358,7 +375,7 @@ function TipOptions({
         onChange={(v) => controller.store.updateToolSettings(tool, { size: v })}
       />
       <NumberOption
-        label="Hardness"
+        label={t("Hardness")}
         value={Math.round(hardness * 100)}
         min={0}
         max={100}
@@ -393,6 +410,7 @@ function Segmented<T extends string>({
 
 function SourceBrushOptions({ tool }: { tool: "clone" | "heal" }) {
   const controller = useController();
+  const t = useT();
   const settings = useEditorState((s) => s.toolSettings[tool]);
   const set = (patch: Partial<typeof settings>) => controller.store.updateToolSettings(tool, patch);
   return (
@@ -400,7 +418,7 @@ function SourceBrushOptions({ tool }: { tool: "clone" | "heal" }) {
       <TipOptions tool={tool} />
       {tool === "clone" && (
         <NumberOption
-          label="Opacity"
+          label={t("Opacity")}
           value={Math.round(settings.opacity * 100)}
           min={1}
           max={100}
@@ -414,38 +432,39 @@ function SourceBrushOptions({ tool }: { tool: "clone" | "heal" }) {
           checked={settings.aligned}
           onChange={(e) => set({ aligned: e.target.checked })}
         />
-        Aligned
+        {t("Aligned")}
       </label>
       <label className={styles.optionGroup}>
-        Sample
+        {t("Sample")}
         <select
           className={styles.input}
           value={settings.sample}
           onChange={(e) => set({ sample: e.target.value === "all" ? "all" : "current" })}
         >
-          <option value="current">Current layer</option>
-          <option value="all">All layers</option>
+          <option value="current">{t("Current layer")}</option>
+          <option value="all">{t("All layers")}</option>
         </select>
       </label>
-      <span>Alt-click sets the source · [ and ] change size</span>
+      <span>{t("Alt-click sets the source · [ and ] change size")}</span>
     </>
   );
 }
 
 function ToneOptions() {
   const controller = useController();
+  const t = useT();
   const settings = useEditorState((s) => s.toolSettings.tone);
   const set = (patch: Partial<typeof settings>) =>
     controller.store.updateToolSettings("tone", patch);
   return (
     <>
       <Segmented
-        label="Tone mode"
+        label={t("Tone mode")}
         value={settings.mode}
         options={[
-          ["dodge", "Dodge"],
-          ["burn", "Burn"],
-          ["sponge", "Sponge"],
+          ["dodge", t("Dodge")],
+          ["burn", t("Burn")],
+          ["sponge", t("Sponge")],
         ]}
         onChange={(mode) => set({ mode })}
       />
@@ -453,7 +472,7 @@ function ToneOptions() {
       {settings.mode === "sponge" ? (
         <>
           <label className={styles.optionGroup}>
-            Mode
+            {t("Mode")}
             <select
               className={styles.input}
               value={settings.sponge}
@@ -461,12 +480,12 @@ function ToneOptions() {
                 set({ sponge: e.target.value === "saturate" ? "saturate" : "desaturate" })
               }
             >
-              <option value="desaturate">Desaturate</option>
-              <option value="saturate">Saturate</option>
+              <option value="desaturate">{t("Desaturate")}</option>
+              <option value="saturate">{t("Saturate")}</option>
             </select>
           </label>
           <NumberOption
-            label="Flow"
+            label={t("Flow")}
             value={Math.round(settings.flow * 100)}
             min={1}
             max={100}
@@ -477,7 +496,7 @@ function ToneOptions() {
       ) : (
         <>
           <label className={styles.optionGroup}>
-            Range
+            {t("Range")}
             <select
               className={styles.input}
               value={settings.range}
@@ -492,13 +511,13 @@ function ToneOptions() {
                 })
               }
             >
-              <option value="shadows">Shadows</option>
-              <option value="midtones">Midtones</option>
-              <option value="highlights">Highlights</option>
+              <option value="shadows">{t("Shadows")}</option>
+              <option value="midtones">{t("Midtones")}</option>
+              <option value="highlights">{t("Highlights")}</option>
             </select>
           </label>
           <NumberOption
-            label="Exposure"
+            label={t("Exposure")}
             value={Math.round(settings.exposure * 100)}
             min={1}
             max={100}
@@ -513,24 +532,25 @@ function ToneOptions() {
 
 function FocusOptions() {
   const controller = useController();
+  const t = useT();
   const settings = useEditorState((s) => s.toolSettings.focus);
   const set = (patch: Partial<typeof settings>) =>
     controller.store.updateToolSettings("focus", patch);
   return (
     <>
       <Segmented
-        label="Focus mode"
+        label={t("Focus mode")}
         value={settings.mode}
         options={[
-          ["blur", "Blur"],
-          ["sharpen", "Sharpen"],
-          ["smudge", "Smudge"],
+          ["blur", t("Blur")],
+          ["sharpen", t("Sharpen")],
+          ["smudge", t("Smudge")],
         ]}
         onChange={(mode) => set({ mode })}
       />
       <TipOptions tool="focus" />
       <NumberOption
-        label="Strength"
+        label={t("Strength")}
         value={Math.round(settings.strength * 100)}
         min={1}
         max={100}
@@ -542,17 +562,18 @@ function FocusOptions() {
 }
 
 const MODE_LABELS: Record<SelectionMode, string> = {
-  replace: "New",
-  add: "Add",
-  subtract: "Subtract",
-  intersect: "Intersect",
+  replace: N_("New"),
+  add: N_("Add"),
+  subtract: N_("Subtract"),
+  intersect: N_("Intersect"),
 };
 
 function SelectionModeOption({ tool }: { tool: "marquee" | "lasso" | "wand" }) {
   const controller = useController();
   const mode = useEditorState((s) => s.toolSettings[tool].mode);
+  const t = useT();
   return (
-    <div className={styles.segmented} role="group" aria-label="Selection mode">
+    <div className={styles.segmented} role="group" aria-label={t("Selection mode")}>
       {SELECTION_MODES.map((m) => (
         <button
           key={m}
@@ -560,7 +581,7 @@ function SelectionModeOption({ tool }: { tool: "marquee" | "lasso" | "wand" }) {
           aria-pressed={mode === m}
           onClick={() => controller.store.updateToolSettings(tool, { mode: m })}
         >
-          {MODE_LABELS[m]}
+          {t(MODE_LABELS[m])}
         </button>
       ))}
     </div>
@@ -614,19 +635,20 @@ function CheckOption({
 function MarqueeOptions() {
   const controller = useController();
   const shape = useEditorState((s) => s.toolSettings.marquee.shape);
+  const t = useT();
   return (
     <>
       <SegmentedOption
-        label="Marquee shape"
+        label={t("Marquee shape")}
         value={shape}
         options={[
-          { id: "rect", label: "Rectangle" },
-          { id: "ellipse", label: "Ellipse" },
+          { id: "rect", label: t("Rectangle") },
+          { id: "ellipse", label: t("Ellipse") },
         ]}
         onChange={(v) => controller.store.updateToolSettings("marquee", { shape: v })}
       />
       <SelectionModeOption tool="marquee" />
-      <span>Shift adds · Alt subtracts · drag inside to move</span>
+      <span>{t("Shift adds · Alt subtracts · drag inside to move")}</span>
     </>
   );
 }
@@ -634,22 +656,23 @@ function MarqueeOptions() {
 function LassoOptions() {
   const controller = useController();
   const kind = useEditorState((s) => s.toolSettings.lasso.kind);
+  const t = useT();
   return (
     <>
       <SegmentedOption
-        label="Lasso type"
+        label={t("Lasso type")}
         value={kind}
         options={[
-          { id: "freehand", label: "Freehand" },
-          { id: "polygonal", label: "Polygonal" },
+          { id: "freehand", label: t("Freehand") },
+          { id: "polygonal", label: t("Polygonal") },
         ]}
         onChange={(v) => controller.store.updateToolSettings("lasso", { kind: v })}
       />
       <SelectionModeOption tool="lasso" />
       <span>
         {kind === "polygonal"
-          ? "Click to add points · double-click or Enter closes"
-          : "Drag around an area"}
+          ? t("Click to add points · double-click or Enter closes")
+          : t("Drag around an area")}
       </span>
     </>
   );
@@ -657,24 +680,25 @@ function LassoOptions() {
 
 function FloodOptions({ tool }: { tool: "wand" | "bucket" | "magic-eraser" }) {
   const controller = useController();
+  const t = useT();
   const settings = useEditorState((s) => s.toolSettings[tool]);
   const set = (patch: Partial<typeof settings>) => controller.store.updateToolSettings(tool, patch);
   return (
     <>
       <NumberOption
-        label="Tolerance"
+        label={t("Tolerance")}
         value={settings.tolerance}
         min={0}
         max={255}
         onChange={(tolerance) => set({ tolerance })}
       />
       <CheckOption
-        label="Contiguous"
+        label={t("Contiguous")}
         checked={settings.contiguous}
         onChange={(contiguous) => set({ contiguous })}
       />
       <CheckOption
-        label="Sample all layers"
+        label={t("Sample all layers")}
         checked={settings.sampleAll}
         onChange={(sampleAll) => set({ sampleAll })}
       />
@@ -687,11 +711,12 @@ function FloodOptions({ tool }: { tool: "wand" | "bucket" | "magic-eraser" }) {
 function SampledBrushOptions({ tool }: { tool: "bg-eraser" | "color-replace" }) {
   const controller = useController();
   const tolerance = useEditorState((s) => s.toolSettings[tool].tolerance);
+  const t = useT();
   return (
     <>
       <TipOptions tool={tool} />
       <NumberOption
-        label="Tolerance"
+        label={t("Tolerance")}
         value={tolerance}
         min={0}
         max={255}
@@ -699,8 +724,10 @@ function SampledBrushOptions({ tool }: { tool: "bg-eraser" | "color-replace" }) 
       />
       <span>
         {tool === "bg-eraser"
-          ? "Erases colours like the one under the first dab"
-          : "Paints the foreground colour over colours like the one under the first dab, keeping their shading"}
+          ? t("Erases colours like the one under the first dab")
+          : t(
+              "Paints the foreground colour over colours like the one under the first dab, keeping their shading",
+            )}
       </span>
     </>
   );
@@ -708,13 +735,14 @@ function SampledBrushOptions({ tool }: { tool: "bg-eraser" | "color-replace" }) 
 
 function RedEyeOptions() {
   const controller = useController();
+  const t = useT();
   const settings = useEditorState((s) => s.toolSettings["red-eye"]);
   const set = (patch: Partial<typeof settings>) =>
     controller.store.updateToolSettings("red-eye", patch);
   return (
     <>
       <NumberOption
-        label="Pupil size"
+        label={t("Pupil size")}
         value={settings.size}
         min={2}
         max={500}
@@ -722,14 +750,14 @@ function RedEyeOptions() {
         onChange={(size) => set({ size })}
       />
       <NumberOption
-        label="Darken"
+        label={t("Darken")}
         value={Math.round(settings.darken * 100)}
         min={0}
         max={100}
         suffix="%"
         onChange={(v) => set({ darken: v / 100 })}
       />
-      <span>Click or paint over red pupils</span>
+      <span>{t("Click or paint over red pupils")}</span>
     </>
   );
 }
@@ -740,12 +768,13 @@ const hex2 = (n: number) => n.toString(16).padStart(2, "0");
 function SamplerOptions() {
   const controller = useController();
   const samplers = useEditorState((s) => s.measure.samplers);
+  const t = useT();
   // Re-read the colours whenever the document changes.
   useActiveSession();
   return (
     <>
-      {samplers.length === 0 && <span>Click to place up to four colour sample points</span>}
-      <ul className={styles.samplerList} aria-label="Colour samples">
+      {samplers.length === 0 && <span>{t("Click to place up to four colour sample points")}</span>}
+      <ul className={styles.samplerList} aria-label={t("Colour samples")}>
         {samplers.map((p, i) => {
           const c = controller.sampleColor(p.x, p.y);
           const label = c ? `#${hex2(c[0])}${hex2(c[1])}${hex2(c[2])}` : "…";
@@ -755,7 +784,7 @@ function SamplerOptions() {
                 className={styles.samplerSwatch}
                 style={{ background: c ? label : "transparent" }}
               />
-              <strong>#{i + 1}</strong> {c ? `R ${c[0]} G ${c[1]} B ${c[2]}` : "loading"}{" "}
+              <strong>#{i + 1}</strong> {c ? `R ${c[0]} G ${c[1]} B ${c[2]}` : t("loading")}{" "}
               <code>{label}</code>
             </li>
           );
@@ -767,10 +796,10 @@ function SamplerOptions() {
           className={styles.button}
           onClick={() => controller.store.setMeasure({ samplers: [] })}
         >
-          Clear
+          {t("Clear")}
         </button>
       )}
-      {samplers.length > 0 && <span>Drag a point to move it · Alt-click removes it</span>}
+      {samplers.length > 0 && <span>{t("Drag a point to move it · Alt-click removes it")}</span>}
     </>
   );
 }
@@ -778,12 +807,14 @@ function SamplerOptions() {
 function RulerOptions() {
   const controller = useController();
   const ruler = useEditorState((s) => s.measure.ruler);
-  if (!ruler) return <span>Drag to measure a distance and an angle · Shift snaps to 45°</span>;
+  const t = useT();
+  if (!ruler)
+    return <span>{t("Drag to measure a distance and an angle · Shift snaps to 45°")}</span>;
   const m = measureLine(ruler.from, ruler.to);
   const f = (v: number) => (Math.round(v * 10) / 10).toString();
   return (
     <>
-      <output className={styles.rulerReadout} aria-label="Measurement">
+      <output className={styles.rulerReadout} aria-label={t("Measurement")}>
         X {f(m.x)} · Y {f(m.y)} · W {f(m.width)} · H {f(m.height)} · A {f(m.angle)}° · L{" "}
         {f(m.length)} px
       </output>
@@ -792,7 +823,7 @@ function RulerOptions() {
         className={styles.button}
         onClick={() => controller.store.setMeasure({ ruler: null })}
       >
-        Clear
+        {t("Clear")}
       </button>
     </>
   );
@@ -800,38 +831,39 @@ function RulerOptions() {
 
 function GradientOptions() {
   const controller = useController();
+  const t = useT();
   const settings = useEditorState((s) => s.toolSettings.gradient);
   const set = (patch: Partial<typeof settings>) =>
     controller.store.updateToolSettings("gradient", patch);
   return (
     <>
       <SegmentedOption
-        label="Gradient type"
+        label={t("Gradient type")}
         value={settings.kind}
         options={[
-          { id: "linear", label: "Linear" },
-          { id: "radial", label: "Radial" },
+          { id: "linear", label: t("Linear") },
+          { id: "radial", label: t("Radial") },
         ]}
         onChange={(kind) => set({ kind })}
       />
       <SegmentedOption
-        label="Gradient colours"
+        label={t("Gradient colours")}
         value={settings.to}
         options={[
-          { id: "background", label: "To background" },
-          { id: "transparent", label: "To transparent" },
+          { id: "background", label: t("To background") },
+          { id: "transparent", label: t("To transparent") },
         ]}
         onChange={(to) => set({ to })}
       />
       <NumberOption
-        label="Opacity"
+        label={t("Opacity")}
         value={Math.round(settings.opacity * 100)}
         min={1}
         max={100}
         suffix="%"
         onChange={(v) => set({ opacity: v / 100 })}
       />
-      <span>Drag to draw · Shift snaps to 45°</span>
+      <span>{t("Drag to draw · Shift snaps to 45°")}</span>
     </>
   );
 }
@@ -839,32 +871,34 @@ function GradientOptions() {
 function EyedropperOptions() {
   const controller = useController();
   const sampleAll = useEditorState((s) => s.toolSettings.eyedropper.sampleAll);
+  const t = useT();
   return (
     <>
       <CheckOption
-        label="Sample all layers"
+        label={t("Sample all layers")}
         checked={sampleAll}
         onChange={(v) => controller.store.updateToolSettings("eyedropper", { sampleAll: v })}
       />
-      <span>Click sets the foreground colour · Alt-click the background colour</span>
+      <span>{t("Click sets the foreground colour · Alt-click the background colour")}</span>
     </>
   );
 }
 
 function ShapeOptions() {
   const controller = useController();
+  const t = useT();
   const settings = useEditorState((s) => s.toolSettings.shape);
   const set = (patch: Partial<typeof settings>) =>
     controller.store.updateToolSettings("shape", patch);
   const kinds: { id: Exclude<ShapeKind, "path"> | "polygon"; label: string }[] = [
-    { id: "rect", label: "Rectangle" },
-    { id: "ellipse", label: "Ellipse" },
-    { id: "polygon", label: "Polygon" },
-    { id: "line", label: "Line" },
+    { id: "rect", label: t("Rectangle") },
+    { id: "ellipse", label: t("Ellipse") },
+    { id: "polygon", label: t("Polygon") },
+    { id: "line", label: t("Line") },
   ];
   return (
     <>
-      <div className={styles.segmented} role="group" aria-label="Shape">
+      <div className={styles.segmented} role="group" aria-label={t("Shape")}>
         {kinds.map((k) => (
           <button
             key={k.id}
@@ -883,10 +917,10 @@ function ShapeOptions() {
             checked={settings.fillEnabled}
             onChange={(e) => set({ fillEnabled: e.target.checked })}
           />
-          Fill
+          {t("Fill")}
           <input
             type="color"
-            aria-label="Fill colour"
+            aria-label={t("Fill colour")}
             value={settings.fill}
             onChange={(e) => set({ fill: e.target.value })}
           />
@@ -899,16 +933,16 @@ function ShapeOptions() {
           disabled={settings.kind === "line"}
           onChange={(e) => set({ strokeEnabled: e.target.checked })}
         />
-        Stroke
+        {t("Stroke")}
         <input
           type="color"
-          aria-label="Stroke colour"
+          aria-label={t("Stroke colour")}
           value={settings.stroke}
           onChange={(e) => set({ stroke: e.target.value, strokeEnabled: true })}
         />
       </label>
       <NumberOption
-        label="Width"
+        label={t("Width")}
         value={settings.strokeWidth}
         min={1}
         max={500}
@@ -917,7 +951,7 @@ function ShapeOptions() {
       />
       {settings.kind === "polygon" && (
         <NumberOption
-          label="Sides"
+          label={t("Sides")}
           value={settings.sides}
           min={3}
           max={64}
@@ -926,7 +960,7 @@ function ShapeOptions() {
       )}
       {settings.kind === "rect" && (
         <NumberOption
-          label="Radius"
+          label={t("Radius")}
           value={settings.cornerRadius}
           min={0}
           max={5000}
@@ -934,7 +968,7 @@ function ShapeOptions() {
           onChange={(cornerRadius) => set({ cornerRadius })}
         />
       )}
-      <span>Shift: square · Alt: from centre</span>
+      <span>{t("Shift: square · Alt: from centre")}</span>
     </>
   );
 }
@@ -942,6 +976,8 @@ function ShapeOptions() {
 function TextOptions() {
   const controller = useController();
   const settings = useEditorState((s) => s.toolSettings.text);
+  const t = useT();
+  const alignLabels = { left: t("Left"), center: t("Center"), right: t("Right") };
   const edit = useSyncExternalStore(
     controller.textEdit.subscribe,
     controller.textEdit.get,
@@ -956,7 +992,7 @@ function TextOptions() {
   return (
     <>
       <label className={styles.optionGroup}>
-        Font
+        {t("Font")}
         <select
           className={styles.select}
           value={style.fontFamily}
@@ -964,20 +1000,20 @@ function TextOptions() {
         >
           {FONT_FAMILIES.map((f) => (
             <option key={f} value={f}>
-              {f === "system-ui" ? "System" : f}
+              {f === "system-ui" ? t("System") : f}
             </option>
           ))}
         </select>
       </label>
       <NumberOption
-        label="Size"
+        label={t("Size")}
         value={style.fontSize}
         min={1}
         max={2000}
         suffix="px"
         onChange={(fontSize) => set({ fontSize })}
       />
-      <div className={styles.segmented} role="group" aria-label="Style">
+      <div className={styles.segmented} role="group" aria-label={t("Style")}>
         <button
           type="button"
           aria-pressed={style.fontWeight === 700}
@@ -995,7 +1031,7 @@ function TextOptions() {
           <i>I</i>
         </button>
       </div>
-      <div className={styles.segmented} role="group" aria-label="Alignment">
+      <div className={styles.segmented} role="group" aria-label={t("Alignment")}>
         {(["left", "center", "right"] as const).map((align) => (
           <button
             key={align}
@@ -1004,14 +1040,14 @@ function TextOptions() {
             onPointerDown={(e) => e.preventDefault()}
             onClick={() => set({ align })}
           >
-            {align[0].toUpperCase() + align.slice(1)}
+            {alignLabels[align]}
           </button>
         ))}
       </div>
       <span>
         {edit
-          ? "⌘/Ctrl+Enter or click outside to finish · Esc cancels"
-          : "Click on the canvas to add text"}
+          ? t("⌘/Ctrl+Enter or click outside to finish · Esc cancels")
+          : t("Click on the canvas to add text")}
       </span>
     </>
   );
@@ -1019,20 +1055,21 @@ function TextOptions() {
 
 function CropOptions() {
   const controller = useController();
+  const t = useT();
   return (
     <>
-      <span>Drag the handles or draw a new box</span>
+      <span>{t("Drag the handles or draw a new box")}</span>
       <button
         type="button"
         className={`${styles.button} ${styles.primary}`}
         onClick={() => controller.tools.applyCrop()}
       >
-        Apply crop
+        {t("Apply crop")}
       </button>
       <button type="button" className={styles.button} onClick={() => controller.tools.resetCrop()}>
-        Reset
+        {t("Reset")}
       </button>
-      <span>Enter applies · Esc resets</span>
+      <span>{t("Enter applies · Esc resets")}</span>
     </>
   );
 }
@@ -1040,6 +1077,7 @@ function CropOptions() {
 function MoveOptions({ actions }: { actions: Record<UiActionId, UiAction> }) {
   const controller = useController();
   const autoSelect = useEditorState((s) => s.toolSettings.move.autoSelect);
+  const t = useT();
   const count = selectedLayerIds(useActiveSession()).length;
   return (
     <>
@@ -1051,7 +1089,7 @@ function MoveOptions({ actions }: { actions: Record<UiActionId, UiAction> }) {
             controller.store.updateToolSettings("move", { autoSelect: e.target.checked })
           }
         />
-        Auto-select layer
+        {t("Auto-select layer")}
       </label>
       <button
         type="button"
@@ -1059,7 +1097,7 @@ function MoveOptions({ actions }: { actions: Record<UiActionId, UiAction> }) {
         disabled={!actions["layer.flipH"].enabled}
         onClick={actions["layer.flipH"].run}
       >
-        Flip H
+        {t("Flip H")}
       </button>
       <button
         type="button"
@@ -1067,14 +1105,15 @@ function MoveOptions({ actions }: { actions: Record<UiActionId, UiAction> }) {
         disabled={!actions["layer.flipV"].enabled}
         onClick={actions["layer.flipV"].run}
       >
-        Flip V
+        {t("Flip V")}
       </button>
       {count > 1 ? (
         <ArrangeButtons count={count} />
       ) : (
         <span>
-          Drag handles to scale (Shift keeps ratio) · drag outside a corner to rotate · Shift-click
-          adds a layer
+          {t(
+            "Drag handles to scale (Shift keeps ratio) · drag outside a corner to rotate · Shift-click adds a layer",
+          )}
         </span>
       )}
     </>
@@ -1083,22 +1122,23 @@ function MoveOptions({ actions }: { actions: Record<UiActionId, UiAction> }) {
 
 /** Work-path actions shared by the Pen and Direct Selection options. */
 function PathButtons({ actions }: { actions: Record<UiActionId, UiAction> }) {
+  const t = useT();
   const ids: UiActionId[] = ["path.makeSelection", "path.vectorMask", "path.shape", "path.delete"];
   const labels: Partial<Record<UiActionId, string>> = {
-    "path.makeSelection": "Selection",
-    "path.vectorMask": "Mask",
-    "path.shape": "Shape",
-    "path.delete": "Delete Path",
+    "path.makeSelection": t("Selection"),
+    "path.vectorMask": t("Mask"),
+    "path.shape": t("Shape"),
+    "path.delete": t("Delete Path"),
   };
   return (
-    <div className={styles.segmented} role="group" aria-label="Work path">
+    <div className={styles.segmented} role="group" aria-label={t("Work path")}>
       {ids.map((id) => (
         <button
           key={id}
           type="button"
           disabled={!actions[id].enabled}
           onClick={actions[id].run}
-          title={actions[id].label}
+          title={t(actions[id].label)}
         >
           {labels[id]}
         </button>
@@ -1110,9 +1150,10 @@ function PathButtons({ actions }: { actions: Record<UiActionId, UiAction> }) {
 function PenOptions({ actions }: { actions: Record<UiActionId, UiAction> }) {
   const controller = useController();
   const mode = useEditorState((s) => s.toolSettings.pen.mode);
+  const t = useT();
   return (
     <>
-      <div className={styles.segmented} role="group" aria-label="Pen mode">
+      <div className={styles.segmented} role="group" aria-label={t("Pen mode")}>
         {(["shape", "path"] as const).map((m) => (
           <button
             key={m}
@@ -1120,55 +1161,56 @@ function PenOptions({ actions }: { actions: Record<UiActionId, UiAction> }) {
             aria-pressed={mode === m}
             onClick={() => controller.store.updateToolSettings("pen", { mode: m })}
           >
-            {m === "shape" ? "Shape" : "Path"}
+            {m === "shape" ? t("Shape") : t("Path")}
           </button>
         ))}
       </div>
       <PathButtons actions={actions} />
       <span>
-        Click for corners, drag for curves · click the first point to close · Enter finishes
+        {t("Click for corners, drag for curves · click the first point to close · Enter finishes")}
       </span>
     </>
   );
 }
 
 const TOOL_LABELS: Record<ToolId, string> = {
-  move: "Move",
-  marquee: "Marquee",
-  lasso: "Lasso",
-  wand: "Magic Wand",
-  crop: "Crop",
-  eyedropper: "Eyedropper",
-  brush: "Brush",
-  pencil: "Pencil",
-  eraser: "Eraser",
-  clone: "Clone Stamp",
-  heal: "Healing Brush",
-  tone: "Dodge · Burn · Sponge",
-  focus: "Blur · Sharpen · Smudge",
-  bucket: "Paint Bucket",
-  gradient: "Gradient",
-  shape: "Shape",
-  pen: "Pen",
-  "path-select": "Direct Selection",
-  text: "Text",
-  hand: "Hand",
-  zoom: "Zoom",
-  "spot-heal": "Spot Healing Brush",
-  "red-eye": "Red Eye",
-  "bg-eraser": "Background Eraser",
-  "magic-eraser": "Magic Eraser",
-  "color-replace": "Color Replacement",
-  "color-sampler": "Color Sampler",
-  ruler: "Ruler",
-  "path-move": "Path Selection",
-  "anchor-add": "Add Anchor Point",
-  "anchor-delete": "Delete Anchor Point",
-  "anchor-convert": "Convert Point",
+  move: N_("Move"),
+  marquee: N_("Marquee"),
+  lasso: N_("Lasso"),
+  wand: N_("Magic Wand"),
+  crop: N_("Crop"),
+  eyedropper: N_("Eyedropper"),
+  brush: N_("Brush"),
+  pencil: N_("Pencil"),
+  eraser: N_("Eraser"),
+  clone: N_("Clone Stamp"),
+  heal: N_("Healing Brush"),
+  tone: N_("Dodge · Burn · Sponge"),
+  focus: N_("Blur · Sharpen · Smudge"),
+  bucket: N_("Paint Bucket"),
+  gradient: N_("Gradient"),
+  shape: N_("Shape"),
+  pen: N_("Pen"),
+  "path-select": N_("Direct Selection"),
+  text: N_("Text"),
+  hand: N_("Hand"),
+  zoom: N_("Zoom"),
+  "spot-heal": N_("Spot Healing Brush"),
+  "red-eye": N_("Red Eye"),
+  "bg-eraser": N_("Background Eraser"),
+  "magic-eraser": N_("Magic Eraser"),
+  "color-replace": N_("Color Replacement"),
+  "color-sampler": N_("Color Sampler"),
+  ruler: N_("Ruler"),
+  "path-move": N_("Path Selection"),
+  "anchor-add": N_("Add Anchor Point"),
+  "anchor-delete": N_("Delete Anchor Point"),
+  "anchor-convert": N_("Convert Point"),
 };
 
 export function OptionsBar({ actions }: { actions: Record<UiActionId, UiAction> }) {
   const activeTool = useEditorState((s) => s.activeTool);
+  const t = useT();
   const button = (id: UiActionId, label?: string) => (
     <button
       type="button"
@@ -1176,13 +1218,18 @@ export function OptionsBar({ actions }: { actions: Record<UiActionId, UiAction> 
       disabled={!actions[id].enabled}
       onClick={actions[id].run}
     >
-      {label ?? actions[id].label}
+      {label ?? t(actions[id].label)}
     </button>
   );
   return (
     // data-keep-text-edit: focusing these controls must not end on-canvas text editing.
-    <div className={styles.options} role="toolbar" aria-label="Tool options" data-keep-text-edit>
-      <span className={styles.optionsLabel}>{TOOL_LABELS[activeTool]}</span>
+    <div
+      className={styles.options}
+      role="toolbar"
+      aria-label={t("Tool options")}
+      data-keep-text-edit
+    >
+      <span className={styles.optionsLabel}>{t(TOOL_LABELS[activeTool])}</span>
       {activeTool === "move" && <MoveOptions actions={actions} />}
       {activeTool === "crop" && <CropOptions />}
       {activeTool === "marquee" && <MarqueeOptions />}
@@ -1190,13 +1237,15 @@ export function OptionsBar({ actions }: { actions: Record<UiActionId, UiAction> 
       {(activeTool === "wand" || activeTool === "bucket" || activeTool === "magic-eraser") && (
         <FloodOptions tool={activeTool} />
       )}
-      {activeTool === "magic-eraser" && <span>Click to erase an area of similar colour</span>}
+      {activeTool === "magic-eraser" && (
+        <span>{t("Click to erase an area of similar colour")}</span>
+      )}
       {activeTool === "color-sampler" && <SamplerOptions />}
       {activeTool === "ruler" && <RulerOptions />}
       {activeTool === "spot-heal" && (
         <>
           <TipOptions tool="spot-heal" />
-          <span>Paint over spots — the texture comes from around them automatically</span>
+          <span>{t("Paint over spots — the texture comes from around them automatically")}</span>
         </>
       )}
       {activeTool === "red-eye" && <RedEyeOptions />}
@@ -1212,10 +1261,12 @@ export function OptionsBar({ actions }: { actions: Record<UiActionId, UiAction> 
           <span>
             {
               {
-                "path-move": "Drag a path to move all of it",
-                "anchor-add": "Click a path segment to add a point",
-                "anchor-delete": "Click a point to delete it",
-                "anchor-convert": "Click a point for corner ↔ smooth · drag it to pull out handles",
+                "path-move": t("Drag a path to move all of it"),
+                "anchor-add": t("Click a path segment to add a point"),
+                "anchor-delete": t("Click a point to delete it"),
+                "anchor-convert": t(
+                  "Click a point for corner ↔ smooth · drag it to pull out handles",
+                ),
               }[activeTool]
             }
           </span>
@@ -1237,21 +1288,23 @@ export function OptionsBar({ actions }: { actions: Record<UiActionId, UiAction> 
         <>
           <PathButtons actions={actions} />
           <span>
-            Drag anchors or handles · Alt-click an anchor for corner/smooth · Delete removes it
+            {t(
+              "Drag anchors or handles · Alt-click an anchor for corner/smooth · Delete removes it",
+            )}
           </span>
         </>
       )}
       {activeTool === "text" && <TextOptions />}
       {activeTool === "zoom" && (
         <>
-          {button("view.zoomIn", "Zoom in")}
-          {button("view.zoomOut", "Zoom out")}
-          <span>Click to zoom in · Alt-click to zoom out</span>
+          {button("view.zoomIn", t("Zoom in"))}
+          {button("view.zoomOut", t("Zoom out"))}
+          <span>{t("Click to zoom in · Alt-click to zoom out")}</span>
         </>
       )}
-      {activeTool === "hand" && <span>Drag to pan · Hold Space with any tool to pan</span>}
+      {activeTool === "hand" && <span>{t("Drag to pan · Hold Space with any tool to pan")}</span>}
       <span style={{ flex: 1 }} />
-      {button("view.fit", "Fit screen")}
+      {button("view.fit", t("Fit screen"))}
       {button("view.actualPixels", "100%")}
     </div>
   );
@@ -1261,9 +1314,10 @@ export function DocumentTabs() {
   const controller = useController();
   const sessions = useEditorState((s) => s.sessions);
   const activeId = useEditorState((s) => s.activeDocumentId);
+  const t = useT();
   if (sessions.length === 0) return null;
   return (
-    <div className={styles.tabs} role="tablist" aria-label="Open documents">
+    <div className={styles.tabs} role="tablist" aria-label={t("Open documents")}>
       {sessions.map((session) => {
         const { document: doc } = session;
         const active = doc.id === activeId;
@@ -1275,16 +1329,18 @@ export function DocumentTabs() {
               role="tab"
               aria-selected={active}
               className={styles.tabLabel}
-              title={`${doc.name} (${doc.width} × ${doc.height})${dirty ? " — unsaved changes" : ""}`}
+              title={`${doc.name} (${doc.width} × ${doc.height})${dirty ? ` — ${t("unsaved changes")}` : ""}`}
               onClick={() => controller.store.setActiveDocument(doc.id)}
             >
               {doc.name}
             </button>
-            {dirty && <span className={styles.dirtyDot} aria-label="Unsaved changes" role="img" />}
+            {dirty && (
+              <span className={styles.dirtyDot} aria-label={t("Unsaved changes")} role="img" />
+            )}
             <button
               type="button"
               className={styles.iconButton}
-              aria-label={`Close ${doc.name}`}
+              aria-label={t("Close {name}", { name: doc.name })}
               onClick={() => void controller.closeDocument(doc.id)}
             >
               <CloseIcon size={12} />
@@ -1315,18 +1371,19 @@ export function StatusBar() {
     () => false,
   );
   const doc = session?.document;
+  const t = useT();
   const saveState = !session
     ? ""
     : session.savedRevision === null
-      ? "Not saved yet"
+      ? t("Not saved yet")
       : isDirty(session)
-        ? "Unsaved changes"
+        ? t("Unsaved changes")
         : persistent
-          ? "Saved in this browser"
-          : "Saved for this session only";
+          ? t("Saved in this browser")
+          : t("Saved for this session only");
 
   return (
-    <footer className={styles.status} aria-label="Status">
+    <footer className={styles.status} aria-label={t("Status")}>
       {session && doc ? (
         <>
           <span data-testid="zoom-level">{Math.round(session.viewport.zoom * 1000) / 10}%</span>
@@ -1340,13 +1397,13 @@ export function StatusBar() {
           )}
           {doc.selection?.bounds && (
             <span data-testid="selection-size">
-              Selection {doc.selection.bounds.width} × {doc.selection.bounds.height}
+              {t("Selection")} {doc.selection.bounds.width} × {doc.selection.bounds.height}
             </span>
           )}
           <span className={styles.statusSpacer} />
           {refining && (
             <span className={styles.muted} data-testid="refining">
-              Rendering…
+              {t("Rendering…")}
             </span>
           )}
           <span aria-live="polite" data-testid="save-state">
@@ -1354,7 +1411,7 @@ export function StatusBar() {
           </span>
         </>
       ) : (
-        <span>Your images stay on this device — nothing is uploaded.</span>
+        <span>{t("Your images stay on this device — nothing is uploaded.")}</span>
       )}
     </footer>
   );

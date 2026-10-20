@@ -5,6 +5,7 @@ import { SponsorTile } from "@/components/site/SponsorTile";
 import { SPONSORSHIPS } from "@/content/sponsorships";
 import { dayNumber, pickSponsorships } from "@/lib/sponsorship/sponsorship";
 import styles from "./editor.module.css";
+import { useT } from "./i18n";
 
 const noSubscribe = () => () => {};
 
@@ -24,9 +25,14 @@ export function SideColumn({ onPrivacySettings }: { onPrivacySettings: () => voi
     () => dayNumber(Date.now()),
     () => 0,
   );
+  const t = useT();
   const ads = pickSponsorships(SPONSORSHIPS, "editor-side", day, SIDE_SLOTS);
   return (
-    <aside className={styles.side} aria-label="Sponsorship and privacy" data-testid="editor-side">
+    <aside
+      className={styles.side}
+      aria-label={t("Sponsorship and privacy")}
+      data-testid="editor-side"
+    >
       <div className={styles.sideSlots}>
         {ads.map((ad, i) => (
           <div key={`${i}-${ad.id}`} className={styles.sideSlot} data-testid="side-slot">
@@ -35,7 +41,7 @@ export function SideColumn({ onPrivacySettings }: { onPrivacySettings: () => voi
         ))}
       </div>
       <button type="button" className={styles.sideButton} onClick={onPrivacySettings}>
-        Privacy settings
+        {t("Privacy settings")}
       </button>
     </aside>
   );

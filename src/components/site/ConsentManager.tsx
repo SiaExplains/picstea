@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import {
   ALL,
@@ -43,7 +44,7 @@ export function ConsentManager() {
           <p>
             Picstea never uploads your images. On the website and blog we would like to show Google
             ads, which may use cookies. You choose — the editor works the same either way.{" "}
-            <a href="/cookies">Cookie policy</a>
+            <Link href="/cookies">Cookie policy</Link>
           </p>
           <div className={styles.bannerActions}>
             <button

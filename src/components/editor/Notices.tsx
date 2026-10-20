@@ -3,6 +3,7 @@
 import { useEffect, useSyncExternalStore } from "react";
 import { useAppStatus, useController } from "./editor-context";
 import styles from "./editor.module.css";
+import { useMessage, useT } from "./i18n";
 import { CloseIcon } from "./icons";
 
 const AUTO_DISMISS_MS = 8000;
@@ -10,6 +11,8 @@ const AUTO_DISMISS_MS = 8000;
 export function Notices() {
   const controller = useController();
   const notices = useAppStatus((s) => s.notices);
+  const t = useT();
+  const message = useMessage();
 
   useEffect(() => {
     if (notices.length === 0) return;
@@ -25,11 +28,11 @@ export function Notices() {
           key={notice.id}
           className={`${styles.notice} ${notice.kind === "error" ? styles.noticeError : ""}`}
         >
-          <span className={styles.noticeText}>{notice.message}</span>
+          <span className={styles.noticeText}>{message(notice.message, notice.template)}</span>
           <button
             type="button"
             className={styles.iconButton}
-            aria-label="Dismiss"
+            aria-label={t("Dismiss")}
             onClick={() => controller.dismissNotice(notice.id)}
           >
             <CloseIcon size={12} />
@@ -44,11 +47,12 @@ export function Notices() {
 export function BusyOverlay() {
   const controller = useController();
   const busy = useSyncExternalStore(controller.busy.subscribe, controller.busy.get, () => null);
+  const t = useT();
   if (!busy) return null;
   return (
     <div className={styles.busy} role="status" aria-live="polite" data-testid="busy">
       <span className={styles.spinner} aria-hidden="true" />
-      {busy}
+      {t(busy)}
     </div>
   );
 }

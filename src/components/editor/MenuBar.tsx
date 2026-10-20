@@ -8,6 +8,9 @@ import { DEFAULT_KEYMAP, formatBinding } from "@/editor/core/shortcuts/shortcuts
 import { useIsMac } from "./editor-context";
 import styles from "./editor.module.css";
 import type { UiAction, UiActionId } from "./use-editor-actions";
+import { LOCALES, localizedPath } from "@/i18n/locales";
+import { N_ } from "@/i18n/editor/catalog";
+import { useLocale, useT } from "./i18n";
 
 /** A menu entry: an action, a separator, or a submenu (ADR-0032). */
 type MenuEntry = UiActionId | "-" | Submenu;
@@ -38,21 +41,21 @@ const FILTER_MENU: MenuEntry[] = [
 ];
 
 const MENUS: readonly Submenu[] = [
-  sub("File", [
+  sub(N_("File"), [
     "file.new",
     "file.open",
-    sub("Place", ["file.place", "file.placeEmbedded"]),
+    sub(N_("Place"), ["file.place", "file.placeEmbedded"]),
     "-",
     "file.save",
     "file.saveProject",
     "file.export",
     "file.convert",
     "-",
-    sub("Automate", ["file.batch", "window.actions"]),
+    sub(N_("Automate"), ["file.batch", "window.actions"]),
     "-",
     "file.close",
   ]),
-  sub("Edit", [
+  sub(N_("Edit"), [
     "edit.undo",
     "edit.redo",
     "-",
@@ -66,12 +69,12 @@ const MENUS: readonly Submenu[] = [
     "edit.stroke",
     "-",
     "tool.transform",
-    sub("Transform", ["layer.flipH", "layer.flipV"]),
+    sub(N_("Transform"), ["layer.flipH", "layer.flipV"]),
     "-",
     "help.shortcuts",
   ]),
-  sub("Image", [
-    sub("Adjustments", ADJUSTMENT_ITEMS),
+  sub(N_("Image"), [
+    sub(N_("Adjustments"), ADJUSTMENT_ITEMS),
     "-",
     "image.autoTone",
     "image.autoContrast",
@@ -79,7 +82,7 @@ const MENUS: readonly Submenu[] = [
     "-",
     "image.size",
     "image.canvasSize",
-    sub("Image Rotation", [
+    sub(N_("Image Rotation"), [
       "image.rotateCw",
       "image.rotateCcw",
       "image.rotate180",
@@ -94,26 +97,26 @@ const MENUS: readonly Submenu[] = [
     "-",
     "image.duplicate",
   ]),
-  sub("Layer", [
-    sub("New", ["layer.new", "layer.newGroup", "layer.newFill", "-", "layer.viaCopy"]),
+  sub(N_("Layer"), [
+    sub(N_("New"), ["layer.new", "layer.newGroup", "layer.newFill", "-", "layer.viaCopy"]),
     "layer.duplicate",
     "layer.delete",
     "-",
-    sub("Layer Style", ["layer.style", "layer.rasterizeStyle"]),
-    sub("New Adjustment Layer", ADJUSTMENT_ITEMS),
+    sub(N_("Layer Style"), ["layer.style", "layer.rasterizeStyle"]),
+    sub(N_("New Adjustment Layer"), ADJUSTMENT_ITEMS),
     "-",
-    sub("Raster Mask", ["layer.addMask", "layer.toggleMask", "layer.deleteMask"]),
-    sub("Vector Mask", ["path.vectorMask", "layer.toggleVectorMask", "layer.deleteVectorMask"]),
+    sub(N_("Raster Mask"), ["layer.addMask", "layer.toggleMask", "layer.deleteMask"]),
+    sub(N_("Vector Mask"), ["path.vectorMask", "layer.toggleVectorMask", "layer.deleteVectorMask"]),
     "layer.clip",
     "-",
-    sub("Smart Object", ["layer.toSmartObject", "layer.editContents"]),
+    sub(N_("Smart Object"), ["layer.toSmartObject", "layer.editContents"]),
     "layer.rasterize",
     "-",
     "layer.group",
     "layer.ungroup",
     "-",
-    sub("Arrange", ["layer.moveUp", "layer.moveDown"]),
-    sub("Align", [
+    sub(N_("Arrange"), ["layer.moveUp", "layer.moveDown"]),
+    sub(N_("Align"), [
       "align.left",
       "align.center-x",
       "align.right",
@@ -122,14 +125,14 @@ const MENUS: readonly Submenu[] = [
       "align.center-y",
       "align.bottom",
     ]),
-    sub("Distribute", [
+    sub(N_("Distribute"), [
       "distribute.centers-x",
       "distribute.centers-y",
       "-",
       "distribute.spacing-x",
       "distribute.spacing-y",
     ]),
-    sub("Colour Label", [
+    sub(N_("Colour Label"), [
       "label.none",
       "-",
       "label.red",
@@ -144,13 +147,13 @@ const MENUS: readonly Submenu[] = [
     "layer.mergeDown",
     "layer.flatten",
   ]),
-  sub("Select", [
+  sub(N_("Select"), [
     "select.all",
     "select.deselect",
     "select.reselect",
     "select.inverse",
     "-",
-    sub("Layers", [
+    sub(N_("Layers"), [
       "select.allLayers",
       "select.deselectLayers",
       "-",
@@ -160,7 +163,7 @@ const MENUS: readonly Submenu[] = [
     "layer.selectPixels",
     "select.colorRange",
     "-",
-    sub("Modify", ["select.feather", "select.expand", "select.contract"]),
+    sub(N_("Modify"), ["select.feather", "select.expand", "select.contract"]),
     "select.grow",
     "select.similar",
     "-",
@@ -169,20 +172,20 @@ const MENUS: readonly Submenu[] = [
     "path.makeSelection",
     "path.fromSelection",
   ]),
-  sub("Filter", FILTER_MENU),
-  sub("View", [
+  sub(N_("Filter"), FILTER_MENU),
+  sub(N_("View"), [
     "view.zoomIn",
     "view.zoomOut",
     "view.fit",
     "view.actualPixels",
     "-",
-    sub("Show", ["view.rulers", "view.guides", "view.grid"]),
+    sub(N_("Show"), ["view.rulers", "view.guides", "view.grid"]),
     "view.snap",
     "-",
-    sub("Guides", ["view.newGuide", "view.lockGuides", "view.clearGuides"]),
+    sub(N_("Guides"), ["view.newGuide", "view.lockGuides", "view.clearGuides"]),
     "view.gridSettings",
   ]),
-  sub("Window", [
+  sub(N_("Window"), [
     "window.layers",
     "window.properties",
     "-",
@@ -190,7 +193,7 @@ const MENUS: readonly Submenu[] = [
     "window.swatches",
     "window.actions",
   ]),
-  sub("Help", [
+  sub(N_("Help"), [
     "help.welcome",
     "-",
     "help.docs",
@@ -199,6 +202,10 @@ const MENUS: readonly Submenu[] = [
     "-",
     "help.install",
     "help.privacy",
+    sub(
+      N_("Language"),
+      LOCALES.map((l) => `language.${l}` as const),
+    ),
     "-",
     "help.about",
   ]),
@@ -268,6 +275,7 @@ function MenuList({
   submenu = false,
   autoFocus = true,
 }: ListProps) {
+  const t = useT();
   const ref = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState<{
     index: number;
@@ -343,7 +351,7 @@ function MenuList({
       id={id}
       ref={ref}
       role="menu"
-      aria-label={label}
+      aria-label={t(label)}
       className={`${styles.menuPopup} ${submenu ? styles.submenuPopup : ""}`}
       style={position ? { top: position.top, left: position.left } : undefined}
       onKeyDown={onKeyDown}
@@ -376,7 +384,7 @@ function MenuList({
               >
                 <span>
                   <span className={styles.menuCheck} aria-hidden />
-                  {entry.label}
+                  {t(entry.label)}
                 </span>
                 <span className={styles.submenuArrow} aria-hidden>
                   ›
@@ -413,7 +421,7 @@ function MenuList({
             data-menu-item
             className={styles.menuItem}
             disabled={!action.enabled}
-            aria-label={action.label}
+            aria-label={t(action.label)}
             aria-keyshortcuts={keyShortcutsFor(entry) || undefined}
             onPointerEnter={() => setOpen(null)}
             onClick={() => {
@@ -425,7 +433,7 @@ function MenuList({
               <span className={styles.menuCheck} aria-hidden>
                 {action.checked ? "✓" : ""}
               </span>
-              {action.label}
+              {t(action.label)}
             </span>
             <span className={styles.shortcut}>{shortcutFor(entry, isMac)}</span>
           </button>
@@ -437,6 +445,8 @@ function MenuList({
 
 /** Accessible menubar (WAI-ARIA menubar pattern): arrow keys move between and within menus. */
 export function MenuBar({ actions }: { actions: Actions }) {
+  const t = useT();
+  const locale = useLocale();
   const [open, setOpen] = useState<number | null>(null);
   const barRef = useRef<HTMLDivElement>(null);
   const isMac = useIsMac();
@@ -476,7 +486,7 @@ export function MenuBar({ actions }: { actions: Actions }) {
       <button
         type="button"
         className={styles.brand}
-        title="Welcome to Picstea"
+        title={t("Welcome to Picstea")}
         onClick={actions["help.welcome"].run}
       >
         <Image
@@ -489,7 +499,7 @@ export function MenuBar({ actions }: { actions: Actions }) {
           unoptimized
         />
       </button>
-      <div role="menubar" aria-label="Editor menu" style={{ display: "flex", gap: 2 }}>
+      <div role="menubar" aria-label={t("Editor menu")} style={{ display: "flex", gap: 2 }}>
         {MENUS.map((menu, index) => {
           const menuId = `${baseId}-menu-${index}`;
           return (
@@ -506,7 +516,7 @@ export function MenuBar({ actions }: { actions: Actions }) {
                 onPointerEnter={() => open !== null && setOpen(index)}
                 onKeyDown={(e) => onTriggerKeyDown(e, index)}
               >
-                {menu.label}
+                {t(menu.label)}
               </button>
               {open === index && (
                 <MenuList
@@ -530,17 +540,17 @@ export function MenuBar({ actions }: { actions: Actions }) {
       </div>
       {/* Website links open in a new tab, so the editor and its work stay where they are. */}
       <nav aria-label="Picstea" className={styles.menubarLinks}>
-        <a href="/about" target="_blank" rel="noopener">
-          About
+        <a href={localizedPath("/about", locale)} target="_blank" rel="noopener">
+          {t("About")}
         </a>
         <a href="/docs" target="_blank" rel="noopener">
-          Learn
+          {t("Learn")}
         </a>
         <a href="/docs/keyboard-shortcuts" target="_blank" rel="noopener">
-          Shortcuts
+          {t("Shortcuts")}
         </a>
         <a href="/blog" target="_blank" rel="noopener">
-          Blog
+          {t("Blog")}
         </a>
       </nav>
     </div>

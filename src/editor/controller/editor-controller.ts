@@ -151,6 +151,7 @@ import { ColorRangeSession, exportFile } from "../workers/offthread";
 import { exportFilename, ExportError, safeFilename } from "../formats/export/raster-export";
 import { rgbaToSurface } from "../formats/layer-render";
 import { convertFile, type ConvertOptions, type ConvertResult } from "../formats/convert";
+import { messageTemplate, messageText, msg, type Message, type Msg } from "../core/message";
 import { detectFileKind } from "../formats/open-file";
 import {
   PROJECT_EXTENSION,
@@ -205,7 +206,9 @@ export type NoticeKind = "info" | "error";
 export interface Notice {
   readonly id: string;
   readonly kind: NoticeKind;
+  /** English text; `template` (when the message has values) is what the UI translates. */
   readonly message: string;
+  readonly template?: Msg;
 }
 
 export interface AppStatus {
@@ -215,7 +218,7 @@ export interface AppStatus {
   readonly notices: readonly Notice[];
 }
 
-export type Result = { ok: true } | { ok: false; error: string };
+export type Result = { ok: true } | { ok: false; error: string; template?: Msg };
 
 /** The on-canvas text editor's state while the user is typing. */
 export interface TextEditSession {
@@ -391,9 +394,15 @@ export class EditorController {
 
   // ---------------------------------------------------------------- notices
 
-  notify(kind: NoticeKind, message: string): void {
+  notify(kind: NoticeKind, message: Message): void {
     if (kind === "error") this.errorCount++;
-    const notice: Notice = { id: createId("notice"), kind, message };
+    const template = messageTemplate(message);
+    const notice: Notice = {
+      id: createId("notice"),
+      kind,
+      message: messageText(message),
+      ...(template && { template }),
+    };
     this.status.update((s) => ({ ...s, notices: [...s.notices, notice].slice(-MAX_NOTICES) }));
   }
 
@@ -415,7 +424,10 @@ export class EditorController {
     if (doc.width * doc.height > LARGE_DOCUMENT_PIXELS) {
       this.notify(
         "info",
-        `Large image (${megapixels.toFixed(0)} MP): editing stays responsive, but exports and some tools take a moment, and fewer undo steps are kept.`,
+        msg(
+          "Large image ({megapixels} MP): editing stays responsive, but exports and some tools take a moment, and fewer undo steps are kept.",
+          { megapixels: Math.round(megapixels) },
+        ),
       );
     }
   }
@@ -927,7 +939,7 @@ export class EditorController {
           return this.fail(kind.message);
         case "raster": {
           const result = await importRasterFile(file, this.decode);
-          if (!result.ok) return this.fail(result.error);
+          if (!result.ok) return this.fail(result.template ?? result.error);
           const { image } = result;
           const asset = this.assets.add(
             { mime: image.mime, width: image.width, height: image.height, blob: image.blob },
@@ -991,7 +1003,9 @@ export class EditorController {
     } catch (error) {
       this.logger.warn("placing embedded file failed", describeError(error));
       return this.fail(
-        error instanceof FormatError ? error.message : "The file could not be placed.",
+        error instanceof FormatError
+          ? (error.template ?? error.message)
+          : "The file could not be placed.",
       );
     }
   }
@@ -1413,7 +1427,7 @@ export class EditorController {
       const now = this.store.getSession()?.document;
       const current = now && findLayer(now, layer.id);
       if (now?.id !== doc.id || current?.kind !== "raster" || current.assetId !== layer.assetId) {
-        this.notify("info", `${label} was not applied because the layer changed.`);
+        this.notify("info", msg("{label} was not applied because the layer changed.", { label }));
         return null;
       }
       const surface = rgbaToSurface(this, out.data, out.width, out.height);
@@ -1423,7 +1437,7 @@ export class EditorController {
       return changed;
     } catch (error) {
       this.logger.warn("pixel job failed", describeError(error));
-      this.notify("error", `${label} could not be applied. Try a smaller setting.`);
+      this.notify("error", msg("{label} could not be applied. Try a smaller setting.", { label }));
       return null;
     }
   }
@@ -1476,7 +1490,10 @@ export class EditorController {
       return null;
     }
     if (!layer || layer.kind !== "raster") {
-      this.notify("error", `${action} works on pixel layers. Select a pixel layer and try again.`);
+      this.notify(
+        "error",
+        msg("{action} works on pixel layers. Select a pixel layer and try again.", { action }),
+      );
       return null;
     }
     if (layer.assetId && !this.assets.getBitmap(layer.assetId)) {
@@ -1784,7 +1801,10 @@ export class EditorController {
     }
     const adjustment = autoLevels(kind, pixels.data);
     if (!adjustment) {
-      this.notify("info", `${AUTO_NAMES[kind]}: the image already uses the full range.`);
+      this.notify(
+        "info",
+        msg("{command}: the image already uses the full range.", { command: AUTO_NAMES[kind] }),
+      );
       return;
     }
     const layer = createAdjustmentLayer(session.document, adjustment, AUTO_NAMES[kind]);
@@ -2019,7 +2039,9 @@ export class EditorController {
     } catch (error) {
       this.logger.warn("opening file failed", describeError(error));
       return this.fail(
-        error instanceof FormatError ? error.message : "The file could not be opened.",
+        error instanceof FormatError
+          ? (error.template ?? error.message)
+          : "The file could not be opened.",
       );
     }
   }
@@ -2099,7 +2121,9 @@ export class EditorController {
     } catch (error) {
       this.logger.warn("placing file failed", describeError(error));
       return this.fail(
-        error instanceof FormatError ? error.message : "The file could not be placed.",
+        error instanceof FormatError
+          ? (error.template ?? error.message)
+          : "The file could not be placed.",
       );
     }
   }
@@ -2141,7 +2165,8 @@ export class EditorController {
   }
 
   private reportWarnings(title: string, warnings: readonly string[]): void {
-    if (warnings.length > 0) this.notify("info", `${title}: ${warnings.join(" ")}`);
+    if (warnings.length > 0)
+      this.notify("info", msg("{title}: {details}", { title, details: warnings.join(" ") }));
   }
 
   /** The active document as a portable `.picstea` project file. */
@@ -2150,7 +2175,7 @@ export class EditorController {
   }
 
   private async saveProjectFileNow(): Promise<
-    { ok: true; blob: Blob; filename: string } | { ok: false; error: string }
+    { ok: true; blob: Blob; filename: string } | { ok: false; error: string; template?: Msg }
   > {
     if (this.textEdit.get()) this.commitTextEdit();
     const session = this.store.getSession();
@@ -2169,7 +2194,9 @@ export class EditorController {
     } catch (error) {
       this.logger.warn("saving project file failed", describeError(error));
       return this.fail(
-        error instanceof FormatError ? error.message : "The project file could not be created.",
+        error instanceof FormatError
+          ? (error.template ?? error.message)
+          : "The project file could not be created.",
       );
     }
   }
@@ -2177,7 +2204,7 @@ export class EditorController {
   /** Open a local image file as a new document. */
   async openImageFile(file: Blob, filename: string, transient = false): Promise<Result> {
     const result = await importRasterFile(file, this.decode);
-    if (!result.ok) return this.fail(result.error);
+    if (!result.ok) return this.fail(result.template ?? result.error);
     const { image } = result;
     const asset = this.assets.add(
       { mime: image.mime, width: image.width, height: image.height, blob: image.blob },
@@ -2206,7 +2233,7 @@ export class EditorController {
     if (!session) return this.openImageFile(file, filename);
     const documentId = session.document.id;
     const result = await importRasterFile(file, this.decode);
-    if (!result.ok) return this.fail(result.error);
+    if (!result.ok) return this.fail(result.template ?? result.error);
     const { image } = result;
     const current = this.store.getSession(documentId);
     if (!current) {
@@ -2388,7 +2415,10 @@ export class EditorController {
       if (project.missingAssetIds.length > 0) {
         this.notify(
           "error",
-          `${project.missingAssetIds.length} image layer(s) could not be restored — the browser may have cleared part of its storage.`,
+          msg(
+            "{count} image layer(s) could not be restored — the browser may have cleared part of its storage.",
+            { count: project.missingAssetIds.length },
+          ),
         );
       }
       return { ok: true };
@@ -2563,7 +2593,9 @@ export class EditorController {
   }
 
   /** Add the actions from an exported file; returns how many were added. */
-  importActions(text: string): { ok: true; count: number } | { ok: false; error: string } {
+  importActions(
+    text: string,
+  ): { ok: true; count: number } | { ok: false; error: string; template?: Msg } {
     try {
       const imported = parseActionsFile(text, () => createId("action"));
       if (this.actions.get().length + imported.length > MAX_ACTIONS) {
@@ -2654,13 +2686,21 @@ export class EditorController {
       for (const [index, step] of action.steps.entries()) {
         const current = this.store.getSession();
         if (current?.document.id !== documentId) {
-          return this.fail(`"${action.name}" stopped because the document changed.`);
+          return this.fail(
+            msg('"{name}" stopped because the document changed.', { name: action.name }),
+          );
         }
         await this.assets.whenDecoded(referencedAssetIds(current.document));
         const errors = this.errorCount;
         await this.runStep(step);
         if (this.errorCount !== errors) {
-          return this.fail(`"${action.name}" stopped at step ${index + 1} (${stepLabel(step)}).`);
+          return this.fail(
+            msg('"{name}" stopped at step {step} ({label}).', {
+              name: action.name,
+              step: index + 1,
+              label: stepLabel(step),
+            }),
+          );
         }
       }
       return { ok: true };
@@ -2735,7 +2775,7 @@ export class EditorController {
     signal?: AbortSignal;
   }): Promise<
     | { ok: true; blob: Blob; processed: number; failed: readonly string[]; cancelled: boolean }
-    | { ok: false; error: string }
+    | { ok: false; error: string; template?: Msg }
   > {
     return this.runBatchNow(options);
   }
@@ -2809,7 +2849,13 @@ export class EditorController {
     if (previous && this.store.getSession(previous)) this.store.setActiveDocument(previous);
     if (failed.length > 0) {
       const list = failed.slice(0, 5).join(", ") + (failed.length > 5 ? ", …" : "");
-      this.notify("error", `${failed.length} file(s) could not be processed: ${list}`);
+      this.notify(
+        "error",
+        msg("{count} file(s) could not be processed: {files}", {
+          count: failed.length,
+          files: list,
+        }),
+      );
     }
     if (entries.length === 0) return { ok: false, error: "No files were processed." };
     const zip = await writeZip(entries);
@@ -2833,7 +2879,7 @@ export class EditorController {
     request: ExportRequest,
   ): Promise<
     | { ok: true; blob: Blob; filename: string; warnings: readonly string[] }
-    | { ok: false; error: string }
+    | { ok: false; error: string; template?: Msg }
   > {
     if (this.textEdit.get()) this.commitTextEdit();
     const session = this.store.getSession();
@@ -2845,7 +2891,7 @@ export class EditorController {
     } catch (error) {
       this.logger.warn("export failed", describeError(error));
       const known = error instanceof ExportError || error instanceof FormatError;
-      return this.fail(known ? error.message : "Export failed.");
+      return this.fail(known ? (error.template ?? error.message) : "Export failed.");
     }
   }
 
@@ -2911,9 +2957,10 @@ export class EditorController {
     );
   }
 
-  private fail(error: string): { ok: false; error: string } {
+  private fail(error: Message): { ok: false; error: string; template?: Msg } {
     this.notify("error", error);
-    return { ok: false, error };
+    const template = messageTemplate(error);
+    return { ok: false, error: messageText(error), ...(template && { template }) };
   }
 }
 

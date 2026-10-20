@@ -11,6 +11,8 @@ import {
 } from "@/editor/core/geometry/transform-handles";
 import { useController } from "./editor-context";
 import styles from "./editor.module.css";
+import { useT } from "./i18n";
+import { N_ } from "@/i18n/editor/catalog";
 
 /**
  * A number field that commits on Enter or blur, so typing "120" doesn't apply 1, 12 and 120.
@@ -73,21 +75,22 @@ export function TransformSection({
   doc: EditorDocument;
 }) {
   const controller = useController();
+  const t = useT();
   const size = layerLocalSize(layer, doc, controller.sizer);
-  const t = layer.transform;
-  const apply = (next: typeof t, label: string) =>
+  const tf = layer.transform;
+  const apply = (next: typeof tf, label: string) =>
     controller.execute(setLayerTransform(layer.id, next, { label }));
-  const width = Math.abs(size.width * t.scaleX);
-  const height = Math.abs(size.height * t.scaleY);
+  const width = Math.abs(size.width * tf.scaleX);
+  const height = Math.abs(size.height * tf.scaleY);
 
   return (
     <div style={{ marginTop: 10 }}>
       <div className={styles.fieldLabel} style={{ marginBottom: 6 }}>
-        Transform
+        {t("Transform")}
       </div>
       <div className={styles.fieldPair}>
-        <CommitNumber label="X" value={t.x} onCommit={(x) => apply({ ...t, x }, "Move")} />
-        <CommitNumber label="Y" value={t.y} onCommit={(y) => apply({ ...t, y }, "Move")} />
+        <CommitNumber label="X" value={tf.x} onCommit={(x) => apply({ ...tf, x }, N_("Move"))} />
+        <CommitNumber label="Y" value={tf.y} onCommit={(y) => apply({ ...tf, y }, N_("Move"))} />
         <CommitNumber
           label="W"
           value={width}
@@ -95,8 +98,8 @@ export function TransformSection({
           onCommit={(w) =>
             size.width > 0 &&
             apply(
-              setScaleAboutCenter(t, size, Math.sign(t.scaleX) * (w / size.width), t.scaleY),
-              "Scale",
+              setScaleAboutCenter(tf, size, Math.sign(tf.scaleX) * (w / size.width), tf.scaleY),
+              N_("Scale"),
             )
           }
         />
@@ -107,19 +110,19 @@ export function TransformSection({
           onCommit={(h) =>
             size.height > 0 &&
             apply(
-              setScaleAboutCenter(t, size, t.scaleX, Math.sign(t.scaleY) * (h / size.height)),
-              "Scale",
+              setScaleAboutCenter(tf, size, tf.scaleX, Math.sign(tf.scaleY) * (h / size.height)),
+              N_("Scale"),
             )
           }
         />
         <CommitNumber
           label="°"
-          value={t.rotation}
+          value={tf.rotation}
           min={-180}
           max={180}
           decimals={1}
           step={0.1}
-          onCommit={(r) => apply(setRotationAboutCenter(t, size, r), "Rotate")}
+          onCommit={(r) => apply(setRotationAboutCenter(tf, size, r), N_("Rotate"))}
         />
       </div>
     </div>
@@ -128,12 +131,14 @@ export function TransformSection({
 
 export function TextSection({ layer }: { layer: TextLayer }) {
   const controller = useController();
+  const t = useT();
+  const alignLabels = { left: t("Left"), center: t("Center"), right: t("Right") };
   const update = (patch: Parameters<typeof updateTextLayer>[1]) =>
     controller.execute(updateTextLayer(layer.id, patch));
   return (
     <div style={{ marginTop: 10 }}>
       <label className={styles.fieldLabel} htmlFor="prop-text">
-        Text
+        {t("Text")}
       </label>
       <textarea
         id="prop-text"
@@ -145,7 +150,7 @@ export function TextSection({ layer }: { layer: TextLayer }) {
       />
       <div className={styles.field} style={{ marginTop: 8 }}>
         <label className={styles.fieldLabel} htmlFor="prop-font">
-          Font
+          {t("Font")}
         </label>
         <select
           id="prop-font"
@@ -155,21 +160,21 @@ export function TextSection({ layer }: { layer: TextLayer }) {
         >
           {FONT_FAMILIES.map((f) => (
             <option key={f} value={f}>
-              {f === "system-ui" ? "System" : f}
+              {f === "system-ui" ? t("System") : f}
             </option>
           ))}
         </select>
       </div>
       <div className={styles.fieldPair}>
         <CommitNumber
-          label="Size"
+          label={t("Size")}
           value={layer.fontSize}
           min={1}
           max={2000}
           onCommit={(fontSize) => update({ fontSize })}
         />
         <label className={styles.smallLabel}>
-          <span>Color</span>
+          <span>{t("Color")}</span>
           <input
             type="color"
             className={styles.colorInput}
@@ -179,7 +184,7 @@ export function TextSection({ layer }: { layer: TextLayer }) {
           />
         </label>
         <CommitNumber
-          label="Line"
+          label={t("Line")}
           value={layer.lineHeight}
           min={0.5}
           max={5}
@@ -188,7 +193,7 @@ export function TextSection({ layer }: { layer: TextLayer }) {
           onCommit={(lineHeight) => update({ lineHeight })}
         />
         <CommitNumber
-          label="Spacing"
+          label={t("Spacing")}
           value={layer.letterSpacing}
           min={-100}
           max={500}
@@ -196,7 +201,7 @@ export function TextSection({ layer }: { layer: TextLayer }) {
         />
       </div>
       <div className={styles.radioRow} style={{ marginTop: 8 }}>
-        <div className={styles.segmented} role="group" aria-label="Text style">
+        <div className={styles.segmented} role="group" aria-label={t("Text style")}>
           <button
             type="button"
             aria-pressed={layer.fontWeight === 700}
@@ -212,7 +217,7 @@ export function TextSection({ layer }: { layer: TextLayer }) {
             <i>I</i>
           </button>
         </div>
-        <div className={styles.segmented} role="group" aria-label="Text alignment">
+        <div className={styles.segmented} role="group" aria-label={t("Text alignment")}>
           {(["left", "center", "right"] as const).map((align) => (
             <button
               key={align}
@@ -220,7 +225,7 @@ export function TextSection({ layer }: { layer: TextLayer }) {
               aria-pressed={layer.align === align}
               onClick={() => update({ align })}
             >
-              {align[0].toUpperCase() + align.slice(1)}
+              {alignLabels[align]}
             </button>
           ))}
         </div>
@@ -231,6 +236,7 @@ export function TextSection({ layer }: { layer: TextLayer }) {
 
 export function ShapeSection({ layer }: { layer: ShapeLayer }) {
   const controller = useController();
+  const t = useT();
   const update = (patch: Parameters<typeof updateShapeLayer>[1]) =>
     controller.execute(updateShapeLayer(layer.id, patch));
   const stroke = layer.stroke ?? { color: "#000000", width: 4 };
@@ -243,11 +249,11 @@ export function ShapeSection({ layer }: { layer: ShapeLayer }) {
             checked={layer.fill !== null}
             onChange={(e) => update({ fill: e.target.checked ? "#4c8dff" : null })}
           />
-          <span>Fill</span>
+          <span>{t("Fill")}</span>
           {layer.fill !== null && (
             <input
               type="color"
-              aria-label="Fill colour"
+              aria-label={t("Fill colour")}
               className={styles.colorInput}
               value={layer.fill}
               onChange={(e) => update({ fill: e.target.value })}
@@ -263,11 +269,11 @@ export function ShapeSection({ layer }: { layer: ShapeLayer }) {
           disabled={layer.shape === "line"}
           onChange={(e) => update({ stroke: e.target.checked ? stroke : null })}
         />
-        <span>Stroke</span>
+        <span>{t("Stroke")}</span>
         {layer.stroke && (
           <input
             type="color"
-            aria-label="Stroke colour"
+            aria-label={t("Stroke colour")}
             className={styles.colorInput}
             value={layer.stroke.color}
             onChange={(e) => update({ stroke: { ...stroke, color: e.target.value } })}
@@ -278,7 +284,7 @@ export function ShapeSection({ layer }: { layer: ShapeLayer }) {
       <div className={styles.fieldPair}>
         {layer.stroke && (
           <CommitNumber
-            label="Width"
+            label={t("Width")}
             value={layer.stroke.width}
             min={0.5}
             max={1000}
@@ -289,7 +295,7 @@ export function ShapeSection({ layer }: { layer: ShapeLayer }) {
         )}
         {layer.shape === "rect" && (
           <CommitNumber
-            label="Radius"
+            label={t("Radius")}
             value={layer.cornerRadius}
             min={0}
             onCommit={(cornerRadius) => update({ cornerRadius })}
