@@ -1,6 +1,6 @@
 # Feature status
 
-Last updated: 2026-10-20 · version 0.33.1 · live at https://www.picstea.com · see `CHANGELOG.md` for each release and `docs/adr/` (ADR-0001 to ADR-0036) for decisions
+Last updated: 2026-10-20 · version 0.35.0 · live at https://www.picstea.com · see `CHANGELOG.md` for each release and `docs/adr/` (ADR-0001 to ADR-0036) for decisions
 
 Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ deferred
 
@@ -22,7 +22,7 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 
 | Feature | Status | Notes |
 |---|---|---|
-| Editor at `/` with first-visit welcome dialog (`/editor` → 308 to `/`) | ✅ | ADR-0009 |
+| Editor at `/` with first-visit welcome dialog (`/editor` → 308 to `/`) | ✅ | ADR-0009; a collapsed "About Picstea" section gives `/` ~680 server-rendered words (0.35.0) |
 | Menu bar (File, Edit, Image, Layer, Select, Filter, View, Window, Help) | ✅ | WAI-ARIA menubar, keyboard navigable; submenus since ADR-0032 (adjustment layers moved to Layer → New Adjustment Layer and Image → Adjustments) |
 | Toolbar | ✅ | 24 tools (selection, crop, painting, retouching, shapes, pen, text, navigation) + colour picker |
 | Tool options bar | ✅ | |

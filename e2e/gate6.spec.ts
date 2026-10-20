@@ -166,6 +166,8 @@ test("GIF opens; TIFF, PDF and junk get clear messages", async ({ page }) => {
     mimeType: "image/vnd.adobe.photoshop",
     buffer: Buffer.from("8BPS\0\x02"),
   });
-  await expect(page.getByText(/PSB|ends unexpectedly|damaged/)).toBeVisible();
+  await expect(
+    page.getByText(/PSB|ends unexpectedly|damaged/).filter({ visible: true }),
+  ).toBeVisible();
   expect(errors).toEqual([]);
 });

@@ -5,6 +5,10 @@ test("home page is the editor and welcomes first-time visitors once", async ({ p
   const welcome = page.getByRole("dialog", { name: /free image editor/i });
   await expect(welcome).toBeVisible();
   await expect(welcome.getByRole("heading", { level: 1 })).toBeVisible();
+  // The longer description is collapsed; opened, "Start editing" stays in reach.
+  const about = welcome.getByText(/About Picstea: features/);
+  await about.click();
+  await expect(welcome.getByRole("heading", { level: 2, name: "What is Picstea?" })).toBeVisible();
   await welcome.getByRole("button", { name: "Start editing" }).click();
   await expect(welcome).toBeHidden();
   await expect(page.getByRole("button", { name: "New document" })).toBeVisible();
@@ -33,6 +37,15 @@ test("home page is indexable with metadata, icons and structured data", async ({
   const html = await response.text();
   // The welcome text is server-rendered, so crawlers see it without running the editor.
   expect(html).toContain("A free image editor that keeps your images on your device");
+  // …including the longer description, so the most important URL isn't thin content.
+  for (const heading of ["What is Picstea?", "File formats", "Frequently asked questions"])
+    expect(html).toContain(`<h2>${heading}</h2>`);
+  const text = html
+    .replace(/<(script|style)[\s\S]*?<\/\1>/g, " ")
+    .replace(/<[^>]+>/g, " ")
+    .split(/\s+/)
+    .filter(Boolean);
+  expect(text.length).toBeGreaterThan(600);
 
   await page.goto("/");
   await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(

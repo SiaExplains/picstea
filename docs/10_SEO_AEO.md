@@ -57,6 +57,11 @@ Pages should contain:
 - examples
 - limitations
 
+The home page is the editor (fixed to the viewport), so its crawlable text lives in the welcome
+dialog: the short intro plus a collapsed "About Picstea" section (`WelcomeAbout`, a server
+component passed in as children, so it adds no editor JavaScript). Never put text under or behind
+the editor where users can't see it. Keep its claims in line with `src/lib/seo/llms.ts`.
+
 Machine-readable entry points for AI assistants (ADR-0028):
 
 - `/llms.txt` — what Picstea is, verified facts, current limits, every page, doc and guide.
