@@ -229,6 +229,6 @@ test("a Photoshop file with text, a shape, a smart object and a drop shadow open
   await expect(page.getByLabel("Fill colour")).toHaveValue("#0000ff");
   await page.getByRole("button", { name: "Box", exact: true }).click();
   await expect(page.getByRole("checkbox", { name: "Drop shadow" })).toBeChecked();
-  await expect(page.getByText(/editable text/)).toBeVisible();
+  await expect(page.getByText(/editable text/).filter({ visible: true })).toBeVisible();
   expect(errors).toEqual([]);
 });

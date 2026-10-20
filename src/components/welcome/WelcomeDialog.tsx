@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { SITE } from "@/lib/seo/site";
 import styles from "./welcome.module.css";
 import { OPEN_WELCOME_EVENT, WELCOME_SEEN_KEY } from "./welcome";
@@ -17,14 +17,6 @@ const HIGHLIGHTS = [
   [
     "Open and export",
     "PNG, JPEG, WebP, GIF, SVG and layered PSD in; PSD, SVG, PDF and images out.",
-  ],
-] as const;
-
-const FAQ = [
-  ["Is Picstea free?", "Yes. It runs in your browser with no account required."],
-  [
-    "Where is my work saved?",
-    "In this browser's storage on your device. Use File → Save Project As to keep a copy.",
   ],
 ] as const;
 
@@ -47,8 +39,9 @@ function rememberWelcomeSeen(): void {
 /**
  * Explains Picstea on the first visit; reopened from the logo or Help menu. The content is part of
  * the server-rendered page, so it also describes the app to search engines and AI assistants.
+ * `children` is the longer, server-only description (WelcomeAbout), shown under the highlights.
  */
-export function WelcomeDialog() {
+export function WelcomeDialog({ children }: { children?: ReactNode }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
 
   useEffect(() => {
@@ -95,17 +88,7 @@ export function WelcomeDialog() {
             </li>
           ))}
         </ul>
-        <details className={styles.faq}>
-          <summary>Questions</summary>
-          <dl>
-            {FAQ.map(([q, a]) => (
-              <div key={q}>
-                <dt>{q}</dt>
-                <dd>{a}</dd>
-              </div>
-            ))}
-          </dl>
-        </details>
+        {children}
         <p className={styles.lead}>
           New here? Read the{" "}
           <a href="/docs/getting-started" target="_blank" rel="noopener">

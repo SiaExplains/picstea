@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { pageOpenGraph } from "@/lib/seo/root-metadata";
 import { EditorRoot } from "@/components/editor/EditorRoot";
 import { JsonLd } from "@/components/marketing/JsonLd";
+import { WelcomeAbout } from "@/components/welcome/WelcomeAbout";
 import { WelcomeDialog } from "@/components/welcome/WelcomeDialog";
 import { SITE } from "@/lib/seo/site";
 
@@ -51,7 +52,9 @@ export default function HomePage() {
         }}
       />
       <EditorRoot />
-      <WelcomeDialog />
+      <WelcomeDialog>
+        <WelcomeAbout />
+      </WelcomeDialog>
     </>
   );
 }

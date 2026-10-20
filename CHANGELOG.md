@@ -3,6 +3,14 @@
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.35.0] — 2026-10-20
+
+### Added
+
+- **The welcome dialog has an "About Picstea" section.** Open it to read what Picstea does, why
+  your images stay on your device, which files it opens and saves, answers to common questions and
+  links to the guides. It starts closed, so starting to edit is still one click.
+
 ## [0.34.0] — 2026-10-20
 
 ### Added
