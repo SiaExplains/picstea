@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { HOW_TO_PAGES, TOOL_PAGES } from "@/components/site/RelatedTools";
+import { COMPARE_PAGES, HOW_TO_PAGES, TOOL_PAGES } from "@/components/site/RelatedTools";
 import { EditorLink } from "@/components/site/EditorLink";
 import { ConsentManager } from "@/components/site/ConsentManager";
 import { PwaStart } from "@/components/pwa/PwaStart";
@@ -60,9 +60,14 @@ export default function SiteLayout({ children }: LayoutProps<"/">) {
                 </Link>
               ))}
             </nav>
+            <nav aria-label="Comparisons" className={styles.footerNav}>
+              {COMPARE_PAGES.map(([path, label]) => (
+                <Link key={path} href={path}>
+                  {label}
+                </Link>
+              ))}
+            </nav>
             <nav aria-label="Footer" className={styles.footerNav}>
-              <Link href="/photoshop-alternative">Photoshop alternative</Link>
-              <Link href="/photopea-alternative">Photopea alternative</Link>
               <Link href="/faq">FAQ</Link>
               <Link href="/about">About</Link>
               <Link href="/docs">Documentation</Link>

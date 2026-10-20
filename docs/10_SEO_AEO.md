@@ -77,8 +77,11 @@ Machine-readable entry points for AI assistants (ADR-0028):
 - `/llms-full.txt` — every docs page as Markdown.
 - Both are generated from the site content (`src/lib/seo/llms.ts`); update the facts and limits
   there when features change, and never list something the editor can't do.
-- Comparison pages (`/photoshop-alternative`, `/photopea-alternative`) and `/faq` state only
-  general, verifiable facts about other products and say where they are the better choice.
+- Comparison pages (`COMPARE_PAGES`: Photoshop, Photopea, GIMP, Pixlr, Canva, Photoshop Express)
+  and `/faq` state only general, verifiable facts about other products — checked on their
+  official sites, with the month in the table (`ComparisonTable`) — never prices, which change
+  by region and month. Each says where the other product is the better choice. Re-check them
+  every few months.
 - `/about` (ADR-0032) describes the product, the privacy model, funding and the current version;
   it is in the sitemap, the footer and `llms.txt`, and opened from Help → About Picstea.
 

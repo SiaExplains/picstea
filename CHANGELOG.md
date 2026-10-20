@@ -3,6 +3,16 @@
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.40.0] — 2026-10-20
+
+### Added
+
+- **Four new comparisons:** Picstea vs GIMP, Pixlr, Canva and Photoshop Express. Each has a
+  side-by-side table (facts checked on each product's own site in October 2026), what Picstea
+  does better, and an honest section on where the other product is the better choice.
+- A "Comparisons" row in the site footer, and the Photoshop and Photopea pages now link to the
+  other comparisons, guides and tools.
+
 ## [0.39.0] — 2026-10-20
 
 ### Added
