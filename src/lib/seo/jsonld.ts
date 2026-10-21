@@ -1,3 +1,4 @@
+import { authorPath, DEFAULT_AUTHOR, type Author } from "@/content/authors";
 import { absoluteUrl, SITE } from "./site";
 
 /**
@@ -37,7 +38,7 @@ export function article(post: {
     mainEntityOfPage: absoluteUrl(post.path),
     datePublished: post.published,
     dateModified: post.updated ?? post.published,
-    author: { "@type": "Organization", name: SITE.name, url: SITE.url },
+    author: person(DEFAULT_AUTHOR),
     publisher: { "@id": `${SITE.url}/#organization` },
   };
 }
@@ -71,3 +72,25 @@ export const graph = (...nodes: object[]) => ({
   "@context": "https://schema.org",
   "@graph": nodes,
 });
+
+/** A real, accountable author (E-E-A-T): name, profile page, photo and the same person elsewhere. */
+export function person(author: Author) {
+  return {
+    "@type": "Person",
+    "@id": `${absoluteUrl(authorPath(author))}#person`,
+    name: author.name,
+    url: absoluteUrl(authorPath(author)),
+    image: absoluteUrl(author.photo),
+    description: author.short,
+    sameAs: author.links.map((l) => l.url),
+  };
+}
+
+/** An author's own page: the Person is its main subject. */
+export function profilePage(author: Author) {
+  return {
+    "@type": "ProfilePage",
+    url: absoluteUrl(authorPath(author)),
+    mainEntity: person(author),
+  };
+}

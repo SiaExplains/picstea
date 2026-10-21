@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { CONVERTER_SLUGS, DOC_SLUGS, POST_SLUGS } from "./content/slugs";
+import { AUTHOR_SLUGS, CONVERTER_SLUGS, DOC_SLUGS, POST_SLUGS } from "./content/slugs";
 import { DEFAULT_LOCALE, splitLocale } from "./i18n/locales";
 import { isTranslatedPath } from "./i18n/translated-paths";
 
@@ -9,7 +9,7 @@ import { isTranslatedPath } from "./i18n/translated-paths";
  * - Languages (ADR-0039). Every route lives under `app/[lang]`. English keeps the unprefixed URLs,
  *   which are rewritten to `/en/…` internally; `/en/…` itself redirects to the unprefixed URL so
  *   English has one address. Other languages pass through, but only for translated pages.
- * - Real 404 status codes for docs, blog posts and converters that don't exist (or are drafts).
+ * - Real 404 status codes for docs, blog posts, converters and authors that don't exist (or are drafts).
  *   Pages streamed with Cache Components always start with 200, so the check has to run here
  *   (Next docs: "Status codes").
  */
@@ -24,6 +24,8 @@ function knownPage(path: string): boolean {
     );
   }
   if (section === "convert" && slug !== undefined) return !extra && CONVERTER_SLUGS.includes(slug);
+  // Only individual author pages exist; there's no /authors listing.
+  if (section === "authors") return slug !== undefined && !extra && AUTHOR_SLUGS.includes(slug);
   // Anything else is decided by the router (unknown paths render the 404 page).
   return true;
 }

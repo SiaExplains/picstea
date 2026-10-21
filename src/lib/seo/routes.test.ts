@@ -89,4 +89,16 @@ describe("slug lists for the proxy", () => {
       Object.fromEntries(POSTS.map((p) => [p.slug, p.draft ? "draft" : "published"])),
     );
   });
+
+  it("match the authors exactly, and every author is complete", async () => {
+    const { AUTHORS } = await import("@/content/authors");
+    const { AUTHOR_SLUGS } = await import("@/content/slugs");
+    expect([...AUTHOR_SLUGS]).toEqual(AUTHORS.map((a) => a.slug));
+    for (const a of AUTHORS) {
+      expect(a.short.length, a.slug).toBeGreaterThanOrEqual(50);
+      expect(a.short.length, a.slug).toBeLessThanOrEqual(160);
+      expect(a.photo, a.slug).toMatch(/^\/authors\//);
+      for (const l of a.links) expect(l.url, a.slug).toMatch(/^https:\/\//);
+    }
+  });
 });

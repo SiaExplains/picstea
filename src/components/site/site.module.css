@@ -145,6 +145,15 @@
   vertical-align: top;
 }
 
+/* Wide tables scroll sideways on phones instead of widening the page. */
+@media (max-width: 600px) {
+  .prose table,
+  .table {
+    display: block;
+    overflow-x: auto;
+  }
+}
+
 .crumbs ol {
   display: flex;
   flex-wrap: wrap;
@@ -378,4 +387,45 @@
 .languages [aria-current] {
   color: var(--foreground);
   font-weight: 600;
+}
+
+/* Blog bylines and the author box (docs/10 "E-E-A-T"). */
+.byline {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.bylinePhoto,
+.authorPhoto {
+  border-radius: 50%;
+  flex: none;
+}
+
+.authorBox {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  margin: 32px 0;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+}
+
+.authorBox p {
+  margin: 0 0 4px;
+}
+
+.authorName {
+  font-weight: 600;
+}
+
+.authorProfile {
+  display: flex;
+  gap: 24px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
 }

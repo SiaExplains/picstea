@@ -3,6 +3,7 @@ import { pageOpenGraph } from "@/lib/seo/root-metadata";
 import Link from "next/link";
 import { ContentPage } from "@/components/site/ContentPage";
 import styles from "@/components/site/site.module.css";
+import { DEFAULT_AUTHOR, authorPath } from "@/content/authors";
 import { visiblePosts } from "@/content/blog";
 
 export const metadata: Metadata = {
@@ -33,6 +34,9 @@ export default function BlogIndex() {
                 <Link href={`/blog/${post.slug}`}>{post.title}</Link>
                 {post.draft && " (draft)"}
               </h2>
+              <p className={styles.meta}>
+                By <Link href={authorPath(DEFAULT_AUTHOR)}>{DEFAULT_AUTHOR.name}</Link>
+              </p>
               <p>{post.description}</p>
             </li>
           ))}

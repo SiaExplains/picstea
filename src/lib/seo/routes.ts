@@ -1,3 +1,4 @@
+import { AUTHORS, authorPath } from "@/content/authors";
 import { publishedPosts } from "@/content/blog";
 import { CONVERTER_IDS } from "@/content/converters";
 import { DOCS } from "@/content/docs";
@@ -48,6 +49,7 @@ export function publicRoutes(): PublicRoute[] {
       priority: 0.6,
       lastModified: p.updated ?? p.published,
     })),
+    ...AUTHORS.map((a) => ({ path: authorPath(a), priority: 0.4 })),
     ...Object.values(LEGAL)
       .filter((l) => l.finalized)
       .map((l) => ({ path: l.path, priority: 0.2 })),

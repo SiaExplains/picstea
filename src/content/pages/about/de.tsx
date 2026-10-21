@@ -41,6 +41,13 @@ const copy: PageCopy = {
         gespeichert wird und warum.
       </p>
 
+      <h2>Wer Picstea macht</h2>
+      <p>
+        Picstea wird von <Link href="/authors/siavash-ghanbari">Siavash Ghanbari</Link> entwickelt.
+        Auf dem YouTube-Kanal SiaBarry erklärt Siavash auch Technik und Software. Jede Anleitung im{" "}
+        <Link href="/blog">Blog</Link> (auf Englisch) wird am Editor selbst geschrieben und geprüft.
+      </p>
+
       <h2>Wie es gebaut ist</h2>
       <p>
         Picstea ist in TypeScript mit React und Next.js geschrieben. Der Editor selbst – Dokumente,

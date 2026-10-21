@@ -123,3 +123,28 @@ test("AI assistants and social previews: llms.txt, robots and preview images", a
     );
   }
 });
+
+test("blog posts name their author, who has a profile page (E-E-A-T)", async ({
+  page,
+  request,
+}) => {
+  await page.goto("/blog/png-vs-jpeg-vs-webp");
+  const byline = page.getByRole("link", { name: "Siavash Ghanbari" }).first();
+  await expect(byline).toBeVisible();
+  await expect(page.getByRole("complementary", { name: "About the author" })).toBeVisible();
+  const post = (await page.locator('script[type="application/ld+json"]').allTextContents()).join();
+  expect(post).toContain('"@type":"Person"');
+  expect(post).toContain("https://www.youtube.com/@SiaBarry");
+
+  await byline.click();
+  await expect(page).toHaveURL(/\/authors\/siavash-ghanbari$/);
+  await expect(page.getByRole("heading", { level: 1, name: "Siavash Ghanbari" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "LinkedIn" })).toHaveAttribute("rel", /\bme\b/);
+  const profile = (
+    await page.locator('script[type="application/ld+json"]').allTextContents()
+  ).join();
+  expect(profile).toContain('"@type":"ProfilePage"');
+
+  expect((await request.get("/authors")).status()).toBe(404);
+  expect((await request.get("/authors/nobody")).status()).toBe(404);
+});
