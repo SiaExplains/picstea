@@ -45,3 +45,6 @@ export const POST_SLUGS: Readonly<Record<string, "draft" | "published">> = {
   "vibrance-color-balance-gradient-map-and-more": "published",
   "layer-styles-blend-if-and-the-image-menu": "published",
 };
+
+/** Author pages (`/authors/<slug>`); a unit test keeps this in sync with `authors.ts`. */
+export const AUTHOR_SLUGS: readonly string[] = ["siavash-ghanbari"];

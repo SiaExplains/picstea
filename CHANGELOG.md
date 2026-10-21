@@ -3,7 +3,25 @@
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
-## [0.42.0] — 2026-10-21
+## [0.43.0] — 2026-10-22
+
+### Added
+
+- **The blog has a real author.** Every post now says who wrote it — Siavash Ghanbari, who builds
+  Picstea — with a photo, the date it was published and, when it changed, updated. A short author
+  box closes each post.
+- **An author page** at /authors/siavash-ghanbari with a bio, links to YouTube (SiaBarry) and
+  LinkedIn, and every guide written.
+- The About page, in every language, says who makes Picstea.
+- Search engines and AI assistants now see the author as a person (structured data with the
+  profiles elsewhere), and the Picstea organisation names its founder.
+
+### Fixed
+
+- Wide tables in guides and comparisons scroll sideways on phones instead of making the whole
+  page wider than the screen.
+
+ — 2026-10-21
 
 ### Added
 

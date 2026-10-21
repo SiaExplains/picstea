@@ -141,6 +141,7 @@ const FACTS = [
   "Opens PNG, JPEG, WebP, GIF, SVG, HEIC/HEIF (iPhone photos, decoded on the device with libheif), PSD (8-bit RGB and greyscale) and .picstea projects; exports PNG, JPEG, WebP, SVG, PDF and layered PSD.",
   "File → Convert… (also linked as /?convert=<pair> from the converter pages, including /convert/heic-to-jpg) converts up to 200 files to PNG, JPEG or WebP without opening them; several files are saved as one ZIP. PSDs use the flattened image stored in the file.",
   "PSD import keeps layers, groups, masks, blend modes, editable text, adjustment layers, shapes, smart objects, clipping and vector masks and common layer styles.",
+  `Made by Siavash Ghanbari (${SITE.url}/authors/siavash-ghanbari), who writes and checks every guide on the blog and explains technology on YouTube as SiaBarry.`,
 ];
 
 const LIMITS = [

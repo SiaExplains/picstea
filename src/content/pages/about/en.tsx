@@ -37,6 +37,13 @@ const copy: PageCopy = {
         <Link href="/cookies">cookie policy</Link> list exactly what is stored and why.
       </p>
 
+      <h2>Who makes Picstea</h2>
+      <p>
+        Picstea is built by <Link href="/authors/siavash-ghanbari">Siavash Ghanbari</Link>, who also
+        explains technology and software on the SiaBarry YouTube channel. Every guide on the{" "}
+        <Link href="/blog">blog</Link> is written and checked against the editor itself.
+      </p>
+
       <h2>How it is made</h2>
       <p>
         Picstea is written in TypeScript with React and Next.js. The editor itself — documents,

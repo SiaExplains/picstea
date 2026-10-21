@@ -7,6 +7,8 @@ import { loadEditorCatalog } from "@/i18n/editor/load";
 import { JsonLd } from "@/components/marketing/JsonLd";
 import { WelcomeAbout } from "@/components/welcome/WelcomeAbout";
 import { WelcomeDialog } from "@/components/welcome/WelcomeDialog";
+import { DEFAULT_AUTHOR } from "@/content/authors";
+import { person } from "@/lib/seo/jsonld";
 import { SITE } from "@/lib/seo/site";
 import { home } from "@/content/pages/home";
 import { LANGUAGE_TAG, localizedPath } from "@/i18n/locales";
@@ -53,6 +55,7 @@ export default async function HomePage() {
               name: SITE.name,
               url: SITE.url,
               logo: `${SITE.url}/android-chrome-512x512.png`,
+              founder: person(DEFAULT_AUTHOR),
             },
             {
               "@type": "SoftwareApplication",

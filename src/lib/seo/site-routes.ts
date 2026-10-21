@@ -10,6 +10,7 @@ export const SITE_ROUTES: readonly string[] = [
   "/about",
   "/docs",
   "/blog",
+  "/authors",
   "/online-photo-editor",
   "/psd-editor",
   "/png-editor",

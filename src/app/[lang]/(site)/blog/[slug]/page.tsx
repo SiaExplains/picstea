@@ -5,7 +5,9 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { AdSlot } from "@/components/site/AdSlot";
 import styles from "@/components/site/site.module.css";
+import { AuthorBox, AuthorByline } from "@/components/site/AuthorByline";
 import { ContentPage } from "@/components/site/ContentPage";
+import { DEFAULT_AUTHOR } from "@/content/authors";
 import { postBySlug, publishedPosts } from "@/content/blog";
 import { article } from "@/lib/seo/jsonld";
 
@@ -33,6 +35,8 @@ export async function generateMetadata({
       description: post.description,
       type: "article",
       publishedTime: post.published,
+      modifiedTime: post.updated ?? post.published,
+      authors: [DEFAULT_AUTHOR.name],
     }),
   };
 }
@@ -58,11 +62,14 @@ async function Post({ params }: Pick<PageProps<"/[lang]/blog/[slug]">, "params">
         { name: post.title, path },
       ]}
       title={post.title}
-      meta={`Published ${post.published}`}
+      meta={
+        <AuthorByline author={DEFAULT_AUTHOR} published={post.published} updated={post.updated} />
+      }
       note={post.draft ? "Draft — not published. Only visible during development." : undefined}
       structuredData={post.draft ? [] : [article({ ...post, path })]}
     >
       {post.body()}
+      <AuthorBox author={DEFAULT_AUTHOR} />
       <AdSlot placement="blog-inline" />
       <RelatedPosts slug={post.slug} />
     </ContentPage>
