@@ -93,34 +93,60 @@ const valid = (ad: Advertisement, placement: Placement) =>
   isSafeVideo(ad.video);
 
 /**
- * The sponsorships for a placement with `count` slots: booked ones first, in their listed order
- * rotated by one each day (so each gets the first slot in turn), then house ads for the rest.
+ * The valid sponsorships for a placement in a random order chosen by `seed` (a per-page-load
+ * number, see page-seed.ts). Seed 0 is the listed order: what prerendering and tests use.
+ * Fisher–Yates with a small seeded generator (mulberry32), so every order is equally likely.
+ */
+function shuffled(ads: readonly Advertisement[], seed: number): Advertisement[] {
+  const list = [...ads];
+  if (seed === 0) return list;
+  let state = seed >>> 0;
+  const random = () => {
+    state = (state + 0x6d2b79f5) >>> 0;
+    let t = state;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  for (let i = list.length - 1; i > 0; i--) {
+    const j = Math.floor(random() * (i + 1));
+    [list[i], list[j]] = [list[j], list[i]];
+  }
+  return list;
+}
+
+/**
+ * The sponsorships for a placement with `count` slots: `count` of the booked ones, picked and
+ * placed at random for each page view (so with more bookings than slots each sponsor appears in
+ * a share of views, equally often in every position), then house ads for any empty slots.
  */
 export function pickSponsorships(
   ads: readonly Advertisement[],
   placement: Placement,
-  day: number,
+  seed: number,
   count: number,
 ): Advertisement[] {
-  const booked = ads.filter((ad) => valid(ad, placement));
-  const shift = booked.length ? Math.abs(Math.floor(day)) % booked.length : 0;
-  const rotated = [...booked.slice(shift), ...booked.slice(0, shift)].slice(0, count);
-  const house = HOUSE_ADS.slice(0, count - rotated.length);
-  return [...rotated, ...house];
+  const booked = shuffled(
+    ads.filter((ad) => valid(ad, placement)),
+    seed,
+  ).slice(0, count);
+  const house = HOUSE_ADS.slice(0, count - booked.length);
+  return [...booked, ...house];
 }
 
 /**
- * The sponsorship to show for a placement: active, valid ones rotate once per day (`day` = days
- * since 1970, the same for everyone, no user data involved); the house ad fills empty slots.
+ * The one sponsorship for a single-slot placement, picked at random per page view (`seed`, see
+ * page-seed.ts; no user data involved); the house ad when nothing is booked.
  */
 export function pickSponsorship(
   ads: readonly Advertisement[],
   placement: Placement,
-  day: number,
+  seed: number,
 ): Advertisement {
-  const candidates = ads.filter((ad) => valid(ad, placement));
-  if (candidates.length === 0) return HOUSE_AD;
-  return candidates[Math.abs(Math.floor(day)) % candidates.length];
+  return (
+    shuffled(
+      ads.filter((ad) => valid(ad, placement)),
+      seed,
+    )[0] ?? HOUSE_AD
+  );
 }
-
-export const dayNumber = (time: number) => Math.floor(time / 86_400_000);

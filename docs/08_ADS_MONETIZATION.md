@@ -70,10 +70,14 @@ Custom ads should be clearly identified as sponsored content.
 
 ### Current sponsorship model
 
-- **Slots.** `pickSponsorships(ads, placement, day, count)` fills the editor column's three slots:
-  booked sponsorships first, rotated by one each day (the same for everyone, no user data), then
-  house ads for empty slots (ADR-0034). Booked today: FocusCrew, Emojar and WikiDigit, in that
-  order, rotated by one each day, so every slot is booked and no house ad shows in the column.
+- **Slots.** `pickSponsorships(ads, placement, seed, count)` fills the editor column's three
+  slots with booked sponsorships picked and placed at random for each page view, then house ads
+  for empty slots (ADR-0034). `seed` is a random number drawn once per page load in the browser
+  (`page-seed.ts`), so the slots agree and nothing changes while someone works; no user data is
+  involved and nothing is stored. Prerendering uses seed 0, the listed order. Booked today:
+  FocusCrew, Emojar, WikiDigit and GoAll.ai — four for three slots, so each appears in about three
+  views out of four, equally often in every position, and no house ad shows in the column.
+  Single-slot placements (start screen, website) pick one the same way.
 - **Formats.** An image, or a short, silent, muted, looping video with no controls. With "reduce
   motion" the video stays on its still frame; it is rendered only while online and loads with
   `preload="metadata"` (ADR-0034).

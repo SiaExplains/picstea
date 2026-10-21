@@ -12,26 +12,29 @@ test("wide screens get the sponsorship column, privacy settings and website link
 
   const side = page.getByTestId("editor-side");
   await expect(side).toBeVisible();
-  // Three slots, all booked: FocusCrew, Emojar and WikiDigit, rotating by one each day.
+  // Three slots, each showing a different booked sponsor, picked and placed at random per view.
   const slots = side.getByTestId("side-slot");
   await expect(slots).toHaveCount(3);
-  for (const [name, href, src] of [
-    [/FocusCrew/, "https://focus-crew.com", "/sponsors/focuscrew-tabs.mp4"],
-    [/Emojar/, "https://emojar.com", "/sponsors/emojar.mp4"],
-    [/WikiDigit/, "https://wikidigit.com", "/sponsors/wikidigit.mp4"],
-  ] as const) {
-    const link = side.getByRole("link", { name });
-    await expect(link).toHaveAttribute("href", href);
+  const booked = new Map(SPONSORSHIPS.map((s) => [s.targetUrl, s.video]));
+  const shown: string[] = [];
+  for (let i = 0; i < 3; i++) {
+    const link = slots.nth(i).getByRole("link");
+    const href = (await link.getAttribute("href"))!;
+    expect(booked.has(href), href).toBe(true);
     await expect(link).toHaveAttribute("rel", "sponsored noopener noreferrer");
-    const video = side.locator(`video[src="${src}"]`);
+    const video = slots.nth(i).locator(`video[src="${booked.get(href)}"]`);
     await expect
       .poll(() => video.evaluate((v: HTMLVideoElement) => v.muted && !v.paused))
       .toBe(true);
+    shown.push(href);
   }
+  expect(new Set(shown).size).toBe(3);
   const first = slots.first();
   // Media only, with the label over it; no house ad while every slot is booked.
   await expect(first.getByText("Sponsored")).toBeVisible();
-  await expect(first.getByText(/your productivity|tech news|free online tools/i)).toHaveCount(0);
+  await expect(
+    first.getByText(/your productivity|tech news|free online tools|AI and automation/i),
+  ).toHaveCount(0);
   await expect(side.getByText("Your ad here")).toHaveCount(0);
   // The start screen doesn't repeat the sponsorship while the column shows it.
   await expect(page.getByTestId("sponsor-card")).toHaveCount(4);
@@ -63,7 +66,7 @@ test("narrower screens keep the sponsorship on the start screen instead", async 
   await expect(page.getByTestId("editor-side")).toBeHidden();
   await expect(page.getByTestId("sponsor-card").first()).toBeVisible();
   await expect(page.getByTestId("sponsor-card").first()).toHaveAccessibleName(
-    /FocusCrew|Emojar|WikiDigit/,
+    new RegExp(SPONSORSHIPS.map((s) => s.sponsor.replace(".", "\\.")).join("|")),
   );
 });
 
@@ -72,10 +75,37 @@ test("with reduced motion the sponsor videos stay on their still frames", async 
   await page.setViewportSize({ width: 1440, height: 860 });
   await openEditor(page);
   const side = page.getByTestId("editor-side");
-  // Paths from the booked list, so a new creative doesn't need a test change.
-  for (const { video: src, image: poster } of SPONSORSHIPS.filter((ad) => ad.video)) {
-    const video = side.locator(`video[src="${src}"]`);
-    await expect(video).toHaveAttribute("poster", poster!);
+  // Whichever three sponsors this view shows: each has its still frame and stays paused. Paths
+  // come from the booked list, so a new creative doesn't need a test change.
+  const posters = new Map(SPONSORSHIPS.map((ad) => [ad.video, ad.image]));
+  const videos = side.locator("video");
+  await expect(videos).toHaveCount(3);
+  for (let i = 0; i < 3; i++) {
+    const video = videos.nth(i);
+    const src = (await video.getAttribute("src"))!;
+    await expect(video).toHaveAttribute("poster", posters.get(src)!);
     await expect.poll(() => video.evaluate((v: HTMLVideoElement) => v.paused)).toBe(true);
   }
+});
+
+test("every view picks three of the sponsors at random, in random positions", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 860 });
+  await openEditor(page);
+  const views = new Set<string>();
+  const seen = new Set<string>();
+  // Ten views: with 24 possible arrangements, seeing only one would mean nothing is random.
+  for (let i = 0; i < 10; i++) {
+    if (i > 0) await page.reload();
+    const slots = page.getByTestId("editor-side").getByTestId("side-slot");
+    await expect(slots).toHaveCount(3);
+    const hrefs: string[] = [];
+    for (let s = 0; s < 3; s++)
+      hrefs.push((await slots.nth(s).getByRole("link").getAttribute("href"))!);
+    expect(new Set(hrefs).size).toBe(3);
+    hrefs.forEach((h) => seen.add(h));
+    views.add(hrefs.join(" "));
+  }
+  expect(views.size).toBeGreaterThan(1);
+  // All four sponsors turn up across the views.
+  expect(seen).toEqual(new Set(SPONSORSHIPS.map((s) => s.targetUrl)));
 });

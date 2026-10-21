@@ -3,6 +3,19 @@
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.42.0] — 2026-10-21
+
+### Added
+
+- **GoAll.ai is the fourth sponsor.** Its short silent video joins FocusCrew's, Emojar's and
+  WikiDigit's beside the canvas.
+
+### Changed
+
+- **The sponsorships beside the canvas are picked at random on every visit**: three of the four,
+  each in a random position, instead of the same order shifting once a day. Each sponsor is shown
+  about as often as the others, and the choice stays put while you work.
+
 ## [0.41.0] — 2026-10-20
 
 ### Added

@@ -5,11 +5,10 @@ import { SPONSORSHIPS } from "@/content/sponsorships";
 import { ADSENSE_CLIENT, ADSENSE_SLOT } from "@/lib/ads/adsense";
 import { allows } from "@/lib/consent/consent";
 import { consentRuntime, GOOGLE_CMP } from "@/lib/consent/runtime";
-import { dayNumber, pickSponsorship, type Placement } from "@/lib/sponsorship/sponsorship";
+import { noSubscribe, pageSeed } from "@/lib/sponsorship/page-seed";
+import { pickSponsorship, type Placement } from "@/lib/sponsorship/sponsorship";
 import styles from "./site.module.css";
 import { SponsorCard } from "./SponsorCard";
-
-const noSubscribe = () => () => {};
 
 /**
  * A fixed-size ad space on website pages (never in the editor). With a configured AdSense unit and
@@ -34,13 +33,9 @@ export function AdSlot({ placement }: { placement: Exclude<Placement, "editor-st
     }
   }, [google]);
 
-  // Day 0 while prerendering; today's rotation once in the browser (no hydration mismatch).
-  const day = useSyncExternalStore(
-    noSubscribe,
-    () => dayNumber(Date.now()),
-    () => 0,
-  );
-  const ad = pickSponsorship(SPONSORSHIPS, placement, day);
+  // Listed order while prerendering; a random pick once in the browser (no hydration mismatch).
+  const seed = useSyncExternalStore(noSubscribe, pageSeed, () => 0);
+  const ad = pickSponsorship(SPONSORSHIPS, placement, seed);
   return (
     <div className={styles.adSlot} data-placement={placement}>
       {google ? (
