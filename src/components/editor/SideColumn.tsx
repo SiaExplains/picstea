@@ -3,11 +3,10 @@
 import { useSyncExternalStore } from "react";
 import { SponsorTile } from "@/components/site/SponsorTile";
 import { SPONSORSHIPS } from "@/content/sponsorships";
-import { dayNumber, pickSponsorships } from "@/lib/sponsorship/sponsorship";
+import { noSubscribe, pageSeed } from "@/lib/sponsorship/page-seed";
+import { pickSponsorships } from "@/lib/sponsorship/sponsorship";
 import styles from "./editor.module.css";
 import { useT } from "./i18n";
-
-const noSubscribe = () => () => {};
 
 /** Sponsorship slots in the column, top to bottom. */
 const SIDE_SLOTS = 3;
@@ -19,14 +18,10 @@ const SIDE_SLOTS = 3;
  * reserved up front, so the canvas never shifts.
  */
 export function SideColumn({ onPrivacySettings }: { onPrivacySettings: () => void }) {
-  // Day 0 while prerendering; today's rotation once in the browser (no hydration mismatch).
-  const day = useSyncExternalStore(
-    noSubscribe,
-    () => dayNumber(Date.now()),
-    () => 0,
-  );
+  // Listed order while prerendering; a random pick once in the browser (no hydration mismatch).
+  const seed = useSyncExternalStore(noSubscribe, pageSeed, () => 0);
   const t = useT();
-  const ads = pickSponsorships(SPONSORSHIPS, "editor-side", day, SIDE_SLOTS);
+  const ads = pickSponsorships(SPONSORSHIPS, "editor-side", seed, SIDE_SLOTS);
   return (
     <aside
       className={styles.side}

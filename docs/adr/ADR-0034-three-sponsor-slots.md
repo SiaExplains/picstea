@@ -68,3 +68,12 @@ With three booked videos the side column could no longer fit three full-width sq
 screens below about 900 px tall. Each slot now takes a third of the free height. Its tile is the
 largest square that fits (`min(100cqw, 100cqh)` in a size container), so all three show in full:
 185 px squares at 720 px tall, up to the column width (279 px) on tall screens.
+
+## Update (v0.42.0): random per view, GoAll.ai
+
+A fourth sponsor, GoAll.ai (256 × 256 H.264, 334 KB, linking to `https://goall.ai`), means there are
+more bookings than slots. The daily rotation is replaced: every page view shows three of the
+booked sponsors, chosen and placed at random (a seeded Fisher–Yates shuffle, seed drawn once per
+page load with `crypto.getRandomValues`). Each sponsor appears in about ¾ of views and equally
+often in each slot. Seed 0 — while prerendering — is the listed order, so server and browser
+render the same first frame. Single-slot placements use the same seed.

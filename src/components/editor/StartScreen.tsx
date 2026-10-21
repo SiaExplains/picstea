@@ -3,7 +3,8 @@
 import { useSyncExternalStore } from "react";
 import { SponsorTile } from "@/components/site/SponsorTile";
 import { SPONSORSHIPS } from "@/content/sponsorships";
-import { dayNumber, pickSponsorship } from "@/lib/sponsorship/sponsorship";
+import { noSubscribe, pageSeed } from "@/lib/sponsorship/page-seed";
+import { pickSponsorship } from "@/lib/sponsorship/sponsorship";
 import { useAppStatus, useController } from "./editor-context";
 import styles from "./editor.module.css";
 import { TrashIcon } from "./icons";
@@ -115,20 +116,14 @@ export function StartScreen({ actions }: { actions: Record<UiActionId, UiAction>
   );
 }
 
-const noSubscribe = () => () => {};
-
 /**
  * The start screen's sponsorship (docs/08) on screens narrower than the side column, which has
  * three slots of its own (ADR-0034, ADR-0035). Never over the canvas or tools. Picstea's own
  * sponsorships only — no third-party code runs in the editor.
  */
 function StartSponsorship() {
-  const day = useSyncExternalStore(
-    noSubscribe,
-    () => dayNumber(Date.now()),
-    () => 0,
-  );
-  const ad = pickSponsorship(SPONSORSHIPS, "editor-start", day);
+  const seed = useSyncExternalStore(noSubscribe, pageSeed, () => 0);
+  const ad = pickSponsorship(SPONSORSHIPS, "editor-start", seed);
   return (
     <div className={styles.startSponsor}>
       <SponsorTile ad={ad} size={200} />

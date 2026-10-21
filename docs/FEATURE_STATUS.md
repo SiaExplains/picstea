@@ -1,6 +1,6 @@
 # Feature status
 
-Last updated: 2026-10-20 · version 0.41.0 · live at https://www.picstea.com · see `CHANGELOG.md` for each release and `docs/adr/` (ADR-0001 to ADR-0039) for decisions
+Last updated: 2026-10-20 · version 0.42.0 · live at https://www.picstea.com · see `CHANGELOG.md` for each release and `docs/adr/` (ADR-0001 to ADR-0039) for decisions
 
 Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ deferred
 
@@ -144,7 +144,7 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 | Menu bar with submenus (keyboard and pointer), Window menu | ✅ | ADR-0032 |
 | Copy Merged, Edit → Stroke…, Select → Grow / Similar, Layer → Colour Label | ✅ | ADR-0032 |
 | About page (`/about`) | ✅ | ADR-0032 |
-| Three sponsorship slots in the editor column; silent looping video sponsorships (FocusCrew, Emojar, WikiDigit; rotating daily) | ✅ | ADR-0034; reduced motion shows the still frame |
+| Three sponsorship slots in the editor column; silent looping video sponsorships (FocusCrew, Emojar, WikiDigit, GoAll.ai; three at random per view, in random positions) | ✅ | ADR-0034; reduced motion shows the still frame |
 | Media-only sponsor tiles with an overlaid "Sponsored" label; compact empty slots | ✅ | ADR-0035 |
 | Website in the editor's dark theme | ✅ | ADR-0035 |
 | Image Size…, Canvas Size… (9 anchors, relative), Image Rotation (90°/180°, flip canvas) | ✅ | ADR-0033; layers transformed, not resampled; arbitrary angle 📋 |

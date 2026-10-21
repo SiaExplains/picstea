@@ -1,8 +1,9 @@
 import type { Advertisement } from "@/lib/sponsorship/sponsorship";
 
 /**
- * Booked sponsorships. Add an entry to show it; images and videos go in /public/sponsors. Empty
- * slots show the house ads ("Sponsor Picstea"). Every entry is validated before it is rendered.
+ * Booked sponsorships. Add an entry to show it; images and videos go in /public/sponsors. Every
+ * page view shows a random choice of them in random positions (pickSponsorships); empty slots
+ * show the house ads ("Sponsor Picstea"). Every entry is validated before it is rendered.
  */
 export const SPONSORSHIPS: readonly Advertisement[] = [
   {
@@ -35,6 +36,17 @@ export const SPONSORSHIPS: readonly Advertisement[] = [
     video: "/sponsors/wikidigit.mp4",
     image: "/sponsors/wikidigit-poster.png",
     targetUrl: "https://wikidigit.com",
+    placement: ["editor-side", "editor-start"],
+    active: true,
+  },
+  {
+    id: "goallai",
+    sponsor: "GoAll.ai",
+    title: "GoAll.ai — go all-in on AI",
+    description: "AI and automation for early-stage startups, at goall.ai.",
+    video: "/sponsors/goallai.mp4",
+    image: "/sponsors/goallai-poster.png",
+    targetUrl: "https://goall.ai",
     placement: ["editor-side", "editor-start"],
     active: true,
   },
