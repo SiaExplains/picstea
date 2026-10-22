@@ -3,6 +3,17 @@
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.44.0] — 2026-10-22
+
+### Added
+
+- **The Move tool moves selected pixels**, as in Photoshop. With a selection on a pixel layer,
+  drag to move just those pixels; the selection outline goes with them. Alt-drag moves a copy and
+  leaves the original, Shift keeps the move straight, and the arrow keys nudge by 1 pixel (10 with
+  Shift). Each drag is one undo step. To move the whole layer, deselect first (Cmd/Ctrl+D).
+- Moving the same pixels several times keeps soft and feathered edges clean: they are lifted
+  once, not cut and pasted again at every step.
+
 ## [0.43.0] — 2026-10-22
 
 ### Added

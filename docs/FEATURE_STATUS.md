@@ -1,6 +1,6 @@
 # Feature status
 
-Last updated: 2026-10-22 · version 0.43.0 · live at https://www.picstea.com · see `CHANGELOG.md` for each release and `docs/adr/` (ADR-0001 to ADR-0039) for decisions
+Last updated: 2026-10-22 · version 0.44.0 · live at https://www.picstea.com · see `CHANGELOG.md` for each release and `docs/adr/` (ADR-0001 to ADR-0039) for decisions
 
 Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ deferred
 
@@ -88,7 +88,7 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 | Painting, fill and gradient limited to the selection | ✅ | |
 | Clear, Fill, Cut/Copy/Paste, Layer via Copy, Mask from Selection, Crop to Selection | ✅ | Copy also goes to the system clipboard where allowed |
 | Pencil, Paint Bucket, Gradient (linear/radial), Eyedropper | ✅ | Gradient presets/editor 📋 |
-| Moving selected pixels with the Move tool | 📋 | Use Cut/Paste or Layer via Copy |
+| Moving selected pixels with the Move tool | ✅ | Alt-drag moves a copy; arrows nudge. Pixels moved past a pixel layer's own edge are clipped until layers can grow |
 | Quick mask, refine edge, saving selections, clipping masks, polygon shape | 📋 | |
 
 ## Gate 6 — Formats
