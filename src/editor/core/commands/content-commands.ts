@@ -1,4 +1,5 @@
 import { translatePath } from "../path/path";
+import type { SelectionMask } from "../../selection/mask";
 import { withoutSelection } from "./selection-commands";
 import { isHexColor } from "../document/factory";
 import { checkDimensions } from "../document/limits";
@@ -87,6 +88,34 @@ export function setLayerTransform(
         ...(mask ? { mask } : {}),
         ...(vectorMask ? { vectorMask } : {}),
       } as Layer);
+    },
+  };
+}
+
+/**
+ * Move selected pixels (Move tool with a selection): the layer's new pixels and the moved
+ * outline in one undo step. `selection` is null when the outline was moved off the canvas.
+ */
+export function moveSelectedPixels(
+  layerId: string,
+  assetId: string,
+  selection: SelectionMask | null,
+  options: { label?: string; mergeKey?: string; gesture?: boolean } = {},
+): Command {
+  return {
+    type: "layer.movePixels",
+    label: options.label ?? "Move",
+    mergeKey: options.mergeKey,
+    mergeUntilSealed: options.gesture,
+    apply(doc) {
+      const layer = requireLayer(doc, layerId);
+      if (layer.kind !== "raster") throw new CommandError("Only pixel layers can be painted on.");
+      requireUnlocked(layer, doc);
+      if (selection && (selection.width !== doc.width || selection.height !== doc.height)) {
+        throw new CommandError("The selection does not match the canvas size.");
+      }
+      const moved = replaceLayer(doc, { ...layer, assetId });
+      return selection?.bounds ? { ...moved, selection } : withoutSelection(moved);
     },
   };
 }

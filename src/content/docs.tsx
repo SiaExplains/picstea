@@ -307,7 +307,7 @@ export const DOCS: readonly DocPage[] = [
     title: "Selections",
     description:
       "Select with the marquee, lasso and magic wand, combine and refine selections, and use them to paint, fill, copy and mask.",
-    updated: "2026-10-09",
+    updated: "2026-10-22",
     body: () => (
       <>
         <p>
@@ -345,6 +345,13 @@ export const DOCS: readonly DocPage[] = [
         <ul>
           <li>Brush, pencil, eraser, paint bucket and gradient only paint inside it.</li>
           <li>Delete clears the selected pixels; Edit → Fill (Shift+F5) fills them.</li>
+          <li>
+            With the Move tool (V), drag to move the selected pixels of a pixel layer; the outline
+            moves with them. Alt-drag moves a copy, Shift keeps the move straight, and the arrow
+            keys nudge by 1 pixel (10 with Shift). To move the whole layer, deselect first
+            (Cmd/Ctrl+D). Pixels moved past the edge of a smaller pixel layer, such as a placed
+            image, are cut off.
+          </li>
           <li>Cut, Copy and Paste work with the selected pixels.</li>
           <li>Cmd/Ctrl+J copies the selection to a new layer.</li>
           <li>Image → Crop to Selection crops the canvas to it.</li>

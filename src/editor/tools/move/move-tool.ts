@@ -1,5 +1,6 @@
 import { msg } from "../../core/message";
 import {
+  moveSelectedPixels,
   setLayerTransform,
   transformLayers,
   translateLayer,
@@ -16,7 +17,7 @@ import {
   type TransformTarget,
 } from "../../core/geometry/multi-transform";
 import { activeLayer } from "../../core/document/queries";
-import type { Layer, Transform } from "../../core/document/types";
+import type { EditorDocument, Layer, RasterLayer, Transform } from "../../core/document/types";
 import { createId } from "../../core/ids";
 import {
   boundsOf,
@@ -39,6 +40,16 @@ import { snapPoint, snapRect, type SnapLine } from "../../core/geometry/snapping
 import type { Rect } from "../../core/geometry/layer-geometry";
 import { documentToScreen, type Point, type Size } from "../../core/viewport/viewport";
 import type { Overlay } from "../../rendering/overlay";
+import type { CompositePreview } from "../../rendering/compositing/compositor";
+import { releaseSurface, type Surface } from "../../pixels/layer-pixels";
+import {
+  composeMoved,
+  liftSelection,
+  releaseLifted,
+  type LiftedPixels,
+} from "../../pixels/move-pixels";
+import type { SelectionMask } from "../../selection/mask";
+import { translateSelection } from "../../selection/ops";
 import {
   dragSnapping,
   HANDLE_HIT_PX,
@@ -91,6 +102,36 @@ interface Drag {
   applied: Point;
 }
 
+/**
+ * Selected pixels lifted off a pixel layer. Reused by later drags and nudges while the document
+ * is still the one the last move produced, so soft edges are cut out only once.
+ */
+interface PixelFloat {
+  readonly documentId: string;
+  readonly layerId: string;
+  readonly lifted: LiftedPixels;
+  /** The selection when the pixels were lifted; moves are offsets from it. */
+  readonly selection: SelectionMask;
+  /** Offset of the last committed move. */
+  offset: Point;
+  /** The document that move produced (null until the first commit). */
+  doc: EditorDocument | null;
+}
+
+interface PixelDrag {
+  readonly float: PixelFloat;
+  readonly startPointer: Point;
+  /** Selection bounds at the start, for snapping. */
+  readonly startBounds: Rect;
+  readonly mergeKey: string;
+  readonly surface: Surface;
+  readonly preview: CompositePreview;
+  offset: Point;
+  /** The outline as it will be after the move (null when moved off the canvas). */
+  selection: SelectionMask | null;
+  changed: boolean;
+}
+
 /** Rotation zone: just outside a corner handle, in CSS pixels. */
 const ROTATE_ZONE_PX = 22;
 const RESIZE_CURSORS = ["ew-resize", "nwse-resize", "ns-resize", "nesw-resize"];
@@ -98,12 +139,15 @@ const RESIZE_CURSORS = ["ew-resize", "nwse-resize", "ns-resize", "nesw-resize"];
 /**
  * Move tool with free-transform handles: drag inside to move, drag a handle to scale (Shift keeps
  * proportions, Alt scales from the centre), drag just outside a corner to rotate (Shift snaps to
- * 15°). Arrow keys nudge by 1px, Shift+arrow by 10px.
+ * 15°). Arrow keys nudge by 1px, Shift+arrow by 10px. With a selection on a pixel layer, drags and
+ * nudges move the selected pixels instead (Alt-drag moves a copy).
  */
 export class MoveTool implements Tool {
   readonly id = "move";
   private drag: Drag | null = null;
   private multiDrag: MultiDrag | null = null;
+  private pixelDrag: PixelDrag | null = null;
+  private float: PixelFloat | null = null;
   /** Smart guides for the current drag. */
   private snapLines: readonly SnapLine[] = [];
 
@@ -127,6 +171,176 @@ export class MoveTool implements Tool {
     const lockY = pointer.shiftKey && dy === 0;
     this.snapLines = snap.lines.filter((l) => (l.axis === "x" ? !lockX : !lockY));
     return { x: lockX ? dx : dx + snap.dx, y: lockY ? dy : dy + snap.dy };
+  }
+
+  /**
+   * The pixel layer whose selected pixels a drag moves: a selection plus one active, visible
+   * pixel layer (Photoshop's behaviour). Otherwise the whole layer moves.
+   */
+  private pixelTarget(ctx: ToolContext): RasterLayer | undefined {
+    const session = ctx.store.getSession();
+    const layer = session ? activeLayer(session.document) : undefined;
+    if (!session?.document.selection || layer?.kind !== "raster" || !layer.visible) return;
+    if (this.multi(ctx)) return;
+    return layer;
+  }
+
+  private dropFloat(): void {
+    if (!this.float) return;
+    releaseLifted(this.float.lifted);
+    this.float = null;
+  }
+
+  /** The current float for `layer`, or freshly lifted pixels; null (with a notice) if it can't. */
+  private floatFor(ctx: ToolContext, layer: RasterLayer, keepOriginal: boolean): PixelFloat | null {
+    const doc = ctx.store.getSession()!.document;
+    const current = this.float;
+    if (current && !keepOriginal && current.doc === doc && current.layerId === layer.id) {
+      return current;
+    }
+    this.dropFloat();
+    let lifted: LiftedPixels | null;
+    try {
+      lifted = liftSelection(ctx, doc, layer, doc.selection!, keepOriginal);
+    } catch (error) {
+      ctx.notify("error", error instanceof Error ? error.message : String(error));
+      return null;
+    }
+    if (!lifted) {
+      ctx.notify("info", "This layer is still loading. Try again in a moment.");
+      return null;
+    }
+    this.float = {
+      documentId: doc.id,
+      layerId: layer.id,
+      lifted,
+      selection: doc.selection!,
+      offset: { x: 0, y: 0 },
+      doc: null,
+    };
+    return this.float;
+  }
+
+  /** Commit the float at `offset` (one command: new pixels and the moved outline). */
+  private commitPixels(
+    ctx: ToolContext,
+    float: PixelFloat,
+    layer: RasterLayer,
+    offset: Point,
+    surface: Surface,
+    options: { label: string; mergeKey: string; gesture?: boolean },
+  ): void {
+    const asset = ctx.assets.addBitmap(surface, layer.width, layer.height);
+    const selection = translateSelection(float.selection, offset.x, offset.y);
+    const result = ctx.store.dispatch(moveSelectedPixels(layer.id, asset.id, selection, options));
+    if (!result.ok) {
+      ctx.notify("error", result.error);
+      this.dropFloat();
+      return;
+    }
+    float.offset = offset;
+    float.doc = ctx.store.getSession()?.document ?? null;
+    ctx.pixelsCommitted();
+  }
+
+  private pixelPointerDown(ctx: ToolContext, pointer: ToolPointer, layer: RasterLayer): void {
+    if (layer.locked) {
+      ctx.notify("error", msg('"{layer}" is locked. Unlock it to move it.', { layer: layer.name }));
+      return;
+    }
+    const float = this.floatFor(ctx, layer, pointer.altKey);
+    if (!float) return;
+    const surface = ctx.createSurface(layer.width, layer.height);
+    composeMoved(layer, float.lifted, float.offset.x, float.offset.y, surface);
+    const b = translateSelection(float.selection, float.offset.x, float.offset.y)?.bounds;
+    this.pixelDrag = {
+      float,
+      startPointer: pointer.doc,
+      startBounds: b ?? { x: pointer.doc.x, y: pointer.doc.y, width: 0, height: 0 },
+      mergeKey: `move-pixels:${layer.id}:${createId("drag")}`,
+      surface,
+      preview: { overrides: new Map([[layer.id, surface]]) },
+      offset: float.offset,
+      selection: null,
+      changed: false,
+    };
+  }
+
+  private pixelPointerMove(ctx: ToolContext, pointer: ToolPointer, drag: PixelDrag): void {
+    const session = ctx.store.getSession();
+    const layer = session && findLayerDeep(session.document.layers, drag.float.layerId);
+    if (layer?.kind !== "raster") return;
+    let dx = pointer.doc.x - drag.startPointer.x;
+    let dy = pointer.doc.y - drag.startPointer.y;
+    if (pointer.shiftKey) {
+      if (Math.abs(dx) > Math.abs(dy)) dy = 0;
+      else dx = 0;
+    }
+    this.snapLines = [];
+    const snapping = dragSnapping(ctx, pointer, [layer.id]);
+    if (snapping) {
+      const b = drag.startBounds;
+      const snap = snapRect(
+        { ...b, x: b.x + dx, y: b.y + dy },
+        snapping.targets,
+        snapping.threshold,
+      );
+      const lockX = pointer.shiftKey && dx === 0;
+      const lockY = pointer.shiftKey && dy === 0;
+      this.snapLines = snap.lines.filter((l) => (l.axis === "x" ? !lockX : !lockY));
+      dx = lockX ? dx : dx + snap.dx;
+      dy = lockY ? dy : dy + snap.dy;
+    }
+    const base = drag.float.offset;
+    const offset = { x: base.x + Math.round(dx), y: base.y + Math.round(dy) };
+    if (offset.x === drag.offset.x && offset.y === drag.offset.y) return;
+    composeMoved(layer, drag.float.lifted, offset.x, offset.y, drag.surface);
+    drag.offset = offset;
+    drag.selection = translateSelection(drag.float.selection, offset.x, offset.y);
+    drag.changed = true;
+    ctx.invalidate();
+  }
+
+  private pixelPointerUp(ctx: ToolContext, drag: PixelDrag): void {
+    this.pixelDrag = null;
+    const session = ctx.store.getSession();
+    const layer = session && findLayerDeep(session.document.layers, drag.float.layerId);
+    const moved = drag.offset.x !== drag.float.offset.x || drag.offset.y !== drag.float.offset.y;
+    if (!moved || layer?.kind !== "raster") {
+      releaseSurface(drag.surface);
+      return;
+    }
+    // The preview surface becomes the layer's new pixels.
+    this.commitPixels(ctx, drag.float, layer, drag.offset, drag.surface, {
+      label: "Move",
+      mergeKey: drag.mergeKey,
+      gesture: true,
+    });
+  }
+
+  /** Abandon a pixel drag: nothing was committed yet, so dropping the preview is enough. */
+  private dropPixelDrag(ctx: ToolContext): void {
+    if (!this.pixelDrag) return;
+    releaseSurface(this.pixelDrag.surface);
+    this.pixelDrag = null;
+    this.snapLines = [];
+    ctx.invalidate();
+  }
+
+  private pixelNudge(ctx: ToolContext, layer: RasterLayer, delta: Point): void {
+    if (layer.locked) {
+      ctx.notify("error", msg('"{layer}" is locked. Unlock it to move it.', { layer: layer.name }));
+      return;
+    }
+    const float = this.floatFor(ctx, layer, false);
+    if (!float) return;
+    const offset = { x: float.offset.x + delta.x, y: float.offset.y + delta.y };
+    const surface = ctx.createSurface(layer.width, layer.height);
+    composeMoved(layer, float.lifted, offset.x, offset.y, surface);
+    this.commitPixels(ctx, float, layer, offset, surface, {
+      label: "Nudge",
+      mergeKey: `nudge-pixels:${layer.id}`,
+    });
   }
 
   private editableActive(ctx: ToolContext): Layer | undefined {
@@ -355,6 +569,9 @@ export class MoveTool implements Tool {
   }
 
   cursor(ctx: ToolContext, pointer: ToolPointer | null): string {
+    if (this.pixelDrag || (!this.drag && !this.multiDrag && pointer && this.pixelTarget(ctx))) {
+      return "move";
+    }
     if (this.multiDrag) {
       return this.multiDrag.kind === "move"
         ? "move"
@@ -403,6 +620,11 @@ export class MoveTool implements Tool {
     const session = ctx.store.getSession();
     if (!session || pointer.button !== 0) return;
     const doc = session.document;
+    const pixels = this.pixelTarget(ctx);
+    if (pixels) {
+      this.pixelPointerDown(ctx, pointer, pixels);
+      return;
+    }
     const multi = this.multi(ctx);
     if (multi && this.multiPointerDown(ctx, pointer, multi)) return;
     let hit = this.hitTest(ctx, pointer);
@@ -447,6 +669,10 @@ export class MoveTool implements Tool {
   }
 
   pointerMove(ctx: ToolContext, pointer: ToolPointer): void {
+    if (this.pixelDrag) {
+      this.pixelPointerMove(ctx, pointer, this.pixelDrag);
+      return;
+    }
     if (this.multiDrag) {
       this.multiPointerMove(ctx, pointer, this.multiDrag);
       return;
@@ -543,6 +769,12 @@ export class MoveTool implements Tool {
   }
 
   pointerUp(ctx: ToolContext): void {
+    if (this.pixelDrag) {
+      this.pixelPointerUp(ctx, this.pixelDrag);
+      this.snapLines = [];
+      ctx.store.sealHistory();
+      return;
+    }
     if (!this.drag && !this.multiDrag) return;
     this.drag = null;
     this.multiDrag = null;
@@ -560,6 +792,10 @@ export class MoveTool implements Tool {
   }
 
   keyDown(ctx: ToolContext, key: ToolKey): boolean {
+    if (key.key === "Escape" && this.pixelDrag) {
+      this.dropPixelDrag(ctx);
+      return true;
+    }
     const deltas: Record<string, Point> = {
       ArrowLeft: { x: -1, y: 0 },
       ArrowRight: { x: 1, y: 0 },
@@ -570,6 +806,11 @@ export class MoveTool implements Tool {
     const layer = this.editableActive(ctx);
     if (!delta || !layer || key.modKey) return false;
     const step = key.shiftKey ? 10 : 1;
+    const pixels = this.pixelTarget(ctx);
+    if (pixels) {
+      this.pixelNudge(ctx, pixels, { x: delta.x * step, y: delta.y * step });
+      return true;
+    }
     const multi = this.multi(ctx);
     if (multi) {
       const moved = ctx.store.dispatch(
@@ -604,6 +845,9 @@ export class MoveTool implements Tool {
   }
 
   cancel(ctx: ToolContext): void {
+    this.dropPixelDrag(ctx);
+    // Tool and document switches cancel too: lifted pixels are cheap to lift again.
+    this.dropFloat();
     // The whole drag is one merged history entry, so undoing it restores the start state.
     if (this.drag?.changed) ctx.store.undo(this.drag.documentId);
     if (this.multiDrag?.changed) ctx.store.undo(this.multiDrag.documentId);
@@ -616,6 +860,10 @@ export class MoveTool implements Tool {
     const session = ctx.store.getSession();
     const layer = this.editableActive(ctx);
     if (!session || !layer) return [];
+    // Moving selected pixels: the marching ants show what moves, so no layer frame.
+    if (this.pixelDrag || (!this.drag && !this.multiDrag && this.pixelTarget(ctx))) {
+      return [{ kind: "snap", lines: this.pixelDrag ? this.snapLines : [] }];
+    }
     const drag = this.multiDrag;
     const multi = drag?.selection ?? this.multi(ctx);
     if (multi) {
@@ -647,7 +895,11 @@ export class MoveTool implements Tool {
     ];
   }
 
-  preview(): undefined {
-    return undefined;
+  preview(): CompositePreview | undefined {
+    return this.pixelDrag?.preview;
+  }
+
+  selectionPreview(): SelectionMask | null | undefined {
+    return this.pixelDrag?.changed ? this.pixelDrag.selection : undefined;
   }
 }

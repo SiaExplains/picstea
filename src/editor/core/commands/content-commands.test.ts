@@ -10,12 +10,14 @@ import type { EditorDocument, Layer } from "../document/types";
 import { CommandError } from "./command";
 import {
   cropDocument,
+  moveSelectedPixels,
   setLayerTransform,
   setRasterContent,
   updateShapeLayer,
   updateTextLayer,
 } from "./content-commands";
 import { addLayer, setLayerLocked } from "./layer-commands";
+import { createSelection } from "../../selection/mask";
 
 function docWith(...layers: Layer[]): EditorDocument {
   return layers.reduce(
@@ -173,5 +175,36 @@ describe("cropDocument", () => {
     expect(() => cropDocument({ x: 0, y: 0, width: 0, height: 10 }).apply(doc)).toThrow(
       CommandError,
     );
+  });
+});
+
+describe("moveSelectedPixels", () => {
+  const base = createDocument({ name: "x", width: 10, height: 10 });
+  const pixel = () => ({ ...createEmptyRasterLayer(base, "p"), id: "p" });
+  const square = (x: number) => {
+    const data = new Uint8Array(100);
+    for (let y = 2; y < 5; y++) for (let i = x; i < x + 3; i++) data[y * 10 + i] = 255;
+    return createSelection(10, 10, data);
+  };
+
+  it("swaps the pixels and moves the outline in one step", () => {
+    const doc = { ...docWith(pixel()), width: 10, height: 10, selection: square(1) };
+    const next = moveSelectedPixels("p", "asset_2", square(5)).apply(doc);
+    expect(next.layers[1]).toMatchObject({ kind: "raster", assetId: "asset_2" });
+    expect(next.selection?.bounds).toEqual({ x: 5, y: 2, width: 3, height: 3 });
+  });
+
+  it("drops the selection when it was moved off the canvas", () => {
+    const doc = { ...docWith(pixel()), width: 10, height: 10, selection: square(1) };
+    expect(moveSelectedPixels("p", "asset_2", null).apply(doc).selection).toBeUndefined();
+  });
+
+  it("refuses locked and non-pixel layers and a selection of the wrong size", () => {
+    const doc = { ...docWith(pixel(), shape()), width: 10, height: 10 };
+    expect(() => moveSelectedPixels("s", "a", null).apply(doc)).toThrow(CommandError);
+    const locked = setLayerLocked("p", true).apply(doc);
+    expect(() => moveSelectedPixels("p", "a", null).apply(locked)).toThrow(/locked/);
+    const wrong = createSelection(5, 5, new Uint8Array(25).fill(255));
+    expect(() => moveSelectedPixels("p", "a", wrong).apply(doc)).toThrow(/canvas size/);
   });
 });
