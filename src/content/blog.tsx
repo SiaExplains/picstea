@@ -798,6 +798,182 @@ export const POSTS: readonly BlogPost[] = [
       </>
     ),
   },
+  {
+    slug: "change-the-color-of-an-object-in-a-photo",
+    title: "How to change the colour of an object in a photo",
+    description:
+      "Recolour a jacket, car or wall in your browser: select it with Color Range, shift its hue with a clipped Hue/Saturation layer, and check it with Color Sampler.",
+    published: "2026-11-08",
+    draft: false,
+    body: () => (
+      <>
+        <p>
+          To change the colour of one thing in a photo, select that colour, copy it to its own
+          layer, and shift its hue with an adjustment layer clipped to the copy. In Picstea that
+          means <strong>Select → Color Range…</strong>, then{" "}
+          <strong>Layer → New → Layer via Copy</strong>, then a Hue/Saturation adjustment layer with{" "}
+          <strong>Layer → Create Clipping Mask</strong>. The shading and texture stay as they were
+          because only the hue moves. For small areas there is also the Color Replacement tool,
+          which paints a new colour over the old one. Everything happens in your browser, and the
+          photo stays on your device.
+        </p>
+        <p>The example below follows one photo: someone in a red jacket, which we want blue.</p>
+
+        <h2>How do I select only the red parts?</h2>
+        <p>
+          Open the photo in <EditorLink>Picstea</EditorLink> (drop it on the window or use{" "}
+          <strong>File → Open Image…</strong>). Pick the Eyedropper (I) and click a typical part of
+          the jacket, not a highlight or the darkest fold. That sets the foreground colour, and
+          Color Range starts from the foreground colour.
+        </p>
+        <p>
+          Now choose <strong>Select → Color Range…</strong>. The dialog has three settings:
+        </p>
+        <ul>
+          <li>
+            <strong>Colour</strong>, already set to the red you picked. You can change it here too.
+          </li>
+          <li>
+            <strong>Fuzziness</strong>, from 0 to 255 and 40 by default. Pixels within half the
+            fuzziness of the colour are fully selected, and pixels further away are selected less
+            and less until the full value, so the edge of the selection is soft.
+          </li>
+          <li>
+            <strong>Sample all layers</strong>, on by default. Untick it to look only at the active
+            layer.
+          </li>
+        </ul>
+        <p>
+          While the dialog is open, marching ants show what would be selected, and a line under the
+          slider gives the size of the selected area or says &quot;Nothing matches&quot;. Raise
+          Fuzziness until the shadowed folds are in, and stop before the skin or a red sign in the
+          background joins them. Click OK.
+        </p>
+        <p>
+          Color Range checks every pixel in the image, including ones nowhere near the jacket. If
+          something else in the frame is the same red, it gets selected too, and you remove it in
+          the next step. Each run of Color Range replaces the current selection.
+        </p>
+
+        <h2>How do I clean up the selection?</h2>
+        <p>
+          Use the Lasso (L) to fix the leftovers. Hold Alt while you draw around the stray red sign
+          to subtract it, or hold Shift and draw around a missed patch to add it. Under{" "}
+          <strong>Select → Modify</strong> there are <strong>Feather…</strong> (Shift+F6) to soften
+          the edge further, and <strong>Expand…</strong> and <strong>Contract…</strong> to grow or
+          shrink it by a few pixels. <strong>Select → Grow</strong> adds neighbouring pixels of a
+          similar colour, and <strong>Select → Similar</strong> adds matching pixels anywhere in the
+          image; both use the Magic Wand&apos;s tolerance. The{" "}
+          <Link href="/docs/selections">Selections guide</Link> covers every selection tool.
+        </p>
+
+        <h2>How do I change the colour and keep the shading?</h2>
+        <p>
+          With the photo layer active and the selection still on, press Cmd/Ctrl+J or choose{" "}
+          <strong>Layer → New → Layer via Copy</strong>. The selected pixels go to a new layer
+          called &quot;… copy&quot; above the photo, and the original stays untouched underneath.
+        </p>
+        <p>
+          Next choose <strong>Layer → New Adjustment Layer → Hue/Saturation…</strong>. The new layer
+          appears above the copy, and its settings are in the Properties panel. On its own it would
+          change the whole photo, so choose <strong>Layer → Create Clipping Mask</strong>{" "}
+          (Cmd/Ctrl+Alt+G). The adjustment is indented with ↳ in the Layers panel and now only
+          affects the jacket copy.
+        </p>
+        <p>
+          Drag <strong>Hue</strong> (−180 to 180) until the red turns the blue you want. Leave{" "}
+          <strong>Lightness</strong> at 0 if you want the folds and highlights to keep their
+          contrast, and use <strong>Saturation</strong> (−100 to 100) for a softer or stronger blue.
+          Since this is an adjustment layer, you can come back and change the numbers later, hide it
+          to compare, or paint on its mask to take the effect off a button or zip. The{" "}
+          <Link href="/docs/layers-groups-and-masks">layers, groups and masks guide</Link> explains
+          clipping in more detail.
+        </p>
+        <p>
+          One limit: Hue only rotates colours that have some saturation. White, black and grey have
+          none, so a white car stays white whatever Hue says. Picstea&apos;s Hue/Saturation has no
+          Colorize option, so for neutral objects use the Color Replacement tool below.
+        </p>
+
+        <h2>When is the Color Replacement tool the better choice?</h2>
+        <p>
+          The Color Replacement tool is a brush. It shares a toolbar slot with the Brush and Pencil:
+          right-click or hold the Brush button, or press Shift+B to cycle to it. The colour under
+          your first dab is the one it replaces. Pixels within the <strong>Tolerance</strong> (0 to
+          255, 60 by default) take the hue and saturation of the foreground colour and keep their
+          own lightness, so shading survives. The options bar also has Size and Hardness.
+        </p>
+        <p>
+          It suits small or awkward areas, like a logo on a mug or a single stripe, and it works on
+          a grey or white object, since the saturation comes from the foreground colour. It changes
+          the pixels directly and works on pixel layers only, so make a copy first (Cmd/Ctrl+J with
+          no selection duplicates the layer). Each stroke is one undo step, and if a selection is
+          active the stroke stays inside it. The other brush-style tools are in the{" "}
+          <Link href="/docs/retouching">Retouching guide</Link>.
+        </p>
+
+        <h2>How do I check the new colour is right?</h2>
+        <p>
+          If the jacket has to match a brand colour or another photo, use the Color Sampler. It sits
+          with the Eyedropper (Shift+I cycles to it). Click to place up to four sample points; the
+          options bar lists each one as R, G, B and a hex code, and the readings update as you move
+          the Hue slider. Drag a point to move it, Alt-click it to remove it, or press Clear. The
+          points are a working aid and are not saved with the image.
+        </p>
+
+        <h2>How does this compare with Photoshop?</h2>
+        <p>
+          Photoshop&apos;s <strong>Select → Color Range</strong> does more than Picstea&apos;s. It
+          can sample several colours with Shift and Alt, has Localized Color Clusters to keep the
+          selection to nearby areas, and has Skin Tones and Out of Gamut presets. Adobe&apos;s own
+          recolouring method also uses a Hue/Saturation adjustment layer, and there a selection
+          turns straight into the adjustment layer&apos;s mask; it also has a Colorize option for
+          colours that tint the result.
+        </p>
+        <p>
+          In Picstea a new adjustment layer comes with a mask that shows everything, which is why
+          this guide copies the jacket to its own layer and clips the adjustment to it. The result
+          is the same kind of non-destructive edit. If you are weighing the two editors for other
+          work, the <Link href="/photoshop-alternative">Photoshop alternative page</Link> compares
+          them feature by feature.
+        </p>
+
+        <h2>How do I save the result?</h2>
+        <p>
+          <strong>File → Export As…</strong> writes a PNG, JPEG or WebP of the finished image, and
+          the same dialog can write a layered PSD. To keep everything editable in Picstea, use{" "}
+          <strong>File → Save Project As…</strong> for a .picstea file.
+        </p>
+
+        <h2>Questions people ask</h2>
+        <h3>Can I change a colour without making a selection?</h3>
+        <p>
+          Yes, with the Color Replacement tool. It only changes pixels close to the colour under
+          your first dab, so you can brush over the edges of an object and nearby colours that are
+          different enough are left alone.
+        </p>
+        <h3>Why did part of the background change colour too?</h3>
+        <p>
+          Color Range selects matching colours across the whole image. Subtract the extra areas with
+          the Lasso while holding Alt, or lower Fuzziness and run it again.
+        </p>
+        <h3>Can I recolour a white or black object?</h3>
+        <p>
+          Hue/Saturation can&apos;t, because those colours have no hue to rotate. The Color
+          Replacement tool can, since it takes the hue and saturation from your foreground colour.
+        </p>
+        <h3>Is my photo uploaded anywhere?</h3>
+        <p>
+          No. Picstea runs in your browser, and opening, editing and exporting all happen on your
+          device.
+        </p>
+        <p>
+          <EditorLink>Open a photo in Picstea</EditorLink> and try it on something you want in a
+          different colour.
+        </p>
+      </>
+    ),
+  },
 ];
 
 const showDrafts = process.env.NODE_ENV !== "production";

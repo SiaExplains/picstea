@@ -3,6 +3,12 @@
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.44.1] — 2026-11-08
+
+### Added
+
+- New blog post, **How to change the colour of an object in a photo**, which recolours one object with Color Range, Layer via Copy, a clipped Hue/Saturation layer, the Color Replacement tool and the Color Sampler.
+
 ## [0.44.0] — 2026-10-22
 
 ### Added
@@ -32,7 +38,7 @@ All notable changes to this project are documented here. The format follows
 - Wide tables in guides and comparisons scroll sideways on phones instead of making the whole
   page wider than the screen.
 
- — 2026-10-21
+— 2026-10-21
 
 ### Added
 
