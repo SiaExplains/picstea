@@ -44,6 +44,7 @@ export const POST_SLUGS: Readonly<Record<string, "draft" | "published">> = {
   "select-align-and-distribute-several-layers": "published",
   "vibrance-color-balance-gradient-map-and-more": "published",
   "layer-styles-blend-if-and-the-image-menu": "published",
+  "change-the-color-of-an-object-in-a-photo": "published",
 };
 
 /** Author pages (`/authors/<slug>`); a unit test keeps this in sync with `authors.ts`. */
