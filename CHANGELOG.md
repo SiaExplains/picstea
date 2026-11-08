@@ -3,6 +3,13 @@
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.44.2] — 2026-11-08
+
+### Security
+
+- Updated Next.js from 16.4.0 to 16.4.5, which fixes three published Next.js vulnerabilities
+  (GHSA-2464-fhr4-w9xw, GHSA-673q-mjm6-r5xr, GHSA-p3m5-59mp-jv5r).
+
 ## [0.44.1] — 2026-11-08
 
 ### Added
