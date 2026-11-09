@@ -3,6 +3,13 @@
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.44.3] — 2026-11-09
+
+### Added
+
+- Blog post **Rulers, guides and snapping: line up a layout exactly**, on straightening a photo
+  with the Ruler tool and placing layers on guides, the grid and snap targets.
+
 ## [0.44.2] — 2026-11-08
 
 ### Security

@@ -974,6 +974,182 @@ export const POSTS: readonly BlogPost[] = [
       </>
     ),
   },
+  {
+    slug: "rulers-guides-and-snapping-for-exact-layouts",
+    title: "Rulers, guides and snapping: line up a layout exactly",
+    description:
+      "Use rulers, guides, the grid, snapping and the Ruler tool in Picstea to straighten a photo and place text on exact margins, with notes on Photoshop and Canva.",
+    published: "2026-11-09",
+    draft: false,
+    body: () => (
+      <>
+        <p>
+          To place things exactly in Picstea, turn on the rulers with{" "}
+          <strong>View → Show → Rulers</strong> (Cmd/Ctrl+R), drag guides out of them where your
+          margins go, and leave <strong>View → Snap</strong> on so layers, selections, shapes and
+          the crop box jump to those guides as you drag. A grid from{" "}
+          <strong>View → Grid Size…</strong> gives you an even pattern to snap to, and the Ruler
+          tool measures distances and angles, which is how you find out how far a crooked photo
+          needs to turn. None of these marks are saved into the exported image. The whole thing runs
+          in your browser, so your photo never leaves your device.
+        </p>
+        <p>
+          The example here is a 1080 × 1350 Instagram portrait post: a beach photo with a slightly
+          tilted horizon, a headline and a small logo, both kept 60 pixels from the edges.
+        </p>
+
+        <h2>How do I set up the canvas and the rulers?</h2>
+        <p>
+          In <EditorLink>Picstea</EditorLink>, choose <strong>File → New…</strong> and pick{" "}
+          <strong>Instagram portrait</strong> from the Social sizes (1080 × 1350 px). Bring the
+          photo in with <strong>File → Place Image as Layer…</strong>.
+        </p>
+        <p>
+          Now press Cmd/Ctrl+R. Rulers appear along the top and left of the canvas, measured in
+          document pixels. The tick spacing changes with the zoom so the labels stay readable, and a
+          marker on each ruler follows the pointer. Rulers are off by default. Picstea remembers
+          this choice, and the grid and snap settings, in your browser.
+        </p>
+
+        <h2>How do I straighten a tilted photo?</h2>
+        <p>
+          The Ruler tool sits in the same toolbar slot as the Eyedropper and Color Sampler. Press
+          Shift+I until it&apos;s active, or right-click or hold the Eyedropper button to pick it.
+          Drag along the horizon from left to right. The options bar shows six readings: X and Y for
+          the start point, W and H for the horizontal and vertical distance, A for the angle and L
+          for the length in pixels. The angle is counted counter-clockwise, as in Photoshop, so a
+          horizon that rises to the right gives a positive number. Hold Shift to lock the line to
+          45° steps. A click without dragging, or the <strong>Clear</strong> button, removes the
+          line. The measurement is only a working aid and is not saved with the document.
+        </p>
+        <p>
+          Say the readout shows A 2.4°. Select the photo layer and find the{" "}
+          <strong>Transform</strong> section in the Properties panel. It has X, Y, W and H fields
+          and a <strong>°</strong> field for rotation, from −180 to 180 in steps of 0.1. Positive
+          values turn the layer clockwise, so type 2.4 to bring a horizon that rises to the right
+          back to level. You can change the number again later.
+        </p>
+        <p>
+          Turning a layer leaves empty corners. Press Cmd/Ctrl+T and drag a corner handle outward
+          with Shift held to scale the photo up evenly until the corners are filled. If the final
+          size doesn&apos;t matter, the Crop tool (C) is the other option: drag its edges inward and
+          press Enter. Picstea has no straighten button that does this in one step, and{" "}
+          <strong>Image → Image Rotation</strong> only offers 90° and 180° turns, so measuring and
+          typing the angle is the way to do it for now.
+        </p>
+
+        <h2>How do I add guides for margins?</h2>
+        <p>
+          Drag down from the top ruler to make a horizontal guide, or right from the left ruler for
+          a vertical one. For exact numbers, use <strong>View → Guides → New Guide…</strong>. The
+          dialog asks for <strong>Vertical</strong> or <strong>Horizontal</strong> and a position in
+          pixels from the left or the top. For 60 px margins on this canvas, add vertical guides at
+          60 and 1020 and horizontal guides at 60 and 1290. You don&apos;t need a guide at 540 for
+          the centre, because the canvas centre is already a snap target.
+        </p>
+        <p>
+          To move a guide, switch to the Move tool (V) and drag it. Dragging it back onto a ruler or
+          off the canvas deletes it. Each new guide, move or delete is one undo step.{" "}
+          <strong>View → Guides → Lock Guides</strong> stops them moving while you work near them,{" "}
+          <strong>View → Show → Guides</strong> (Cmd/Ctrl+;) hides them, and{" "}
+          <strong>View → Guides → Clear Guides</strong> removes them all. Guides are saved with the
+          project, so they are still there when you reopen a .picstea file, and they never appear in
+          an exported PNG, JPEG or WebP.
+        </p>
+
+        <h2>What does snapping actually snap to?</h2>
+        <p>
+          With <strong>View → Snap</strong> on (the default), a dragged item pulls onto the nearest
+          target once it comes within six screen pixels. The targets are the guides, the grid lines
+          when the grid is visible, the canvas edges and centre, and the edges and centres of other
+          visible layers. A pink line shows what it snapped to. If a guide and a layer edge are
+          equally close, the guide wins.
+        </p>
+        <p>
+          Snapping works when you move layers, drag scale handles, draw a marquee selection, draw
+          shapes, place Pen anchors, adjust the crop box and drag guides. Hold Cmd (macOS) or Ctrl
+          while dragging to place something freely for that one drag, or turn snapping off
+          altogether with <strong>View → Snap</strong> (Cmd/Ctrl+Shift+; on a US keyboard).
+        </p>
+        <p>
+          For the example post, add a text layer with the Type tool (T) and drag it with the Move
+          tool until its left edge snaps to the guide at 60 and its top to the guide at 60. Drag the
+          logo down until its bottom edge catches the guide at 1290, then along until its right edge
+          catches the guide at 1020.
+        </p>
+
+        <h2>When is the grid more useful than guides?</h2>
+        <p>
+          Guides suit a few fixed lines, such as margins or a centre line. The grid suits layouts
+          with many equal steps, like a row of product tiles or icons spaced 40 px apart.{" "}
+          <strong>View → Grid Size…</strong> sets the spacing, from 2 to 1000 px (50 px by default),
+          and turns the grid on. <strong>View → Show → Grid</strong> (Cmd/Ctrl+&apos;) toggles it.
+          When you zoom far out, Picstea draws only every second or fourth line so the canvas
+          doesn&apos;t fill with lines. While the grid is visible, edges and centres snap to the
+          nearest grid line as well.
+        </p>
+        <p>
+          Once several layers are roughly in place, <strong>Layer → Align</strong> and{" "}
+          <strong>Layer → Distribute</strong> finish the job. The post on{" "}
+          <Link href="/blog/select-align-and-distribute-several-layers">
+            selecting, aligning and distributing several layers
+          </Link>{" "}
+          covers those, and the{" "}
+          <Link href="/docs/guides-grid-and-snapping">rulers, guides, grid and snapping guide</Link>{" "}
+          is the short reference for everything above.
+        </p>
+
+        <h2>How does this compare with Photoshop and Canva?</h2>
+        <p>
+          The shortcuts will feel familiar if you come from Photoshop: Cmd/Ctrl+; shows and hides
+          guides and Cmd/Ctrl+&apos; the grid in both editors. Photoshop&apos;s Ruler tool can do
+          more than Picstea&apos;s. It has a protractor mode, where you Alt-drag (Option-drag on
+          macOS) a second line from one end to measure the angle between two lines. Adobe&apos;s
+          straightening method is the same idea as the one above: draw the line along the horizon,
+          then choose <strong>Image → Image Rotation → Arbitrary</strong> and enter the angle.
+          Picstea has no arbitrary canvas rotation yet, so you rotate the layer instead. The{" "}
+          <Link href="/photoshop-alternative">Photoshop alternative page</Link> compares the two
+          editors more broadly.
+        </p>
+        <p>
+          Canva also has rulers and guides, under <strong>File → Rulers and guides</strong>. You can
+          drag guides from the rulers, and it offers preset layouts (12 columns, 3 columns or a 3 ×
+          3 grid) and custom ones. Its help pages note that adding individual guides with the rulers
+          isn&apos;t available on mobile, and preset and custom guides start locked. Picstea has no
+          preset column layouts, so you add each guide yourself, but it does have the Ruler tool for
+          measuring and angles. More differences are on the{" "}
+          <Link href="/canva-alternative">Canva alternative page</Link>.
+        </p>
+
+        <h2>Questions people ask</h2>
+        <h3>Do guides show up in the exported image?</h3>
+        <p>
+          No. Guides, the grid, rulers and Ruler tool lines are only drawn in the editor. Guides are
+          saved in .picstea project files so you can keep working with them.
+        </p>
+        <h3>Why won&apos;t my layer snap to a guide?</h3>
+        <p>
+          Check that <strong>View → Snap</strong> is ticked and that guides are visible, because
+          hidden guides are not snap targets. Also make sure you aren&apos;t holding Cmd or Ctrl,
+          which turns snapping off for that drag.
+        </p>
+        <h3>Can I measure in inches or centimetres?</h3>
+        <p>
+          The rulers, guide positions, grid size and Ruler tool all work in pixels. The New document
+          dialog accepts inches, centimetres and millimetres, but it converts them to pixels for the
+          canvas.
+        </p>
+        <h3>Is my photo uploaded while I edit?</h3>
+        <p>
+          No. Picstea runs in your browser and everything, from opening to exporting, happens on
+          your device.
+        </p>
+        <p>
+          <EditorLink>Open Picstea</EditorLink> and drag a guide out of the ruler to try it.
+        </p>
+      </>
+    ),
+  },
 ];
 
 const showDrafts = process.env.NODE_ENV !== "production";
