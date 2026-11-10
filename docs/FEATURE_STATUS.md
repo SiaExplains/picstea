@@ -1,6 +1,6 @@
 # Feature status
 
-Last updated: 2026-10-22 · version 0.44.0 · live at https://www.picstea.com · see `CHANGELOG.md` for each release and `docs/adr/` (ADR-0001 to ADR-0039) for decisions
+Last updated: 2026-11-10 · version 0.45.1 · live at https://www.picstea.com · see `CHANGELOG.md` for each release and `docs/adr/` (ADR-0001 to ADR-0041) for decisions
 
 Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ deferred
 
