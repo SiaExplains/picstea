@@ -1653,6 +1653,201 @@ export const POSTS: readonly BlogPost[] = [
       </>
     ),
   },
+  {
+    slug: "make-a-gradient-background-for-a-banner",
+    title: "How to make a gradient background for a banner",
+    description:
+      "Make a smooth gradient background in your browser with Picstea's Gradient tool, add a soft glow, drop a logo's white box and stop banding with a little noise.",
+    published: "2026-11-10",
+    draft: false,
+    body: () => (
+      <>
+        <p>
+          To make a gradient background in Picstea, add a new pixel layer, pick two colours, choose
+          the Gradient tool (<strong>G</strong>) and drag across the canvas. A second gradient set
+          to <strong>Radial</strong> and <strong>To transparent</strong> adds a soft glow, the Magic
+          Eraser removes the white box around a logo, the Paint Bucket recolours flat shapes, and
+          about 2% of <strong>Add Noise</strong> keeps the gradient from breaking into visible bands
+          when you export it. Everything happens in your browser, and the image stays on your
+          device.
+        </p>
+        <p>
+          The example in this post is a LinkedIn banner: a dark blue to purple gradient, a lighter
+          glow behind the company name, and a logo that arrived as a JPG on a white background.
+        </p>
+        <h2>Which canvas size should I start with?</h2>
+        <p>
+          Open <EditorLink>the editor</EditorLink> and choose <strong>File → New…</strong>{" "}
+          (Ctrl+Alt+N, or Cmd+Alt+N on a Mac). The dialog has size presets grouped by category and a
+          search field, so typing &quot;linkedin&quot; finds <strong>LinkedIn banner</strong> at
+          1584 × 396 px. The same list has <strong>YouTube thumbnail</strong> (1280 × 720),{" "}
+          <strong>Instagram story</strong> (1080 × 1920) and many more. Leave the background white
+          and click <strong>Create</strong>.
+        </p>
+        <h2>Why won&apos;t the gradient draw on the Background layer?</h2>
+        <p>
+          A new document&apos;s Background is a locked fill layer, a single solid colour. The
+          Gradient tool, the Paint Bucket and the Magic Eraser only work on unlocked pixel layers,
+          so on the Background you get a message instead of a gradient. Choose{" "}
+          <strong>Layer → New → New Layer</strong> (Ctrl+Shift+N) and name it &quot;Gradient&quot;.
+          With the gradient on its own layer you can hide it or draw it again later without touching
+          anything else.
+        </p>
+        <h2>How do I draw the main gradient?</h2>
+        <ol>
+          <li>
+            Click the foreground colour swatch at the bottom of the toolbar and pick the dark blue.
+            Click the background swatch and pick the purple. Press <strong>X</strong> to swap them
+            if you got them the wrong way round, or <strong>D</strong> to go back to black and
+            white.
+          </li>
+          <li>
+            Choose the Gradient tool with <strong>G</strong>. In the options bar, set{" "}
+            <strong>Gradient type</strong> to <strong>Linear</strong> and{" "}
+            <strong>Gradient colours</strong> to <strong>To background</strong>, with{" "}
+            <strong>Opacity</strong> at 100%.
+          </li>
+          <li>
+            Drag from the left edge to the right edge. Hold Shift while you drag and the direction
+            snaps to steps of 45°, which keeps it perfectly horizontal. You see a preview while you
+            drag, and releasing the mouse makes it one step in the history.
+          </li>
+        </ol>
+        <p>
+          Everything before the start point is the first colour and everything after the end point
+          is the second, so a short drag in the middle gives a hard edge and a drag past both edges
+          gives a gentle blend. If there is a selection, the gradient only fills the selected area.
+        </p>
+        <h2>How do I add a soft glow behind the text?</h2>
+        <p>
+          Add another new layer above the gradient. Set the foreground colour to a light pink or
+          pale blue, then switch the options bar to <strong>Radial</strong> and{" "}
+          <strong>To transparent</strong>. Drag outward from where the company name will go: the
+          start point is the centre of the glow and the length of the drag is its radius. With{" "}
+          <strong>To transparent</strong>, the gradient fades from the foreground colour to nothing,
+          so the layer underneath shows through.
+        </p>
+        <p>
+          At full strength the glow is usually too much. Lower the layer&apos;s opacity in the
+          Layers panel to 40 to 60%, or try a blend mode such as Screen or Soft Light. The{" "}
+          <Link href="/docs/layers-groups-and-masks">layers guide</Link> explains how opacity and
+          blend modes work together.
+        </p>
+        <h2>How do I remove a logo&apos;s white background?</h2>
+        <p>
+          Bring in the logo with <strong>File → Place → Place Image as Layer…</strong>. A JPG logo
+          comes with a white rectangle around it, which looks wrong on a gradient. Pick the Magic
+          Eraser from the Eraser group of the toolbar (right-click or hold the Eraser button, or
+          press Shift+E to cycle through the group) and click the white area.
+        </p>
+        <p>
+          The Magic Eraser works like the Paint Bucket in reverse: it finds the area of similar
+          colour under the click and makes it transparent. It has the same three options:
+        </p>
+        <ul>
+          <li>
+            <strong>Tolerance</strong> (0 to 255, default 32): how different a colour may be and
+            still count as a match. Raise it if a light grey rim stays around the logo.
+          </li>
+          <li>
+            <strong>Contiguous</strong>: on, only the connected area you clicked is erased. Turn it
+            off to also clear the white inside letters like &quot;o&quot; and &quot;a&quot;.
+          </li>
+          <li>
+            <strong>Sample all layers</strong>: matches colours as you see them in the whole image,
+            but still erases on the active layer only.
+          </li>
+        </ul>
+        <p>
+          A logo with a busier background needs more control. The{" "}
+          <Link href="/make-background-transparent">make a background transparent</Link> guide
+          covers the Background Eraser and selections for that.
+        </p>
+        <h2>Can I recolour the logo with the Paint Bucket?</h2>
+        <p>
+          Yes, if it is a flat colour. A dark logo disappears on a dark gradient, so set the
+          foreground colour to white, choose the Paint Bucket with Shift+G (it shares the Gradient
+          tool&apos;s slot) and click the logo with <strong>Contiguous</strong> off. Every pixel
+          within the tolerance of the colour you clicked turns white. The bucket compares
+          transparency as well as colour, so the half-transparent pixels along the edges may keep a
+          dark rim; raise <strong>Tolerance</strong> and click again. For a logo with gradients or
+          shading, a Color Overlay layer style is the cleaner choice, and it stays editable.
+        </p>
+        <h2>Why does my gradient show stripes, and how do I fix them?</h2>
+        <p>
+          A gradient between two close, dark colours across 1584 pixels has more pixels than shades
+          to fill them with. Each channel only has 256 levels, so the blend steps from one shade to
+          the next in visible bands. JPEG and WebP compression often make it worse.
+        </p>
+        <p>
+          A small amount of noise hides the steps. Select the gradient layer and choose{" "}
+          <strong>Filter → Noise → Add Noise…</strong>. Set <strong>Amount</strong> to 1 to 3% (it
+          moves in steps of 0.5), turn on <strong>Monochromatic</strong> so the grain adds no
+          coloured specks, and optionally <strong>Gaussian distribution</strong> for a softer grain.
+          The dialog shows a live preview. Filters change the pixels of a pixel layer for good; if
+          you want to adjust the amount later, choose{" "}
+          <strong>Layer → Smart Object → Convert to Smart Object</strong> first, and the noise is
+          added as a smart filter you can edit or hide.
+        </p>
+        <h2>How does this compare with Photoshop and Canva?</h2>
+        <ul>
+          <li>
+            <strong>Photoshop</strong>&apos;s Gradient tool has five types (Linear, Radial, Angle,
+            Reflected and Diamond), a Gradient Editor with several colour and opacity stops, saved
+            presets, and a Dither option that adds noise to reduce banding. Newer versions let you
+            edit a gradient after drawing it. See{" "}
+            <Link href="/photoshop-alternative">Picstea as a Photoshop alternative</Link>.
+          </li>
+          <li>
+            <strong>Canva</strong> has gradient tiles you can pick as a page background from the
+            Background colour option, which is quick for a design made in Canva. See{" "}
+            <Link href="/canva-alternative">Picstea as a Canva alternative</Link>.
+          </li>
+          <li>
+            <strong>Picstea</strong> is free and works in the browser without an account. Its
+            Gradient tool is simpler: linear or radial, two colours (or one colour fading to
+            transparent), and no presets, gradient editor or dither yet. For more than two colours,
+            stack gradient layers, or use a Gradient Overlay layer style.
+          </li>
+        </ul>
+        <h2>Which format should I export?</h2>
+        <p>
+          Choose <strong>File → Export As…</strong> (Ctrl+Shift+E). PNG is lossless and keeps the
+          noise exactly as you see it. JPEG and WebP make smaller files; keep the quality high (90%
+          or more) for a smooth gradient, since strong compression brings the banding back. The{" "}
+          <Link href="/blog/png-vs-jpeg-vs-webp">PNG vs JPEG vs WebP</Link> post goes into the
+          trade-offs.
+        </p>
+        <h2>Questions people ask</h2>
+        <h3>Can I make a gradient with three or more colours?</h3>
+        <p>
+          Not in one drag. The Gradient tool blends two colours, or one colour into transparency.
+          Draw a second gradient on a layer above with <strong>To transparent</strong>, or use a
+          Gradient Overlay layer style.
+        </p>
+        <h3>Can I edit the gradient after I draw it?</h3>
+        <p>
+          No, it becomes pixels on the layer. Undo it, or drag again: a new gradient covers the
+          whole layer (or the selection).
+        </p>
+        <h3>Does the gradient fill the whole canvas?</h3>
+        <p>
+          Yes, unless there is a selection. With a selection, only the selected area is filled,
+          which is a quick way to put a gradient inside a shape or a band.
+        </p>
+        <h3>Is my image uploaded anywhere?</h3>
+        <p>
+          No. Picstea runs in your browser, and the logo, the banner and the export all stay on your
+          device.
+        </p>
+        <p>
+          The <Link href="/docs/painting-and-fills">painting and fills guide</Link> lists every
+          painting tool and its options. <EditorLink>Open Picstea</EditorLink> and drag your first
+          gradient.
+        </p>
+      </>
+    ),
+  },
 ];
 
 const showDrafts = process.env.NODE_ENV !== "production";

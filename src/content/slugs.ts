@@ -50,6 +50,7 @@ export const POST_SLUGS: Readonly<Record<string, "draft" | "published">> = {
   "fix-exposure-and-colour-with-camera-raw": "draft",
   "copy-and-paint-in-perspective-with-vanishing-point": "draft",
   "paragraph-text-and-custom-fonts": "published",
+  "make-a-gradient-background-for-a-banner": "published",
 };
 
 /** Author pages (`/authors/<slug>`); a unit test keeps this in sync with `authors.ts`. */
