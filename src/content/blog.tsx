@@ -1445,6 +1445,214 @@ export const POSTS: readonly BlogPost[] = [
       </>
     ),
   },
+  {
+    slug: "paragraph-text-and-custom-fonts",
+    title: "Paragraph text and custom fonts in Picstea",
+    description:
+      "Wrap text in a box, style single words and use your own fonts in Picstea: Google Fonts, fonts on your computer or uploaded font files, all kept on your device.",
+    published: "2026-11-10",
+    draft: false,
+    body: () => (
+      <>
+        <p>
+          In Picstea you can drag a box with the Type tool to get paragraph text that wraps inside
+          it, style any selected word differently in the Character panel, and set indents and
+          spacing in the Paragraph panel. For fonts, you can pick from 27 Google Fonts that come
+          with Picstea, use the fonts installed on your computer (in Chrome and Edge) or upload a
+          TTF, OTF, WOFF or WOFF2 file. The font file stays on your device and is saved with the
+          project.
+        </p>
+        <p>
+          Say you are making a flyer for a small event. The headline uses a brand font, the body
+          text has to fit a column, and the date and venue should stand out from the rest.
+        </p>
+        <h2>Point text or paragraph text: which one do I need?</h2>
+        <p>
+          Picstea has both kinds of text layer, the same as Photoshop. Pick the Type tool (
+          <strong>T</strong>) and:
+        </p>
+        <ul>
+          <li>
+            <strong>Click</strong> on the canvas for point text. A line only breaks where you press
+            Enter, so it suits headlines, labels and captions.
+          </li>
+          <li>
+            <strong>Drag</strong> a box for paragraph text. Lines wrap at the box&apos;s width, and
+            dragging the box&apos;s handles makes the text reflow. Anything that doesn&apos;t fit in
+            the box is clipped, so make the box tall enough for all of it.
+          </li>
+        </ul>
+        <p>
+          For the flyer, the headline is point text and the event description is paragraph text. If
+          you started with the wrong one, <strong>Layer → Type → Convert to Paragraph Text</strong>{" "}
+          or <strong>Convert to Point Text</strong> switches it. The same command is on the
+          right-click menu in the Layers panel. Going from paragraph to point text keeps each line
+          where it was wrapped.
+        </p>
+        <p>
+          While you type, Enter starts a new paragraph, Esc cancels the edit, and Ctrl+Enter
+          (Cmd+Enter on a Mac) finishes it. The whole typing session is one step in the history, so
+          one undo takes it back.
+        </p>
+        <h2>How do I get my own font into Picstea?</h2>
+        <p>
+          Open the font list from the options bar or from the Character panel. It has a search field
+          and groups the fonts as <strong>In this document</strong>, <strong>Google Fonts</strong>,{" "}
+          <strong>On this computer</strong> and <strong>System fonts</strong>. You have four
+          sources:
+        </p>
+        <ol>
+          <li>
+            <strong>System fonts</strong>, the few that every computer has.
+          </li>
+          <li>
+            <strong>27 Google Fonts</strong> that Picstea serves from its own site, among them
+            Roboto, Inter, Montserrat, Poppins, Playfair Display, EB Garamond, Bebas Neue, Lobster
+            and Caveat. Each one is downloaded the first time you use it and cached after that.
+          </li>
+          <li>
+            <strong>Fonts on your computer.</strong> At the bottom of the list, click{" "}
+            <strong>Use Fonts on This Computer…</strong>. The browser asks for your permission, then
+            lists your installed fonts. This works in Chrome and Edge; other browsers don&apos;t
+            offer it, and you upload the file instead.
+          </li>
+          <li>
+            <strong>Uploaded font files.</strong> Click <strong>Upload Font…</strong> and choose a
+            TTF, OTF, WOFF or WOFF2 file of up to 10 MB. Picstea checks the file&apos;s first bytes
+            to make sure it really is a font and reads the family name from it.
+          </li>
+        </ol>
+        <p>
+          For the flyer, the brand font comes as an OTF file from the designer, so it goes in with{" "}
+          <strong>Upload Font…</strong> and shows up under <strong>In this document</strong>.
+        </p>
+        <h2>Where does an uploaded font go?</h2>
+        <p>
+          It stays in your browser. An uploaded font becomes part of the project: it is stored with
+          it in your browser&apos;s storage and written into the <code>.picstea</code> file when you
+          save one, so the project opens with the right font on another computer. Fonts from your
+          computer work the other way: Picstea only records the font&apos;s name and never copies
+          the file, because an installed font is licensed to that computer. On a computer without
+          the font, the text shows in a fallback font.
+        </p>
+        <p>
+          When a project or PSD uses a font that isn&apos;t available, Picstea tells you once which
+          fonts are missing and draws the text with a fallback. Add the font with{" "}
+          <strong>Upload Font…</strong> or <strong>Use Fonts on This Computer…</strong> and the text
+          redraws in the right font without any retyping.
+        </p>
+        <h2>How do I style one word differently?</h2>
+        <p>
+          Open <strong>Window → Character</strong>. While you are typing, the panel changes only the
+          characters you have selected; when you aren&apos;t typing, it changes the whole layer. It
+          has:
+        </p>
+        <ul>
+          <li>
+            <strong>Font</strong>, <strong>Size</strong>, <strong>Color</strong>
+          </li>
+          <li>
+            <strong>Leading</strong> (line height, as a multiple of the font size, from 0.5 to 5)
+            and <strong>Tracking</strong> (letter spacing)
+          </li>
+          <li>
+            <strong>Baseline shift</strong>, for raising or lowering characters, such as the
+            &quot;th&quot; in a date
+          </li>
+          <li>
+            <strong>Faux bold</strong>, <strong>Faux italic</strong>, <strong>All caps</strong>,{" "}
+            <strong>Small caps</strong> and a <strong>Kerning</strong> checkbox
+          </li>
+        </ul>
+        <p>
+          On the flyer, the date and the venue sit inside the body text. Select them while typing
+          and give them the brand colour and <strong>Faux bold</strong>; the rest of the paragraph
+          keeps its style. Small caps are drawn as capitals at 75% of the size.
+        </p>
+        <h2>How do I set indents and spacing between paragraphs?</h2>
+        <p>
+          <strong>Window → Paragraph</strong> works on the paragraphs under the cursor or the
+          selection, or on every paragraph of the layer when you aren&apos;t typing. It has
+          alignment (<strong>Left</strong>, <strong>Center</strong>, <strong>Right</strong>,{" "}
+          <strong>Justify</strong>), <strong>Indent left</strong>, <strong>Indent right</strong>,{" "}
+          <strong>First line</strong>, <strong>Space before</strong> and{" "}
+          <strong>Space after</strong>.
+        </p>
+        <p>
+          Justify spreads every line to the full box width except a paragraph&apos;s last line,
+          which keeps its normal spacing. For the flyer&apos;s body text, a little space after each
+          paragraph reads better than empty lines between them, and it doesn&apos;t move when you
+          edit the text.
+        </p>
+        <h2>How does this compare with Canva and Photopea?</h2>
+        <p>
+          Both can use your own fonts. Where they differ is the plan you need, the file types and
+          where the font ends up:
+        </p>
+        <ul>
+          <li>
+            <strong>Canva</strong> lets you upload OTF, TTF and WOFF fonts to a Brand Kit. Its help
+            centre lists that for Canva Pro, Teams, Business, Education and Nonprofits, so not the
+            free plan, and the font is uploaded to your Canva account. See{" "}
+            <Link href="/canva-alternative">Picstea as a Canva alternative</Link>.
+          </li>
+          <li>
+            <strong>Photopea</strong> opens TTF and OTF files with File → Open or drag and drop,
+            adds them to the end of its font list, and has its own library of free fonts. See{" "}
+            <Link href="/photopea-alternative">Picstea as a Photopea alternative</Link>.
+          </li>
+          <li>
+            <strong>Picstea</strong> is free, takes TTF, OTF, WOFF and WOFF2, can list installed
+            fonts in Chrome and Edge, and saves uploaded fonts inside the project rather than on a
+            server. Its bundled list is much shorter: 27 Google Fonts.
+          </li>
+        </ul>
+        <h2>What happens to the text when I export?</h2>
+        <p>
+          PNG, JPEG and WebP exports draw the text into the image with the fonts you chose.{" "}
+          <strong>SVG</strong> keeps text as text. A <strong>PSD</strong> export writes the text as
+          editable Photoshop text with its style runs, paragraph styles and box, but a text layer
+          with layer effects (a drop shadow, say) is turned into pixels. The{" "}
+          <Link href="/docs/file-formats">file formats guide</Link> has the details.
+        </p>
+        <h2>What can&apos;t Picstea do with text yet?</h2>
+        <ul>
+          <li>Text on a path and vertical text.</li>
+          <li>Warped text (warps in a PSD are dropped, with a notice).</li>
+          <li>Hyphenation, and OpenType features beyond kerning.</li>
+          <li>Recording text in an action.</li>
+        </ul>
+        <h2>Questions people ask</h2>
+        <h3>Does Picstea upload my fonts?</h3>
+        <p>
+          No. Uploaded fonts are read by your browser and saved with the project on your device. The
+          Google Fonts come from Picstea&apos;s own site, and no request goes to another site.
+        </p>
+        <h3>Why can&apos;t I see Use Fonts on This Computer…?</h3>
+        <p>
+          The button only appears in browsers that support it, which means Chrome and Edge. In
+          Firefox or Safari, use <strong>Upload Font…</strong> with the font file.
+        </p>
+        <h3>Will text from a PSD keep its fonts?</h3>
+        <p>
+          Picstea matches the PSD&apos;s font names with system fonts, the bundled Google Fonts,
+          fonts on your computer and fonts you uploaded. Anything it can&apos;t match is listed as
+          missing and drawn with a fallback until you add it.
+        </p>
+        <h3>Can I make the text wrap around an image?</h3>
+        <p>
+          No. Paragraph text wraps inside its rectangular box only. Use two boxes side by side if
+          you need text next to an image.
+        </p>
+        <p>
+          The <Link href="/docs/layers-groups-and-masks">layers guide</Link> covers text layers with
+          the other layer types, and the <Link href="/add-text-to-photo">add text to a photo</Link>{" "}
+          guide has the quick version. <EditorLink>Open Picstea</EditorLink> and drag a text box to
+          try it.
+        </p>
+      </>
+    ),
+  },
 ];
 
 const showDrafts = process.env.NODE_ENV !== "production";
