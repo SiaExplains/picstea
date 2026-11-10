@@ -144,7 +144,20 @@ export const DOCS: readonly DocPage[] = [
             <strong>Shape layers</strong> — rectangles, ellipses and lines that stay editable.
           </li>
           <li>
-            <strong>Text layers</strong> — text you type on the canvas and can edit any time.
+            <strong>Text layers</strong> — text you type on the canvas and can edit any time. Click
+            with the Type tool (T) for point text, whose lines break only where you press Enter, or
+            drag a box for paragraph text that wraps inside it (drag the box&apos;s handles to
+            reflow it). Layer → Type converts between the two. Window → Character and Window →
+            Paragraph style the selected characters (font, size, leading, tracking, baseline shift,
+            colour, faux bold and italic, all caps, small caps, kerning) and paragraphs (alignment
+            including justify, indents, space before and after).
+          </li>
+          <li>
+            <strong>Fonts</strong> — the font list has system fonts, 27 Google Fonts that Picstea
+            serves from its own site, fonts installed on your computer (Use Fonts on This Computer…,
+            in Chrome and Edge after the browser asks you) and font files you upload (TTF, OTF,
+            WOFF, WOFF2, up to 10 MB), which are saved with the project. Fonts are never fetched
+            from another site.
           </li>
           <li>
             <strong>Fill layers</strong> — a solid colour covering the canvas.
@@ -905,13 +918,14 @@ export const DOCS: readonly DocPage[] = [
           <li>
             <strong>PSD</strong> — 8-bit RGB and greyscale files open with their layers, groups,
             names, opacity, visibility, blend modes, layer masks, vector masks and clipping masks.
-            Text opens as editable text (check the fonts), adjustment layers (Levels, Curves,
-            Brightness/Contrast, Hue/Saturation, Vibrance, Color Balance, Photo Filter, Channel
-            Mixer, Gradient Map, Exposure, Invert, Posterize, Threshold, Black &amp; White) as
-            adjustment layers, shape and fill layers as shapes and fills, embedded smart objects as
-            smart objects, and drop shadows, outer glows, inner shadows, inner bevels, gradient
-            overlays, strokes and colour overlays as effects. Anything that cannot be kept is listed
-            when the file opens.
+            Text opens as editable text, with mixed styles and paragraph text boxes (fonts that
+            aren&apos;t available here show with a fallback until you add them), adjustment layers
+            (Levels, Curves, Brightness/Contrast, Hue/Saturation, Vibrance, Color Balance, Photo
+            Filter, Channel Mixer, Gradient Map, Exposure, Invert, Posterize, Threshold, Black &amp;
+            White) as adjustment layers, shape and fill layers as shapes and fills, embedded smart
+            objects as smart objects, and drop shadows, outer glows, inner shadows, inner bevels,
+            gradient overlays, strokes and colour overlays as effects. Anything that cannot be kept
+            is listed when the file opens.
           </li>
           <li>
             <strong>SVG</strong> opens as an image (pixels). Scripts in SVG files never run.
@@ -935,8 +949,9 @@ export const DOCS: readonly DocPage[] = [
           <li>
             <strong>PSD</strong> — layers, groups, masks, vector masks, clipping masks, opacity,
             blend modes and adjustment layers (except Temperature/Tint, Black &amp; White, Photo
-            Filter and Gradient Map, which are in the flattened image only). Shapes, text, smart
-            objects and effects become pixels.
+            Filter and Gradient Map, which are in the flattened image only). Text stays editable
+            (text with layer effects becomes pixels); shapes, smart objects and effects become
+            pixels.
           </li>
           <li>
             <strong>SVG</strong> — shapes and text stay vectors; other layers are embedded as

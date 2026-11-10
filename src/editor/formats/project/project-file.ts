@@ -1,4 +1,5 @@
-import type { RasterMime } from "../../assets/asset-store";
+import type { AssetMime } from "../../assets/asset-store";
+import { sniffFont } from "../../fonts/font-file";
 import { checkDimensions, MAX_IMPORT_FILE_BYTES } from "../../core/document/limits";
 import { referencedAssetIds } from "../../core/document/queries";
 import { mapLayersDeep } from "../../core/document/tree";
@@ -11,7 +12,7 @@ import { readZip, writeZip } from "../zip/zip";
 
 /**
  * Portable Picstea project files (`.picstea`, ADR-0011): a ZIP with `picstea.json` (the versioned,
- * validated serialization used for local storage) and the image assets under `assets/`.
+ * validated serialization used for local storage) and the image and font assets under `assets/`.
  * Opening a file goes through exactly the same validation and migrations as IndexedDB.
  */
 
@@ -19,11 +20,15 @@ export const PROJECT_EXTENSION = "picstea";
 export const PROJECT_MIME = "application/x-picstea";
 const MANIFEST = "picstea.json";
 const FORMAT_ID = "picstea-project";
-const EXTENSIONS: Record<RasterMime, string> = {
+const EXTENSIONS: Record<AssetMime, string> = {
   "image/png": "png",
   "image/jpeg": "jpg",
   "image/webp": "webp",
   "image/gif": "gif",
+  "font/ttf": "ttf",
+  "font/otf": "otf",
+  "font/woff": "woff",
+  "font/woff2": "woff2",
 };
 
 interface Manifest {
@@ -96,6 +101,7 @@ export async function readProjectFile(
 
   // Only assets the document references are read; anything else in the archive is ignored.
   const wanted = new Set(referencedAssetIds(doc));
+  const fontIds = new Set((doc.fonts ?? []).flatMap((f) => (f.assetId ? [f.assetId] : [])));
   const idMap = new Map<string, string>();
   const assets: StoredAsset[] = [];
   for (const item of manifest.assets) {
@@ -104,6 +110,20 @@ export async function readProjectFile(
     const entry = entries.get(item.path);
     if (!entry) continue;
     const data = await entry.read();
+    const fontMime = fontIds.has(item.id) ? sniffFont(data) : null;
+    if (fontIds.has(item.id)) {
+      if (!fontMime) throw new FormatError("A font inside the project file is damaged.");
+      const id = createId("asset");
+      idMap.set(item.id, id);
+      assets.push({
+        id,
+        mime: fontMime,
+        width: 0,
+        height: 0,
+        blob: new Blob([data as BlobPart], { type: fontMime }),
+      });
+      continue;
+    }
     const header = readImageHeader(data);
     if (!header || !checkDimensions(header.width, header.height).ok) {
       throw new FormatError("An image inside the project file is damaged or too large.");
@@ -129,5 +149,9 @@ export async function readProjectFile(
     if (next.mask) next = { ...next, mask: { ...next.mask, assetId: remap(next.mask.assetId) } };
     return next;
   });
-  return { document: { ...doc, id: createId("document"), layers }, assets };
+  const fonts = doc.fonts?.map((f) => (f.assetId ? { ...f, assetId: remap(f.assetId)! } : f));
+  return {
+    document: { ...doc, id: createId("document"), layers, ...(fonts ? { fonts } : {}) },
+    assets,
+  };
 }

@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
+import { BlogFigure } from "@/components/site/BlogFigure";
 import { EditorLink } from "@/components/site/EditorLink";
 
 /**
@@ -16,6 +17,8 @@ export interface BlogPost {
   readonly published: string;
   readonly updated?: string;
   readonly draft: boolean;
+  /** Cover image under `/blog/<slug>/` for search results and social previews (1200 × 630). */
+  readonly image?: string;
   readonly body: () => ReactNode;
 }
 
@@ -976,7 +979,7 @@ export const POSTS: readonly BlogPost[] = [
   },
   {
     slug: "rulers-guides-and-snapping-for-exact-layouts",
-    title: "Rulers, guides and snapping: line up a layout exactly",
+    title: "Rulers, guides and snapping for exact layouts",
     description:
       "Use rulers, guides, the grid, snapping and the Ruler tool in Picstea to straighten a photo and place text on exact margins, with notes on Photoshop and Canva.",
     published: "2026-11-09",
@@ -1146,6 +1149,298 @@ export const POSTS: readonly BlogPost[] = [
         </p>
         <p>
           <EditorLink>Open Picstea</EditorLink> and drag a guide out of the ruler to try it.
+        </p>
+      </>
+    ),
+  },
+  {
+    slug: "convert-heic-to-jpg-without-uploading",
+    title: "Convert HEIC photos to JPG without uploading them",
+    description:
+      "Turn iPhone HEIC photos into JPGs in your browser. The photos are decoded on your device, so they never go to a server. Here is how, and what to expect.",
+    published: "2026-11-10",
+    draft: false,
+    body: () => (
+      <>
+        <p>
+          Open <Link href="/convert/heic-to-jpg">Picstea&apos;s HEIC to JPG converter</Link>, drop
+          your .heic photos on it, pick a quality and save. The conversion runs inside your browser,
+          so the photos stay on your phone or computer the whole time. You can convert one photo or
+          a whole batch, and nothing needs an account.
+        </p>
+        <h2>Why are my iPhone photos HEIC files?</h2>
+        <p>
+          iPhones and iPads save photos as HEIC (High Efficiency Image File) by default because the
+          files are smaller than JPEGs of the same quality. Apple&apos;s own apps open them without
+          a second thought. Many Windows PCs, Android phones, websites and upload forms still
+          don&apos;t, which is usually when you find out your photos are in a format you never
+          chose.
+        </p>
+        <h2>Why do most online converters upload your photos?</h2>
+        <p>
+          Decoding HEIC is real work, and the usual way to offer it on a website is to send your
+          file to a server, convert it there and send a JPG back. That works, but your photos now
+          sit on someone else&apos;s computer for a while. Holiday pictures, a scan of your passport
+          or photos of your kids are exactly the files people convert, and exactly the ones you
+          might not want to hand over.
+        </p>
+        <h2>How does Picstea convert HEIC on your device?</h2>
+        <p>
+          Picstea decodes HEIC with libheif, an open-source decoder, running in your browser. The
+          first time you convert a HEIC file, Picstea loads the decoder (about 2 MB) from its own
+          site. After that it is cached, and it keeps working offline once you install Picstea as an
+          app. Your photo is read, turned the right way up and written out as a JPG without leaving
+          the page.
+        </p>
+        <h2>Step by step</h2>
+        <ol>
+          <li>
+            Go to <Link href="/convert/heic-to-jpg">HEIC to JPG</Link> and click{" "}
+            <strong>Convert now</strong>.
+          </li>
+          <li>Drop one or more .heic or .heif files, or choose them from your device.</li>
+          <li>
+            Choose a quality. 90 is the default, and 85 to 90 keeps photos looking the same as the
+            original.
+          </li>
+          <li>Save the JPGs. Several photos can be saved together as a ZIP file.</li>
+        </ol>
+        <h2>Can I edit a HEIC photo before converting it?</h2>
+        <p>
+          Yes. Open the photo in <EditorLink>the Picstea editor</EditorLink> with{" "}
+          <strong>File → Open</strong>, like any other image. It opens as a normal document,
+          upright, and you can crop it, fix the colours, add text and export it as a JPG, PNG or
+          WebP.
+        </p>
+        <h2>What is left out?</h2>
+        <p>
+          Picstea reads the main photo only. Live Photo videos, depth maps and burst frames are not
+          converted, and camera details such as the location are not copied into the JPG. For most
+          people that last part is a plus when they share a photo. The{" "}
+          <Link href="/docs/file-formats">file formats guide</Link> lists everything Picstea opens
+          and saves.
+        </p>
+        <h2>Questions people ask</h2>
+        <h3>Is it really not uploaded?</h3>
+        <p>
+          Really. The decoder comes from Picstea&apos;s own site and runs in your browser; your
+          photo is never sent anywhere.
+        </p>
+        <h3>Will the JPG look worse?</h3>
+        <p>
+          At quality 85 to 90 you won&apos;t see a difference in normal viewing. The JPG will be
+          bigger than the HEIC, because JPEG compresses less efficiently.
+        </p>
+        <h3>Can I convert HEIC to PNG instead?</h3>
+        <p>Yes. Choose PNG instead of JPG in the converter; PNG files are larger but lossless.</p>
+        <p>
+          <Link href="/convert/heic-to-jpg">Convert your HEIC photos</Link>, free and without
+          uploading them.
+        </p>
+      </>
+    ),
+  },
+  {
+    slug: "fix-exposure-and-colour-with-camera-raw",
+    title: "Fix exposure and colour with Camera Raw",
+    description:
+      "Correct white balance, exposure, highlights and shadows in one dialog with Picstea's Camera Raw filter, and keep it editable as a smart filter.",
+    published: "2026-11-08",
+    draft: true,
+    body: () => (
+      <>
+        <p>
+          To fix a photo that is too dark, too blue or flat, open it in Picstea and choose{" "}
+          <strong>Filter → Camera Raw…</strong>. One dialog has the controls photographers reach for
+          first: white balance, exposure, contrast, highlights, shadows, whites, blacks, clarity,
+          dehaze, vibrance and saturation. Everything runs in your browser and the photo is never
+          uploaded.
+        </p>
+        <h2>What does each slider do?</h2>
+        <ul>
+          <li>
+            <strong>Temperature</strong> and <strong>Tint</strong> set the white balance: warmer or
+            cooler, greener or more magenta. Use them first, so whites look white.
+          </li>
+          <li>
+            <strong>Exposure</strong> brightens or darkens the whole photo, in stops (EV), from −5
+            to +5.
+          </li>
+          <li>
+            <strong>Contrast</strong> spreads the tones apart or pulls them together.
+          </li>
+          <li>
+            <strong>Highlights</strong> and <strong>Shadows</strong> recover the bright and dark
+            parts on their own, so a bright sky and a dark foreground can both keep detail.
+          </li>
+          <li>
+            <strong>Whites</strong> and <strong>Blacks</strong> set the very brightest and darkest
+            points.
+          </li>
+          <li>
+            <strong>Clarity</strong> adds or removes local contrast in the mid-tones, which makes
+            texture stand out or softens it.
+          </li>
+          <li>
+            <strong>Dehaze</strong> cuts through haze and fog, or adds it.
+          </li>
+          <li>
+            <strong>Vibrance</strong> boosts the muted colours more than the strong ones;{" "}
+            <strong>Saturation</strong> changes every colour by the same amount.
+          </li>
+        </ul>
+        <p>Picstea applies them in that order, the same order as the list in the dialog.</p>
+        <h2>A walkthrough on a real photo</h2>
+        <BlogFigure
+          alt="Before: an indoor photo that is too dark and too orange"
+          caption="Before: underexposed, with orange light from a lamp."
+        />
+        <ol>
+          <li>
+            Open the photo and choose <strong>Filter → Camera Raw…</strong>.
+          </li>
+          <li>
+            Move <strong>Temperature</strong> to the left until a white wall or a sheet of paper
+            looks neutral.
+          </li>
+          <li>
+            Raise <strong>Exposure</strong> until the faces look right, then lower{" "}
+            <strong>Highlights</strong> if the window starts to burn out.
+          </li>
+          <li>
+            Lift <strong>Shadows</strong> a little to open up the dark corners, and add a touch of{" "}
+            <strong>Clarity</strong> and <strong>Vibrance</strong>.
+          </li>
+          <li>
+            Turn <strong>Preview</strong> on and off to compare, then click <strong>OK</strong>.
+          </li>
+        </ol>
+        <BlogFigure
+          alt="After: the same photo, brighter and with neutral colours"
+          caption="After: neutral white balance, brighter faces, the window still has detail."
+        />
+        <h2>Can I change the settings later?</h2>
+        <p>
+          Yes, if you apply it as a smart filter. Choose{" "}
+          <strong>Layer → Smart Object → Convert to Smart Object</strong> first, then{" "}
+          <strong>Filter → Camera Raw…</strong>. The dialog tells you it is a smart filter, and it
+          appears under the layer in the Properties panel, where you can edit its settings, hide it
+          or delete it at any time. The original pixels stay untouched. The{" "}
+          <Link href="/docs/smart-objects-and-smart-filters">smart objects guide</Link> explains how
+          they work.
+        </p>
+        <h2>When should I use adjustment layers instead?</h2>
+        <p>
+          Camera Raw is quickest when one set of corrections fits the whole photo. When you want to
+          change only part of the image, or stack corrections you can reorder, use adjustment layers
+          such as Levels, Curves or Vibrance from <strong>Layer → New Adjustment Layer</strong>.
+          They come with their own masks, so you can paint where they apply.
+        </p>
+        <h2>Questions people ask</h2>
+        <h3>Is this the same as Adobe Camera Raw?</h3>
+        <p>
+          It covers the Basic panel: white balance, tone and presence. It works on the photo&apos;s
+          pixels, so it is meant for JPEG, PNG, WebP and HEIC photos rather than camera raw files.
+        </p>
+        <h3>Does the preview match the result?</h3>
+        <p>
+          Yes. The preview may be computed on a smaller copy while you drag, but Clarity&apos;s
+          radius scales with the image, so the full-size result matches.
+        </p>
+        <p>
+          More filters are in the <Link href="/docs/filters">filters guide</Link> and on the{" "}
+          <Link href="/photo-filters">photo filters page</Link>.{" "}
+          <EditorLink>Open a photo in Picstea</EditorLink> to try it.
+        </p>
+      </>
+    ),
+  },
+  {
+    slug: "copy-and-paint-in-perspective-with-vanishing-point",
+    title: "Copy and paint in perspective with Vanishing Point",
+    description:
+      "Clone along a wall or a floor so the copy shrinks into the distance, with Picstea's Vanishing Point filter. Step by step, with good uses and its limits.",
+    published: "2026-11-08",
+    draft: true,
+    body: () => (
+      <>
+        <p>
+          Vanishing Point lets you clone along a surface that runs away from the camera, such as a
+          tiled floor or a brick wall, so that what you copy gets smaller as it goes into the
+          distance. In Picstea you mark the four corners of the surface, then paint with a clone
+          stamp that follows its perspective. It is under <strong>Filter → Vanishing Point…</strong>{" "}
+          and runs in your browser.
+        </p>
+        <BlogFigure
+          alt="Screen recording: marking a floor plane and cloning tiles along it"
+          caption="Marking the floor, then cloning tiles towards the back of the room."
+        />
+        <h2>Step by step</h2>
+        <ol>
+          <li>
+            Select a pixel layer (duplicate it first if you want to keep the original) and choose{" "}
+            <strong>Filter → Vanishing Point…</strong>.
+          </li>
+          <li>
+            In <strong>Edit Plane</strong> mode, click the four corners of a flat surface. Drag the
+            corners until the outline sits on the edges of the floor or wall. If the corners cross,
+            the dialog tells you, and you can drag them back into a four-sided shape.
+          </li>
+          <li>
+            Switch to <strong>Stamp</strong>. Set the <strong>Brush diameter</strong> and{" "}
+            <strong>Hardness</strong>.
+          </li>
+          <li>
+            Alt-click inside the plane to pick where to copy from (or press{" "}
+            <strong>Set Source</strong> and click), then paint where you want the copy.
+          </li>
+          <li>
+            <strong>Undo Stroke</strong> takes back the last stroke. Click <strong>OK</strong> to
+            apply; the whole edit is one undo step in the document.
+          </li>
+        </ol>
+        <h2>What is it good for?</h2>
+        <ul>
+          <li>
+            <strong>Extending a tiled floor</strong> over a rug, a cable or a gap, with tiles that
+            line up with the rest.
+          </li>
+          <li>
+            <strong>Removing a sign or a socket from a wall</strong> by painting clean bricks or
+            plaster over it from another part of the same wall.
+          </li>
+          <li>
+            <strong>Repeating windows or panels</strong> along a building façade.
+          </li>
+        </ul>
+        <p>
+          With a selection active, only the selected area changes, which is an easy way to keep the
+          stamp off nearby furniture.
+        </p>
+        <h2>What are the limits?</h2>
+        <ul>
+          <li>One plane at a time: a floor or a wall, not both joined at a corner.</li>
+          <li>The stamp clones; there is no healing or pasting into the plane yet.</li>
+          <li>
+            It works on pixel layers and changes their pixels directly, so it can&apos;t be a smart
+            filter. Duplicate the layer if you want a way back.
+          </li>
+          <li>Only the inside of the plane changes; everything outside it is left alone.</li>
+        </ul>
+        <h2>Questions people ask</h2>
+        <h3>Why is the preview a bit soft?</h3>
+        <p>
+          On large images the dialog previews a smaller copy so it stays fast. The full-size result
+          is made when you click OK.
+        </p>
+        <h3>Can I fix a mistake in the middle?</h3>
+        <p>
+          Yes. Undo Stroke removes the last stroke while the dialog is open, and Cancel discards
+          everything.
+        </p>
+        <p>
+          The <Link href="/docs/filters">filters guide</Link> lists Vanishing Point with the other
+          filters. <EditorLink>Open a photo in Picstea</EditorLink> to try it.
         </p>
       </>
     ),

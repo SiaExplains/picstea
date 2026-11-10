@@ -18,6 +18,7 @@ import { MemoryProjectStorage } from "@/editor/persistence/memory/memory-project
 import type { BitmapEncoder } from "@/editor/assets/asset-store";
 import { defaultSurfaceFactory } from "@/editor/rendering/canvas/canvas2d-renderer";
 import { createCanvasTextSizer } from "@/editor/rendering/text/text-layout";
+import { browserFontEnvironment, FontLibrary } from "@/editor/fonts/font-library";
 import { workerRunner } from "@/editor/workers/job-runner";
 import { EditorContext } from "./editor-context";
 import styles from "./editor.module.css";
@@ -88,6 +89,7 @@ function getBrowserController(): EditorController {
           name: "picstea-editor",
         }),
     ),
+    fonts: new FontLibrary(browserFontEnvironment()),
     sizer: createCanvasTextSizer(
       () => defaultSurfaceFactory(1, 1).getContext("2d") as CanvasRenderingContext2D | null,
     ),

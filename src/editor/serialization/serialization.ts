@@ -8,7 +8,7 @@ import { ValidationError, validateDocument } from "./validate";
  * To change the stored shape: bump CURRENT_SCHEMA_VERSION, add a migration from the previous
  * version, and update the validator. Never edit a released migration.
  */
-export const CURRENT_SCHEMA_VERSION = 8;
+export const CURRENT_SCHEMA_VERSION = 9;
 
 export interface SerializedProject {
   readonly schemaVersion: number;
@@ -56,7 +56,37 @@ export const MIGRATIONS: Readonly<Record<number, Migration>> = {
    * v8 document.
    */
   7: (document) => document,
+  /*
+   * v9 (0.45.0) added paragraph text, character and paragraph styles (ADR-0041) and fonts beyond
+   * the system fonts (ADR-0040). Text layers gain point-text defaults: no box, no runs, plain
+   * paragraphs, kerning on.
+   */
+  8: (document) => upgradeTextIn(document),
 };
+
+/** Recursively give text layers the v9 fields, including in groups and smart object contents. */
+function upgradeTextIn(document: unknown): unknown {
+  if (typeof document !== "object" || document === null) return document;
+  const doc = document as { layers?: unknown };
+  if (!Array.isArray(doc.layers)) return document;
+  return { ...doc, layers: doc.layers.map(upgradeTextLayer) };
+}
+
+function upgradeTextLayer(value: unknown): unknown {
+  if (typeof value !== "object" || value === null) return value;
+  const layer: Record<string, unknown> = { ...(value as Record<string, unknown>) };
+  if (layer.kind === "text") {
+    layer.baselineShift ??= 0;
+    layer.caps ??= "normal";
+    layer.kerning ??= true;
+    layer.box ??= null;
+    layer.runs ??= [];
+    layer.paragraphs ??= [];
+  }
+  if (Array.isArray(layer.children)) layer.children = layer.children.map(upgradeTextLayer);
+  if (layer.kind === "smart") layer.content = upgradeTextIn(layer.content);
+  return layer;
+}
 
 /** Recursively upgrade `effects` on every layer, including groups and smart object contents. */
 function upgradeEffectsIn(document: unknown): unknown {

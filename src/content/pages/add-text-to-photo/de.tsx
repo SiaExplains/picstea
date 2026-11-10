@@ -13,7 +13,7 @@ const copy: PageCopy = {
     },
     {
       q: "Welche Schriften kann ich verwenden?",
-      a: "Gängige Schriften, die jeder Computer hat: Arial, Helvetica, Verdana, Trebuchet MS, Georgia, Times New Roman, Courier New, Impact und deine Systemschrift. Eigene Schriften hochladen geht noch nicht.",
+      a: "Die gängigen Schriften jedes Computers, 27 Google Fonts, die Picstea selbst bereitstellt (Roboto, Montserrat, Playfair Display, Lobster und mehr), auf deinem Computer installierte Schriften (in Chrome und Edge, nachdem du es erlaubst) und eigene TTF-, OTF-, WOFF- oder WOFF2-Dateien, die mit dem Projekt gespeichert werden. Nichts wird hochgeladen.",
     },
     {
       q: "Wie mache ich Text auf einem unruhigen Foto gut lesbar?",
@@ -68,9 +68,9 @@ const copy: PageCopy = {
       </ul>
       <h2>Einschränkungen</h2>
       <p>
-        Text ist Punkttext: Zeilen brechen dort um, wo du Enter drückst, ohne automatischen Umbruch
-        in einem Textrahmen. Text auf einem Pfad oder vertikalen Text gibt es noch nicht, und es
-        stehen nur die gängigen Schriften aus den Fragen unten zur Verfügung.
+        Text auf einem Pfad oder vertikalen Text gibt es noch nicht. Schriften von deinem Computer
+        gibt es nur in Chrome und Edge; in anderen Browsern lädst du stattdessen die Schriftdatei
+        hoch. Für umbrechenden Text ziehst du mit dem Text-Werkzeug zuerst einen Rahmen auf.
       </p>
     </>
   ),

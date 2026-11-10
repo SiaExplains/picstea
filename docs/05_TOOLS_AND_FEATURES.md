@@ -97,11 +97,17 @@ Implement:
 - bounding boxes
 - editable text
 
+Since 0.45.0 (ADR-0040, ADR-0041):
+
+- paragraph text in a box, with wrapping
+- rich text ranges (Character panel)
+- paragraph styles (Paragraph panel)
+- bundled Google Fonts, local fonts and uploaded fonts
+
 Later:
 
-- rich text ranges
-- paragraph styles
 - text-on-path
+- vertical text
 
 ### Gate
 

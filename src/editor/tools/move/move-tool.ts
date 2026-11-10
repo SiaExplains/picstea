@@ -17,7 +17,7 @@ import {
   type TransformTarget,
 } from "../../core/geometry/multi-transform";
 import { activeLayer } from "../../core/document/queries";
-import type { EditorDocument, Layer, RasterLayer, Transform } from "../../core/document/types";
+import type { EditorDocument, Layer, Transform } from "../../core/document/types";
 import { createId } from "../../core/ids";
 import {
   boundsOf,
@@ -45,8 +45,11 @@ import { releaseSurface, type Surface } from "../../pixels/layer-pixels";
 import {
   composeMoved,
   liftSelection,
+  offsetMatrix,
+  pixelPlane,
   releaseLifted,
   type LiftedPixels,
+  type PixelPlane,
 } from "../../pixels/move-pixels";
 import type { SelectionMask } from "../../selection/mask";
 import { translateSelection } from "../../selection/ops";
@@ -103,12 +106,12 @@ interface Drag {
 }
 
 /**
- * Selected pixels lifted off a pixel layer. Reused by later drags and nudges while the document
- * is still the one the last move produced, so soft edges are cut out only once.
+ * Selected pixels lifted off a pixel layer or a mask. Reused by later drags and nudges while the
+ * document is still the one the last move produced, so soft edges are cut out only once.
  */
 interface PixelFloat {
   readonly documentId: string;
-  readonly layerId: string;
+  readonly plane: PixelPlane;
   readonly lifted: LiftedPixels;
   /** The selection when the pixels were lifted; moves are offsets from it. */
   readonly selection: SelectionMask;
@@ -174,15 +177,16 @@ export class MoveTool implements Tool {
   }
 
   /**
-   * The pixel layer whose selected pixels a drag moves: a selection plus one active, visible
-   * pixel layer (Photoshop's behaviour). Otherwise the whole layer moves.
+   * The pixels a drag moves: with a selection, the active visible layer's mask when the mask is
+   * being edited, else a pixel layer's content (Photoshop's behaviour). Otherwise the whole layer
+   * moves.
    */
-  private pixelTarget(ctx: ToolContext): RasterLayer | undefined {
+  private pixelTarget(ctx: ToolContext): { layer: Layer; plane: PixelPlane } | undefined {
     const session = ctx.store.getSession();
     const layer = session ? activeLayer(session.document) : undefined;
-    if (!session?.document.selection || layer?.kind !== "raster" || !layer.visible) return;
+    if (!session?.document.selection || !layer?.visible) return;
     if (this.multi(ctx)) return;
-    return layer;
+    return movablePixels(layer, ctx.store.getState().editTarget);
   }
 
   private dropFloat(): void {
@@ -192,16 +196,22 @@ export class MoveTool implements Tool {
   }
 
   /** The current float for `layer`, or freshly lifted pixels; null (with a notice) if it can't. */
-  private floatFor(ctx: ToolContext, layer: RasterLayer, keepOriginal: boolean): PixelFloat | null {
+  private floatFor(ctx: ToolContext, plane: PixelPlane, keepOriginal: boolean): PixelFloat | null {
     const doc = ctx.store.getSession()!.document;
     const current = this.float;
-    if (current && !keepOriginal && current.doc === doc && current.layerId === layer.id) {
+    if (
+      current &&
+      !keepOriginal &&
+      current.doc === doc &&
+      current.plane.layerId === plane.layerId &&
+      current.plane.target === plane.target
+    ) {
       return current;
     }
     this.dropFloat();
     let lifted: LiftedPixels | null;
     try {
-      lifted = liftSelection(ctx, doc, layer, doc.selection!, keepOriginal);
+      lifted = liftSelection(ctx, doc, plane, doc.selection!, keepOriginal);
     } catch (error) {
       ctx.notify("error", error instanceof Error ? error.message : String(error));
       return null;
@@ -212,7 +222,7 @@ export class MoveTool implements Tool {
     }
     this.float = {
       documentId: doc.id,
-      layerId: layer.id,
+      plane,
       lifted,
       selection: doc.selection!,
       offset: { x: 0, y: 0 },
@@ -225,14 +235,16 @@ export class MoveTool implements Tool {
   private commitPixels(
     ctx: ToolContext,
     float: PixelFloat,
-    layer: RasterLayer,
     offset: Point,
     surface: Surface,
     options: { label: string; mergeKey: string; gesture?: boolean },
   ): void {
-    const asset = ctx.assets.addBitmap(surface, layer.width, layer.height);
+    const { plane } = float;
+    const asset = ctx.assets.addBitmap(surface, plane.width, plane.height);
     const selection = translateSelection(float.selection, offset.x, offset.y);
-    const result = ctx.store.dispatch(moveSelectedPixels(layer.id, asset.id, selection, options));
+    const result = ctx.store.dispatch(
+      moveSelectedPixels(plane.layerId, asset.id, selection, { ...options, target: plane.target }),
+    );
     if (!result.ok) {
       ctx.notify("error", result.error);
       this.dropFloat();
@@ -243,15 +255,19 @@ export class MoveTool implements Tool {
     ctx.pixelsCommitted();
   }
 
-  private pixelPointerDown(ctx: ToolContext, pointer: ToolPointer, layer: RasterLayer): void {
+  private pixelPointerDown(
+    ctx: ToolContext,
+    pointer: ToolPointer,
+    { layer, plane }: { layer: Layer; plane: PixelPlane },
+  ): void {
     if (layer.locked) {
       ctx.notify("error", msg('"{layer}" is locked. Unlock it to move it.', { layer: layer.name }));
       return;
     }
-    const float = this.floatFor(ctx, layer, pointer.altKey);
+    const float = this.floatFor(ctx, plane, pointer.altKey);
     if (!float) return;
-    const surface = ctx.createSurface(layer.width, layer.height);
-    composeMoved(layer, float.lifted, float.offset.x, float.offset.y, surface);
+    const surface = ctx.createSurface(plane.width, plane.height);
+    composeMoved(float.lifted, offsetMatrix(float.offset.x, float.offset.y), surface);
     const b = translateSelection(float.selection, float.offset.x, float.offset.y)?.bounds;
     this.pixelDrag = {
       float,
@@ -259,7 +275,7 @@ export class MoveTool implements Tool {
       startBounds: b ?? { x: pointer.doc.x, y: pointer.doc.y, width: 0, height: 0 },
       mergeKey: `move-pixels:${layer.id}:${createId("drag")}`,
       surface,
-      preview: { overrides: new Map([[layer.id, surface]]) },
+      preview: planePreview(plane, surface),
       offset: float.offset,
       selection: null,
       changed: false,
@@ -268,8 +284,8 @@ export class MoveTool implements Tool {
 
   private pixelPointerMove(ctx: ToolContext, pointer: ToolPointer, drag: PixelDrag): void {
     const session = ctx.store.getSession();
-    const layer = session && findLayerDeep(session.document.layers, drag.float.layerId);
-    if (layer?.kind !== "raster") return;
+    const layer = session && findLayerDeep(session.document.layers, drag.float.plane.layerId);
+    if (!layer) return;
     let dx = pointer.doc.x - drag.startPointer.x;
     let dy = pointer.doc.y - drag.startPointer.y;
     if (pointer.shiftKey) {
@@ -294,7 +310,7 @@ export class MoveTool implements Tool {
     const base = drag.float.offset;
     const offset = { x: base.x + Math.round(dx), y: base.y + Math.round(dy) };
     if (offset.x === drag.offset.x && offset.y === drag.offset.y) return;
-    composeMoved(layer, drag.float.lifted, offset.x, offset.y, drag.surface);
+    composeMoved(drag.float.lifted, offsetMatrix(offset.x, offset.y), drag.surface);
     drag.offset = offset;
     drag.selection = translateSelection(drag.float.selection, offset.x, offset.y);
     drag.changed = true;
@@ -304,14 +320,14 @@ export class MoveTool implements Tool {
   private pixelPointerUp(ctx: ToolContext, drag: PixelDrag): void {
     this.pixelDrag = null;
     const session = ctx.store.getSession();
-    const layer = session && findLayerDeep(session.document.layers, drag.float.layerId);
+    const layer = session && findLayerDeep(session.document.layers, drag.float.plane.layerId);
     const moved = drag.offset.x !== drag.float.offset.x || drag.offset.y !== drag.float.offset.y;
-    if (!moved || layer?.kind !== "raster") {
+    if (!moved || !layer) {
       releaseSurface(drag.surface);
       return;
     }
-    // The preview surface becomes the layer's new pixels.
-    this.commitPixels(ctx, drag.float, layer, drag.offset, drag.surface, {
+    // The preview surface becomes the new pixels.
+    this.commitPixels(ctx, drag.float, drag.offset, drag.surface, {
       label: "Move",
       mergeKey: drag.mergeKey,
       gesture: true,
@@ -327,17 +343,21 @@ export class MoveTool implements Tool {
     ctx.invalidate();
   }
 
-  private pixelNudge(ctx: ToolContext, layer: RasterLayer, delta: Point): void {
+  private pixelNudge(
+    ctx: ToolContext,
+    { layer, plane }: { layer: Layer; plane: PixelPlane },
+    delta: Point,
+  ): void {
     if (layer.locked) {
       ctx.notify("error", msg('"{layer}" is locked. Unlock it to move it.', { layer: layer.name }));
       return;
     }
-    const float = this.floatFor(ctx, layer, false);
+    const float = this.floatFor(ctx, plane, false);
     if (!float) return;
     const offset = { x: float.offset.x + delta.x, y: float.offset.y + delta.y };
-    const surface = ctx.createSurface(layer.width, layer.height);
-    composeMoved(layer, float.lifted, offset.x, offset.y, surface);
-    this.commitPixels(ctx, float, layer, offset, surface, {
+    const surface = ctx.createSurface(plane.width, plane.height);
+    composeMoved(float.lifted, offsetMatrix(offset.x, offset.y), surface);
+    this.commitPixels(ctx, float, offset, surface, {
       label: "Nudge",
       mergeKey: `nudge-pixels:${layer.id}`,
     });
@@ -902,4 +922,22 @@ export class MoveTool implements Tool {
   selectionPreview(): SelectionMask | null | undefined {
     return this.pixelDrag?.changed ? this.pixelDrag.selection : undefined;
   }
+}
+
+/**
+ * The pixels a Move-tool drag or Free Transform moves on `layer` when there is a selection: its
+ * mask while the mask is being edited, else a pixel layer's content.
+ */
+export function movablePixels(
+  layer: Layer,
+  editTarget: "content" | "mask",
+): { layer: Layer; plane: PixelPlane } | undefined {
+  const plane =
+    editTarget === "mask" && layer.mask ? pixelPlane(layer, "mask") : pixelPlane(layer, "content");
+  return plane ? { layer, plane } : undefined;
+}
+
+export function planePreview(plane: PixelPlane, surface: Surface): CompositePreview {
+  const map = new Map([[plane.layerId, surface]]);
+  return plane.target === "mask" ? { maskOverrides: map } : { overrides: map };
 }

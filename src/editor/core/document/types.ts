@@ -175,7 +175,12 @@ export interface ShapeLayer extends BaseLayer {
   readonly path?: VectorPath;
 }
 
-export const FONT_FAMILIES = [
+/**
+ * Fonts every computer is expected to have (always offered, never stored with a project). Other
+ * families come from Picstea's bundled Google Fonts, the user's computer or an uploaded file and
+ * are listed in `EditorDocument.fonts` (ADR-0040).
+ */
+export const SYSTEM_FONTS = [
   "system-ui",
   "Arial",
   "Helvetica",
@@ -186,26 +191,83 @@ export const FONT_FAMILIES = [
   "Courier New",
   "Impact",
 ] as const;
-export type FontFamily = (typeof FONT_FAMILIES)[number];
+/** A CSS font family name. */
+export type FontFamily = string;
 
-export type TextAlign = "left" | "center" | "right";
+/** Where a document font comes from (ADR-0040). */
+export type FontSource = "bundled" | "local" | "uploaded";
 
-/** Point text: lines split on "\n", no automatic wrapping. Origin is the top-left of the block. */
-export interface TextLayer extends BaseLayer {
-  readonly kind: "text";
-  readonly text: string;
+/** A font face a document uses beyond the system fonts. */
+export interface DocumentFont {
+  readonly family: string;
+  readonly weight: 400 | 700;
+  readonly italic: boolean;
+  readonly source: FontSource;
+  /** PostScript name, for local fonts and PSD export. */
+  readonly postscriptName?: string;
+  /** Uploaded fonts: the font file in the asset store. */
+  readonly assetId?: string;
+}
+
+export type TextAlign = "left" | "center" | "right" | "justify";
+export type FontCaps = "normal" | "all-caps" | "small-caps";
+
+/** Character formatting (Character panel, ADR-0041). */
+export interface CharStyle {
   readonly fontFamily: FontFamily;
   /** px */
   readonly fontSize: number;
+  /** 700 = bold (faux bold when the font has no bold face). */
   readonly fontWeight: 400 | 700;
   readonly italic: boolean;
   /** `#rrggbb` */
   readonly color: string;
-  readonly align: TextAlign;
-  /** Multiple of fontSize. */
+  /** Leading, as a multiple of fontSize. */
   readonly lineHeight: number;
-  /** px */
+  /** Tracking, px. */
   readonly letterSpacing: number;
+  /** px, up is positive. */
+  readonly baselineShift: number;
+  readonly caps: FontCaps;
+  /** Use the font's kerning pairs. */
+  readonly kerning: boolean;
+}
+
+/** Paragraph formatting (Paragraph panel, ADR-0041). Sizes in px. */
+export interface ParagraphStyle {
+  readonly align: TextAlign;
+  readonly indentLeft: number;
+  readonly indentRight: number;
+  /** Extra indent of a paragraph's first line (may be negative for a hanging indent). */
+  readonly indentFirst: number;
+  readonly spaceBefore: number;
+  readonly spaceAfter: number;
+}
+
+/** Character formatting for `text[start, end)`, over the layer's own style. */
+export interface TextRun {
+  readonly start: number;
+  readonly end: number;
+  readonly style: Partial<CharStyle>;
+}
+
+/**
+ * Text. Point text (`box: null`) grows with its lines, which only break at "\n"; paragraph text
+ * wraps inside its box and is clipped to it. The layer's own fields are the base character and
+ * paragraph style; `runs` override characters and `paragraphs[i]` the i-th paragraph (ADR-0041).
+ * The origin is the top-left of the block.
+ */
+export interface TextLayer extends BaseLayer, CharStyle {
+  readonly kind: "text";
+  readonly text: string;
+  /** Base paragraph alignment. */
+  readonly align: TextAlign;
+  /** Paragraph text box in layer units, or null for point text. */
+  readonly box: { readonly width: number; readonly height: number } | null;
+  /** Sorted, non-overlapping character runs. */
+  readonly runs: readonly TextRun[];
+  /** Per-paragraph styles; missing entries use the base alignment and no indents or spacing. */
+  readonly paragraphs: readonly ParagraphStyle[];
 }
 
 /** A folder of layers. Children are ordered bottom-most first, like `EditorDocument.layers`. */
@@ -378,4 +440,6 @@ export interface EditorDocument {
   readonly selection?: SelectionMask;
   /** Photoshop's global light for effects with "Use global angle" (ADR-0030). Absent = default. */
   readonly globalLight?: GlobalLight;
+  /** Fonts beyond the system fonts that text layers use (ADR-0040). Absent = none. */
+  readonly fonts?: readonly DocumentFont[];
 }

@@ -12,3 +12,4 @@ export * from "./path-commands";
 export * from "./smart-commands";
 export * from "./multi-commands";
 export * from "./merge-commands";
+export * from "./font-commands";

@@ -1,4 +1,5 @@
 import { isHexColor } from "../core/document/factory";
+import { isFontFamilyName } from "../core/document/text";
 import { checkDimensions, MAX_DIMENSION } from "../core/document/limits";
 import { MAX_GROUP_DEPTH, walkLayers } from "../core/document/tree";
 import { EffectError, parseGlobalLight, parseLayerEffects } from "../core/effects/parse";
@@ -17,9 +18,11 @@ import {
   BLEND_MODES,
   LAYER_LABELS,
   type LayerLabel,
-  FONT_FAMILIES,
-  type FontFamily,
+  type CharStyle,
+  type DocumentFont,
+  type ParagraphStyle,
   type StrokeStyle,
+  type TextRun,
   type BlendMode,
   type EditorDocument,
   type Guide,
@@ -107,6 +110,81 @@ function transform(value: unknown, path: string): Transform {
     scaleX: num(o.scaleX, `${path}.scaleX`, -1000, 1000),
     scaleY: num(o.scaleY, `${path}.scaleY`, -1000, 1000),
     rotation: num(o.rotation, `${path}.rotation`, -360, 360),
+  };
+}
+
+const MAX_TEXT_CHARS = 10_000;
+const MAX_TEXT_RUNS = 5_000;
+const MAX_DOCUMENT_FONTS = 500;
+
+function fontFamilyName(value: unknown, path: string): string {
+  if (!isFontFamilyName(value)) fail(path, "font family name");
+  return value;
+}
+
+function textAlign(value: unknown, path: string): ParagraphStyle["align"] {
+  if (value !== "left" && value !== "center" && value !== "right" && value !== "justify") {
+    fail(path, "left|center|right|justify");
+  }
+  return value;
+}
+
+/** Character style fields; `complete` requires every field (a layer's base style). */
+function charStyle(o: Obj, path: string, complete: boolean): Partial<CharStyle> {
+  const out: Record<string, unknown> = {};
+  const field = (key: keyof CharStyle, read: (v: unknown, p: string) => unknown) => {
+    if (o[key] === undefined && !complete) return;
+    out[key] = read(o[key], `${path}.${key}`);
+  };
+  field("fontFamily", fontFamilyName);
+  field("fontSize", (v, p) => num(v, p, 1, 2000));
+  field("fontWeight", (v, p) => {
+    if (v !== 400 && v !== 700) fail(p, "400|700");
+    return v;
+  });
+  field("italic", bool);
+  field("color", hexColor);
+  field("lineHeight", (v, p) => num(v, p, 0.5, 5));
+  field("letterSpacing", (v, p) => num(v, p, -100, 500));
+  field("baselineShift", (v, p) => num(v, p, -1000, 1000));
+  field("caps", (v, p) => {
+    if (v !== "normal" && v !== "all-caps" && v !== "small-caps") {
+      fail(p, "normal|all-caps|small-caps");
+    }
+    return v;
+  });
+  field("kerning", bool);
+  return out as Partial<CharStyle>;
+}
+
+function paragraphStyle(value: unknown, path: string): ParagraphStyle {
+  const o = obj(value, path);
+  return {
+    align: textAlign(o.align, `${path}.align`),
+    indentLeft: num(o.indentLeft, `${path}.indentLeft`, -1e5, 1e5),
+    indentRight: num(o.indentRight, `${path}.indentRight`, -1e5, 1e5),
+    indentFirst: num(o.indentFirst, `${path}.indentFirst`, -1e5, 1e5),
+    spaceBefore: num(o.spaceBefore, `${path}.spaceBefore`, 0, 1e5),
+    spaceAfter: num(o.spaceAfter, `${path}.spaceAfter`, 0, 1e5),
+  };
+}
+
+function documentFont(value: unknown, path: string): DocumentFont {
+  const o = obj(value, path);
+  if (o.weight !== 400 && o.weight !== 700) fail(`${path}.weight`, "400|700");
+  if (o.source !== "bundled" && o.source !== "local" && o.source !== "uploaded") {
+    fail(`${path}.source`, "bundled|local|uploaded");
+  }
+  if (o.source === "uploaded" && typeof o.assetId !== "string") fail(`${path}.assetId`, "string");
+  return {
+    family: fontFamilyName(o.family, `${path}.family`),
+    weight: o.weight,
+    italic: bool(o.italic, `${path}.italic`),
+    source: o.source,
+    ...(o.postscriptName !== undefined
+      ? { postscriptName: str(o.postscriptName, `${path}.postscriptName`, 128) }
+      : {}),
+    ...(o.source === "uploaded" ? { assetId: str(o.assetId, `${path}.assetId`, 128) } : {}),
   };
 }
 
@@ -280,28 +358,47 @@ function layer(value: unknown, path: string, depth: number, budget: Budget): Lay
       };
     }
     case "text": {
-      if (
-        typeof o.fontFamily !== "string" ||
-        !(FONT_FAMILIES as readonly string[]).includes(o.fontFamily)
-      ) {
-        fail(`${path}.fontFamily`, "known font");
-      }
-      if (o.fontWeight !== 400 && o.fontWeight !== 700) fail(`${path}.fontWeight`, "400|700");
-      if (o.align !== "left" && o.align !== "center" && o.align !== "right") {
-        fail(`${path}.align`, "left|center|right");
+      const text = str(o.text, `${path}.text`, MAX_TEXT_CHARS);
+      const style = charStyle(o, path, true) as CharStyle;
+      const box =
+        o.box === null
+          ? null
+          : (() => {
+              const b = obj(o.box, `${path}.box`);
+              return {
+                width: num(b.width, `${path}.box.width`, 1, 1e6),
+                height: num(b.height, `${path}.box.height`, 1, 1e6),
+              };
+            })();
+      if (!Array.isArray(o.runs) || o.runs.length > MAX_TEXT_RUNS) fail(`${path}.runs`, "array");
+      let previousEnd = 0;
+      const runs = o.runs.map((value, i): TextRun => {
+        const r = obj(value, `${path}.runs[${i}]`);
+        const start = int(r.start, `${path}.runs[${i}].start`, previousEnd, text.length);
+        const end = int(r.end, `${path}.runs[${i}].end`, start + 1, text.length);
+        previousEnd = end;
+        return {
+          start,
+          end,
+          style: charStyle(
+            obj(r.style, `${path}.runs[${i}].style`),
+            `${path}.runs[${i}].style`,
+            false,
+          ),
+        };
+      });
+      if (!Array.isArray(o.paragraphs) || o.paragraphs.length > MAX_TEXT_RUNS) {
+        fail(`${path}.paragraphs`, "array");
       }
       return {
         ...base,
         kind: "text",
-        text: str(o.text, `${path}.text`, 10_000),
-        fontFamily: o.fontFamily as FontFamily,
-        fontSize: num(o.fontSize, `${path}.fontSize`, 1, 2000),
-        fontWeight: o.fontWeight,
-        italic: bool(o.italic, `${path}.italic`),
-        color: hexColor(o.color, `${path}.color`),
-        align: o.align,
-        lineHeight: num(o.lineHeight, `${path}.lineHeight`, 0.5, 5),
-        letterSpacing: num(o.letterSpacing, `${path}.letterSpacing`, -100, 500),
+        text,
+        ...style,
+        align: textAlign(o.align, `${path}.align`),
+        box,
+        runs,
+        paragraphs: o.paragraphs.map((p, i) => paragraphStyle(p, `${path}.paragraphs[${i}]`)),
       };
     }
     default:
@@ -398,6 +495,14 @@ function documentAt(value: unknown, at: string, budget: Budget): EditorDocument 
       : {}),
     ...(o.globalLight !== undefined
       ? { globalLight: globalLight(o.globalLight, `${at}.globalLight`) }
+      : {}),
+    ...(o.fonts !== undefined
+      ? {
+          fonts: (Array.isArray(o.fonts) && o.fonts.length <= MAX_DOCUMENT_FONTS
+            ? o.fonts
+            : fail(`${at}.fonts`, "array")
+          ).map((f, i) => documentFont(f, `${at}.fonts[${i}]`)),
+        }
       : {}),
     metadata: {
       createdAt: isoDate(metadata.createdAt, `${at}.metadata.createdAt`),

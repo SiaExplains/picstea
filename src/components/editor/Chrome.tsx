@@ -2,7 +2,8 @@
 
 import { useCallback, useRef, useState, useSyncExternalStore } from "react";
 import { SELECTION_MODES, type SelectionMode } from "@/editor/selection/ops";
-import { FONT_FAMILIES, type FontFamily, type ShapeKind } from "@/editor/core/document/types";
+import type { ShapeKind } from "@/editor/core/document/types";
+import { LazyFontPicker as FontPicker } from "./LazyFontPicker";
 import { isDirty, selectedLayerIds, type ToolId } from "@/editor/core/editor-store";
 import { primaryBinding } from "@/editor/core/shortcuts/shortcuts";
 import {
@@ -977,34 +978,37 @@ function TextOptions() {
   const controller = useController();
   const settings = useEditorState((s) => s.toolSettings.text);
   const t = useT();
-  const alignLabels = { left: t("Left"), center: t("Center"), right: t("Right") };
+  const alignLabels = {
+    left: t("Left"),
+    center: t("Center"),
+    right: t("Right"),
+    justify: t("Justify"),
+  };
   const edit = useSyncExternalStore(
     controller.textEdit.subscribe,
     controller.textEdit.get,
     () => null,
   );
-  // While typing, options change the text being edited; otherwise they set the defaults.
+  // While typing, options change the text being edited (the selected characters, or all of
+  // them); otherwise they set the defaults for new text.
   const style = edit ? edit.style : settings;
   const set = (patch: Partial<typeof settings>) => {
     controller.store.updateToolSettings("text", patch);
-    if (edit) controller.updateTextDraft({ style: patch });
+    if (!edit) return;
+    const { align, ...character } = patch;
+    if (Object.keys(character).length > 0) controller.applyCharacterStyle(character);
+    if (align) controller.applyParagraphStyle({ align });
   };
   return (
     <>
-      <label className={styles.optionGroup}>
+      <div className={styles.optionGroup}>
         {t("Font")}
-        <select
-          className={styles.select}
+        <FontPicker
+          label={t("Font")}
           value={style.fontFamily}
-          onChange={(e) => set({ fontFamily: e.target.value as FontFamily })}
-        >
-          {FONT_FAMILIES.map((f) => (
-            <option key={f} value={f}>
-              {f === "system-ui" ? t("System") : f}
-            </option>
-          ))}
-        </select>
-      </label>
+          onChange={(fontFamily) => set({ fontFamily })}
+        />
+      </div>
       <NumberOption
         label={t("Size")}
         value={style.fontSize}
@@ -1032,7 +1036,7 @@ function TextOptions() {
         </button>
       </div>
       <div className={styles.segmented} role="group" aria-label={t("Alignment")}>
-        {(["left", "center", "right"] as const).map((align) => (
+        {(["left", "center", "right", "justify"] as const).map((align) => (
           <button
             key={align}
             type="button"
@@ -1047,7 +1051,7 @@ function TextOptions() {
       <span>
         {edit
           ? t("⌘/Ctrl+Enter or click outside to finish · Esc cancels")
-          : t("Click on the canvas to add text")}
+          : t("Click to add text, or drag a box for text that wraps")}
       </span>
     </>
   );

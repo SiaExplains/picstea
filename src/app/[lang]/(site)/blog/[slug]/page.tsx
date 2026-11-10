@@ -37,6 +37,9 @@ export async function generateMetadata({
       publishedTime: post.published,
       modifiedTime: post.updated ?? post.published,
       authors: [DEFAULT_AUTHOR.name],
+      ...(post.image
+        ? { images: [{ url: post.image, width: 1200, height: 630, alt: post.title }] }
+        : {}),
     }),
   };
 }

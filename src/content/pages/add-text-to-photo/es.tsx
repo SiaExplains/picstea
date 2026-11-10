@@ -13,7 +13,7 @@ const copy: PageCopy = {
     },
     {
       q: "¿Qué fuentes puedo usar?",
-      a: "Las fuentes habituales que tiene cualquier ordenador: Arial, Helvetica, Verdana, Trebuchet MS, Georgia, Times New Roman, Courier New, Impact y la fuente de tu sistema. Todavía no se pueden subir fuentes propias.",
+      a: "Las fuentes habituales de cualquier ordenador, 27 Google Fonts que Picstea sirve por sí mismo (Roboto, Montserrat, Playfair Display, Lobster y más), las fuentes instaladas en tu ordenador (en Chrome y Edge, después de permitirlo) y tus propios archivos TTF, OTF, WOFF o WOFF2, que se guardan con el proyecto. No se sube nada.",
     },
     {
       q: "¿Cómo hago que el texto se lea bien sobre una foto recargada?",
@@ -69,9 +69,9 @@ const copy: PageCopy = {
       </ul>
       <h2>Limitaciones</h2>
       <p>
-        El texto es texto de punto: las líneas se cortan donde pulsas Intro, sin ajuste automático
-        dentro de un cuadro. Todavía no hay texto en curva ni texto vertical, y solo están
-        disponibles las fuentes habituales que se indican en las preguntas de abajo.
+        Todavía no hay texto en curva ni texto vertical. Las fuentes de tu ordenador solo están
+        disponibles en Chrome y Edge; en otros navegadores, sube el archivo de la fuente. Para texto
+        que se ajuste, arrastra primero un cuadro con la herramienta Texto.
       </p>
     </>
   ),

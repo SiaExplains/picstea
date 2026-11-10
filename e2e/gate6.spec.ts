@@ -55,7 +55,7 @@ test("PSD export keeps layers and groups and opens again in Picstea", async ({ p
   const psd = await exportAs(page, "PSD");
   expect(psd.name).toBe("Layered.psd");
   expect(ascii(psd.bytes, 0, 4)).toBe("8BPS");
-  await expect(page.getByText(/Shapes and text were converted to pixels/)).toBeVisible();
+  await expect(page.getByText(/Shapes were converted to pixels/)).toBeVisible();
 
   await openFile(page, {
     name: psd.name,

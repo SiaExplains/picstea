@@ -1521,4 +1521,60 @@ export const de: Catalog = {
   "size category|Mobile": "Mobil",
   "size category|Ads": "Werbung",
   "size category|Icons": "Icons",
+  // Paragraph text, character and paragraph panels, fonts (0.45.0)
+  Justify: "Blocksatz",
+  "Click to add text, or drag a box for text that wraps":
+    "Klicken für Text, oder einen Rahmen ziehen für umbrechenden Text",
+  "In this document": "In diesem Dokument",
+  "Google Fonts": "Google Fonts",
+  "On this computer": "Auf diesem Computer",
+  "System fonts": "Systemschriften",
+  "Search fonts": "Schriften suchen",
+  "No fonts found": "Keine Schriften gefunden",
+  "Your browser asks before Picstea can list the fonts on this computer.":
+    "Dein Browser fragt, bevor Picstea die Schriften auf diesem Computer auflisten darf.",
+  "Use Fonts on This Computer": "Schriften dieses Computers verwenden",
+  "Upload Font": "Schrift hochladen",
+  "Box W": "Rahmen B",
+  "Box H": "Rahmen H",
+  "Convert to Point Text": "In Punkttext umwandeln",
+  "Convert to Paragraph Text": "In Absatztext umwandeln",
+  Character: "Zeichen",
+  Paragraph: "Absatz",
+  "Select a text layer or start typing.": "Wähle eine Textebene oder beginne zu tippen.",
+  "Baseline shift": "Grundlinienversatz",
+  "Faux bold": "Faux fett",
+  "Faux italic": "Faux kursiv",
+  "All caps": "Großbuchstaben",
+  "Small caps": "Kapitälchen",
+  Kerning: "Kerning",
+  "Paragraph alignment": "Absatzausrichtung",
+  "Justify spreads lines only in paragraph text (a text box).":
+    "Blocksatz verteilt Zeilen nur in Absatztext (einem Textrahmen).",
+  "Indent left": "Einzug links",
+  "Indent right": "Einzug rechts",
+  "First line": "Erste Zeile",
+  "Space before": "Abstand davor",
+  "Space after": "Abstand danach",
+  "Layers, groups, masks, opacity and blend modes; text stays editable. Shapes become pixels.":
+    "Ebenen, Gruppen, Masken, Deckkraft und Füllmethoden; Text bleibt bearbeitbar. Formen werden zu Pixeln.",
+  "Some fonts are not available here and are shown with a fallback: {fonts}. Add them with Upload Font… or Use Fonts on This Computer… in the font list.":
+    "Einige Schriften sind hier nicht verfügbar und werden durch eine Ersatzschrift dargestellt: {fonts}. Füge sie in der Schriftliste mit „Schrift hochladen…“ oder „Schriften dieses Computers verwenden…“ hinzu.",
+  "Added the font {font}. It is saved with this project.":
+    "Schrift {font} hinzugefügt. Sie wird mit diesem Projekt gespeichert.",
+  "That font file is too large (10 MB at most).":
+    "Diese Schriftdatei ist zu groß (höchstens 10 MB).",
+  "That is not a font file Picstea can use (TTF, OTF, WOFF or WOFF2).":
+    "Das ist keine Schriftdatei, die Picstea verwenden kann (TTF, OTF, WOFF oder WOFF2).",
+  "This browser could not read that font file.":
+    "Dieser Browser konnte die Schriftdatei nicht lesen.",
+  "That font's name can't be used. Rename the file and try again.":
+    "Der Name dieser Schrift kann nicht verwendet werden. Benenne die Datei um und versuche es erneut.",
+  "Text that did not fit the box was kept and is now visible.":
+    "Text, der nicht in den Rahmen passte, wurde behalten und ist jetzt sichtbar.",
+  "Drag the handles to transform the selected pixels. Enter applies, Esc cancels.":
+    "Ziehe die Griffe, um die ausgewählten Pixel zu transformieren. Enter übernimmt, Esc bricht ab.",
+  "A font inside the project file is damaged.": "Eine Schrift in der Projektdatei ist beschädigt.",
+  "Picstea could not list the fonts on this computer. You can upload a font file instead.":
+    "Picstea konnte die Schriften auf diesem Computer nicht auflisten. Du kannst stattdessen eine Schriftdatei hochladen.",
 };

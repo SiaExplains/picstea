@@ -3,6 +3,30 @@
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.45.0] — 2026-11-10
+
+### Added
+
+- **Paragraph text.** Drag a box with the Type tool and the text wraps inside it; drag the box's
+  handles and it reflows. Layer → Type converts point text to paragraph text and back.
+- **Character and Paragraph panels** (Window → Character, Window → Paragraph). Style just the
+  selected characters (font, size, leading, tracking, baseline shift, colour, faux bold and italic,
+  all caps, small caps, kerning) or paragraphs (left, centre, right or justified, indents, space
+  before and after). One text layer can now mix styles.
+- **More fonts.** A searchable font list with a preview of each font, 27 Google Fonts served from
+  Picstea itself, the fonts installed on your computer (Chrome and Edge, after the browser asks
+  you) and your own font files (TTF, OTF, WOFF, WOFF2), which are saved with the project. Nothing
+  is fetched from another site.
+- **PSD text keeps its styles.** PSD files open with mixed styles and paragraph boxes intact, and
+  exported PSDs keep text editable instead of turning it into pixels. Fonts that aren't available
+  are named, drawn with a fallback, and fixed as soon as you add them.
+- **Free Transform on a selection.** With a selection, Cmd/Ctrl+T scales and rotates just the
+  selected pixels; Enter applies it as one undo step and Esc puts them back.
+- **Moving pixels on a mask.** With a layer mask targeted, the Move tool moves the mask's
+  selected pixels instead of the layer's.
+- New blog post, **Convert HEIC photos to JPG without uploading them**. Two more posts, on Camera
+  Raw and Vanishing Point, are drafted and wait for their images.
+
 ## [0.44.3] — 2026-11-09
 
 ### Added

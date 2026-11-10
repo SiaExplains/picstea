@@ -11,7 +11,7 @@ import type {
 } from "../../core/document/types";
 import type { ContentSizer } from "../../core/geometry/layer-geometry";
 import { fromTransform } from "../../core/geometry/matrix";
-import { lineAdvance, textLines } from "../../rendering/text/text-layout";
+import { cssFamily } from "../../rendering/text/text-layout";
 
 /**
  * SVG export (ADR-0011). Shapes, text and colour fills become real SVG elements so they stay
@@ -95,24 +95,34 @@ function shapeElement(layer: ShapeLayer): string {
   }
 }
 
-function textElement(layer: TextLayer, sizer: ContentSizer): string {
-  const { width } = sizer.measureText(layer);
-  const anchor = layer.align === "left" ? "start" : layer.align === "center" ? "middle" : "end";
-  const x = layer.align === "left" ? 0 : layer.align === "center" ? width / 2 : width;
-  const advance = lineAdvance(layer);
-  const family =
-    layer.fontFamily === "system-ui" ? "system-ui, sans-serif" : `${layer.fontFamily}, sans-serif`;
-  const spans = textLines(layer.text)
-    .map(
-      (line, i) =>
-        `<tspan x="${num(x)}" y="${num(i * advance + advance / 2)}">${escapeXml(line)}</tspan>`,
-    )
+/** One `<text>` per line, one `<tspan>` per styled fragment, positioned from the layout. */
+function textElement(layer: TextLayer, sizer: ContentSizer, clipId: string): string {
+  const layout = sizer.layoutText(layer);
+  const lines = layout.lines
+    .filter((line) => line.fragments.length > 0)
+    .map((line) => {
+      const spans = line.fragments
+        .map((f) => {
+          const s = f.style;
+          return (
+            `<tspan x="${num(f.x)}" y="${num(f.y)}"` +
+            ` font-family="${escapeXml(cssFamily(s.fontFamily).replaceAll('"', "'"))}"` +
+            ` font-size="${num(f.size)}" font-weight="${s.fontWeight}"` +
+            (s.italic ? ` font-style="italic"` : "") +
+            (s.letterSpacing ? ` letter-spacing="${num(s.letterSpacing)}"` : "") +
+            (s.kerning ? "" : ` font-kerning="none"`) +
+            ` fill="${escapeXml(s.color)}">${escapeXml(f.text)}</tspan>`
+          );
+        })
+        .join("");
+      return `<text xml:space="preserve" dominant-baseline="middle">${spans}</text>`;
+    })
     .join("");
-  const style =
-    ` font-family="${escapeXml(family)}" font-size="${num(layer.fontSize)}"` +
-    ` font-weight="${layer.fontWeight}"${layer.italic ? ` font-style="italic"` : ""}` +
-    (layer.letterSpacing ? ` letter-spacing="${num(layer.letterSpacing)}"` : "");
-  return `<text xml:space="preserve" fill="${escapeXml(layer.color)}" text-anchor="${anchor}" dominant-baseline="middle"${style}>${spans}</text>`;
+  if (!layer.box || !layout.overflow) return lines;
+  return (
+    `<clipPath id="${clipId}"><rect width="${num(layer.box.width)}" height="${num(layer.box.height)}"/></clipPath>` +
+    `<g clip-path="url(#${clipId})">${lines}</g>`
+  );
 }
 
 /** Can this layer be written as plain SVG without changing how it looks? */
@@ -147,6 +157,7 @@ export async function buildSvg(
       for (const layer of layers) out.push(await element(layer));
       return out.join("\n");
     };
+    let clips = 0;
     const element = async (layer: Layer): Promise<string> => {
       if (layer.kind === "group") {
         const group = layer as GroupLayer;
@@ -164,7 +175,9 @@ export async function buildSvg(
           return `<rect width="${doc.width}" height="${doc.height}" fill="${escapeXml(layer.color)}"${attrs}/>`;
         }
         const inner =
-          layer.kind === "shape" ? shapeElement(layer) : textElement(layer as TextLayer, sizer);
+          layer.kind === "shape"
+            ? shapeElement(layer)
+            : textElement(layer as TextLayer, sizer, `text-clip-${++clips}`);
         return `<g${matrix((layer as ShapeLayer | TextLayer).transform)}${attrs}>${inner}</g>`;
       }
       const flat = { ...layer, opacity: 1, blendMode: "normal" as const, visible: true } as Layer;

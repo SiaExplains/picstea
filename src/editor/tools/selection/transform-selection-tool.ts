@@ -195,7 +195,7 @@ export class TransformSelectionTool implements Tool {
   }
 }
 
-function insidePolygon(points: readonly Point[], p: Point): boolean {
+export function insidePolygon(points: readonly Point[], p: Point): boolean {
   let inside = false;
   for (let i = 0, j = points.length - 1; i < points.length; j = i++) {
     const a = points[i];

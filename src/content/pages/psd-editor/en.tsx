@@ -38,7 +38,11 @@ const copy: PageCopy = {
         <li>8-bit RGB and greyscale PSD files up to 12,000 pixels per side.</li>
         <li>Pixel layers, groups, layer names, opacity, visibility and blend modes.</li>
         <li>Layer masks, including masks on groups; vector masks and clipping masks.</li>
-        <li>Editable text layers (first style of each layer; fonts mapped to common fonts).</li>
+        <li>
+          Editable text layers, including paragraph text in boxes and mixed styles. Fonts are
+          matched to system fonts, bundled Google Fonts or fonts you add; text stays editable when
+          you export a PSD.
+        </li>
         <li>
           Adjustment layers: Levels, Curves, Brightness/Contrast, Hue/Saturation, Vibrance, Color
           Balance, Photo Filter, Channel Mixer, Gradient Map, Exposure, Invert, Posterize,

@@ -82,6 +82,8 @@ export type UiActionId =
   | "layer.toSmartObject"
   | "layer.editContents"
   | "layer.rasterize"
+  | "type.toParagraph"
+  | "type.toPoint"
   | "layer.rasterizeStyle"
   | "layer.flatten"
   | "layer.selectPixels"
@@ -189,6 +191,7 @@ export function useEditorActions(hosts: ActionHosts): Record<UiActionId, UiActio
   const session = useActiveSession();
   const activeTool = useEditorState((s) => s.activeTool);
   const colors = useEditorState((s) => s.colors);
+  const editTarget = useEditorState((s) => s.editTarget);
   const view = useSyncExternalStore(
     controller.view.subscribe,
     controller.view.get,
@@ -231,6 +234,13 @@ export function useEditorActions(hosts: ActionHosts): Record<UiActionId, UiActio
     const hasWorkPath = !!doc?.workPath;
     const isPathShape = layer?.kind === "shape" && layer.shape === "path";
     const onPixels = hasSelection && layer?.kind === "raster" && !layer.locked;
+    // With a selection, Free Transform works on a pixel layer's pixels or on the mask being edited.
+    const canTransformPixels =
+      hasSelection &&
+      !!layer &&
+      !layer.locked &&
+      layer.visible &&
+      (layer.kind === "raster" || (editTarget === "mask" && !!layer.mask));
     const tool = (id: Parameters<typeof controller.store.setActiveTool>[0], label: string) => ({
       label,
       enabled: true,
@@ -415,6 +425,16 @@ export function useEditorActions(hosts: ActionHosts): Record<UiActionId, UiActio
       "window.history": { label: "History", enabled: true, run: () => showPanel("history") },
       "window.swatches": { label: "Swatches", enabled: true, run: () => showPanel("swatches") },
       "window.actions": { label: "Actions", enabled: true, run: () => showPanel("actions") },
+      "window.character": {
+        label: "Character",
+        enabled: true,
+        run: () => showPanel("character"),
+      },
+      "window.paragraph": {
+        label: "Paragraph",
+        enabled: true,
+        run: () => showPanel("paragraph"),
+      },
       "edit.paste": {
         // The clipboard is not React state, so Paste stays enabled and explains when it is empty.
         label: "Paste",
@@ -567,6 +587,16 @@ export function useEditorActions(hosts: ActionHosts): Record<UiActionId, UiActio
           !layer.locked &&
           (layer.kind === "smart" || layer.kind === "shape" || layer.kind === "text"),
         run: () => controller.rasterizeActiveLayer(),
+      },
+      "type.toParagraph": {
+        label: "Convert to Paragraph Text",
+        enabled: layer?.kind === "text" && !layer.locked && !layer.box,
+        run: () => controller.convertText("paragraph"),
+      },
+      "type.toPoint": {
+        label: "Convert to Point Text",
+        enabled: layer?.kind === "text" && !layer.locked && !!layer.box,
+        run: () => controller.convertText("point"),
       },
       "layer.mergeDown": {
         label: "Merge Down",
@@ -831,7 +861,11 @@ export function useEditorActions(hosts: ActionHosts): Record<UiActionId, UiActio
         run: () => window.open(PRIVACY_SETTINGS_URL, "_blank", "noopener"),
       },
       "tool.move": tool("move", N_("Move Tool")),
-      "tool.transform": { ...tool("move", N_("Free Transform")), enabled: canTransform },
+      "tool.transform": {
+        label: N_("Free Transform"),
+        enabled: canTransform || canTransformPixels,
+        run: () => controller.freeTransform(),
+      },
       "tool.marquee": groupTool("marquee", N_("Marquee Tool")),
       "tool.lasso": groupTool("lasso", N_("Lasso Tool")),
       "tool.wand": tool("wand", N_("Magic Wand Tool")),
@@ -879,5 +913,17 @@ export function useEditorActions(hosts: ActionHosts): Record<UiActionId, UiActio
         run: () => controller.store.setColors(DEFAULT_COLORS),
       },
     };
-  }, [controller, t, locale, session, hosts, activeTool, colors, view, lastFilter, installed]);
+  }, [
+    controller,
+    t,
+    locale,
+    session,
+    hosts,
+    activeTool,
+    colors,
+    editTarget,
+    view,
+    lastFilter,
+    installed,
+  ]);
 }

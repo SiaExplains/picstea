@@ -13,7 +13,7 @@ const copy: PageCopy = {
     },
     {
       q: "Which fonts can I use?",
-      a: "Common fonts that every computer has: Arial, Helvetica, Verdana, Trebuchet MS, Georgia, Times New Roman, Courier New, Impact and your system font. Uploading your own fonts isn't possible yet.",
+      a: "The common fonts every computer has, 27 Google Fonts that Picstea serves itself (Roboto, Montserrat, Playfair Display, Lobster and more), fonts installed on your computer (in Chrome and Edge, after you allow it), and your own TTF, OTF, WOFF or WOFF2 files, which are saved with the project. Nothing is uploaded.",
     },
     {
       q: "How do I make text readable on a busy photo?",
@@ -30,7 +30,8 @@ const copy: PageCopy = {
       <ol>
         <li>Open the editor and drop your photo on the page.</li>
         <li>
-          Press T (or pick the Type tool), click on the photo and type. Press Enter for a new line.
+          Press T (or pick the Type tool), click on the photo and type. Press Enter for a new line,
+          or drag a box first for text that wraps inside it.
         </li>
         <li>
           In the options bar, choose the font, size, bold or italic, colour, alignment, line height
@@ -65,9 +66,8 @@ const copy: PageCopy = {
       </ul>
       <h2>Limitations</h2>
       <p>
-        Text is point text: lines break where you press Enter, with no automatic wrapping in a box.
-        There is no text on a curve or vertical text yet, and only the common fonts listed in the
-        questions below are available.
+        There is no text on a curve or vertical text yet. Fonts from your computer are available in
+        Chrome and Edge only; in other browsers, upload the font file instead.
       </p>
     </>
   ),

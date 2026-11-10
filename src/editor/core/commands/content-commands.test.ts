@@ -17,6 +17,7 @@ import {
   updateTextLayer,
 } from "./content-commands";
 import { addLayer, setLayerLocked } from "./layer-commands";
+import { addLayerMask } from "./mask-commands";
 import { createSelection } from "../../selection/mask";
 
 function docWith(...layers: Layer[]): EditorDocument {
@@ -116,10 +117,7 @@ describe("updateTextLayer", () => {
     expect(next.layers[1]).toMatchObject({ text: "Hello", fontSize: 72, color: "#ff0000" });
     expect(updateTextLayer("t", { text: "Hi" }).apply(doc)).toBe(doc);
     expect(() => updateTextLayer("t", { fontSize: 0 }).apply(doc)).toThrow(CommandError);
-    // @ts-expect-error runtime guard for untyped input
-    expect(() => updateTextLayer("t", { fontFamily: "Comic Sans" }).apply(doc)).toThrow(
-      CommandError,
-    );
+    expect(() => updateTextLayer("t", { fontFamily: 'Bad"Font' }).apply(doc)).toThrow(CommandError);
     expect(() => updateTextLayer("t", { text: "x".repeat(10_001) }).apply(doc)).toThrow(
       CommandError,
     );
@@ -206,5 +204,26 @@ describe("moveSelectedPixels", () => {
     expect(() => moveSelectedPixels("p", "a", null).apply(locked)).toThrow(/locked/);
     const wrong = createSelection(5, 5, new Uint8Array(25).fill(255));
     expect(() => moveSelectedPixels("p", "a", wrong).apply(doc)).toThrow(/canvas size/);
+  });
+
+  it("moves a mask's pixels, leaving the layer's own pixels alone", () => {
+    const doc = addLayerMask("s").apply({
+      ...docWith(pixel(), shape()),
+      width: 10,
+      height: 10,
+      selection: square(1),
+    });
+    const next = moveSelectedPixels("s", "mask_2", square(5), { target: "mask" }).apply(doc);
+    const moved = next.layers.find((l) => l.id === "s")!;
+    expect(moved.mask?.assetId).toBe("mask_2");
+    expect(moved.kind).toBe("shape");
+    expect(next.selection?.bounds).toEqual({ x: 5, y: 2, width: 3, height: 3 });
+  });
+
+  it("refuses the mask target on a layer without a mask", () => {
+    const doc = { ...docWith(pixel()), width: 10, height: 10 };
+    expect(() => moveSelectedPixels("p", "a", null, { target: "mask" }).apply(doc)).toThrow(
+      /no mask/,
+    );
   });
 });

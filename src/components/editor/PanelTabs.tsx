@@ -1,10 +1,18 @@
 "use client";
 
-import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
+import { lazy, Suspense, useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
 import { ActionsPanel } from "./ActionsPanel";
 import styles from "./editor.module.css";
 import { HistoryPanel } from "./HistoryPanel";
 import { SwatchesPanel } from "./SwatchesPanel";
+
+// Loaded when first shown: most sessions never open them.
+const CharacterPanel = lazy(() =>
+  import("./TypePanels").then((m) => ({ default: m.CharacterPanel })),
+);
+const ParagraphPanel = lazy(() =>
+  import("./TypePanels").then((m) => ({ default: m.ParagraphPanel })),
+);
 import { onShowTab } from "./show-panel";
 import { useT } from "./i18n";
 import { N_ } from "@/i18n/editor/catalog";
@@ -13,9 +21,11 @@ const TABS = [
   { id: "history", label: N_("History"), Panel: HistoryPanel },
   { id: "swatches", label: N_("Swatches"), Panel: SwatchesPanel },
   { id: "actions", label: N_("Actions"), Panel: ActionsPanel },
+  { id: "character", label: N_("Character"), Panel: CharacterPanel },
+  { id: "paragraph", label: N_("Paragraph"), Panel: ParagraphPanel },
 ] as const;
 
-/** History, Swatches and Actions share one panel (ARIA tabs). */
+/** History, Swatches, Actions, Character and Paragraph share one panel (ARIA tabs). */
 export function PanelTabs() {
   const [active, setActive] = useState(0);
   const prefix = useId();
@@ -53,6 +63,8 @@ export function PanelTabs() {
         className={styles.panelTabs}
         role="tablist"
         aria-label={t("Panels")}
+        // Switching to Character or Paragraph while typing keeps the text editor open.
+        data-keep-text-edit
         onKeyDown={onKeyDown}
       >
         {TABS.map((tab, i) => (
@@ -85,7 +97,11 @@ export function PanelTabs() {
           className={styles.tabPanelBody}
           hidden={i !== active}
         >
-          {i === active && <Panel />}
+          {i === active && (
+            <Suspense fallback={null}>
+              <Panel />
+            </Suspense>
+          )}
         </div>
       ))}
     </section>

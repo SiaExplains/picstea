@@ -80,7 +80,12 @@ export function dragSnapping(
 
 export type TextEditRequest =
   | { readonly mode: "edit"; readonly layerId: string }
-  | { readonly mode: "new"; readonly at: Point };
+  | {
+      readonly mode: "new";
+      readonly at: Point;
+      /** Paragraph text box (Type tool drag); omitted for point text. */
+      readonly box?: { readonly width: number; readonly height: number };
+    };
 
 export interface Tool {
   readonly id: string;

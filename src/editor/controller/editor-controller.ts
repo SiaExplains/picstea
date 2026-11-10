@@ -19,6 +19,7 @@ import {
 } from "../selection/derive";
 import { AssetStore, type BitmapDecoder, type BitmapEncoder } from "../assets/asset-store";
 import {
+  addDocumentFonts,
   addLayer,
   addLayerMask,
   cropDocument,
@@ -122,7 +123,25 @@ import {
   type NewDocumentOptions,
   type TextStyle,
 } from "../core/document/factory";
-import type { Transform } from "../core/document/types";
+import type {
+  CharStyle,
+  ParagraphStyle,
+  TextLayer,
+  TextRun,
+  Transform,
+} from "../core/document/types";
+import {
+  applyCharStyle as styleRange,
+  applyParagraphStyle as styleParagraphs,
+  baseCharStyle,
+  isFontFamilyName,
+  normalizeParagraphs,
+  normalizeRuns,
+  paragraphIndexAt,
+  paragraphRanges,
+} from "../core/document/text";
+import { hardWrappedText } from "../core/document/text-layout";
+import { FontLibrary } from "../fonts/font-library";
 import { activeLayer, findLayer } from "../core/document/queries";
 import {
   boundsOf,
@@ -158,7 +177,6 @@ import {
   readProjectFile,
   writeProjectFile,
 } from "../formats/project/project-file";
-import { psdToDocument } from "../formats/psd/psd-convert";
 import { svgPixelSize } from "../formats/svg/svg-import";
 import { MAX_IMPORT_FILE_BYTES } from "../core/document/limits";
 import { baseName, importRasterFile } from "../formats/raster/raster-import";
@@ -226,8 +244,34 @@ export interface TextEditSession {
   /** null while creating a new text layer. */
   readonly layerId: string | null;
   readonly text: string;
+  /** Base character style and alignment. */
   readonly style: TextStyle;
+  readonly runs: readonly TextRun[];
+  readonly paragraphs: readonly ParagraphStyle[];
+  /** Paragraph text box, or null for point text. */
+  readonly box: { readonly width: number; readonly height: number } | null;
   readonly transform: Transform;
+  /** Characters selected in the editor; collapsed = the caret. */
+  readonly selection: { readonly start: number; readonly end: number };
+  /** Bumped when the draft's styles change from outside the editor (panels), to re-render it. */
+  readonly revision: number;
+}
+
+/** The draft as a text layer, for layout and sizing. */
+export function draftTextLayer(edit: TextEditSession): TextLayer {
+  return {
+    ...createTextLayer({
+      text: edit.text,
+      x: edit.transform.x,
+      y: edit.transform.y,
+      style: edit.style,
+      box: edit.box,
+      runs: edit.runs,
+      paragraphs: edit.paragraphs,
+    }),
+    id: edit.layerId ?? "text-draft",
+    transform: edit.transform,
+  };
 }
 
 export interface EditorControllerOptions {
@@ -252,6 +296,8 @@ export interface EditorControllerOptions {
   /** Idle time after the last edit before autosaving. 0 disables autosave. */
   autosaveDelayMs?: number;
   clock?: () => number;
+  /** Loads the fonts text uses (ADR-0040); none outside the browser. */
+  fonts?: FontLibrary;
 }
 
 export const DEFAULT_AUTOSAVE_DELAY_MS = 1500;
@@ -369,9 +415,16 @@ export class EditorController {
       view: () => this.view.get(),
       screenSize: () => this.viewportSize.get(),
     });
+    this.fonts = options.fonts ?? new FontLibrary(null);
+    // A font that finished loading changes how text measures and draws.
+    const unsubscribeFonts = this.fonts.version.subscribe(() => {
+      (this.sizer as { fontsChanged?: () => void }).fontsChanged?.();
+      this.tools.revision.update((n) => n + 1);
+    });
     let lastTool = this.store.getState().activeTool;
     let lastDocument = this.store.getState().activeDocumentId;
-    this.unsubscribe = this.store.subscribe(() => {
+    let lastFontDoc: EditorDocument | null = null;
+    const unsubscribeStore = this.store.subscribe(() => {
       const { activeTool, activeDocumentId } = this.store.getState();
       // Leaving the text tool or the document finishes the text being typed.
       if (activeTool !== lastTool || activeDocumentId !== lastDocument) {
@@ -381,7 +434,135 @@ export class EditorController {
       }
       this.initializeViewport();
       this.scheduleAutosave();
+      const doc = this.store.getSession()?.document ?? null;
+      if (doc && doc !== lastFontDoc) {
+        lastFontDoc = doc;
+        this.loadFonts(doc);
+      }
     });
+    this.unsubscribe = () => {
+      unsubscribeStore();
+      unsubscribeFonts();
+    };
+  }
+
+  // ---------------------------------------------------------------- fonts (ADR-0040)
+
+  readonly fonts: FontLibrary;
+  /** Families reported missing, so each is reported once per document. */
+  private readonly reportedMissingFonts = new Map<string, Set<string>>();
+
+  /** Fonts a PSD's PostScript names can match beyond system and bundled ones. */
+  private knownFonts(): { family: string; postscriptName?: string }[] {
+    const doc = this.store.getSession()?.document;
+    return [...(this.fonts.localFonts.get() ?? []), ...(doc?.fonts ?? [])];
+  }
+
+  /** Load the fonts `doc` uses; report families that are not available once. */
+  private loadFonts(doc: EditorDocument): void {
+    void this.fonts
+      .loadForDocument(doc, async (id) => this.assets.get(id)?.blob ?? null)
+      .then(({ missing }) => {
+        const reported = this.reportedMissingFonts.get(doc.id) ?? new Set<string>();
+        this.reportedMissingFonts.set(doc.id, reported);
+        const fresh = missing.filter((f) => !reported.has(f));
+        if (fresh.length === 0) return;
+        for (const f of fresh) reported.add(f);
+        this.notify(
+          "info",
+          msg(
+            "Some fonts are not available here and are shown with a fallback: {fonts}. Add them with Upload Font… or Use Fonts on This Computer… in the font list.",
+            { fonts: fresh.join(", ") },
+          ),
+        );
+      })
+      .catch((error: unknown) => this.logger.warn("fonts", describeError(error)));
+  }
+
+  /**
+   * Add an uploaded font file to the active document: checked by its first bytes and by the
+   * browser loading it, then stored with the project. Returns the family, or null on failure.
+   */
+  async uploadFont(file: File): Promise<string | null> {
+    const session = this.store.getSession();
+    if (!session) return null;
+    // Font-file parsing is only needed here; load it on demand.
+    const { familyFromFileName, MAX_FONT_FILE_BYTES, readFontNames, sniffFont, styleFromName } =
+      await import("../fonts/font-file");
+    if (file.size > MAX_FONT_FILE_BYTES) {
+      this.notify("error", "That font file is too large (10 MB at most).");
+      return null;
+    }
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    const mime = sniffFont(bytes);
+    if (!mime) {
+      this.notify("error", "That is not a font file Picstea can use (TTF, OTF, WOFF or WOFF2).");
+      return null;
+    }
+    if (!(await this.fonts.validate(bytes.slice().buffer))) {
+      this.notify("error", "This browser could not read that font file.");
+      return null;
+    }
+    const names = readFontNames(bytes);
+    const family = names?.family.trim() || familyFromFileName(file.name);
+    const style = styleFromName(names?.subfamily ?? file.name);
+    if (!isFontFamilyName(family)) {
+      this.notify("error", "That font's name can't be used. Rename the file and try again.");
+      return null;
+    }
+    const asset = this.assets.addFont(new Blob([bytes as BlobPart], { type: mime }), mime);
+    const result = this.store.dispatch(
+      addDocumentFonts(
+        [
+          {
+            family,
+            ...style,
+            source: "uploaded",
+            assetId: asset.id,
+            ...(names?.postscriptName ? { postscriptName: names.postscriptName } : {}),
+          },
+        ],
+        "Upload Font",
+      ),
+      session.document.id,
+    );
+    if (!result.ok) {
+      this.notify("error", result.error);
+      return null;
+    }
+    this.notify(
+      "info",
+      msg("Added the font {font}. It is saved with this project.", { font: family }),
+    );
+    return family;
+  }
+
+  /** Use a font installed on this computer: every style of the family is remembered. */
+  useLocalFont(family: string): void {
+    const session = this.store.getSession();
+    const faces = (this.fonts.localFonts.get() ?? []).filter((f) => f.family === family);
+    if (!session || faces.length === 0) return;
+    const missing = faces.filter(
+      (f) =>
+        !(session.document.fonts ?? []).some(
+          (d) => d.family === f.family && d.weight === f.weight && d.italic === f.italic,
+        ),
+    );
+    if (missing.length === 0) return;
+    const result = this.store.dispatch(
+      addDocumentFonts(
+        missing.map((f) => ({
+          family: f.family,
+          weight: f.weight,
+          italic: f.italic,
+          source: "local" as const,
+          postscriptName: f.postscriptName,
+        })),
+        "Use Font",
+      ),
+      session.document.id,
+    );
+    if (!result.ok) this.notify("error", result.error);
   }
 
   dispose(): void {
@@ -645,6 +826,11 @@ export class EditorController {
 
   transformSelection(): void {
     this.tools.beginSelectionTransform();
+  }
+
+  /** Edit → Free Transform: the selected pixels when there is a selection, else the layer. */
+  freeTransform(): void {
+    void this.tools.beginFreeTransform();
   }
 
   cropToSelection(): void {
@@ -966,7 +1152,8 @@ export class EditorController {
         }
         case "psd": {
           const { file: psd, warnings } = await this.jobs.run("psdRead", bytes, [bytes.buffer]);
-          const imported = psdToDocument(this, psd, name, warnings);
+          const { psdToDocument } = await import("../formats/psd/psd-convert");
+          const imported = psdToDocument(this, psd, name, warnings, this.knownFonts());
           this.reportWarnings("Placed with changes", imported.warnings);
           content = imported.document;
           break;
@@ -2019,7 +2206,14 @@ export class EditorController {
         }
         case "psd": {
           const { file: psd, warnings } = await this.jobs.run("psdRead", bytes, [bytes.buffer]);
-          const imported = psdToDocument(this, psd, baseName(filename), warnings);
+          const { psdToDocument } = await import("../formats/psd/psd-convert");
+          const imported = psdToDocument(
+            this,
+            psd,
+            baseName(filename),
+            warnings,
+            this.knownFonts(),
+          );
           this.openSession(imported.document, { transient });
           this.reportWarnings("Opened with changes", imported.warnings);
           this.enforcePixelBudget();
@@ -2487,38 +2681,177 @@ export class EditorController {
         documentId: session.document.id,
         layerId: layer.id,
         text: layer.text,
-        style: {
-          fontFamily: layer.fontFamily,
-          fontSize: layer.fontSize,
-          fontWeight: layer.fontWeight,
-          italic: layer.italic,
-          color: layer.color,
-          align: layer.align,
-          lineHeight: layer.lineHeight,
-          letterSpacing: layer.letterSpacing,
-        },
+        style: { ...baseCharStyle(layer), align: layer.align },
+        runs: layer.runs,
+        paragraphs: layer.paragraphs,
+        box: layer.box,
         transform: layer.transform,
+        selection: { start: layer.text.length, end: layer.text.length },
+        revision: 0,
       });
     } else {
+      const box = request.box
+        ? { width: Math.max(1, request.box.width), height: Math.max(1, request.box.height) }
+        : null;
       this.textEdit.set({
         documentId: session.document.id,
         layerId: null,
         text: "",
         style: { ...toolSettings.text, color: colors.foreground },
+        runs: [],
+        paragraphs: [],
+        box,
         transform: { x: request.at.x, y: request.at.y, scaleX: 1, scaleY: 1, rotation: 0 },
+        selection: { start: 0, end: 0 },
+        revision: 0,
       });
     }
     this.tools.revision.update((n) => n + 1);
   }
 
-  updateTextDraft(patch: { text?: string; style?: Partial<TextStyle> }): void {
+  /**
+   * Update the draft from the editor (typing, caret moves, resizing the box). Style changes from
+   * outside the editor go through `applyCharacterStyle` / `applyParagraphStyle` instead.
+   */
+  updateTextDraft(patch: {
+    text?: string;
+    style?: Partial<TextStyle>;
+    runs?: readonly TextRun[];
+    paragraphs?: readonly ParagraphStyle[];
+    box?: { width: number; height: number } | null;
+    selection?: { start: number; end: number };
+  }): void {
     const edit = this.textEdit.get();
     if (!edit) return;
     this.textEdit.set({
       ...edit,
       text: patch.text ?? edit.text,
       style: patch.style ? { ...edit.style, ...patch.style } : edit.style,
+      runs: patch.runs ?? edit.runs,
+      paragraphs: patch.paragraphs ?? edit.paragraphs,
+      box: patch.box !== undefined ? patch.box : edit.box,
+      selection: patch.selection ?? edit.selection,
+      // Options bar style changes re-render the editor too.
+      revision: patch.style ? edit.revision + 1 : edit.revision,
     });
+  }
+
+  /**
+   * Character panel: style the selected characters while editing (or all of them when nothing is
+   * selected), otherwise every selected text layer.
+   */
+  applyCharacterStyle(patch: Partial<CharStyle>): void {
+    const edit = this.textEdit.get();
+    if (edit) {
+      const { start, end } = edit.selection;
+      if (start !== end) {
+        const layer = draftTextLayer(edit);
+        this.textEdit.set({
+          ...edit,
+          runs: styleRange(layer, Math.min(start, end), Math.max(start, end), patch),
+          revision: edit.revision + 1,
+        });
+      } else {
+        const keys = Object.keys(patch);
+        this.textEdit.set({
+          ...edit,
+          style: { ...edit.style, ...patch },
+          runs: edit.runs.map((r) => ({
+            ...r,
+            style: Object.fromEntries(
+              Object.entries(r.style).filter(([k]) => !keys.includes(k)),
+            ) as Partial<CharStyle>,
+          })),
+          revision: edit.revision + 1,
+        });
+      }
+      return;
+    }
+    for (const layer of this.selectedTextLayers()) {
+      const result = this.store.dispatch(updateTextLayer(layer.id, patch, "Character"));
+      if (!result.ok) {
+        this.notify("error", result.error);
+        return;
+      }
+    }
+  }
+
+  /** Paragraph panel: the paragraphs under the caret or selection, or whole selected layers. */
+  applyParagraphStyle(patch: Partial<ParagraphStyle>): void {
+    const edit = this.textEdit.get();
+    if (edit) {
+      const { start, end } = edit.selection;
+      const first = paragraphIndexAt(edit.text, Math.min(start, end));
+      const last = paragraphIndexAt(edit.text, Math.max(start, end));
+      const draft = draftTextLayer(edit);
+      this.textEdit.set({
+        ...edit,
+        paragraphs: styleParagraphs(draft, first, last, patch),
+        revision: edit.revision + 1,
+      });
+      return;
+    }
+    for (const layer of this.selectedTextLayers()) {
+      const count = paragraphRanges(layer.text).length;
+      const result = this.store.dispatch(
+        updateTextLayer(
+          layer.id,
+          {
+            paragraphs: styleParagraphs(layer, 0, count - 1, patch),
+            ...(patch.align ? { align: patch.align } : {}),
+          },
+          "Paragraph",
+        ),
+      );
+      if (!result.ok) {
+        this.notify("error", result.error);
+        return;
+      }
+    }
+  }
+
+  /** Text layers among the selected layers (the active one first). */
+  selectedTextLayers(): TextLayer[] {
+    const session = this.store.getSession();
+    if (!session) return [];
+    const doc = session.document;
+    const out: TextLayer[] = [];
+    for (const id of selectedLayerIds(session)) {
+      const layer = findLayerDeep(doc.layers, id);
+      if (layer?.kind === "text" && !layer.locked) out.push(layer);
+    }
+    return out;
+  }
+
+  /**
+   * Layer → Type → Convert to Paragraph Text / Point Text. Paragraph text gets a box the size of
+   * its current lines; point text keeps the lines as they wrapped.
+   */
+  convertText(to: "paragraph" | "point"): void {
+    if (this.textEdit.get()) this.commitTextEdit();
+    const layer = this.selectedTextLayers()[0];
+    if (!layer) return;
+    if (to === "paragraph" && !layer.box) {
+      const { width, height } = this.sizer.measureText(layer);
+      const result = this.store.dispatch(
+        updateTextLayer(
+          layer.id,
+          { box: { width: Math.max(1, Math.ceil(width)), height: Math.max(1, Math.ceil(height)) } },
+          "Convert to Paragraph Text",
+        ),
+      );
+      if (!result.ok) this.notify("error", result.error);
+    } else if (to === "point" && layer.box) {
+      const layout = this.sizer.layoutText(layer);
+      if (layout.overflow) {
+        this.notify("info", "Text that did not fit the box was kept and is now visible.");
+      }
+      const text = hardWrappedText(layout, layer.text);
+      const result = this.store.dispatch(
+        updateTextLayer(layer.id, { text, box: null }, "Convert to Point Text"),
+      );
+      if (!result.ok) this.notify("error", result.error);
+    }
   }
 
   /** Apply the typed text: create, update or (if emptied) delete the text layer. */
@@ -2536,13 +2869,26 @@ export class EditorController {
         x: edit.transform.x,
         y: edit.transform.y,
         style: edit.style,
+        box: edit.box,
+        runs: normalizeRuns(edit.runs, baseCharStyle(edit.style), text.length),
+        paragraphs: normalizeParagraphs(edit.paragraphs, text, edit.style.align),
       });
       result = this.store.dispatch(addLayer(layer, "New Text"), edit.documentId);
     } else if (!text) {
       result = this.store.dispatch(deleteLayer(edit.layerId), edit.documentId);
     } else {
       result = this.store.dispatch(
-        updateTextLayer(edit.layerId, { text, ...edit.style }, "Edit Text"),
+        updateTextLayer(
+          edit.layerId,
+          {
+            text,
+            ...edit.style,
+            runs: edit.runs,
+            paragraphs: edit.paragraphs,
+            box: edit.box,
+          },
+          "Edit Text",
+        ),
         edit.documentId,
       );
       this.store.sealHistory(edit.documentId);

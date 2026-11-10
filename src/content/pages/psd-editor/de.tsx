@@ -44,8 +44,9 @@ const copy: PageCopy = {
         <li>Pixelebenen, Gruppen, Ebenennamen, Deckkraft, Sichtbarkeit und Füllmethoden.</li>
         <li>Ebenenmasken, auch auf Gruppen; Vektormasken und Schnittmasken.</li>
         <li>
-          Bearbeitbare Textebenen (erster Stil jeder Ebene; Schriften werden gängigen Schriften
-          zugeordnet).
+          Bearbeitbare Textebenen, auch Absatztext in Rahmen und gemischte Stile. Schriften werden
+          Systemschriften, mitgelieferten Google Fonts oder deinen eigenen Schriften zugeordnet;
+          beim PSD-Export bleibt Text bearbeitbar.
         </li>
         <li>
           Einstellungsebenen: Tonwertkorrektur, Gradationskurven, Helligkeit/Kontrast,

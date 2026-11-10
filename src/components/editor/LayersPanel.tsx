@@ -529,6 +529,7 @@ export function LayersPanel({ actions }: { actions: Record<UiActionId, UiAction>
     item("layer.toSmartObject"),
     ...(active?.kind === "smart" ? [item("layer.editContents")] : []),
     { kind: "separator" },
+    ...(active?.kind === "text" ? [item(active.box ? "type.toPoint" : "type.toParagraph")] : []),
     item("layer.rasterize"),
     item("layer.rasterizeStyle"),
     { kind: "separator" },
