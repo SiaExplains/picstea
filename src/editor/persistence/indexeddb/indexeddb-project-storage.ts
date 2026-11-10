@@ -1,4 +1,4 @@
-import type { RasterMime } from "../../assets/asset-store";
+import type { AssetMime } from "../../assets/asset-store";
 import { referencedAssetIds } from "../../core/document/queries";
 import { deserializeProject, serializeDocument } from "../../serialization/serialization";
 import {
@@ -38,7 +38,7 @@ interface ProjectRecord {
 interface AssetRow {
   projectId: string;
   assetId: string;
-  mime: RasterMime;
+  mime: AssetMime;
   width: number;
   height: number;
   data: ArrayBuffer;

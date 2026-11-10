@@ -73,7 +73,7 @@ export const EXPORT_FORMATS: Record<ExportFormat, ExportFormatInfo> = {
     extension: "psd",
     lossy: false,
     alpha: true,
-    note: "Layers, groups, masks, opacity and blend modes. Shapes and text become pixels.",
+    note: "Layers, groups, masks, opacity and blend modes; text stays editable. Shapes become pixels.",
   },
 };
 

@@ -3,7 +3,7 @@
 import { useState, type KeyboardEvent } from "react";
 import { setLayerTransform, updateShapeLayer, updateTextLayer } from "@/editor/core/commands";
 import type { EditorDocument, Layer, ShapeLayer, TextLayer } from "@/editor/core/document/types";
-import { FONT_FAMILIES, type FontFamily } from "@/editor/core/document/types";
+import { LazyFontPicker as FontPicker } from "./LazyFontPicker";
 import { layerLocalSize } from "@/editor/core/geometry/layer-geometry";
 import {
   setRotationAboutCenter,
@@ -132,7 +132,12 @@ export function TransformSection({
 export function TextSection({ layer }: { layer: TextLayer }) {
   const controller = useController();
   const t = useT();
-  const alignLabels = { left: t("Left"), center: t("Center"), right: t("Right") };
+  const alignLabels = {
+    left: t("Left"),
+    center: t("Center"),
+    right: t("Right"),
+    justify: t("Justify"),
+  };
   const update = (patch: Parameters<typeof updateTextLayer>[1]) =>
     controller.execute(updateTextLayer(layer.id, patch));
   return (
@@ -152,18 +157,12 @@ export function TextSection({ layer }: { layer: TextLayer }) {
         <label className={styles.fieldLabel} htmlFor="prop-font">
           {t("Font")}
         </label>
-        <select
+        <FontPicker
           id="prop-font"
-          className={styles.select}
+          label={t("Font")}
           value={layer.fontFamily}
-          onChange={(e) => update({ fontFamily: e.target.value as FontFamily })}
-        >
-          {FONT_FAMILIES.map((f) => (
-            <option key={f} value={f}>
-              {f === "system-ui" ? t("System") : f}
-            </option>
-          ))}
-        </select>
+          onChange={(fontFamily) => update({ fontFamily })}
+        />
       </div>
       <div className={styles.fieldPair}>
         <CommitNumber
@@ -218,7 +217,7 @@ export function TextSection({ layer }: { layer: TextLayer }) {
           </button>
         </div>
         <div className={styles.segmented} role="group" aria-label={t("Text alignment")}>
-          {(["left", "center", "right"] as const).map((align) => (
+          {(["left", "center", "right", "justify"] as const).map((align) => (
             <button
               key={align}
               type="button"
@@ -230,6 +229,40 @@ export function TextSection({ layer }: { layer: TextLayer }) {
           ))}
         </div>
       </div>
+      {layer.box ? (
+        <div className={styles.fieldPair} style={{ marginTop: 8 }}>
+          <CommitNumber
+            label={t("Box W")}
+            value={layer.box.width}
+            min={1}
+            max={1_000_000}
+            onCommit={(width) => update({ box: { ...layer.box!, width } })}
+          />
+          <CommitNumber
+            label={t("Box H")}
+            value={layer.box.height}
+            min={1}
+            max={1_000_000}
+            onCommit={(height) => update({ box: { ...layer.box!, height } })}
+          />
+          <button
+            type="button"
+            className={styles.linkButton}
+            onClick={() => controller.convertText("point")}
+          >
+            {t("Convert to Point Text")}
+          </button>
+        </div>
+      ) : (
+        <button
+          type="button"
+          className={styles.linkButton}
+          style={{ marginTop: 8 }}
+          onClick={() => controller.convertText("paragraph")}
+        >
+          {t("Convert to Paragraph Text")}
+        </button>
+      )}
     </div>
   );
 }

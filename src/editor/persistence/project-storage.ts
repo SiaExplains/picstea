@@ -1,4 +1,4 @@
-import type { RasterMime } from "../assets/asset-store";
+import type { AssetMime } from "../assets/asset-store";
 import { countLayers } from "../core/document/tree";
 import type { EditorDocument } from "../core/document/types";
 
@@ -12,7 +12,7 @@ import type { EditorDocument } from "../core/document/types";
 
 export interface StoredAsset {
   readonly id: string;
-  readonly mime: RasterMime;
+  readonly mime: AssetMime;
   readonly width: number;
   readonly height: number;
   readonly blob: Blob;

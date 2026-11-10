@@ -110,6 +110,7 @@ const MENUS: readonly Submenu[] = [
     "layer.clip",
     "-",
     sub(N_("Smart Object"), ["layer.toSmartObject", "layer.editContents"]),
+    sub(N_("Type"), ["type.toParagraph", "type.toPoint"]),
     "layer.rasterize",
     "-",
     "layer.group",
@@ -192,6 +193,8 @@ const MENUS: readonly Submenu[] = [
     "window.history",
     "window.swatches",
     "window.actions",
+    "window.character",
+    "window.paragraph",
   ]),
   sub(N_("Help"), [
     "help.welcome",

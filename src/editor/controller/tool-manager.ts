@@ -20,6 +20,9 @@ import { EyedropperTool } from "../tools/eyedropper/eyedropper-tool";
 import { GradientTool } from "../tools/gradient/gradient-tool";
 import { LassoTool, MagicWandTool, MarqueeTool } from "../tools/selection/selection-tools";
 import { TransformSelectionTool } from "../tools/selection/transform-selection-tool";
+import type { PixelTransformTool } from "../tools/move/pixel-transform-tool";
+import { movablePixels } from "../tools/move/move-tool";
+import { activeLayer } from "../core/document/queries";
 import { CropTool } from "../tools/crop/crop-tool";
 import { GuideDrag } from "../tools/guide/guide-drag";
 import { MoveTool } from "../tools/move/move-tool";
@@ -56,6 +59,9 @@ export class ToolManager {
   readonly pen = new PenTool();
   /** Select → Transform Selection: overrides the active tool until applied or cancelled. */
   readonly selectionTransform = new TransformSelectionTool();
+  /** Free Transform of selected pixels: overrides the active tool until applied or cancelled. */
+  /** Loaded the first time it is used (most sessions never transform selected pixels). */
+  private pixelTransform: PixelTransformTool | null = null;
   /** Moving guides with the Move tool and creating them from the rulers. */
   readonly guides = new GuideDrag();
   private readonly tools: Partial<Record<ToolId, Tool>>;
@@ -127,9 +133,17 @@ export class ToolManager {
         this.active()?.cancel(this.context);
         this.guides.cancel(this.context);
         if (this.selectionTransform.active) this.selectionTransform.end(this.context);
+        if (this.pixelTransform?.active) this.pixelTransform.end(this.context);
         this.activeId = next.activeTool;
         this.documentId = next.activeDocumentId;
         this.context.invalidate();
+      }
+      // An undo or any other edit while transforming pixels would make the lifted pixels stale.
+      if (
+        this.pixelTransform?.active &&
+        this.pixelTransform.isStale(host.store.getSession()?.document)
+      ) {
+        this.pixelTransform.end(this.context);
       }
     });
   }
@@ -140,6 +154,7 @@ export class ToolManager {
 
   private active(): Tool | undefined {
     if (this.selectionTransform.active) return this.selectionTransform;
+    if (this.pixelTransform?.active) return this.pixelTransform;
     return this.tools[this.host.store.getState().activeTool];
   }
 
@@ -149,6 +164,32 @@ export class ToolManager {
       this.host.notify(
         "info",
         "Drag the handles to transform the selection. Enter applies, Esc cancels.",
+      );
+    }
+  }
+
+  /**
+   * Free Transform (Mod+T): with a selection on pixels (or a mask being edited) it transforms just
+   * the selected pixels; otherwise it switches to the Move tool, whose handles transform layers.
+   */
+  async beginFreeTransform(): Promise<void> {
+    this.host.store.setActiveTool("move");
+    const session = this.host.store.getSession();
+    const layer = session ? activeLayer(session.document) : undefined;
+    const onPixels =
+      !!session?.document.selection?.bounds &&
+      !!layer?.visible &&
+      !!movablePixels(layer, this.host.store.getState().editTarget);
+    if (!onPixels) return;
+    if (!this.pixelTransform) {
+      const { PixelTransformTool } = await import("../tools/move/pixel-transform-tool");
+      this.pixelTransform ??= new PixelTransformTool();
+    }
+    this.active()?.cancel(this.context);
+    if (this.pixelTransform.begin(this.context)) {
+      this.host.notify(
+        "info",
+        "Drag the handles to transform the selected pixels. Enter applies, Esc cancels.",
       );
     }
   }
@@ -183,6 +224,7 @@ export class ToolManager {
   private guideAt(pointer: ToolPointer | null): Guide | null {
     const view = this.host.view();
     if (!pointer || !view.guides || view.lockGuides || this.selectionTransform.active) return null;
+    if (this.pixelTransform?.active) return null;
     if (this.host.store.getState().activeTool !== "move") return null;
     return this.guides.hitTest(this.context, pointer.screen);
   }

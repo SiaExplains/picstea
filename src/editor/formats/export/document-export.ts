@@ -1,7 +1,6 @@
 import type { EditorDocument } from "../../core/document/types";
 import type { PixelEnv } from "../../pixels/layer-pixels";
 import { rasterizeToDataUrl, renderBitmap } from "../layer-render";
-import { documentToPsdDraft } from "../psd/psd-convert";
 import { draftBitmaps } from "../psd/psd-draft";
 import { mainThreadRunner, type JobRunner } from "../../workers/job-runner";
 import { buildSvg } from "../svg/svg-export";
@@ -63,6 +62,8 @@ export async function exportAs(
     }
     case "psd": {
       // Layers are drawn here (GPU); reading pixels back and encoding run in the worker.
+      // The PSD writer is loaded only when a PSD is exported.
+      const { documentToPsdDraft } = await import("../psd/psd-convert");
       const { draft, warnings } = await documentToPsdDraft(env, doc);
       const bytes = await jobs.run("psdEncode", draft, draftBitmaps(draft));
       return { blob: bytesBlob(bytes, mime), warnings };

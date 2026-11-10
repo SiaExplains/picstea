@@ -2,6 +2,7 @@ import { flattenTopFirst, walkLayers } from "../document/tree";
 import type { EditorDocument, GroupLayer, Layer, TextLayer } from "../document/types";
 import type { Point, Size } from "../viewport/viewport";
 import { applyMatrix, fromTransform, invertMatrix } from "./matrix";
+import type { TextLayout } from "../document/text-layout";
 
 /**
  * Measures content whose size depends on the browser (text). Injected so geometry stays pure;
@@ -9,6 +10,8 @@ import { applyMatrix, fromTransform, invertMatrix } from "./matrix";
  */
 export interface ContentSizer {
   measureText(layer: TextLayer): Size;
+  /** Where every line and fragment of a text layer goes (ADR-0041). */
+  layoutText(layer: TextLayer): TextLayout;
 }
 
 export interface Rect {

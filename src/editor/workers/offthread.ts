@@ -1,6 +1,6 @@
 import type { AssetStore } from "../assets/asset-store";
 import { createId } from "../core/ids";
-import { referencedAssetIds } from "../core/document/queries";
+import { imageAssetIds } from "../core/document/queries";
 import type { EditorDocument, Layer } from "../core/document/types";
 import { FormatError } from "../formats/binary/bytes";
 import { exportAs, type ExportedFile, type ExportRequest } from "../formats/export/document-export";
@@ -41,7 +41,7 @@ export async function collectBitmaps(
 ): Promise<Record<string, ImageBitmap> | null> {
   const out: Record<string, ImageBitmap> = {};
   try {
-    for (const id of referencedAssetIds(doc as EditorDocument)) {
+    for (const id of imageAssetIds(doc)) {
       const drawable = assets.getBitmap(id);
       if (!drawable) {
         closeAll(out);
@@ -89,10 +89,15 @@ export async function exportFile(
   jobs: JobRunner,
 ): Promise<ExportedFile> {
   const result = await offThread(jobs, env.assets, doc, async (bitmaps) => {
+    const fontFiles: Record<string, ArrayBuffer> = {};
+    for (const font of doc.fonts ?? []) {
+      const blob = font.assetId ? env.assets.get(font.assetId)?.blob : null;
+      if (blob && font.assetId) fontFiles[font.assetId] = await blob.arrayBuffer();
+    }
     const out = await jobs.run(
       "exportDocument",
-      { doc: forDrawing(doc), request, bitmaps },
-      Object.values(bitmaps),
+      { doc: forDrawing(doc), request, bitmaps, fontFiles },
+      [...Object.values(bitmaps), ...Object.values(fontFiles)],
     );
     return { blob: new Blob([out.bytes as BlobPart], { type: out.mime }), warnings: out.warnings };
   });

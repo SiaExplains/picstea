@@ -62,7 +62,9 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 | Brush (size, hardness, opacity) | ✅ | Pen pressure 📋 |
 | Eraser | ✅ | |
 | Shapes: rectangle (rounded), ellipse, line | ✅ | Polygon 📋 |
-| Text: on-canvas editing, font, size, bold/italic, colour, align, line height, spacing | ✅ | Wrapping/rich text 📋 |
+| Text: on-canvas editing, font, size, bold/italic, colour, align, line height, spacing | ✅ | |
+| Paragraph text (box, wrapping, reflow), mixed styles, Character and Paragraph panels, point ↔ paragraph | ✅ | ADR-0041; schema v9. Text on a path, vertical text, hyphenation 📋 |
+| Fonts: bundled Google Fonts (27, self-hosted), local fonts (Local Font Access), uploaded TTF/OTF/WOFF/WOFF2 | ✅ | ADR-0040; local fonts in Chromium only |
 | Export PNG / JPEG / WebP | ✅ | File System Access save dialog where supported |
 | Foreground/background colours | ✅ | Eyedropper ✅ (Gate 5), colour picker and swatches ✅ (9e) |
 
@@ -88,7 +90,7 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 | Painting, fill and gradient limited to the selection | ✅ | |
 | Clear, Fill, Cut/Copy/Paste, Layer via Copy, Mask from Selection, Crop to Selection | ✅ | Copy also goes to the system clipboard where allowed |
 | Pencil, Paint Bucket, Gradient (linear/radial), Eyedropper | ✅ | Gradient presets/editor 📋 |
-| Moving selected pixels with the Move tool | ✅ | Alt-drag moves a copy; arrows nudge. Pixels moved past a pixel layer's own edge are clipped until layers can grow |
+| Moving selected pixels with the Move tool, on pixel layers and masks; Free Transform (Mod+T) of selected pixels | ✅ | Alt-drag moves a copy; arrows nudge. Pixels moved past a pixel layer's or mask's own edge are clipped until layers can grow |
 | Quick mask, refine edge, saving selections, clipping masks, polygon shape | 📋 | |
 
 ## Gate 6 — Formats
@@ -140,7 +142,7 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 | Legal pages: Privacy, Cookies, Terms, Imprint, Sponsorship | 🟡 | Drafts with [TO COMPLETE] fields; need operator details and legal review |
 | Google-certified CMP (IAB TCF) for personalised EU ads | ✅ | `NEXT_PUBLIC_ADSENSE_CMP=google` (ADR-0024); default stays own banner |
 | Editor side column: own sponsorship, Privacy settings, website links (≥ 1280 px) | ✅ | ADR-0025; Google ads in the editor 📋 (needs a new ADR) |
-| Layers right-click menu (styles, select pixels, merge, flatten, rasterize style, colour labels) | ✅ | ADR-0026; Duplicate Into, Convert to Shape/Point Text 📋 |
+| Layers right-click menu (styles, select pixels, merge, flatten, rasterize style, colour labels) | ✅ | ADR-0026; Convert to Paragraph/Point Text ✅ (ADR-0041); Duplicate Into, Convert to Shape 📋 |
 | Menu bar with submenus (keyboard and pointer), Window menu | ✅ | ADR-0032 |
 | Copy Merged, Edit → Stroke…, Select → Grow / Similar, Layer → Colour Label | ✅ | ADR-0032 |
 | About page (`/about`) | ✅ | ADR-0032 |
@@ -233,10 +235,11 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 | Import: adjustment layers (9 kinds) | ✅ | Vibrance, Color Balance, Photo Filter, Channel Mixer, Gradient Map ✅ (9h); Selective Color, Color Lookup 📋 |
 | Import: layer styles → drop shadow, outer glow, stroke, colour overlay | ✅ | Bevel, inner shadow, gradient overlay ✅ (9h); every effect, copy and option, Fill and global light ✅ (ADR-0030); Photoshop pattern pixels replaced by the closest built-in pattern |
 | Import: vector masks, shape layers (fill + stroke), solid fills | ✅ | Inverted vector masks lose inversion |
-| Import: editable text (first style run, mapped fonts) | ✅ | Mixed styles, warps, paragraph boxes simplified |
+| Import: editable text with every style run, paragraph styles and paragraph boxes; fonts matched to system, bundled, local and uploaded fonts | ✅ | ADR-0041; warps dropped with a notice |
 | Import: smart objects with embedded PNG/JPEG/WebP/GIF/PSD | ✅ | Warped, perspective, smart-filtered and linked ones open as pixels |
 | Export: adjustment layers (8 kinds) and vector masks | ✅ | Temperature/Tint, Black & White in the flattened image only |
-| Export: text, shapes, smart objects, effects as editable Photoshop data | 📋 | Rasterised with a notice |
+| Export: text as editable Photoshop text (TySh/EngineData) | ✅ | ADR-0041; text with layer effects is rasterised |
+| Export: shapes, smart objects, effects as editable Photoshop data | 📋 | Rasterised with a notice |
 
 ### 9e
 
@@ -321,7 +324,6 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 - Pixel layers have a fixed size. Painting outside a layer's box is clipped.
 - Each brush stroke keeps a full-layer copy for undo. Above ~768 MB the oldest undo steps are dropped (ADR-0007).
 - Scaling a shape also scales its stroke width.
-- Text is point text (manual line breaks, no wrapping). Fonts are limited to common system fonts.
 - Masks follow moves but not scale/rotate of their layer.
 - Editing a layer that has several adjustment layers or layer styles above it can pause briefly (about 0.1 s on a 24 MP image) when the edit starts, while the canvas redraws them.
 - Starting a retouching stroke on a very large layer (20+ MP) takes a noticeable moment while the layer is read.

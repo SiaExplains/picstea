@@ -29,10 +29,12 @@ export function article(post: {
   path: string;
   published: string;
   updated?: string;
+  image?: string;
 }) {
   return {
     "@type": "Article",
     headline: post.title,
+    ...(post.image ? { image: absoluteUrl(post.image) } : {}),
     description: post.description,
     url: absoluteUrl(post.path),
     mainEntityOfPage: absoluteUrl(post.path),

@@ -429,3 +429,31 @@
   flex-wrap: wrap;
   margin-bottom: 24px;
 }
+
+/* Images in blog posts */
+.blogFigure {
+  margin: 1.5rem 0;
+}
+
+.blogFigure img {
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+}
+
+.blogFigure figcaption {
+  margin-top: 0.4rem;
+  color: var(--muted, #6b6f76);
+  font-size: 0.9rem;
+}
+
+.blogFigurePlaceholder {
+  display: grid;
+  place-items: center;
+  min-height: 220px;
+  padding: 1rem;
+  text-align: center;
+  border: 2px dashed currentColor;
+  border-radius: 8px;
+  opacity: 0.6;
+}

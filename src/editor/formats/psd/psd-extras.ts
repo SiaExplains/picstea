@@ -13,13 +13,13 @@ import {
   type PatternId,
 } from "../../core/effects/model";
 import { EFFECT_LIMITS, parseEffect } from "../../core/effects/parse";
-import {
-  FONT_FAMILIES,
-  type Adjustment,
-  type BlendMode,
-  type FontFamily,
-  type GradientStop,
-  type TextAlign,
+import type {
+  Adjustment,
+  BlendMode,
+  CharStyle,
+  GradientStop,
+  ParagraphStyle,
+  TextAlign,
 } from "../../core/document/types";
 import { ByteReader } from "../binary/bytes";
 import {
@@ -60,16 +60,25 @@ export interface PsdExtras {
   readonly placed?: PsdPlaced;
 }
 
+/** Character style as read from a PSD: the font is still Photoshop's PostScript name. */
+export type PsdCharStyle = Omit<CharStyle, "fontFamily"> & { readonly font: string };
+
+/** An editable Photoshop text layer (ADR-0017, ADR-0041). */
 export interface PsdText {
   readonly text: string;
-  readonly fontSize: number;
-  readonly color: string;
-  readonly fontFamily: FontFamily;
-  readonly bold: boolean;
-  readonly italic: boolean;
-  readonly align: TextAlign;
-  readonly lineHeight: number;
-  readonly letterSpacing: number;
+  /** Style of every character range, covering the whole text. */
+  readonly runs: readonly { start: number; end: number; style: PsdCharStyle }[];
+  /** One per paragraph. */
+  readonly paragraphs: readonly ParagraphStyle[];
+  /** Paragraph text box in document pixels, relative to `origin`; absent for point text. */
+  readonly box?: {
+    readonly left: number;
+    readonly top: number;
+    readonly width: number;
+    readonly height: number;
+  };
+  /** The text's anchor (TySh translation) in document pixels. */
+  readonly origin: { readonly x: number; readonly y: number };
 }
 
 export interface PsdPlaced {
@@ -492,24 +501,30 @@ function decodeEffects(
   return Object.keys(out).length ? out : undefined;
 }
 
-const FONT_MATCHES: [RegExp, FontFamily][] = [
-  [/arial/i, "Arial"],
-  [/helvetica/i, "Helvetica"],
-  [/verdana/i, "Verdana"],
-  [/trebuchet/i, "Trebuchet MS"],
-  [/georgia/i, "Georgia"],
-  [/times/i, "Times New Roman"],
-  [/courier/i, "Courier New"],
-  [/impact/i, "Impact"],
-];
-
-export function matchFont(postScriptName: string): FontFamily {
-  for (const [re, family] of FONT_MATCHES) if (re.test(postScriptName)) return family;
-  return FONT_FAMILIES[0];
-}
-
 const num = (v: EngineValue | undefined): number | undefined =>
   typeof v === "number" && Number.isFinite(v) ? v : undefined;
+
+const JUSTIFICATION: readonly TextAlign[] = [
+  "left",
+  "right",
+  "center",
+  "justify",
+  "justify",
+  "justify",
+  "justify",
+];
+
+/** Engine data run lengths, clamped to the text: `[start, end)` per run. */
+function runRanges(lengths: EngineValue | undefined, count: number, total: number) {
+  const out: { start: number; end: number }[] = [];
+  let at = 0;
+  for (let i = 0; i < count; i++) {
+    const length = Array.isArray(lengths) ? (num(lengths[i]) ?? 0) : i === 0 ? total : 0;
+    out.push({ start: Math.min(at, total), end: Math.min(at + Math.max(0, length), total) });
+    at += Math.max(0, length);
+  }
+  return out;
+}
 
 function decodeText(body: Uint8Array, notes: Set<string>): PsdText | undefined {
   const r = new ByteReader(body);
@@ -518,8 +533,8 @@ function decodeText(body: Uint8Array, notes: Set<string>): PsdText | undefined {
   const xy = r.f64();
   const yx = r.f64();
   const yy = r.f64();
-  r.f64();
-  r.f64();
+  const tx = r.f64();
+  const ty = r.f64();
   r.u16(); // text version
   const d = readVersionedDescriptor(r);
   const raw = getString(d, "Txt ");
@@ -528,31 +543,33 @@ function decodeText(body: Uint8Array, notes: Set<string>): PsdText | undefined {
   const text = raw.replace(/\r\n?/g, "\n").replace(/\n$/, "").slice(0, 10_000);
   const rawScale = Math.hypot(yx, yy) || Math.hypot(xx, xy);
   const scale = Number.isFinite(rawScale) && rawScale > 0 && rawScale < 1000 ? rawScale : 1;
-  let fontSize = 12;
-  let color = "#000000";
-  let fontName = "";
-  let bold = false;
-  let italic = false;
-  let align: TextAlign = "left";
-  let lineHeight = 1.2;
-  let letterSpacing = 0;
-  if (engine) {
-    const root = parseEngineData(engine);
-    const runs = enginePath(root, "EngineDict", "StyleRun", "RunArray");
-    if (Array.isArray(runs) && runs.length > 1)
-      notes.add("Text with mixed styles was simplified to its first style.");
-    const style = enginePath(
-      root,
-      "EngineDict",
-      "StyleRun",
-      "RunArray",
-      0,
-      "StyleSheet",
-      "StyleSheetData",
-    );
-    const size = num(enginePath(style ?? null, "FontSize"));
-    if (size) fontSize = size;
-    const fill = enginePath(style ?? null, "FillColor", "Values");
+  const origin = {
+    x: Number.isFinite(tx) ? clamp(tx, -1e6, 1e6) : 0,
+    y: Number.isFinite(ty) ? clamp(ty, -1e6, 1e6) : 0,
+  };
+  const root = engine ? parseEngineData(engine) : null;
+
+  // Defaults: the run's sheet, then the document's normal sheet, then Photoshop's defaults.
+  const resources = root ? (enginePath(root, "ResourceDict") ?? null) : null;
+  const normalIndex = num(enginePath(resources, "TheNormalStyleSheet")) ?? 0;
+  const normalStyle = enginePath(resources, "StyleSheetSet", normalIndex, "StyleSheetData") ?? null;
+  const fontNames: string[] = [];
+  const fontSet = enginePath(resources, "FontSet");
+  if (Array.isArray(fontSet)) {
+    for (const f of fontSet) {
+      const name = enginePath(f, "Name");
+      fontNames.push(typeof name === "string" ? name : "");
+    }
+  }
+  const readStyle = (sheet: EngineValue | null): PsdCharStyle => {
+    const get = (key: string) => {
+      const own = enginePath(sheet, key);
+      return own !== undefined ? own : enginePath(normalStyle, key);
+    };
+    const fontSize = clamp((num(get("FontSize")) ?? 12) * scale, 1, 2000);
+    const font = fontNames[num(get("Font")) ?? 0] ?? "";
+    const fill = enginePath(get("FillColor") ?? null, "Values");
+    let color = "#000000";
     if (Array.isArray(fill) && fill.length === 4) {
       const hex = (v: EngineValue) =>
         Math.round(clamp((num(v) ?? 0) * 255, 0, 255))
@@ -560,45 +577,112 @@ function decodeText(body: Uint8Array, notes: Set<string>): PsdText | undefined {
           .padStart(2, "0");
       color = `#${hex(fill[1])}${hex(fill[2])}${hex(fill[3])}`;
     }
-    const fontIndex = num(enginePath(style ?? null, "Font")) ?? 0;
-    const name = enginePath(root, "ResourceDict", "FontSet", fontIndex, "Name");
-    if (typeof name === "string") fontName = name;
-    bold = enginePath(style ?? null, "FauxBold") === true || /bold|black|heavy/i.test(fontName);
-    italic = enginePath(style ?? null, "FauxItalic") === true || /italic|oblique/i.test(fontName);
-    const leading = num(enginePath(style ?? null, "Leading"));
-    if (enginePath(style ?? null, "AutoLeading") === false && leading)
-      lineHeight = leading / fontSize;
-    const tracking = num(enginePath(style ?? null, "Tracking"));
-    if (tracking) letterSpacing = (tracking / 1000) * fontSize;
-    const justification = num(
-      enginePath(
-        root,
-        "EngineDict",
-        "ParagraphRun",
-        "RunArray",
-        0,
-        "ParagraphSheet",
-        "Properties",
-        "Justification",
-      ),
-    );
-    align = justification === 1 ? "right" : justification === 2 ? "center" : "left";
+    const leading = num(get("Leading"));
+    const autoLeading = get("AutoLeading") !== false || !leading;
+    const tracking = num(get("Tracking")) ?? 0;
+    const caps = num(get("FontCaps")) ?? 0;
+    return {
+      font,
+      fontSize,
+      fontWeight: get("FauxBold") === true || /bold|black|heavy/i.test(font) ? 700 : 400,
+      italic: get("FauxItalic") === true || /italic|oblique/i.test(font),
+      color,
+      lineHeight: clamp(autoLeading ? 1.2 : (leading! * scale) / fontSize, 0.5, 5),
+      letterSpacing: clamp((tracking / 1000) * fontSize, -100, 500),
+      baselineShift: clamp((num(get("BaselineShift")) ?? 0) * scale, -1000, 1000),
+      caps: caps === 1 ? "small-caps" : caps === 2 ? "all-caps" : "normal",
+      kerning: get("AutoKerning") !== false,
+    };
+  };
+
+  const styleRuns = enginePath(root, "EngineDict", "StyleRun", "RunArray");
+  const styleCount = Array.isArray(styleRuns) ? Math.max(1, styleRuns.length) : 1;
+  const runs = runRanges(
+    enginePath(root, "EngineDict", "StyleRun", "RunLengthArray"),
+    styleCount,
+    text.length,
+  ).map((range, i) => ({
+    ...range,
+    style: readStyle(
+      enginePath(root, "EngineDict", "StyleRun", "RunArray", i, "StyleSheet", "StyleSheetData") ??
+        null,
+    ),
+  }));
+  // Keep the whole text covered: the last run runs to the end.
+  if (runs.length > 0) runs[runs.length - 1] = { ...runs.at(-1)!, end: text.length };
+
+  const normalParagraph =
+    enginePath(
+      resources,
+      "ParagraphSheetSet",
+      num(enginePath(resources, "TheNormalParagraphSheet")) ?? 0,
+      "Properties",
+    ) ?? null;
+  const paragraphRuns = enginePath(root, "EngineDict", "ParagraphRun", "RunArray");
+  const paragraphLengths = enginePath(root, "EngineDict", "ParagraphRun", "RunLengthArray");
+  const paragraphCount = text.split("\n").length;
+  const paragraphs: ParagraphStyle[] = [];
+  let at = 0;
+  let runIndex = 0;
+  let runEnd = Array.isArray(paragraphLengths) ? (num(paragraphLengths[0]) ?? Infinity) : Infinity;
+  for (let i = 0; i < paragraphCount; i++) {
+    while (
+      at >= runEnd &&
+      Array.isArray(paragraphLengths) &&
+      runIndex < paragraphLengths.length - 1
+    ) {
+      runIndex++;
+      runEnd += num(paragraphLengths[runIndex]) ?? 0;
+    }
+    const props =
+      enginePath(paragraphRuns ?? null, runIndex, "ParagraphSheet", "Properties") ?? null;
+    const get = (key: string) => {
+      const own = enginePath(props, key);
+      return own !== undefined ? own : enginePath(normalParagraph, key);
+    };
+    const size = (key: string) => clamp((num(get(key)) ?? 0) * scale, -1e5, 1e5);
+    paragraphs.push({
+      align: JUSTIFICATION[num(get("Justification")) ?? 0] ?? "left",
+      indentLeft: size("StartIndent"),
+      indentRight: size("EndIndent"),
+      indentFirst: size("FirstLineIndent"),
+      spaceBefore: Math.max(0, size("SpaceBefore")),
+      spaceAfter: Math.max(0, size("SpaceAfter")),
+    });
+    at += text.split("\n")[i].length + 1;
   }
+
+  // Paragraph (box) text: the box is in the text's own space, around its anchor.
+  const photoshop = enginePath(
+    root,
+    "EngineDict",
+    "Rendered",
+    "Shapes",
+    "Children",
+    0,
+    "Cookie",
+    "Photoshop",
+  );
+  let box: PsdText["box"];
+  const bounds = enginePath(photoshop ?? null, "BoxBounds");
+  if (num(enginePath(photoshop ?? null, "ShapeType")) === 1 && Array.isArray(bounds)) {
+    const [l, t, rr, b] = bounds.map((v) => num(v) ?? 0);
+    if (rr > l && b > t) {
+      box = {
+        left: clamp(l * scale, -1e6, 1e6),
+        top: clamp(t * scale, -1e6, 1e6),
+        width: clamp((rr - l) * scale, 1, 1e6),
+        height: clamp((b - t) * scale, 1, 1e6),
+      };
+    }
+  }
+
   if (getDescriptor(d, "warp") && getEnum(getDescriptor(d, "warp"), "warpStyle") !== "warpNone") {
     notes.add("Warped text was imported without its warp.");
   }
+  if (!engine) notes.add("Some text styles could not be read; check fonts and sizes.");
   notes.add("Text layers were imported as editable text. Check fonts and line spacing.");
-  return {
-    text,
-    fontSize: clamp(fontSize * scale, 1, 2000),
-    color,
-    fontFamily: matchFont(fontName),
-    bold,
-    italic,
-    align,
-    lineHeight: clamp(lineHeight, 0.5, 5),
-    letterSpacing: clamp(letterSpacing * scale, -100, 500),
-  };
+  return { text, runs, paragraphs, box, origin };
 }
 
 /** Placement of a smart object, or undefined when Picstea can't reproduce it (warps, filters). */

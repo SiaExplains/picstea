@@ -8,7 +8,7 @@ import type {
   EditorDocument,
   LayerMask,
   FillLayer,
-  FontFamily,
+  CharStyle,
   Layer,
   RasterLayer,
   ShapeKind,
@@ -150,15 +150,9 @@ export function createPathShapeLayer(params: {
   };
 }
 
-export interface TextStyle {
-  fontFamily: FontFamily;
-  fontSize: number;
-  fontWeight: 400 | 700;
-  italic: boolean;
-  color: string;
+/** Base character style plus alignment: what the Type tool and the options bar set. */
+export interface TextStyle extends CharStyle {
   align: TextLayer["align"];
-  lineHeight: number;
-  letterSpacing: number;
 }
 
 export const DEFAULT_TEXT_STYLE: TextStyle = {
@@ -170,6 +164,9 @@ export const DEFAULT_TEXT_STYLE: TextStyle = {
   align: "left",
   lineHeight: 1.2,
   letterSpacing: 0,
+  baselineShift: 0,
+  caps: "normal",
+  kerning: true,
 };
 
 export function createTextLayer(params: {
@@ -177,6 +174,10 @@ export function createTextLayer(params: {
   x: number;
   y: number;
   style: TextStyle;
+  /** Paragraph text box; omitted or null for point text. */
+  box?: { width: number; height: number } | null;
+  runs?: TextLayer["runs"];
+  paragraphs?: TextLayer["paragraphs"];
 }): TextLayer {
   const firstLine = params.text.split("\n")[0].trim();
   return {
@@ -185,6 +186,9 @@ export function createTextLayer(params: {
     name: firstLine.slice(0, 40) || "Text",
     text: params.text,
     ...params.style,
+    box: params.box ?? null,
+    runs: params.runs ?? [],
+    paragraphs: params.paragraphs ?? [],
     visible: true,
     locked: false,
     opacity: 1,

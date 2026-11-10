@@ -43,8 +43,9 @@ const copy: PageCopy = {
           Máscaras de camada, incluindo máscaras em grupos; máscaras vetoriais e máscaras de corte.
         </li>
         <li>
-          Camadas de texto editáveis (primeiro estilo de cada camada; fontes mapeadas para fontes
-          comuns).
+          Camadas de texto editáveis, inclusive texto de parágrafo em caixas e estilos mistos. As
+          fontes são associadas às fontes do sistema, às Google Fonts incluídas ou às que você
+          adicionar; o texto continua editável ao exportar um PSD.
         </li>
         <li>
           Camadas de ajuste: Níveis, Curvas, Brilho/contraste, Matiz/saturação, Vibratilidade,

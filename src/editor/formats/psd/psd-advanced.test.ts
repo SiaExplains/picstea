@@ -20,7 +20,8 @@ import {
 import { enginePath, parseEngineData } from "./engine-data";
 import { decodeAdjustment, encodeAdjustment } from "./psd-adjustments";
 import { transformFromCorners } from "./psd-convert";
-import { decodeExtras, matchFont } from "./psd-extras";
+import { decodeExtras } from "./psd-extras";
+import { BUNDLED_FONTS, familyForPostscript } from "../../fonts/font-catalog";
 import type { PsdFile, PsdPixelLayer } from "./psd-model";
 import { decodeVectorMask, encodeVectorMask } from "./psd-paths";
 import { readPsd } from "./psd-read";
@@ -298,15 +299,14 @@ describe("layer extras", () => {
       size: 4,
     });
     expect(extras.fill).toBe("#ff8800");
-    expect(extras.text).toMatchObject({
-      text: "Hello\nworld",
+    expect(extras.text).toMatchObject({ text: "Hello\nworld" });
+    expect(extras.text!.runs[0].style).toMatchObject({
       fontSize: 24,
       color: "#ff0000",
-      fontFamily: "Arial",
-      bold: true,
+      font: "Arial-BoldMT",
+      fontWeight: 700,
     });
     expect(extras.placed).toEqual({ id: "abc", corners: [10, 20, 110, 20, 110, 70, 10, 70] });
-    expect([...warnings].join(" ")).toMatch(/editable text/);
   });
 
   it("keeps text sizes finite when the transform is damaged", () => {
@@ -321,8 +321,8 @@ describe("layer extras", () => {
     const view = new DataView(block.buffer);
     view.setFloat64(2 + 16, Number.POSITIVE_INFINITY); // yx
     const text = decodeExtras(new Map([["TySh", block]]), ctx, new Set()).text!;
-    expect(Number.isFinite(text.fontSize)).toBe(true);
-    expect(Number.isFinite(text.letterSpacing)).toBe(true);
+    expect(Number.isFinite(text.runs[0].style.fontSize)).toBe(true);
+    expect(Number.isFinite(text.runs[0].style.letterSpacing)).toBe(true);
   });
 
   it("falls back with a warning when a block is damaged", () => {
@@ -337,8 +337,10 @@ describe("layer extras", () => {
   });
 
   it("maps fonts and placement transforms", () => {
-    expect(matchFont("TimesNewRomanPSMT")).toBe("Times New Roman");
-    expect(matchFont("SomethingElse")).toBe("system-ui");
+    expect(familyForPostscript("TimesNewRomanPSMT", BUNDLED_FONTS)).toBe("Times New Roman");
+    expect(familyForPostscript("Montserrat-BoldItalic", BUNDLED_FONTS)).toBe("Montserrat");
+    expect(familyForPostscript("OpenSans-Regular", BUNDLED_FONTS)).toBe("Open Sans");
+    expect(familyForPostscript("SomethingElse", BUNDLED_FONTS)).toBeNull();
     expect(transformFromCorners([10, 20, 110, 20, 110, 70, 10, 70], 50, 25)).toMatchObject({
       x: 10,
       y: 20,

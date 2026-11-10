@@ -42,8 +42,9 @@ const copy: PageCopy = {
           recorte.
         </li>
         <li>
-          Capas de texto editables (el primer estilo de cada capa; las fuentes se asignan a fuentes
-          habituales).
+          Capas de texto editables, incluido texto de párrafo en cuadros y estilos mezclados. Las
+          fuentes se asignan a fuentes del sistema, a las Google Fonts incluidas o a las que añadas;
+          el texto sigue siendo editable al exportar un PSD.
         </li>
         <li>
           Capas de ajuste: Niveles, Curvas, Brillo/contraste, Tono/saturación, Intensidad,

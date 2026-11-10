@@ -69,7 +69,7 @@ const LANDING_PAGES: readonly [path: string, title: string, summary: string][] =
   [
     "/add-text-to-photo",
     "How to add text to a photo online",
-    "Type tool, common system fonts, drop shadow and stroke styles; point text only, no wrapping.",
+    "Type tool with point and paragraph (wrapping) text, Character and Paragraph panels, system fonts, 27 bundled Google Fonts, local and uploaded fonts, drop shadow and stroke styles.",
   ],
   [
     "/black-and-white-photo",

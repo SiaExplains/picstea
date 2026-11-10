@@ -23,6 +23,7 @@ import type { ToneChannel } from "../core/document/types";
 import { colorRange, floodRegion, type Rgba, type RgbaPixels } from "../selection/flood";
 import type { SelectionMask } from "../selection/mask";
 import { workerPixelEnv, type JobBitmaps } from "./render-env";
+import { browserFontEnvironment, FontLibrary } from "../fonts/font-library";
 
 /**
  * CPU-heavy, pure jobs that can run in a Web Worker (ADR-0012). Inputs and outputs are plain
@@ -82,7 +83,13 @@ export interface JobTypes {
   };
   /** Export the document in any format, drawing it here (ADR-0022). */
   exportDocument: {
-    input: { doc: EditorDocument; request: ExportRequest; bitmaps: JobBitmaps };
+    input: {
+      doc: EditorDocument;
+      request: ExportRequest;
+      bitmaps: JobBitmaps;
+      /** Uploaded font files the text uses, by asset id (ADR-0040). */
+      fontFiles?: Readonly<Record<string, ArrayBuffer>>;
+    };
     output: { bytes: Uint8Array; mime: string; warnings: readonly string[] };
   };
   /** Flood fill (magic wand, paint bucket) on `layers` drawn as the document, drawn here. */
@@ -118,6 +125,13 @@ export interface JobTypes {
 /** Raised when Color Range's kept drawing is gone (another key, or a new worker). */
 export class CacheMissError extends Error {
   override name = "CacheMissError";
+}
+
+let fontLibrary: FontLibrary | null = null;
+/** This worker's fonts, loaded on demand and kept for later jobs. */
+function workerFonts(): FontLibrary {
+  fontLibrary ??= new FontLibrary(browserFontEnvironment());
+  return fontLibrary;
 }
 
 let colorRangeSource: { key: string; pixels: RgbaPixels } | null = null;
@@ -177,7 +191,11 @@ export const JOBS: {
     return withCoverage(pixels, renderVanishingPoint(pixels, parsed), coverage);
   },
   histogram: ({ pixels, channel }) => histogram(pixels.data, channel),
-  exportDocument: async ({ doc, request, bitmaps }) => {
+  exportDocument: async ({ doc, request, bitmaps, fontFiles }) => {
+    // Text must draw with the document's fonts here too; wait for them before drawing.
+    await workerFonts().loadForDocument(doc, async (id) =>
+      fontFiles?.[id] ? new Blob([fontFiles[id]]) : null,
+    );
     const env = workerPixelEnv(doc, bitmaps);
     try {
       const { blob, warnings } = await exportAs(env, doc, request);

@@ -6,8 +6,8 @@ import { createCanvasTextSizer } from "../rendering/text/text-layout";
 
 /**
  * Rendering inside the worker (ADR-0022): the same compositor as the page, drawing on
- * OffscreenCanvas with the bitmaps the job brought along. The editor only uses system fonts, so
- * text measures and draws the same here as on the page.
+ * OffscreenCanvas with the bitmaps the job brought along. Jobs that draw text load the document's
+ * fonts into this worker first (ADR-0040), so text measures and draws the same as on the page.
  */
 
 /** Raised when this worker can't draw (no OffscreenCanvas 2D); the page then renders itself. */

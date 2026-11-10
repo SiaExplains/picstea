@@ -1,7 +1,8 @@
 import { createId } from "../core/ids";
 
 /**
- * Immutable binary assets referenced by layers (raster pixels today; fonts/linked files later).
+ * Immutable binary assets referenced by documents: raster pixels, and font files uploaded for
+ * text (ADR-0040).
  *
  * Assets never change once created — an edit that changes pixels creates a new asset — which is
  * what makes snapshot-based undo cheap (ADR-0003). The store lives in memory only; persistence
@@ -9,10 +10,15 @@ import { createId } from "../core/ids";
  */
 
 export type RasterMime = "image/png" | "image/jpeg" | "image/webp" | "image/gif";
+export type FontMime = "font/ttf" | "font/otf" | "font/woff" | "font/woff2";
+export type AssetMime = RasterMime | FontMime;
+
+export const isFontMime = (mime: string): mime is FontMime => mime.startsWith("font/");
 
 export interface AssetRecord {
   readonly id: string;
-  readonly mime: RasterMime;
+  readonly mime: AssetMime;
+  /** Pixels; 0 for fonts. */
   readonly width: number;
   readonly height: number;
   /** Encoded bytes; null for pixels created in the editor until they are first saved. */
@@ -71,6 +77,11 @@ export class AssetStore {
     return this.add({ mime: "image/png", width, height, blob: null }, bitmap);
   }
 
+  /** Store an uploaded font file (never decoded here; the font library loads it). */
+  addFont(blob: Blob, mime: FontMime): AssetRecord {
+    return this.add({ mime, width: 0, height: 0, blob });
+  }
+
   /** Encoded bytes for persistence, encoding (once) if the asset was created in the editor. */
   async getBlob(id: string): Promise<Blob> {
     const record = this.records.get(id);
@@ -110,6 +121,7 @@ export class AssetStore {
     const bitmap = this.bitmaps.get(id);
     if (bitmap) return bitmap;
     const record = this.records.get(id);
+    if (record && isFontMime(record.mime)) return undefined;
     if (record?.blob && !this.pending.has(id) && !this.failed.has(id)) {
       const blob = record.blob;
       this.pending.set(

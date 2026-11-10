@@ -1,9 +1,10 @@
 /**
  * Window menu (ADR-0032): bring a panel into view and move keyboard focus to it. The History,
- * Swatches and Actions panels share a tab strip, so they are asked to switch tab first.
+ * Swatches, Actions, Character and Paragraph panels share a tab strip, so they are asked to switch
+ * tab first.
  */
 
-export type PanelTab = "history" | "swatches" | "actions";
+export type PanelTab = "history" | "swatches" | "actions" | "character" | "paragraph";
 export type PanelName = "layers" | "properties" | PanelTab;
 
 const tabListeners = new Set<(tab: PanelTab) => void>();

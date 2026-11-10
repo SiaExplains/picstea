@@ -1,5 +1,15 @@
 import { expect, test, type Page } from "@playwright/test";
-import { at, drag, isDark, isWhite, MOD, newDocument, pixel, trackErrors } from "./helpers";
+import {
+  at,
+  drag,
+  isDark,
+  isWhite,
+  MOD,
+  newDocument,
+  pickMenu,
+  pixel,
+  trackErrors,
+} from "./helpers";
 
 /** A new document with a dark 100 × 100 square on a pixel layer, selected, and the Move tool. */
 async function selectedSquare(page: Page) {
@@ -78,5 +88,55 @@ test("without a selection, the Move tool still moves the whole layer", async ({ 
   await drag(page, [150, 150], [150, 170]);
   expect(await white(page, 150, 110)).toBe(true);
   expect(await dark(page, 150, 210)).toBe(true);
+  expect(errors).toEqual([]);
+});
+
+test("with the mask targeted, the Move tool moves the mask's pixels, not the layer's", async ({
+  page,
+}) => {
+  const errors = trackErrors(page);
+  await selectedSquare(page);
+  await page.getByRole("button", { name: "Add Layer Mask" }).click();
+  await expect(page.getByTestId("mask-thumb")).toHaveAttribute("aria-pressed", "true");
+  await page.keyboard.press("v");
+
+  await drag(page, [150, 150], [350, 150]);
+  // The vacated part of the mask hides the square; the layer's pixels did not move.
+  expect(await white(page, 150, 150)).toBe(true);
+  expect(await white(page, 350, 150)).toBe(true);
+  await page.getByTestId("mask-thumb").click({ modifiers: ["Shift"] });
+  expect(await dark(page, 150, 150)).toBe(true);
+  await page.getByTestId("mask-thumb").click({ modifiers: ["Shift"] });
+
+  // One undo step restores the mask.
+  await page.keyboard.press(`${MOD}+z`);
+  expect(await dark(page, 150, 150)).toBe(true);
+  expect(errors).toEqual([]);
+});
+
+test("Free Transform with a selection scales just the selected pixels; Esc cancels", async ({
+  page,
+}) => {
+  const errors = trackErrors(page);
+  await selectedSquare(page);
+
+  await pickMenu(page, "Edit", "Free Transform");
+  await drag(page, [200, 200], [300, 300]);
+  // Nothing is applied until Enter.
+  await page.keyboard.press("Escape");
+  expect(await white(page, 250, 250)).toBe(true);
+  expect(await dark(page, 150, 150)).toBe(true);
+
+  await pickMenu(page, "Edit", "Free Transform");
+  await drag(page, [200, 200], [300, 300]);
+  await page.keyboard.press("Enter");
+  expect(await dark(page, 150, 150)).toBe(true);
+  expect(await dark(page, 250, 250)).toBe(true);
+  await expect(page.getByTestId("selection-size")).toHaveText("Selection 200 × 200");
+
+  // One undo step for the whole transform.
+  await page.keyboard.press(`${MOD}+z`);
+  expect(await white(page, 250, 250)).toBe(true);
+  expect(await dark(page, 150, 150)).toBe(true);
   expect(errors).toEqual([]);
 });

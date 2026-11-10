@@ -1518,4 +1518,61 @@ export const ptBr: Catalog = {
   "size category|Mobile": "Celular",
   "size category|Ads": "Anúncios",
   "size category|Icons": "Ícones",
+  // Paragraph text, character and paragraph panels, fonts (0.45.0)
+  Justify: "Justificar",
+  "Click to add text, or drag a box for text that wraps":
+    "Clique para adicionar texto ou arraste uma caixa para texto com quebra de linha",
+  "In this document": "Neste documento",
+  "Google Fonts": "Google Fonts",
+  "On this computer": "Neste computador",
+  "System fonts": "Fontes do sistema",
+  "Search fonts": "Pesquisar fontes",
+  "No fonts found": "Nenhuma fonte encontrada",
+  "Your browser asks before Picstea can list the fonts on this computer.":
+    "Seu navegador pergunta antes de o Picstea listar as fontes deste computador.",
+  "Use Fonts on This Computer": "Usar fontes deste computador",
+  "Upload Font": "Enviar fonte",
+  "Box W": "Caixa L",
+  "Box H": "Caixa A",
+  "Convert to Point Text": "Converter em texto de ponto",
+  "Convert to Paragraph Text": "Converter em texto de parágrafo",
+  Character: "Caractere",
+  Paragraph: "Parágrafo",
+  "Select a text layer or start typing.": "Selecione uma camada de texto ou comece a digitar.",
+  "Baseline shift": "Deslocamento da linha de base",
+  "Faux bold": "Negrito falso",
+  "Faux italic": "Itálico falso",
+  "All caps": "Todas maiúsculas",
+  "Small caps": "Versaletes",
+  Kerning: "Kerning",
+  "Paragraph alignment": "Alinhamento do parágrafo",
+  "Justify spreads lines only in paragraph text (a text box).":
+    "Justificar distribui as linhas apenas em texto de parágrafo (uma caixa de texto).",
+  "Indent left": "Recuo à esquerda",
+  "Indent right": "Recuo à direita",
+  "First line": "Primeira linha",
+  "Space before": "Espaço antes",
+  "Space after": "Espaço depois",
+  "Layers, groups, masks, opacity and blend modes; text stays editable. Shapes become pixels.":
+    "Camadas, grupos, máscaras, opacidade e modos de mesclagem; o texto continua editável. As formas viram pixels.",
+  "Some fonts are not available here and are shown with a fallback: {fonts}. Add them with Upload Font… or Use Fonts on This Computer… in the font list.":
+    "Algumas fontes não estão disponíveis aqui e aparecem com uma fonte substituta: {fonts}. Adicione-as com “Enviar fonte…” ou “Usar fontes deste computador…” na lista de fontes.",
+  "Added the font {font}. It is saved with this project.":
+    "Fonte {font} adicionada. Ela é salva com este projeto.",
+  "That font file is too large (10 MB at most).":
+    "Esse arquivo de fonte é grande demais (no máximo 10 MB).",
+  "That is not a font file Picstea can use (TTF, OTF, WOFF or WOFF2).":
+    "Este não é um arquivo de fonte que o Picstea possa usar (TTF, OTF, WOFF ou WOFF2).",
+  "This browser could not read that font file.":
+    "Este navegador não conseguiu ler esse arquivo de fonte.",
+  "That font's name can't be used. Rename the file and try again.":
+    "O nome dessa fonte não pode ser usado. Renomeie o arquivo e tente de novo.",
+  "Text that did not fit the box was kept and is now visible.":
+    "O texto que não cabia na caixa foi mantido e agora está visível.",
+  "Drag the handles to transform the selected pixels. Enter applies, Esc cancels.":
+    "Arraste as alças para transformar os pixels selecionados. Enter aplica, Esc cancela.",
+  "A font inside the project file is damaged.":
+    "Uma fonte dentro do arquivo do projeto está danificada.",
+  "Picstea could not list the fonts on this computer. You can upload a font file instead.":
+    "O Picstea não conseguiu listar as fontes deste computador. Você pode enviar um arquivo de fonte.",
 };

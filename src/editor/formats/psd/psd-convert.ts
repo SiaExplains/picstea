@@ -1,4 +1,16 @@
 import { createGroup } from "../../core/commands/group-commands";
+import { isFontFamilyName, normalizeParagraphs, normalizeRuns } from "../../core/document/text";
+import type { CharStyle } from "../../core/document/types";
+import { BUNDLED_FONTS, familyForPostscript, postscriptNameFor } from "../../fonts/font-catalog";
+import type { TextLayout } from "../../core/document/text-layout";
+import type { TextLayer } from "../../core/document/types";
+
+/** Distance from a text block's top to its first baseline (Photoshop anchors point text there). */
+function firstBaseline(layout: TextLayout, layer: TextLayer): number {
+  const first = layout.lines[0]?.fragments[0];
+  if (first) return first.y + first.size * 0.35;
+  return (layer.fontSize * layer.lineHeight) / 2 + layer.fontSize * 0.35;
+}
 import { layerBlendingOf, psdBlendingOf } from "./psd-blending";
 import {
   createAdjustmentLayer,
@@ -7,6 +19,7 @@ import {
   createPathShapeLayer,
   createRasterLayer,
   createTextLayer,
+  DEFAULT_TEXT_STYLE,
 } from "../../core/document/factory";
 import { effectReach as effectReachOf, hasActiveEffects } from "../../core/effects/model";
 import {
@@ -95,6 +108,12 @@ export async function documentToPsdDraft(
   doc: EditorDocument,
 ): Promise<PsdDraftExport> {
   const warnings = new Set<string>();
+  // Only exports that contain text need the EngineData writer; load it on demand.
+  const hasText = (layers: readonly Layer[]): boolean =>
+    layers.some((l) => l.kind === "text" || (l.kind === "group" && hasText(l.children)));
+  const { encodeTextBlock } = hasText(doc.layers)
+    ? await import("./engine-data-write")
+    : { encodeTextBlock: null };
   const convert = async (layers: readonly Layer[]): Promise<DraftNode[]> => {
     const out: DraftNode[] = [];
     for (const layer of layers) {
@@ -143,8 +162,35 @@ export async function documentToPsdDraft(
         continue;
       }
       if (hasEffects(layer)) warnings.add("Layer effects were merged into the layer pixels.");
-      if (layer.kind === "text" || layer.kind === "shape") {
-        warnings.add("Shapes and text were converted to pixels.");
+      if (layer.kind === "shape") warnings.add("Shapes were converted to pixels.");
+      // Text stays editable (ADR-0041) unless effects had to be merged into its pixels.
+      const textBlock =
+        layer.kind === "text" && !hasEffects(layer) && encodeTextBlock
+          ? {
+              key: "TySh",
+              data: encodeTextBlock(
+                layer,
+                (style) => {
+                  const known = doc.fonts?.find(
+                    (f) =>
+                      f.family === style.fontFamily &&
+                      f.weight === style.fontWeight &&
+                      f.italic === style.italic,
+                  )?.postscriptName;
+                  return postscriptNameFor(
+                    style.fontFamily,
+                    style.fontWeight,
+                    style.italic,
+                    BUNDLED_FONTS,
+                    known,
+                  );
+                },
+                firstBaseline(env.sizer.layoutText(layer), layer),
+              ),
+            }
+          : null;
+      if (layer.kind === "text" && !textBlock) {
+        warnings.add("Text with layer effects was converted to pixels.");
       }
       if (layer.kind === "smart") warnings.add("Smart objects were converted to pixels.");
       // The layer's own look, without its opacity, blend mode or mask (stored separately).
@@ -170,7 +216,9 @@ export async function documentToPsdDraft(
         kind: "pixels",
         region: region ? { x: region.x, y: region.y } : null,
         bitmap: region ? await renderBitmap(env, doc, [plain], region) : null,
-        ...(vectorBlock ? { blocks: [vectorBlock] } : {}),
+        ...(vectorBlock || textBlock
+          ? { blocks: [vectorBlock, textBlock].filter((b) => b !== null) }
+          : {}),
       });
     }
     return out;
@@ -199,9 +247,11 @@ export function psdToDocument(
   psd: PsdFile,
   name: string,
   readWarnings: readonly string[] = [],
+  /** Fonts beyond system and bundled ones that PostScript names can match (local, uploaded). */
+  knownFonts: readonly { family: string; postscriptName?: string }[] = [],
 ): PsdImport {
   const warnings = new Set(readWarnings);
-  const document = convertPsdFile(env, psd, name, warnings);
+  const document = convertPsdFile(env, psd, name, warnings, knownFonts);
   return { document, warnings: [...warnings] };
 }
 
@@ -227,7 +277,23 @@ function convertPsdFile(
   psd: PsdFile,
   name: string,
   warnings: Set<string>,
+  knownFonts: readonly { family: string; postscriptName?: string }[],
 ): EditorDocument {
+  /**
+   * A family for a PostScript name. Unknown fonts keep a family derived from the name, so they
+   * draw with a fallback until the user adds the font (the editor reports them, ADR-0040).
+   */
+  const familyOf = (postscriptName: string): string => {
+    if (!postscriptName) return "Arial";
+    const known = familyForPostscript(postscriptName, BUNDLED_FONTS, knownFonts);
+    if (known) return known;
+    const derived = postscriptName
+      .split("-")[0]
+      .replace(/(MT|PS|PSMT)$/, "")
+      .replace(/([a-z])([A-Z])/g, "$1 $2")
+      .trim();
+    return isFontFamilyName(derived) ? derived : "Arial";
+  };
   const doc = createDocument({
     name,
     width: psd.width,
@@ -310,7 +376,7 @@ function convertPsdFile(
     if (!file || file.kind === "unsupported") return null;
     let content: EditorDocument;
     if (file.kind === "psd") {
-      content = convertPsdFile(env, file.file, node.name || "Smart Object", warnings);
+      content = convertPsdFile(env, file.file, node.name || "Smart Object", warnings, knownFonts);
     } else {
       const asset = env.assets.add({
         mime: file.mime as RasterMime,
@@ -356,21 +422,24 @@ function convertPsdFile(
     if (x?.text) {
       const t = x.text;
       const empty = rectWidth(node.rect) * rectHeight(node.rect) === 0;
+      const resolved = t.runs.map(({ start, end, style }) => {
+        const { font, ...rest } = style;
+        return { start, end, style: { ...rest, fontFamily: familyOf(font) } as CharStyle };
+      });
+      const base: CharStyle = resolved[0]?.style ?? { ...DEFAULT_TEXT_STYLE };
+      const align = t.paragraphs[0]?.align ?? "left";
+      const position = t.box
+        ? { x: t.origin.x + t.box.left, y: t.origin.y + t.box.top }
+        : { x: empty ? 0 : node.rect.left, y: empty ? 0 : node.rect.top };
       return {
         ...createTextLayer({
           text: t.text,
-          x: empty ? 0 : node.rect.left,
-          y: empty ? 0 : node.rect.top,
-          style: {
-            fontFamily: t.fontFamily,
-            fontSize: t.fontSize,
-            fontWeight: t.bold ? 700 : 400,
-            italic: t.italic,
-            color: t.color,
-            align: t.align,
-            lineHeight: t.lineHeight,
-            letterSpacing: t.letterSpacing,
-          },
+          x: Math.round(position.x),
+          y: Math.round(position.y),
+          style: { ...base, align },
+          box: t.box ? { width: t.box.width, height: t.box.height } : null,
+          runs: normalizeRuns(resolved, base, t.text.length),
+          paragraphs: normalizeParagraphs(t.paragraphs, t.text, align),
         }),
         name: node.name || "Text",
       };

@@ -10,10 +10,18 @@ export function activeLayer(doc: EditorDocument): Layer | undefined {
 }
 
 /**
- * Asset ids referenced by the document (pixels and masks), including inside smart objects —
- * what persistence must store and memory must keep.
+ * Asset ids referenced by the document — pixels and masks (inside smart objects too) and uploaded
+ * fonts — what persistence must store and memory must keep.
  */
 export function referencedAssetIds(doc: EditorDocument): string[] {
+  const ids = new Set(imageAssetIds(doc));
+  // Fonts belong to the top-level document; smart object contents use its fonts.
+  for (const font of doc.fonts ?? []) if (font.assetId) ids.add(font.assetId);
+  return [...ids];
+}
+
+/** Asset ids of the pixels the document draws (pixel layers and masks, smart objects too). */
+export function imageAssetIds(doc: Pick<EditorDocument, "layers">): string[] {
   const ids = new Set<string>();
   const visit = (layers: EditorDocument["layers"]) =>
     walkLayers(layers, (layer) => {

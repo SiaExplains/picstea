@@ -1518,4 +1518,61 @@ export const es: Catalog = {
   "size category|Mobile": "Móvil",
   "size category|Ads": "Anuncios",
   "size category|Icons": "Iconos",
+  // Paragraph text, character and paragraph panels, fonts (0.45.0)
+  Justify: "Justificar",
+  "Click to add text, or drag a box for text that wraps":
+    "Haz clic para añadir texto o arrastra un cuadro para texto que se ajuste",
+  "In this document": "En este documento",
+  "Google Fonts": "Google Fonts",
+  "On this computer": "En este ordenador",
+  "System fonts": "Fuentes del sistema",
+  "Search fonts": "Buscar fuentes",
+  "No fonts found": "No se encontraron fuentes",
+  "Your browser asks before Picstea can list the fonts on this computer.":
+    "Tu navegador te pregunta antes de que Picstea pueda listar las fuentes de este ordenador.",
+  "Use Fonts on This Computer": "Usar fuentes de este ordenador",
+  "Upload Font": "Subir fuente",
+  "Box W": "Cuadro An",
+  "Box H": "Cuadro Al",
+  "Convert to Point Text": "Convertir en texto de punto",
+  "Convert to Paragraph Text": "Convertir en texto de párrafo",
+  Character: "Carácter",
+  Paragraph: "Párrafo",
+  "Select a text layer or start typing.": "Selecciona una capa de texto o empieza a escribir.",
+  "Baseline shift": "Desplazamiento de línea base",
+  "Faux bold": "Negrita falsa",
+  "Faux italic": "Cursiva falsa",
+  "All caps": "Todo mayúsculas",
+  "Small caps": "Versalitas",
+  Kerning: "Kerning",
+  "Paragraph alignment": "Alineación del párrafo",
+  "Justify spreads lines only in paragraph text (a text box).":
+    "Justificar reparte las líneas solo en texto de párrafo (un cuadro de texto).",
+  "Indent left": "Sangría izquierda",
+  "Indent right": "Sangría derecha",
+  "First line": "Primera línea",
+  "Space before": "Espacio antes",
+  "Space after": "Espacio después",
+  "Layers, groups, masks, opacity and blend modes; text stays editable. Shapes become pixels.":
+    "Capas, grupos, máscaras, opacidad y modos de fusión; el texto sigue siendo editable. Las formas se convierten en píxeles.",
+  "Some fonts are not available here and are shown with a fallback: {fonts}. Add them with Upload Font… or Use Fonts on This Computer… in the font list.":
+    "Algunas fuentes no están disponibles aquí y se muestran con una fuente alternativa: {fonts}. Añádelas con «Subir fuente…» o «Usar fuentes de este ordenador…» en la lista de fuentes.",
+  "Added the font {font}. It is saved with this project.":
+    "Se añadió la fuente {font}. Se guarda con este proyecto.",
+  "That font file is too large (10 MB at most).":
+    "Ese archivo de fuente es demasiado grande (10 MB como máximo).",
+  "That is not a font file Picstea can use (TTF, OTF, WOFF or WOFF2).":
+    "No es un archivo de fuente que Picstea pueda usar (TTF, OTF, WOFF o WOFF2).",
+  "This browser could not read that font file.":
+    "Este navegador no pudo leer ese archivo de fuente.",
+  "That font's name can't be used. Rename the file and try again.":
+    "No se puede usar el nombre de esa fuente. Cambia el nombre del archivo e inténtalo de nuevo.",
+  "Text that did not fit the box was kept and is now visible.":
+    "El texto que no cabía en el cuadro se ha conservado y ahora es visible.",
+  "Drag the handles to transform the selected pixels. Enter applies, Esc cancels.":
+    "Arrastra los tiradores para transformar los píxeles seleccionados. Intro aplica, Esc cancela.",
+  "A font inside the project file is damaged.":
+    "Una fuente dentro del archivo del proyecto está dañada.",
+  "Picstea could not list the fonts on this computer. You can upload a font file instead.":
+    "Picstea no pudo listar las fuentes de este ordenador. Puedes subir un archivo de fuente en su lugar.",
 };

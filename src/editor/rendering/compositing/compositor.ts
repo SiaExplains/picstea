@@ -21,7 +21,7 @@ import {
 } from "./effects";
 import { renderSmartObject, smartLevel } from "./smart-render";
 import { boundsOf, layerCorners, type ContentSizer } from "../../core/geometry/layer-geometry";
-import { applyTextStyle, lineAdvance, textLines } from "../text/text-layout";
+import { applyCharStyle } from "../text/text-layout";
 import {
   identitySpace,
   isIdentitySpace,
@@ -79,6 +79,8 @@ export type CompositeContext = Pick<
 > & {
   roundRect?: CanvasRenderingContext2D["roundRect"];
   letterSpacing?: string;
+  fontKerning?: CanvasFontKerning;
+  clip?: CanvasRenderingContext2D["clip"];
   getImageData?: CanvasRenderingContext2D["getImageData"];
   putImageData?: CanvasRenderingContext2D["putImageData"];
   setTransform?: CanvasRenderingContext2D["setTransform"];
@@ -238,17 +240,26 @@ export function drawShape(ctx: CompositeContext, layer: ShapeLayer): void {
   }
 }
 
+/** Draw a text layer from its layout (ADR-0041); paragraph text is clipped to its box. */
 export function drawText(ctx: CompositeContext, layer: TextLayer, sizer: ContentSizer): void {
-  const { width } = sizer.measureText(layer);
-  applyTextStyle(ctx, layer);
-  ctx.fillStyle = layer.color;
+  const layout = sizer.layoutText(layer);
+  const clip = layer.box && layout.overflow && ctx.clip;
+  if (clip) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(0, 0, layer.box!.width, layer.box!.height);
+    ctx.clip!();
+  }
   ctx.textBaseline = "middle";
-  ctx.textAlign = layer.align;
-  const x = layer.align === "left" ? 0 : layer.align === "center" ? width / 2 : width;
-  const advance = lineAdvance(layer);
-  textLines(layer.text).forEach((line, i) => {
-    ctx.fillText(line, x, i * advance + advance / 2);
-  });
+  ctx.textAlign = "left";
+  for (const line of layout.lines) {
+    for (const f of line.fragments) {
+      applyCharStyle(ctx, f.style, f.size);
+      ctx.fillStyle = f.style.color;
+      ctx.fillText(f.text, f.x, f.y);
+    }
+  }
+  if (clip) ctx.restore();
 }
 
 function drawLayer(

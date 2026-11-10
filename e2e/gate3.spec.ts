@@ -79,7 +79,7 @@ test("text is typed on canvas and can be re-edited", async ({ page }) => {
 
   // Click the text again to edit it.
   await page.mouse.click(p.x + 10, p.y + 10);
-  await expect(editor).toHaveValue("Hello");
+  await expect(editor).toHaveText("Hello");
   await page.keyboard.press("End");
   await page.keyboard.type(" world");
   await page.keyboard.press("Escape");

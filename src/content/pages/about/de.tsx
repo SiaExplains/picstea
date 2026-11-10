@@ -76,6 +76,11 @@ const copy: PageCopy = {
         <a href="/vendor/libheif/1.23.5/LICENSE-libheif-js.txt">libheif-js</a>. Du kannst diese
         Datei durch deinen eigenen Build der Bibliothek ersetzen.
       </p>
+      <p>
+        Die Google Fonts in der Schriftliste kommen von Picsteas eigener Website und stehen unter
+        der SIL Open Font License 1.1 (<a href="/fonts/LICENSES.txt">Schriften und ihre Urheber</a>
+        ).
+      </p>
 
       <h2>Sprachen</h2>
       <p>
