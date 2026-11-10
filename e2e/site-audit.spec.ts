@@ -19,6 +19,7 @@ interface PageReport {
   ogTitle: string | null;
   ogDescription: string | null;
   ogUrl: string | null;
+  ogImage: string | null;
   jsonLd: string[];
   links: string[];
   lcp: number;
@@ -63,6 +64,7 @@ async function inspect(page: Page, url: string): Promise<PageReport> {
       ogTitle: meta('meta[property="og:title"]'),
       ogDescription: meta('meta[property="og:description"]'),
       ogUrl: meta('meta[property="og:url"]'),
+      ogImage: meta('meta[property="og:image"]'),
       jsonLd: [...document.querySelectorAll('script[type="application/ld+json"]')].map(
         (s) => s.textContent ?? "",
       ),
@@ -91,6 +93,7 @@ test("every sitemap page has complete metadata, valid links and good lab vitals"
 
   const problems: string[] = [];
   const titles = new Map<string, string>();
+  const ogImages = new Set<string>();
   const links = new Set<string>();
   for (const r of reports) {
     const where = r.path;
@@ -109,6 +112,16 @@ test("every sitemap page has complete metadata, valid links and good lab vitals"
       problems.push(`${where}: canonical ${r.canonical}`);
     if (!r.ogTitle || !r.ogDescription || !r.ogUrl)
       problems.push(`${where}: Open Graph incomplete`);
+    // Every page has its own social preview (src/lib/seo/og-pages.ts) except the editor home,
+    // author and legal pages, which use the site-wide image; and every preview loads as a PNG.
+    const siteImage =
+      ["/", "/es", "/pt-br", "/de"].includes(r.path) ||
+      r.path.startsWith("/authors/") ||
+      ["/privacy", "/cookies", "/terms", "/imprint", "/sponsorship"].includes(r.path);
+    if (!r.ogImage) problems.push(`${where}: no og:image`);
+    else if (!siteImage && new URL(r.ogImage).pathname === "/og-image.png")
+      problems.push(`${where}: site-wide og:image instead of its own`);
+    else ogImages.add(new URL(r.ogImage).pathname + new URL(r.ogImage).search);
     if (r.jsonLd.length === 0) problems.push(`${where}: no structured data`);
     for (const json of r.jsonLd) {
       try {
@@ -127,6 +140,13 @@ test("every sitemap page has complete metadata, valid links and good lab vitals"
     if (r.scriptBytes > budget)
       problems.push(`${where}: ${Math.round(r.scriptBytes / 1024)} KB of JavaScript`);
     for (const l of r.links) links.add(new URL(l).pathname);
+  }
+
+  // Social preview images are real PNGs.
+  for (const image of ogImages) {
+    const res = await page.request.get(image);
+    if (res.status() !== 200 || !(res.headers()["content-type"] ?? "").startsWith("image/png"))
+      problems.push(`og:image ${image} (${res.status()} ${res.headers()["content-type"]})`);
   }
 
   // Internal links resolve and never point at drafts.

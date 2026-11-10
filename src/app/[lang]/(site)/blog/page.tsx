@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { pageOpenGraph } from "@/lib/seo/root-metadata";
+import { ogImages } from "@/lib/seo/og-pages";
 import Link from "next/link";
 import { ContentPage } from "@/components/site/ContentPage";
 import styles from "@/components/site/site.module.css";
@@ -10,7 +11,11 @@ export const metadata: Metadata = {
   title: "Blog",
   description: "Guides and explanations about editing images in the browser with Picstea.",
   alternates: { canonical: "/blog" },
-  openGraph: pageOpenGraph({ url: "/blog", title: "Picstea blog" }),
+  openGraph: pageOpenGraph({
+    url: "/blog",
+    title: "Picstea blog",
+    images: ogImages("en", "/blog", "Picstea blog"),
+  }),
 };
 
 export default function BlogIndex() {

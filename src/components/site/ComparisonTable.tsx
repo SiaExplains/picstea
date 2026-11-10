@@ -9,9 +9,12 @@ import { fill } from "@/i18n/site";
 export async function ComparisonTable({
   other,
   rows,
+  checked = "october2026",
 }: {
   other: string;
   rows: readonly (readonly [label: string, picstea: string, theirs: string])[];
+  /** The month the facts about `other` were checked (a phrase key in `t.page`). */
+  checked?: "october2026" | "november2026";
 }) {
   const t = await siteMessages();
   return (
@@ -35,7 +38,7 @@ export async function ComparisonTable({
         </tbody>
       </table>
       <p>
-        <small>{fill(t.page.factsChecked, { other, month: t.page.october2026 })}</small>
+        <small>{fill(t.page.factsChecked, { other, month: t.page[checked] })}</small>
       </p>
     </>
   );

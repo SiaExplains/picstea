@@ -40,6 +40,8 @@ export const en = {
     factsChecked:
       "Facts about {other} checked in {month} on its official website. Products change; check there for the latest.",
     october2026: "October 2026",
+    november2026: "November 2026",
+    lastUpdated: "Last updated {date}",
   },
   /** Link labels for the tool, how-to and comparison lists (RelatedTools, footer). */
   links: {

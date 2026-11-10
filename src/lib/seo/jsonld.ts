@@ -56,6 +56,17 @@ export function faqPage(items: readonly { q: string; a: string }[]) {
   };
 }
 
+/** The page itself, with when its content last changed (AEO: freshness). */
+export function webPage(path: string, name: string, dateModified: string) {
+  return {
+    "@type": "WebPage",
+    name,
+    url: absoluteUrl(path),
+    dateModified,
+    publisher: { "@id": `${SITE.url}/#organization` },
+  };
+}
+
 export function softwareApplication(path: string) {
   return {
     "@type": "SoftwareApplication",

@@ -1,3 +1,4 @@
+import { ComparisonTable } from "@/components/site/ComparisonTable";
 import { LocalLink as Link } from "@/components/site/LocalLink";
 import type { PageCopy } from "../types";
 
@@ -5,7 +6,7 @@ const copy: PageCopy = {
   title: "Picstea: a Photopea alternative",
   description:
     "Looking for a Photopea alternative? Picstea is a free browser photo editor with layers and PSD support, and no third-party ad code inside the editor.",
-  lead: "Photopea showed that a serious image editor can live in a browser tab. Picstea follows the same idea with its own focus: a calm workspace, no third-party code in the editor, and a clear list of what it can and can't do.",
+  lead: "Yes. Picstea, like Photopea, is a free photo editor that runs in your browser and edits files on your device, with layers, masks and PSD support. Picstea keeps third-party code, ads included, out of the editor and lists exactly what changed when it opens a PSD; Photopea opens far more file formats.",
   faqs: [
     {
       q: "How is Picstea different from Photopea?",
@@ -28,6 +29,29 @@ const copy: PageCopy = {
         <li>Open and save layered PSD files and export PNG, JPEG and WebP.</li>
         <li>Edit files locally, with familiar Photoshop-style tools and shortcuts.</li>
       </ul>
+      <h2>How they differ</h2>
+      <ComparisonTable
+        other="Photopea"
+        checked="november2026"
+        rows={[
+          ["Price", "Free", "Free"],
+          [
+            "Uploads",
+            "None: files stay on your device",
+            "None: its site says files never leave your device",
+          ],
+          [
+            "PSD files",
+            "Opens and saves layered PSD; lists anything it can't keep",
+            "Opens and saves PSD, its main format",
+          ],
+          [
+            "Files it opens",
+            "PNG, JPEG, WebP, GIF, SVG, HEIC, PSD and Picstea projects",
+            "More than 40 formats, including PDF, AI, TIFF, Figma and camera RAW",
+          ],
+        ]}
+      />
       <h2>Why people choose Picstea</h2>
       <ul>
         <li>

@@ -1205,6 +1205,13 @@ export const POSTS: readonly BlogPost[] = [
           </li>
           <li>Save the JPGs. Several photos can be saved together as a ZIP file.</li>
         </ol>
+        <BlogFigure
+          src="/blog/convert-heic-to-jpg-without-uploading/converter.png"
+          alt="Picstea's Convert HEIC to JPG dialog with two iPhone photos chosen, JPEG selected at quality 90"
+          caption="Two HEIC photos ready to become JPEGs at quality 90. Nothing leaves the device."
+          width={840}
+          height={636}
+        />
         <h2>Can I edit a HEIC photo before converting it?</h2>
         <p>
           Yes. Open the photo in <EditorLink>the Picstea editor</EditorLink> with{" "}
@@ -1245,8 +1252,9 @@ export const POSTS: readonly BlogPost[] = [
     title: "Fix exposure and colour with Camera Raw",
     description:
       "Correct white balance, exposure, highlights and shadows in one dialog with Picstea's Camera Raw filter, and keep it editable as a smart filter.",
-    published: "2026-11-08",
-    draft: true,
+    published: "2026-11-10",
+    draft: false,
+    image: "/blog/fix-exposure-and-colour-with-camera-raw/after.jpg",
     body: () => (
       <>
         <p>
@@ -1291,33 +1299,52 @@ export const POSTS: readonly BlogPost[] = [
         </ul>
         <p>Picstea applies them in that order, the same order as the list in the dialog.</p>
         <h2>A walkthrough on a real photo</h2>
+        <p>
+          This living room is lit by four table lamps. The camera kept their orange light, so the
+          white walls look yellow and the blue sofa sinks into shadow.
+        </p>
         <BlogFigure
-          alt="Before: an indoor photo that is too dark and too orange"
-          caption="Before: underexposed, with orange light from a lamp."
+          src="/blog/fix-exposure-and-colour-with-camera-raw/before.jpg"
+          alt="Before: a living room lit by four brass table lamps, with orange walls and a dark blue sofa"
+          caption="Before: orange walls and a sofa lost in shadow. Photo: WordPress Photo Directory, CC0."
+          width={1400}
+          height={1050}
         />
         <ol>
           <li>
             Open the photo and choose <strong>Filter → Camera Raw…</strong>.
           </li>
           <li>
-            Move <strong>Temperature</strong> to the left until a white wall or a sheet of paper
-            looks neutral.
+            Move <strong>Temperature</strong> to the left until the walls look white rather than
+            orange. Here that was −22, with <strong>Tint</strong> at +3. Going much further turns
+            them blue.
           </li>
           <li>
-            Raise <strong>Exposure</strong> until the faces look right, then lower{" "}
-            <strong>Highlights</strong> if the window starts to burn out.
+            Raise <strong>Exposure</strong> until the sofa and cushions show detail (+0.35), then
+            lower <strong>Highlights</strong> (−45) and <strong>Whites</strong> (−10) so the
+            lampshades and the light on the wall don&apos;t burn out.
           </li>
           <li>
-            Lift <strong>Shadows</strong> a little to open up the dark corners, and add a touch of{" "}
-            <strong>Clarity</strong> and <strong>Vibrance</strong>.
+            Lift <strong>Shadows</strong> (+35) to open up the dark sofa, and add a little{" "}
+            <strong>Clarity</strong> and <strong>Vibrance</strong> (+12 each).
           </li>
           <li>
             Turn <strong>Preview</strong> on and off to compare, then click <strong>OK</strong>.
           </li>
         </ol>
         <BlogFigure
-          alt="After: the same photo, brighter and with neutral colours"
-          caption="After: neutral white balance, brighter faces, the window still has detail."
+          src="/blog/fix-exposure-and-colour-with-camera-raw/camera-raw-dialog.png"
+          alt="Picstea's Camera Raw dialog with the settings used for this photo"
+          caption="The settings used for this photo."
+          width={420}
+          height={560}
+        />
+        <BlogFigure
+          src="/blog/fix-exposure-and-colour-with-camera-raw/after.jpg"
+          alt="After: the same living room with white walls, a visible blue sofa and the lamps still glowing"
+          caption="After: white walls, a sofa you can see, and the lamps still glow."
+          width={1400}
+          height={1050}
         />
         <h2>Can I change the settings later?</h2>
         <p>
@@ -1360,8 +1387,9 @@ export const POSTS: readonly BlogPost[] = [
     title: "Copy and paint in perspective with Vanishing Point",
     description:
       "Clone along a wall or a floor so the copy shrinks into the distance, with Picstea's Vanishing Point filter. Step by step, with good uses and its limits.",
-    published: "2026-11-08",
-    draft: true,
+    published: "2026-11-10",
+    draft: false,
+    image: "/blog/copy-and-paint-in-perspective-with-vanishing-point/after.jpg",
     body: () => (
       <>
         <p>
@@ -1372,8 +1400,12 @@ export const POSTS: readonly BlogPost[] = [
           and runs in your browser.
         </p>
         <BlogFigure
-          alt="Screen recording: marking a floor plane and cloning tiles along it"
-          caption="Marking the floor, then cloning tiles towards the back of the room."
+          video="/blog/copy-and-paint-in-perspective-with-vanishing-point/vanishing-point.mp4"
+          poster="/blog/copy-and-paint-in-perspective-with-vanishing-point/vanishing-point-poster.jpg"
+          alt="Screen recording: marking the four corners of a tiled paving in Vanishing Point, then cloning plain tiles over a dark one"
+          caption="Marking the paving as the plane, then cloning plain tiles over a dark accent tile. Photo: WordPress Photo Directory, CC0."
+          width={960}
+          height={614}
         />
         <h2>Step by step</h2>
         <ol>
@@ -1403,7 +1435,8 @@ export const POSTS: readonly BlogPost[] = [
         <ul>
           <li>
             <strong>Extending a tiled floor</strong> over a rug, a cable or a gap, with tiles that
-            line up with the rest.
+            line up with the rest. In the recording above, plain paving tiles from further right
+            replace a dark one, and the copies shrink to match their place in the scene.
           </li>
           <li>
             <strong>Removing a sign or a socket from a wall</strong> by painting clean bricks or

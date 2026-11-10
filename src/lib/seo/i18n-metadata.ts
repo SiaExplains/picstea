@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { LANGUAGE_TAG, LOCALES, localizedPath, type Locale } from "@/i18n/locales";
 import { currentLocale } from "@/i18n/server";
 import { pageOpenGraph } from "./root-metadata";
+import { ogImages } from "./og-pages";
 import { absoluteUrl } from "./site";
 
 /** Open Graph locale names (og:locale wants language_TERRITORY). */
@@ -36,6 +37,12 @@ export async function translatedMetadata(
     title,
     description,
     alternates: { canonical: url, languages: languageAlternates(path) },
-    openGraph: pageOpenGraph({ url, title, description, locale: OG_LOCALE[locale] }),
+    openGraph: pageOpenGraph({
+      url,
+      title,
+      description,
+      locale: OG_LOCALE[locale],
+      images: ogImages(locale, path, title),
+    }),
   };
 }

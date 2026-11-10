@@ -1,8 +1,10 @@
 import { EditorLink } from "@/components/site/EditorLink";
 import type { ReactNode } from "react";
-import { localizedPath } from "@/i18n/locales";
+import { pageUpdated } from "@/content/pages/updated";
+import { LANGUAGE_TAG, localizedPath } from "@/i18n/locales";
+import { fill } from "@/i18n/site";
 import { currentLocale, siteMessages } from "@/i18n/server";
-import { faqPage, softwareApplication } from "@/lib/seo/jsonld";
+import { faqPage, softwareApplication, webPage } from "@/lib/seo/jsonld";
 import { ContentPage } from "./ContentPage";
 import styles from "./site.module.css";
 
@@ -34,6 +36,7 @@ export async function LandingPage({
   const locale = await currentLocale();
   const t = await siteMessages();
   const url = localizedPath(path, locale);
+  const updated = pageUpdated(path);
   return (
     <ContentPage
       crumbs={[
@@ -42,7 +45,20 @@ export async function LandingPage({
       ]}
       title={title}
       lead={lead}
-      structuredData={[softwareApplication(url), faqPage(faqs)]}
+      meta={
+        updated &&
+        fill(t.page.lastUpdated, {
+          date: new Intl.DateTimeFormat(LANGUAGE_TAG[locale], {
+            dateStyle: "long",
+            timeZone: "UTC",
+          }).format(new Date(`${updated}T00:00:00Z`)),
+        })
+      }
+      structuredData={[
+        softwareApplication(url),
+        faqPage(faqs),
+        ...(updated ? [webPage(url, title, updated)] : []),
+      ]}
     >
       <EditorLink href={cta?.href} className={styles.ctaLarge}>
         {cta?.label ?? t.page.openEditor}

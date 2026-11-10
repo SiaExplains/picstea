@@ -3,6 +3,21 @@
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.46.0] — 2026-11-10
+
+### Added
+
+- **Every page has its own preview when you share it.** Links to guides, comparisons, converters,
+  documentation and blog posts now show the page's own title in its language on social networks
+  and in chat apps, instead of one picture for the whole site. Blog posts with a cover photo show
+  it beside the title.
+- **"Last updated" dates on the guide and comparison pages**, so you can see how current a page is.
+- **The Photopea comparison** now answers the question directly and has a side-by-side table, like
+  the other comparison pages.
+- **Two blog posts are published with real pictures:** _Fix exposure and colour with Camera Raw_
+  (a before and after with the exact settings) and _Copy and paint in perspective with Vanishing
+  Point_ (a short screen recording). The HEIC to JPG post now shows the converter.
+
 ## [0.45.3] — 2026-11-10
 
 ### Added
