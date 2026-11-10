@@ -3,6 +3,13 @@
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.45.3] — 2026-11-10
+
+### Added
+
+- A blog post, **How to make a gradient background for a banner**, on the Gradient tool, a soft
+  radial glow, the Magic Eraser and Paint Bucket, and Add Noise against banding.
+
 ## [0.45.2] — 2026-11-10
 
 ### Added
