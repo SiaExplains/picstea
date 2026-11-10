@@ -47,8 +47,8 @@ export const POST_SLUGS: Readonly<Record<string, "draft" | "published">> = {
   "change-the-color-of-an-object-in-a-photo": "published",
   "rulers-guides-and-snapping-for-exact-layouts": "published",
   "convert-heic-to-jpg-without-uploading": "published",
-  "fix-exposure-and-colour-with-camera-raw": "draft",
-  "copy-and-paint-in-perspective-with-vanishing-point": "draft",
+  "fix-exposure-and-colour-with-camera-raw": "published",
+  "copy-and-paint-in-perspective-with-vanishing-point": "published",
   "paragraph-text-and-custom-fonts": "published",
   "make-a-gradient-background-for-a-banner": "published",
 };

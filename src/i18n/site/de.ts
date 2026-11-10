@@ -37,6 +37,8 @@ export const de: SiteMessages = {
     factsChecked:
       "Angaben zu {other} im {month} auf der offiziellen Website geprüft. Produkte ändern sich; den aktuellen Stand findest du dort.",
     october2026: "Oktober 2026",
+    november2026: "November 2026",
+    lastUpdated: "Zuletzt aktualisiert am {date}",
   },
   links: {
     "/online-photo-editor": "Online-Bildbearbeitung",

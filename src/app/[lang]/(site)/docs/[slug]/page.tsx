@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { pageOpenGraph } from "@/lib/seo/root-metadata";
+import { ogImages } from "@/lib/seo/og-pages";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
@@ -19,7 +20,13 @@ export async function generateMetadata({ params }: PageProps<"/[lang]/docs/[slug
     title: doc.title,
     description: doc.description,
     alternates: { canonical: path },
-    openGraph: pageOpenGraph({ url: path, title: doc.title, description: doc.description, type: "article" }),
+    openGraph: pageOpenGraph({
+      url: path,
+      title: doc.title,
+      description: doc.description,
+      type: "article",
+      images: ogImages("en", path, doc.title),
+    }),
   };
 }
 

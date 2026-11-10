@@ -16,7 +16,8 @@ type OpenGraph = NonNullable<Metadata["openGraph"]>;
 
 /**
  * A page's Open Graph data with the site-wide parts (name, locale, image). Next replaces the
- * parent's `openGraph` entirely when a page sets its own, so every page goes through this.
+ * parent's `openGraph` entirely when a page sets its own, so every page goes through this. Pages
+ * with their own preview (src/lib/seo/og-pages.ts) pass `images`, which replace the site image.
  */
 export function pageOpenGraph(og: OpenGraph): OpenGraph {
   return { type: "website", ...BASE_OPEN_GRAPH, ...og } as OpenGraph;
@@ -35,7 +36,8 @@ export const rootMetadata: Metadata = {
   description: SITE.description,
   applicationName: SITE.name,
   openGraph: pageOpenGraph({}),
-  twitter: { card: "summary_large_image", images: [OG_IMAGE.url] },
+  // No twitter:image: X falls back to og:image, which pages override with their own preview.
+  twitter: { card: "summary_large_image" },
   // AdSense site verification without loading any ad code (the editor home page stays ad-free).
   ...(ADSENSE_CLIENT ? { other: { "google-adsense-account": ADSENSE_CLIENT } } : {}),
   icons: {

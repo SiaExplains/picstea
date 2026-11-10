@@ -37,6 +37,8 @@ export const ptBr: SiteMessages = {
     factsChecked:
       "Informações sobre o {other} verificadas em {month} no site oficial. Os produtos mudam; confira lá as mais recentes.",
     october2026: "outubro de 2026",
+    november2026: "novembro de 2026",
+    lastUpdated: "Atualizado em {date}",
   },
   links: {
     "/online-photo-editor": "Editor de fotos online",

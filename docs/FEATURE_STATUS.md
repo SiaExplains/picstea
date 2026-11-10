@@ -1,6 +1,6 @@
 # Feature status
 
-Last updated: 2026-11-10 · version 0.45.1 · live at https://www.picstea.com · see `CHANGELOG.md` for each release and `docs/adr/` (ADR-0001 to ADR-0041) for decisions
+Last updated: 2026-11-10 · version 0.46.0 · live at https://www.picstea.com · see `CHANGELOG.md` for each release and `docs/adr/` (ADR-0001 to ADR-0041) for decisions
 
 Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ deferred
 
@@ -165,7 +165,9 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 | Path Selection, Add / Delete Anchor Point, Convert Point; Rounded Rectangle and Polygon shapes | ✅ | ADR-0027 |
 | Perspective Crop, Vertical Type, Quick/Object Selection, Magnetic Lasso, Content-Aware Move, Patch | 📋 | Later rounds |
 | AI crawlers named in robots.txt; /llms.txt and /llms-full.txt | ✅ | ADR-0028 |
-| Social preview image on every page; consistent Open Graph (site name, type, locale) | ✅ | `public/og-image.png`, `pageOpenGraph()` |
+| Social preview image on every page; consistent Open Graph (site name, type, locale) | ✅ | `pageOpenGraph()`; the editor home, author and legal pages use `public/og-image.png` |
+| Per-page social preview images (title card per page and language, blog cover photos) | ✅ | 0.46.0; static `/og/<locale>/<page>.png` from `src/lib/seo/og-pages.ts` and `og-card.tsx` |
+| "Last updated" dates and `dateModified` on landing pages | ✅ | 0.46.0; `src/content/pages/updated.ts` (release checklist in docs/16) |
 | Photoshop / Photopea alternative pages, FAQ page; related guides, docs prev/next | ✅ | ADR-0028 |
 | Installable app (PWA) and offline editor after the first visit | ✅ | ADR-0029; Install button in Chromium, instructions elsewhere |
 | ads.txt + AdSense verification meta tag | ✅ | Generated from `NEXT_PUBLIC_ADSENSE_CLIENT`; off without it |

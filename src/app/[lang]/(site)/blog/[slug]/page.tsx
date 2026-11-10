@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { pageOpenGraph } from "@/lib/seo/root-metadata";
+import { ogImages } from "@/lib/seo/og-pages";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import Link from "next/link";
@@ -37,9 +38,8 @@ export async function generateMetadata({
       publishedTime: post.published,
       modifiedTime: post.updated ?? post.published,
       authors: [DEFAULT_AUTHOR.name],
-      ...(post.image
-        ? { images: [{ url: post.image, width: 1200, height: 630, alt: post.title }] }
-        : {}),
+      // The post's own preview: its title, with its cover photo when it has one.
+      images: ogImages("en", path, post.title),
     }),
   };
 }

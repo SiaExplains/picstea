@@ -1,3 +1,4 @@
+import { ComparisonTable } from "@/components/site/ComparisonTable";
 import { LocalLink as Link } from "@/components/site/LocalLink";
 import type { PageCopy } from "../types";
 
@@ -5,7 +6,7 @@ const copy: PageCopy = {
   title: "Picstea: una alternativa a Photopea",
   description:
     "¿Buscas una alternativa a Photopea? Picstea es un editor de fotos gratis en el navegador con capas y PSD, y sin código publicitario de terceros en el editor.",
-  lead: "Photopea demostró que un editor de imágenes serio puede vivir en una pestaña del navegador. Picstea sigue la misma idea con su propio enfoque: un espacio de trabajo tranquilo, nada de código de terceros en el editor y una lista clara de lo que puede y no puede hacer.",
+  lead: "Sí. Picstea, como Photopea, es un editor de fotos gratuito que funciona en el navegador y edita los archivos en tu dispositivo, con capas, máscaras y soporte para PSD. Picstea deja fuera del editor todo el código de terceros, anuncios incluidos, y te dice exactamente qué cambió al abrir un PSD; Photopea abre muchos más formatos de archivo.",
   faqs: [
     {
       q: "¿En qué se diferencia Picstea de Photopea?",
@@ -32,6 +33,29 @@ const copy: PageCopy = {
           Editan los archivos en local, con herramientas y atajos familiares al estilo de Photoshop.
         </li>
       </ul>
+      <h2>En qué se diferencian</h2>
+      <ComparisonTable
+        other="Photopea"
+        checked="november2026"
+        rows={[
+          ["Precio", "Gratis", "Gratis"],
+          [
+            "Subidas",
+            "Ninguna: los archivos se quedan en tu dispositivo",
+            "Ninguna: su web dice que los archivos nunca salen de tu dispositivo",
+          ],
+          [
+            "Archivos PSD",
+            "Abre y guarda PSD con capas; indica lo que no puede conservar",
+            "Abre y guarda PSD, su formato principal",
+          ],
+          [
+            "Archivos que abre",
+            "PNG, JPEG, WebP, GIF, SVG, HEIC, PSD y proyectos de Picstea",
+            "Más de 40 formatos, entre ellos PDF, AI, TIFF, Figma y RAW de cámara",
+          ],
+        ]}
+      />
       <h2>Por qué la gente elige Picstea</h2>
       <ul>
         <li>
