@@ -3,6 +3,13 @@
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.45.1] — 2026-11-10
+
+### Changed
+
+- The feature status and documentation index now name the current version and every decision
+  record, including the new ones for fonts and paragraph text.
+
 ## [0.45.0] — 2026-11-10
 
 ### Added
