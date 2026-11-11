@@ -1,8 +1,8 @@
 "use client";
 
-import { setFillColor, setLayerBlendMode, setLayerOpacity } from "@/editor/core/commands";
+import { setFillColor } from "@/editor/core/commands";
 import { activeLayer } from "@/editor/core/document/queries";
-import { countLayers } from "@/editor/core/document/tree";
+import { countLayers, findLayerDeep } from "@/editor/core/document/tree";
 import {
   BLEND_MODES,
   type BlendMode,
@@ -51,6 +51,13 @@ export function PropertiesPanel({
   const layer = doc ? activeLayer(doc) : undefined;
   const selected = selectedLayerIds(session);
   const t = useT();
+  // Opacity and blend apply to every selected layer; differing values show as mixed.
+  const selectedLayers = doc
+    ? selected.map((id) => findLayerDeep(doc.layers, id)).filter((l) => !!l)
+    : [];
+  const mixedOpacity = new Set(selectedLayers.map((l) => Math.round(l.opacity * 100))).size > 1;
+  const mixedBlend = new Set(selectedLayers.map((l) => l.blendMode)).size > 1;
+  const anyGroup = selectedLayers.some((l) => l.kind === "group");
 
   return (
     <section
@@ -108,7 +115,7 @@ export function PropertiesPanel({
                   max={100}
                   value={Math.round(layer.opacity * 100)}
                   onChange={(e) =>
-                    controller.execute(setLayerOpacity(layer.id, Number(e.target.value) / 100))
+                    controller.setSelectedLayersOpacity(Number(e.target.value) / 100)
                   }
                   onPointerUp={() => controller.store.sealHistory()}
                   onKeyUp={() => controller.store.sealHistory()}
@@ -119,11 +126,13 @@ export function PropertiesPanel({
                   min={0}
                   max={100}
                   aria-label={t("Opacity percent")}
-                  value={Math.round(layer.opacity * 100)}
+                  placeholder={mixedOpacity ? "—" : undefined}
+                  title={mixedOpacity ? t("Mixed") : undefined}
+                  value={mixedOpacity ? "" : Math.round(layer.opacity * 100)}
                   onChange={(e) => {
                     const value = Number(e.target.value);
                     if (e.target.value !== "" && Number.isFinite(value)) {
-                      controller.execute(setLayerOpacity(layer.id, value / 100));
+                      controller.setSelectedLayersOpacity(value / 100);
                     }
                   }}
                   onBlur={() => controller.store.sealHistory()}
@@ -137,14 +146,19 @@ export function PropertiesPanel({
               <select
                 id="prop-blend"
                 className={styles.select}
-                value={layer.blendMode}
-                onChange={(e) =>
-                  controller.execute(setLayerBlendMode(layer.id, e.target.value as GroupBlendMode))
-                }
+                value={mixedBlend ? "" : layer.blendMode}
+                onChange={(e) => {
+                  if (e.target.value) {
+                    controller.setSelectedLayersBlendMode(e.target.value as GroupBlendMode);
+                  }
+                }}
               >
-                {layer.kind === "group" && (
-                  <option value="pass-through">{t("Pass Through")}</option>
+                {mixedBlend && (
+                  <option value="" disabled>
+                    — {t("Mixed")}
+                  </option>
                 )}
+                {anyGroup && <option value="pass-through">{t("Pass Through")}</option>}
                 {BLEND_MODES.map((mode) => (
                   <option key={mode} value={mode}>
                     {t(BLEND_LABELS[mode])}

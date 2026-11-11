@@ -84,6 +84,7 @@ export type CompositeContext = Pick<
   getImageData?: CanvasRenderingContext2D["getImageData"];
   putImageData?: CanvasRenderingContext2D["putImageData"];
   setTransform?: CanvasRenderingContext2D["setTransform"];
+  transform?: CanvasRenderingContext2D["transform"];
 };
 
 type Surface = HTMLCanvasElement | OffscreenCanvas;
@@ -94,15 +95,29 @@ export interface AssetResolver {
 }
 
 /** Live, uncommitted content shown in place of (or in addition to) document layers. */
+export interface LayerRect {
+  readonly x: number;
+  readonly y: number;
+  readonly width: number;
+  readonly height: number;
+}
+
 export interface CompositePreview {
   /** Drawables replacing a raster layer's pixels (e.g. an in-progress brush stroke). */
   readonly overrides?: ReadonlyMap<string, CanvasImageSource>;
+  /**
+   * Where an override is drawn, in layer pixels, when it covers more than the layer's box (a
+   * stroke that grows the layer, ADR-0043). Default: the layer's own box.
+   */
+  readonly overrideRects?: ReadonlyMap<string, LayerRect>;
   /** Draft layers drawn above `aboveLayerId` (or on top when null), e.g. a shape being dragged. */
   readonly extraLayers?: readonly { layer: Layer; aboveLayerId: string | null }[];
   /** Layers not drawn (e.g. a text layer while its on-canvas editor shows the draft). */
   readonly hiddenLayerIds?: ReadonlySet<string>;
   /** Drawables replacing a layer's mask (e.g. while painting on the mask). */
   readonly maskOverrides?: ReadonlyMap<string, CanvasImageSource>;
+  /** Shape strokes scale with their layer (a transform with "Scale strokes & effects" on). */
+  readonly scaleStrokes?: boolean;
 }
 
 /**
@@ -223,7 +238,12 @@ function shapePath(ctx: CompositeContext, layer: ShapeLayer): void {
   }
 }
 
-export function drawShape(ctx: CompositeContext, layer: ShapeLayer): void {
+/**
+ * Draw a shape under its layer transform. The stroke keeps its own width when the shape is
+ * scaled (ADR-0043): the outline is built scaled, then stroked with the scale undone — unless
+ * `scaleStrokes` ("Scale strokes & effects" during a transform).
+ */
+export function drawShape(ctx: CompositeContext, layer: ShapeLayer, scaleStrokes = false): void {
   shapePath(ctx, layer);
   if (layer.fill && layer.shape !== "line") {
     ctx.fillStyle = layer.fill;
@@ -236,7 +256,15 @@ export function drawShape(ctx: CompositeContext, layer: ShapeLayer): void {
     ctx.lineWidth = layer.stroke.width;
     ctx.lineJoin = "round";
     ctx.lineCap = "round";
-    ctx.stroke();
+    const { scaleX, scaleY } = layer.transform;
+    if (!scaleStrokes && (Math.abs(scaleX) !== 1 || Math.abs(scaleY) !== 1)) {
+      ctx.save();
+      ctx.scale(1 / scaleX, 1 / scaleY);
+      ctx.stroke();
+      ctx.restore();
+    } else {
+      ctx.stroke();
+    }
   }
 }
 
@@ -286,7 +314,9 @@ function drawLayer(
     case "raster": {
       const override = options.preview?.overrides?.get(layer.id);
       if (override) {
-        ctx.drawImage(override, 0, 0, layer.width, layer.height);
+        const r = options.preview?.overrideRects?.get(layer.id);
+        if (r) ctx.drawImage(override, r.x, r.y, r.width, r.height);
+        else ctx.drawImage(override, 0, 0, layer.width, layer.height);
         return;
       }
       if (!layer.assetId) return;
@@ -299,7 +329,7 @@ function drawLayer(
       return;
     }
     case "shape":
-      drawShape(ctx, layer);
+      drawShape(ctx, layer, options.preview?.scaleStrokes === true);
       return;
     case "text":
       drawText(ctx, layer, options.sizer);
@@ -395,8 +425,12 @@ function applyMask(ctx: CompositeContext, layerId: string, mask: LayerMask, env:
     mctx.fillStyle = "#ffffff";
     mctx.fillRect(0, 0, env.space.width, env.space.height);
   });
+  mctx.save();
+  // While its layer is being scaled or rotated, the mask is drawn through that transform.
+  if (mask.pendingTransform) mctx.transform?.(...mask.pendingTransform);
   mctx.clearRect(mask.x, mask.y, mask.width, mask.height);
   mctx.drawImage(source, mask.x, mask.y, mask.width, mask.height);
+  mctx.restore();
   inSurfacePixels(ctx, env, () => {
     ctx.save();
     ctx.globalCompositeOperation = "destination-in";

@@ -405,7 +405,9 @@ function LayerRow({
         title={layer.locked ? t("Unlock layer") : t("Lock layer")}
         onClick={(e) => {
           e.stopPropagation();
-          controller.execute(setLayerLocked(layer.id, !layer.locked));
+          // On one of several selected layers, the lock applies to all of them.
+          if (selected) controller.setSelectedLayersLocked(!layer.locked);
+          else controller.execute(setLayerLocked(layer.id, !layer.locked));
         }}
       >
         {layer.locked ? <LockIcon /> : <UnlockIcon />}

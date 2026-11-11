@@ -9,11 +9,25 @@ import {
   removeLayerDeep,
   topLevelSelection,
 } from "../document/tree";
-import type { EditorDocument, GroupLayer, Layer, Transform } from "../document/types";
-import { CommandError, type Command } from "./command";
+import type {
+  EditorDocument,
+  GroupBlendMode,
+  GroupLayer,
+  Layer,
+  Transform,
+} from "../document/types";
+import { CommandError, replaceLayer, type Command } from "./command";
+import type { Matrix } from "../geometry/matrix";
 import { setLayerTransform } from "./content-commands";
 import { groupLayer, translateLayer } from "./group-commands";
-import { deleteLayer, duplicateLayer } from "./layer-commands";
+import {
+  deleteLayer,
+  duplicateLayer,
+  setLayerBlendMode,
+  setLayerLocked,
+  setLayerOpacity,
+  setLayerVisibility,
+} from "./layer-commands";
 
 /**
  * Commands on several selected layers at once (ADR-0020). Each is one undo step built from the
@@ -71,18 +85,103 @@ export function translateLayersEach(
   });
 }
 
-/** Set the transforms of several layers in one step (group scale, rotate, flip). */
+/**
+ * Set the transforms of several layers in one step (group scale, rotate, flip). `groupMasks`
+ * carries the frame change since the gesture began to the linked raster masks of the selected
+ * groups (their children's masks follow through `setLayerTransform`), baked on release (ADR-0043).
+ */
 export function transformLayers(
   entries: readonly { readonly layerId: string; readonly transform: Transform }[],
-  options: GestureOptions = {},
+  options: GestureOptions & {
+    groupMasks?: { readonly ids: readonly string[]; readonly change: Matrix };
+  } = {},
 ): Command {
   return compose("layers.transform", "Transform", options, (doc) => {
     let next = doc;
     for (const { layerId, transform } of entries) {
       next = setLayerTransform(layerId, transform).apply(next);
     }
+    for (const id of options.groupMasks?.ids ?? []) {
+      const group = findLayerDeep(next.layers, id);
+      if (group?.kind !== "group" || !group.mask?.linked) continue;
+      const change = options.groupMasks!.change;
+      next = replaceLayer(next, {
+        ...group,
+        mask: { ...group.mask, pendingTransform: [...change] },
+      });
+    }
     return next;
   });
+}
+
+/**
+ * Apply a single-layer property command to every selected layer in one undo step. Unlike moves,
+ * the ids are used as selected (a selected layer inside a selected group is changed too). Layers
+ * the command refuses (locked, or a blend mode they can't take) are skipped; only if every layer
+ * refuses does the error surface.
+ */
+function forEachSelected(
+  type: string,
+  label: string,
+  ids: readonly string[],
+  make: (id: string) => Command,
+  mergeKey?: string,
+): Command {
+  return {
+    type,
+    label,
+    mergeKey,
+    apply(doc) {
+      const unique = [...new Set(ids)].filter((id) => findLayerDeep(doc.layers, id));
+      if (unique.length === 0) throw new CommandError("Those layers no longer exist.");
+      let next = doc;
+      let firstError: unknown = null;
+      let applied = 0;
+      for (const id of unique) {
+        try {
+          next = make(id).apply(next);
+          applied++;
+        } catch (error) {
+          if (!(error instanceof CommandError)) throw error;
+          firstError ??= error;
+        }
+      }
+      if (applied === 0 && firstError) throw firstError;
+      return next;
+    },
+  };
+}
+
+const idsKey = (ids: readonly string[]) => [...new Set(ids)].sort().join(",");
+
+/** Opacity of several layers (0–1); a slider drag merges into one step. */
+export function setLayersOpacity(ids: readonly string[], opacity: number): Command {
+  return forEachSelected(
+    "layers.opacity",
+    "Layer Opacity",
+    ids,
+    (id) => setLayerOpacity(id, opacity),
+    `layers.opacity:${idsKey(ids)}`,
+  );
+}
+
+/** Blend mode of several layers; "pass-through" changes only the groups among them. */
+export function setLayersBlendMode(ids: readonly string[], mode: GroupBlendMode): Command {
+  return forEachSelected("layers.blendMode", "Blend Mode", ids, (id) =>
+    setLayerBlendMode(id, mode),
+  );
+}
+
+export function setLayersVisibility(ids: readonly string[], visible: boolean): Command {
+  return forEachSelected("layers.visibility", visible ? "Show Layers" : "Hide Layers", ids, (id) =>
+    setLayerVisibility(id, visible),
+  );
+}
+
+export function setLayersLocked(ids: readonly string[], locked: boolean): Command {
+  return forEachSelected("layers.lock", locked ? "Lock Layers" : "Unlock Layers", ids, (id) =>
+    setLayerLocked(id, locked),
+  );
 }
 
 export function deleteLayers(ids: readonly string[]): Command {

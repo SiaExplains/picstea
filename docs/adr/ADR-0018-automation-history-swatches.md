@@ -26,7 +26,8 @@ stored, exported or replayed on another file.
   filters. It stops at the first step that raises an error notice and names it. The history is
   sealed first and the run is folded into one entry ("Action: name", `collapseSince`).
 - Not recordable (yet): brush strokes, pointer transforms, text and Properties-panel edits other
-  than adjustment settings. They need parameterised steps that are robust across documents of
+  than adjustment settings and, since 0.48.0, opacity, blend mode, visibility and lock of the
+  selected layers (ADR-0043). They need parameterised steps that are robust across documents of
   different sizes.
 
 ### Untrusted action files

@@ -241,7 +241,7 @@ describe("Gate 9h effects", () => {
     }
     const saved = store.getSession()!.document;
     const project = serializeDocument(saved);
-    expect(project.schemaVersion).toBe(9);
+    expect(project.schemaVersion).toBe(10);
     const loaded = deserializeProject(JSON.parse(JSON.stringify(project)));
     expect(loaded.ok).toBe(true);
     const back = (loaded as { ok: true; document: EditorDocument }).document;

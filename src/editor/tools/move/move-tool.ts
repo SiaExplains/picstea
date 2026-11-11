@@ -575,6 +575,7 @@ export class MoveTool implements Tool {
         label: drag.kind === "scale" ? "Scale" : "Rotate",
         mergeKey: drag.mergeKey,
         gesture: true,
+        groupMasks: { ids: selection.ids, change },
       }),
     );
     if (!result.ok) {
@@ -639,6 +640,7 @@ export class MoveTool implements Tool {
   pointerDown(ctx: ToolContext, pointer: ToolPointer): void {
     const session = ctx.store.getSession();
     if (!session || pointer.button !== 0) return;
+    this.scaleStyles = ctx.store.getState().toolSettings.move.scaleStyles;
     const doc = session.document;
     const pixels = this.pixelTarget(ctx);
     if (pixels) {
@@ -915,8 +917,12 @@ export class MoveTool implements Tool {
     ];
   }
 
+  private scaleStyles = false;
+
   preview(): CompositePreview | undefined {
-    return this.pixelDrag?.preview;
+    if (this.pixelDrag) return this.pixelDrag.preview;
+    // Strokes scale live only with "Scale strokes & effects" on; they are baked on release.
+    return (this.drag || this.multiDrag) && this.scaleStyles ? { scaleStrokes: true } : undefined;
   }
 
   selectionPreview(): SelectionMask | null | undefined {

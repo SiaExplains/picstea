@@ -93,6 +93,8 @@ export type UiActionId =
   | "file.convert"
   | "layer.toggleVectorMask"
   | "layer.newGroup"
+  | "layer.toggleVisibility"
+  | "layer.toggleLock"
   | "layer.addMask"
   | "layer.deleteMask"
   | "layer.toggleMask"
@@ -535,6 +537,17 @@ export function useEditorActions(hosts: ActionHosts): Record<UiActionId, UiActio
         run: () => doc && activeId && controller.execute(shiftLayer(doc, activeId, -1)),
       },
       "layer.newGroup": { label: "New Group", enabled: hasDoc, run: () => controller.addGroup() },
+      // Every selected layer follows the active one (shown → hide all, hidden → show all).
+      "layer.toggleVisibility": {
+        label: layer?.visible === false ? "Show Layers" : "Hide Layers",
+        enabled: !!layer,
+        run: () => layer && controller.setSelectedLayersVisible(!layer.visible),
+      },
+      "layer.toggleLock": {
+        label: layer?.locked ? "Unlock Layers" : "Lock Layers",
+        enabled: !!layer,
+        run: () => layer && controller.setSelectedLayersLocked(!layer.locked),
+      },
       "select.allLayers": {
         label: "All Layers",
         enabled: hasDoc,

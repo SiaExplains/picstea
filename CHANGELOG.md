@@ -3,6 +3,26 @@
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.48.0] — 2026-11-11
+
+### Added
+
+- **Paint anywhere on a layer.** Brush, pencil, Fill, Stroke, Paint Bucket and Gradient no longer
+  stop at the edge of a pixel layer: the layer grows to take the new paint, and one undo puts it
+  back as it was. (Layers you have scaled or rotated still keep their size.)
+- **Change several layers at once.** With several layers selected, opacity and blend mode in the
+  Properties panel apply to all of them in one step, and differing values show as "—". The lock
+  button and the new Layer → Hide Layers / Lock Layers commands work on the whole selection, and
+  these changes can be recorded in actions.
+- **"Scale strokes & effects"** in the Move tool options: turn it on to scale a shape's stroke
+  and its layer effects along with the shape.
+
+### Changed
+
+- **Masks follow their layer** when you scale or rotate it, not only when you move it.
+- **A shape's stroke keeps its width** when you scale the shape, as in Photoshop. Projects saved
+  before look exactly the same.
+
 ## [0.47.0] — 2026-11-11
 
 ### Added

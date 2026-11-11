@@ -1,6 +1,6 @@
 # Feature status
 
-Last updated: 2026-11-11 · version 0.47.0 · live at https://www.picstea.com · see `CHANGELOG.md` for each release and `docs/adr/` (ADR-0001 to ADR-0042) for decisions
+Last updated: 2026-11-11 · version 0.48.0 · live at https://www.picstea.com · see `CHANGELOG.md` for each release and `docs/adr/` (ADR-0001 to ADR-0043) for decisions
 
 Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ deferred
 
@@ -57,7 +57,8 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 | Feature | Status | Notes |
 |---|---|---|
 | Move tool (drag, auto-select, nudge) | ✅ | |
-| Free transform (scale, rotate, flip, numeric X/Y/W/H/angle) | ✅ | Skew/perspective 📋 |
+| Free transform (scale, rotate, flip, numeric X/Y/W/H/angle) | ✅ | Linked masks follow scale and rotation; shapes keep their stroke width ("Scale strokes & effects" option) (0.48.0, ADR-0043). Skew/perspective 📋 |
+| Pixel layers grow when brush, pencil, Fill, Stroke, Paint Bucket or Gradient paint outside their box | ✅ | 0.48.0, ADR-0043; unscaled, unrotated layers; 64 px steps; one undo step |
 | Crop (non-destructive) | ✅ | Aspect-ratio presets 📋 |
 | Brush (size, hardness, opacity) | ✅ | Pen pressure 📋 |
 | Eraser | ✅ | |
@@ -274,7 +275,7 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 | Move / scale / rotate / nudge several layers or a group through one frame | ✅ | One undo step; no skew (rotated layers stay rectangular) |
 | Flip, Group, Duplicate, Delete on the selection | ✅ | |
 | Align to each other or the selection; Distribute centres or spacing (3+) | ✅ | Recordable in actions |
-| Opacity/blend/visibility for several layers at once | 📋 | Properties panel edits the active layer |
+| Opacity/blend/visibility/lock for several layers at once | ✅ | 0.48.0, ADR-0043; one undo step, mixed values show "—", recordable in actions |
 
 ### 9h
 
@@ -324,11 +325,9 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 
 ## Known limitations
 
-- Pixel layers have a fixed size. Painting outside a layer's box is clipped.
+- Scaled or rotated pixel layers don't grow: painting outside their box is clipped (unscaled layers grow, ADR-0043).
 - Each brush stroke keeps a full-layer copy for undo. Above ~768 MB the oldest undo steps are dropped (ADR-0007).
-- Scaling a shape also scales its stroke width.
-- Masks follow moves but not scale/rotate of their layer.
+- A group's vector mask does not follow a group transform (raster masks do).
 - Editing a layer that has several adjustment layers or layer styles above it can pause briefly (about 0.1 s on a 24 MP image) when the edit starts, while the canvas redraws them.
 - Starting a retouching stroke on a very large layer (20+ MP) takes a noticeable moment while the layer is read.
-- Fill, gradient and the paint bucket edit inside a pixel layer's own box; they do not grow the layer.
 - Documents are capped at 12,000 px per side and 36 MP (full-resolution export and pixel tools still need one canvas of the whole image).

@@ -1081,6 +1081,7 @@ function CropOptions() {
 function MoveOptions({ actions }: { actions: Record<UiActionId, UiAction> }) {
   const controller = useController();
   const autoSelect = useEditorState((s) => s.toolSettings.move.autoSelect);
+  const scaleStyles = useEditorState((s) => s.toolSettings.move.scaleStyles);
   const t = useT();
   const count = selectedLayerIds(useActiveSession()).length;
   return (
@@ -1094,6 +1095,19 @@ function MoveOptions({ actions }: { actions: Record<UiActionId, UiAction> }) {
           }
         />
         {t("Auto-select layer")}
+      </label>
+      <label
+        className={styles.optionGroup}
+        title={t("Scaling a shape also scales its stroke and layer effects")}
+      >
+        <input
+          type="checkbox"
+          checked={scaleStyles}
+          onChange={(e) =>
+            controller.store.updateToolSettings("move", { scaleStyles: e.target.checked })
+          }
+        />
+        {t("Scale strokes & effects")}
       </label>
       <button
         type="button"

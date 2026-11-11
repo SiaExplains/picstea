@@ -99,6 +99,29 @@ describe("Gate 9g — selection-aware operations", () => {
     expect(round.steps).toEqual(steps);
   });
 
+  it("sets opacity on all selected layers, recorded as one step and replayed", async () => {
+    const { c, ids } = setup();
+    const id = c.createAction("Half")!;
+    c.startRecording(id);
+    for (const v of [0.9, 0.7, 0.5]) c.setSelectedLayersOpacity(v);
+    c.store.sealHistory();
+    c.setSelectedLayersVisible(false);
+    c.stopRecording();
+    expect(c.actions.get()[0].steps).toEqual([
+      { type: "layerOpacity", opacity: 0.5 },
+      { type: "layerVisibility", visible: false },
+    ]);
+    const layer = (lid: string) => findLayerDeep(doc(c).layers, lid)!;
+    expect(ids.map((lid) => layer(lid).opacity)).toEqual([0.5, 0.5, 0.5]);
+    c.undo();
+    c.undo();
+    expect(ids.map((lid) => layer(lid).opacity)).toEqual([1, 1, 1]);
+    c.store.selectLayer(ids[2]);
+    expect((await c.playAction(id)).ok).toBe(true);
+    expect([layer(ids[1]).opacity, layer(ids[2]).opacity]).toEqual([1, 0.5]);
+    expect(layer(ids[2]).visible).toBe(false);
+  });
+
   it("acts on the group when a group and its own child are selected", () => {
     const { c, ids } = setup();
     c.store.selectLayer(ids[0]);

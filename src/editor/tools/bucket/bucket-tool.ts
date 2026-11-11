@@ -1,9 +1,14 @@
-import { setRasterContent } from "../../core/commands";
+import { setRasterContent, setRasterContentAndBounds } from "../../core/commands";
 import { combineSelections } from "../../selection/ops";
 import { findLayer } from "../../core/document/queries";
 import type { SelectionMask } from "../../selection/mask";
 import { floodDocument } from "../../workers/offthread";
-import { paintRasterLayer, releaseSurface, selectionFill } from "../../pixels/layer-pixels";
+import {
+  paintRasterLayer,
+  paintRasterLayerGrowing,
+  releaseSurface,
+  selectionFill,
+} from "../../pixels/layer-pixels";
 import { editablePixelLayer } from "../pixel-target";
 import type { Tool, ToolContext, ToolPointer } from "../tool";
 
@@ -61,15 +66,21 @@ export class BucketTool implements Tool {
     if (!region?.bounds) return;
     const paint = selectionFill(ctx, doc, color, region);
     try {
-      const assetId = paintRasterLayer(
-        ctx,
-        layer,
-        paint,
-        this.erases ? "destination-out" : "source-over",
-      );
-      if (!assetId) return;
       const label = this.erases ? "Magic Eraser" : "Paint Bucket";
-      const result = ctx.store.dispatch(setRasterContent(layer.id, assetId, label));
+      let command;
+      if (this.erases) {
+        const assetId = paintRasterLayer(ctx, layer, paint, "destination-out");
+        if (!assetId) return;
+        command = setRasterContent(layer.id, assetId, label);
+      } else {
+        // The fill may grow the layer to the flooded area (ADR-0043).
+        const painted = paintRasterLayerGrowing(ctx, doc, layer, paint, region.bounds);
+        if (!painted) return;
+        command = painted.box
+          ? setRasterContentAndBounds(layer.id, painted.assetId, painted.box, label)
+          : setRasterContent(layer.id, painted.assetId, label);
+      }
+      const result = ctx.store.dispatch(command);
       if (!result.ok) ctx.notify("error", result.error);
       ctx.pixelsCommitted();
       ctx.invalidate();
