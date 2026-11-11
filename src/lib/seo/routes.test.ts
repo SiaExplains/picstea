@@ -28,6 +28,16 @@ describe("public routes", () => {
     }
     expect(new Set(paths).size).toBe(paths.length);
   });
+
+  it("dates every page except authors and legal pages (sitemap lastmod, ADR-0042)", () => {
+    const undated = publicRoutes()
+      .filter((r) => !r.lastModified)
+      .map((r) => r.path)
+      .filter((p) => !p.startsWith("/authors/") && !Object.values(LEGAL).some((l) => l.path === p));
+    expect(undated).toEqual([]);
+    for (const r of publicRoutes())
+      if (r.lastModified) expect(r.lastModified, r.path).toMatch(/^\d{4}-\d{2}-\d{2}/);
+  });
 });
 
 describe("structured data", () => {

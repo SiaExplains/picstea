@@ -24,8 +24,9 @@ test("website pages are indexable with metadata and structured data", async ({ p
   for (const [path, types] of [
     ["/docs", ["BreadcrumbList"]],
     ["/docs/getting-started", ["BreadcrumbList"]],
-    ["/psd-editor", ["BreadcrumbList", "SoftwareApplication", "FAQPage"]],
-    ["/online-photo-editor", ["BreadcrumbList", "SoftwareApplication", "FAQPage"]],
+    // Landing pages also carry a WebPage node with dateModified (0.46.0).
+    ["/psd-editor", ["BreadcrumbList", "SoftwareApplication", "FAQPage", "WebPage"]],
+    ["/online-photo-editor", ["BreadcrumbList", "SoftwareApplication", "FAQPage", "WebPage"]],
   ] as const) {
     const response = await page.goto(path);
     expect(response!.status()).toBe(200);

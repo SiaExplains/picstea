@@ -111,12 +111,14 @@ test("AI assistants and social previews: llms.txt, robots and preview images", a
 
   const image = await request.get("/og-image.png");
   expect(image.headers()["content-type"]).toBe("image/png");
-  for (const path of ["/", "/faq", "/blog/png-vs-jpeg-vs-webp"]) {
+  // The editor keeps the site-wide image; other pages have their own (src/lib/seo/og-pages.ts).
+  for (const [path, preview] of [
+    ["/", /\/og-image\.png$/],
+    ["/faq", /\/og\/en\/faq\.png$/],
+    ["/blog/png-vs-jpeg-vs-webp", /\/og\/en\/blog\/png-vs-jpeg-vs-webp\.png$/],
+  ] as const) {
     await page.goto(path);
-    await expect(page.locator('meta[property="og:image"]')).toHaveAttribute(
-      "content",
-      /\/og-image\.png$/,
-    );
+    await expect(page.locator('meta[property="og:image"]')).toHaveAttribute("content", preview);
     await expect(page.locator('meta[property="og:site_name"]')).toHaveAttribute(
       "content",
       "Picstea",

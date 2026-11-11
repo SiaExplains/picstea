@@ -3,10 +3,13 @@ import { publishedPosts } from "@/content/blog";
 import { CONVERTER_IDS } from "@/content/converters";
 import { DOCS } from "@/content/docs";
 import { LEGAL } from "@/content/legal";
+import { SITE_UPDATED, pageUpdated } from "@/content/pages/updated";
 
 /**
  * Every public, indexable page — the single source for the sitemap (docs/10 "Sitemap"). Draft
  * blog posts and unfinished legal pages are left out. Editor documents have no URLs at all.
+ * Every page that has a content date carries it as `lastModified` (sitemap lastmod, read by the
+ * IndexNow ping after each deploy, ADR-0042); only author and legal pages have none.
  */
 export interface PublicRoute {
   readonly path: string;
@@ -15,6 +18,21 @@ export interface PublicRoute {
 }
 
 export function publicRoutes(): PublicRoute[] {
+  const posts = publishedPosts();
+  const indexDates: Record<string, string> = {
+    "/": SITE_UPDATED,
+    "/blog": newest(posts.map((p) => p.updated ?? p.published)),
+    "/docs": newest(DOCS.map((d) => d.updated)),
+  };
+  return listRoutes(posts).map((route) => {
+    const lastModified = route.lastModified ?? pageUpdated(route.path) ?? indexDates[route.path];
+    return lastModified ? { ...route, lastModified } : route;
+  });
+}
+
+const newest = (dates: string[]) => dates.reduce((a, b) => (b > a ? b : a), "");
+
+function listRoutes(posts: ReturnType<typeof publishedPosts>): PublicRoute[] {
   return [
     { path: "/", priority: 1 },
     { path: "/online-photo-editor", priority: 0.9 },
@@ -44,7 +62,7 @@ export function publicRoutes(): PublicRoute[] {
     { path: "/docs", priority: 0.7 },
     ...DOCS.map((d) => ({ path: `/docs/${d.slug}`, priority: 0.6, lastModified: d.updated })),
     { path: "/blog", priority: 0.6 },
-    ...publishedPosts().map((p) => ({
+    ...posts.map((p) => ({
       path: `/blog/${p.slug}`,
       priority: 0.6,
       lastModified: p.updated ?? p.published,

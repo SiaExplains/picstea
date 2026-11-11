@@ -52,7 +52,8 @@ Every major feature must satisfy the following checklist.
 
 - [ ] `package.json` version bumped and a `CHANGELOG.md` entry written for people, not developers
 - [ ] AI-assistant facts current: `src/lib/seo/llms.ts` (served as `/llms.txt` and `/llms-full.txt`) describes what changed — features added, limits removed, new pages
-- [ ] Changed landing pages have a new date in `src/content/pages/updated.ts` (shown as "Last updated" and used as `dateModified`)
+- [ ] Changed landing pages have a new date in `src/content/pages/updated.ts` (shown as "Last updated" and used as `dateModified`); a release that changes the editor sets `SITE_UPDATED` there too
+- [ ] After the production deploy, the **IndexNow** action ran green (GitHub → Actions → IndexNow) and listed the pages you changed; it reads their sitemap dates (ADR-0042)
 - [ ] Comparison tables re-checked on the other product's official site when touched; the `checked` month on `ComparisonTable` updated
 - [ ] New public pages appear in the sitemap and have their own social preview (`src/lib/seo/og-pages.ts`; a unit test checks both)
 - [ ] `docs/FEATURE_STATUS.md` header shows the new version
