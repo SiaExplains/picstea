@@ -3,6 +3,17 @@
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.47.0] — 2026-11-11
+
+### Added
+
+- **Bing and other search engines hear about new and changed pages right away.** After every
+  release, Picstea tells the IndexNow search engines (Bing, which also feeds ChatGPT search and
+  Copilot, plus Yandex, Seznam, Naver and Yep) which pages changed, so they don't wait for their
+  next visit. Only public page addresses are sent.
+- **Every guide, comparison and converter page now has a date in the sitemap**, as do the editor,
+  the blog and the documentation index, so search engines can tell what is new.
+
 ## [0.46.1] — 2026-11-11
 
 ### Added

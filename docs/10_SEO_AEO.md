@@ -122,6 +122,19 @@ All absolute URLs come from the canonical origin (`NEXT_PUBLIC_SITE_URL`, docs/1
 
 Generate sitemap automatically from known public routes.
 
+Every page with a content date sends it as `lastmod` (docs, blog posts, landing pages from
+`src/content/pages/updated.ts`, the editor from `SITE_UPDATED`, the blog and docs indexes from
+their newest entry). Only author and legal pages have none.
+
+## IndexNow
+
+After each successful production deploy, `.github/workflows/indexnow.yml` runs
+`scripts/indexnow.mjs`: it reads the live sitemap and sends every URL (and hreflang alternate)
+whose `lastmod` is on or after the previous production deploy to `api.indexnow.org`, which shares
+it with Bing, Yandex, Seznam, Naver and Yep. The key is public by design and lives in
+`public/<key>.txt` and `src/lib/seo/indexnow.mjs`. Run the action by hand with "all" to send
+every page. Google does not use IndexNow (ADR-0042).
+
 Do not index private/local editor documents.
 
 ## Robots

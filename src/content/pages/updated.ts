@@ -30,6 +30,12 @@ export const PAGE_UPDATED: Readonly<Record<string, string>> = {
   "/webp-editor": "2026-10-20",
 };
 
+/**
+ * When the editor at `/` last changed: the date of the latest release with user-visible editor
+ * changes. Sent as the home page's sitemap lastmod, which IndexNow pings read (ADR-0042).
+ */
+export const SITE_UPDATED = "2026-11-11";
+
 /** Date shared by every /convert/<pair> page (src/content/converters). */
 export const CONVERTERS_UPDATED = "2026-10-20";
 

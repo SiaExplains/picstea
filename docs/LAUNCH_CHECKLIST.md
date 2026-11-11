@@ -1,7 +1,7 @@
 # Launch checklist — things done outside the code
 
 Everything here happens in dashboards (Vercel, Google, Bing, AdSense) or needs the operator's
-details. The code side is finished unless a step says otherwise. Last checked: 2026-10-19.
+details. The code side is finished unless a step says otherwise. Last checked: 2026-11-11.
 
 ## Domains (Vercel)
 
@@ -26,6 +26,9 @@ details. The code side is finished unless a step says otherwise. Last checked: 2
 ## Bing Webmaster Tools (feeds ChatGPT search and Copilot)
 
 - [ ] Add the site (import from Google Search Console is fastest) and submit the sitemap.
+- [ ] After the 0.47.0 deploy: GitHub → Actions → **IndexNow** → Run workflow with "all" ticked,
+      once, to send every page. Later deploys send only the changed pages on their own (ADR-0042).
+- [ ] A few days later, Bing Webmaster Tools → IndexNow: the submitted URLs appear there.
 
 ## Legal pages (needed for search trust and AdSense)
 

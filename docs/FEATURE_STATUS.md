@@ -1,6 +1,6 @@
 # Feature status
 
-Last updated: 2026-11-10 · version 0.46.0 · live at https://www.picstea.com · see `CHANGELOG.md` for each release and `docs/adr/` (ADR-0001 to ADR-0041) for decisions
+Last updated: 2026-11-11 · version 0.47.0 · live at https://www.picstea.com · see `CHANGELOG.md` for each release and `docs/adr/` (ADR-0001 to ADR-0042) for decisions
 
 Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ deferred
 
@@ -134,7 +134,8 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 | Docs (7 pages incl. generated shortcut table) | ✅ | |
 | Blog (index, posts, Article data) | ✅ | 11 posts published (2026-10-18) |
 | Structured data: WebSite, Organization, SoftwareApplication, BreadcrumbList, Article, FAQPage | ✅ | No ratings/reviews |
-| Sitemap from one routes registry; real 404s for unknown docs/blog URLs | ✅ | Drafts and unfinished legal pages excluded |
+| Sitemap from one routes registry; real 404s for unknown docs/blog URLs | ✅ | Drafts and unfinished legal pages excluded; every page but authors and legal pages has a `lastmod` (0.47.0) |
+| IndexNow ping after each production deploy (Bing, Yandex, Seznam, Naver, Yep) | ✅ | 0.47.0, ADR-0042; `.github/workflows/indexnow.yml` + `scripts/indexnow.mjs`, key file in `public/`. Google uses the sitemap |
 | Consent system: banner, preferences, vendor registry, versioned storage | ✅ | Only shown when an optional vendor is configured |
 | Google AdSense (website only, after consent, non-personalised) | ✅ | Off until `NEXT_PUBLIC_ADSENSE_CLIENT`/`_SLOT` are set |
 | Custom sponsorships (no tracking), editor start-screen slot | ✅ | House ad until sponsors are booked |
