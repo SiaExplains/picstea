@@ -3,6 +3,12 @@
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.46.1] — 2026-11-11
+
+### Added
+
+- New blog post, **Blur Gallery: tilt-shift, iris, path and spin blur**, explaining what each Blur Gallery filter and slider does and how it compares with Photoshop and Photopea.
+
 ## [0.46.0] — 2026-11-10
 
 ### Added
