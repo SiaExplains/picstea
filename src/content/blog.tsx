@@ -1881,6 +1881,197 @@ export const POSTS: readonly BlogPost[] = [
       </>
     ),
   },
+  {
+    slug: "blur-gallery-tilt-shift-iris-path-spin-blur",
+    title: "Blur Gallery: tilt-shift, iris, path and spin blur",
+    description:
+      "Picstea's Blur Gallery has Field, Iris, Tilt-Shift, Path and Spin blur. What each slider does, which one to pick, and how it differs from Photoshop's pins.",
+    published: "2026-11-11",
+    draft: false,
+    body: () => (
+      <>
+        <p>
+          The Blur Gallery in Picstea is a set of five filters under{" "}
+          <strong>Filter → Blur Gallery</strong>: <strong>Field Blur</strong>,{" "}
+          <strong>Iris Blur</strong>, <strong>Tilt-Shift</strong>, <strong>Path Blur</strong> and{" "}
+          <strong>Spin Blur</strong>. The first three keep part of the photo sharp and blur the rest
+          by an amount that changes across the image, so you get a depth-of-field look without
+          making a selection. Path Blur and Spin Blur add movement, as streaks along a curve or a
+          rotation around a point. Each opens a dialog with sliders and a live preview. The blur is
+          calculated in your browser, and the photo stays on your device.
+        </p>
+        <p>
+          The example here is a photo taken from a footbridge: a city street below, cars parked
+          along both sides, and a cyclist crossing the middle of the frame.
+        </p>
+        <h2>How is this different from Gaussian Blur?</h2>
+        <p>
+          The filters under <strong>Filter → Blur</strong> (Gaussian, Box, Lens, Motion, Radial and
+          the rest) blur every pixel of the layer by the same amount. To blur only the background
+          with them, you select the subject, invert the selection and then blur, as the{" "}
+          <Link href="/blur-background">blur background guide</Link> does with Lens Blur. The Blur
+          Gallery filters vary the amount of blur across the image, so the fade from sharp to
+          blurred is built in. A selection still limits them if you make one.
+        </p>
+        <h2>Before you start: should I use a smart object?</h2>
+        <p>
+          Filters change the pixels of the layer they run on. If you want to come back later and
+          change the blur, choose <strong>Layer → Smart Object → Convert to Smart Object</strong>{" "}
+          first. Any filter you then pick from the Filter menu is added as a smart filter instead.
+          It shows up in the <strong>Smart filters</strong> list in the Properties panel, where you
+          can hide it, open it again with new settings, move it up or down, or delete it. The{" "}
+          <Link href="/blog/smart-objects-explained">smart objects post</Link> covers the rest.
+        </p>
+        <p>
+          On a plain pixel layer the dialog has a <strong>Preview</strong> checkbox instead, and{" "}
+          <strong>OK</strong> applies the filter as one undo step. Text and shape layers can&apos;t
+          be filtered yet.
+        </p>
+        <h2>How do I make the miniature look with Tilt-Shift?</h2>
+        <p>
+          Tilt-Shift keeps a straight band sharp and blurs more and more above and below it. A
+          street seen from above starts to look like a model railway, since a focus band that thin
+          is what you&apos;d get photographing something small up close.
+        </p>
+        <ol>
+          <li>
+            Choose <strong>Filter → Blur Gallery → Tilt-Shift…</strong>.
+          </li>
+          <li>
+            Move <strong>Center Y</strong> until the sharp band sits on the cyclist. It is a
+            percentage of the image height, with 50% in the middle.
+          </li>
+          <li>
+            Set <strong>Focus band</strong> to decide how tall the sharp strip is, and{" "}
+            <strong>Transition</strong> to decide how gradually the blur grows on either side. Both
+            are percentages of the image height. A narrow band with a short transition makes the
+            miniature effect stronger.
+          </li>
+          <li>
+            Turn <strong>Angle</strong> (−90° to 90°) if the street runs diagonally, then raise{" "}
+            <strong>Blur</strong>. It goes up to 500 px; on a photo from a phone, 15 to 40 px is
+            usually enough.
+          </li>
+        </ol>
+        <p>
+          A Vibrance or Hue/Saturation adjustment layer on top adds a bit of colour for the toy look
+          without touching the blurred pixels.
+        </p>
+        <h2>How do I keep one subject sharp with Iris Blur?</h2>
+        <p>
+          Iris Blur keeps an oval sharp and blurs everything outside it. Choose{" "}
+          <strong>Filter → Blur Gallery → Iris Blur…</strong>, put <strong>Center X</strong> and{" "}
+          <strong>Center Y</strong> on the cyclist, then size the oval with <strong>Width</strong>{" "}
+          and <strong>Height</strong> (percentages of the image width and height).{" "}
+          <strong>Angle</strong> tilts the oval for a subject that leans.
+        </p>
+        <p>
+          <strong>Feather</strong> sets how the edge behaves. At 0% sharp meets blurred all at once
+          at the outline. At 50%, the default, the inner half of the oval is fully sharp and the
+          blur fades in toward the outline, and higher values start the fade closer to the centre.
+          For portraits and product shots, something between 40 and 70% looks natural.
+        </p>
+        <h2>What is Field Blur for?</h2>
+        <p>
+          Field Blur blends between two pins, each with its own amount of blur. The defaults put{" "}
+          <strong>Pin 1</strong> at the left with 15 px of blur and <strong>Pin 2</strong> at the
+          right with none, so the photo goes from blurred to sharp across the frame. Everything
+          before the first pin gets the first pin&apos;s blur, everything past the second gets the
+          second&apos;s, and the amount changes smoothly in between.
+        </p>
+        <p>
+          In the street photo, put <strong>Pin 1 X</strong> and <strong>Pin 1 Y</strong> near the
+          top, where the far end of the street is, with some blur, and Pin 2 at the bottom with 0
+          px. The distance goes soft and the foreground stays crisp, much as a wide-open lens would
+          have shot it.
+        </p>
+        <h2>How do I add motion with Path Blur?</h2>
+        <p>
+          Path Blur smears the image along a short curve, like a camera panning past something fast.
+          Picstea uses one curve for the whole layer, set with these sliders:
+        </p>
+        <ul>
+          <li>
+            <strong>Angle</strong> is the direction of the streak, from −180° to 180°.
+          </li>
+          <li>
+            <strong>Speed</strong> is the length of the streak in pixels, from 1 to 300.
+          </li>
+          <li>
+            <strong>Curve</strong> bends the streak to one side or the other, as a percentage of its
+            length.
+          </li>
+          <li>
+            <strong>Centered blur</strong> (on by default) spreads the streak both ways from each
+            pixel. Turn it off and the streak trails to one side only.
+          </li>
+        </ul>
+        <p>
+          Because the streak covers the whole layer, use a selection to decide where it goes. To
+          make the street behind the cyclist rush past, select the cyclist with the{" "}
+          <Link href="/docs/selections">selection tools</Link>, choose{" "}
+          <strong>Select → Inverse</strong>, add a few pixels with{" "}
+          <strong>Select → Feather…</strong> so the edge isn&apos;t harsh, and then run Path Blur
+          with the angle matching the direction of travel.
+        </p>
+        <h2>How do I make wheels spin with Spin Blur?</h2>
+        <p>
+          Spin Blur rotates the pixels inside a circle around its centre. Choose{" "}
+          <strong>Filter → Blur Gallery → Spin Blur…</strong>, put <strong>Center X</strong> and{" "}
+          <strong>Center Y</strong> on the hub of the front wheel and set <strong>Radius</strong> (a
+          percentage of the shorter side of the image) until the circle covers the wheel.{" "}
+          <strong>Blur angle</strong>, from 0° to 360°, is how far each pixel is smeared around the
+          circle. <strong>Feather</strong> fades the effect out toward the edge of the circle.
+        </p>
+        <p>
+          Each Spin Blur covers one circle, so the rear wheel needs a second pass. Open the dialog
+          again and move the centre; it starts from the settings you used last. On a pixel layer,{" "}
+          <strong>Filter → Last Filter</strong> (Ctrl+Alt+F, or Cmd+Option+F on a Mac) repeats it
+          with exactly the same settings. On a smart object you can add the same filter twice and
+          keep both editable.
+        </p>
+        <h2>How does this compare with Photoshop and Photopea?</h2>
+        <p>
+          Photoshop and Photopea have the same five blur types, but you place them on the image
+          itself. In Photoshop you drag pins, rings and handles on the canvas, and Field Blur can
+          take several pins with a different blur on each. Adobe recommends converting the layer to
+          a smart object first so the Blur Gallery is applied as a smart filter, which works the
+          same way in Picstea. Photopea&apos;s Blur Gallery also uses control points on the image,
+          and its guide says you can add as many blurs of each type as you need.
+        </p>
+        <p>
+          Picstea sets the geometry with sliders, and each run of a filter has one of each: two pins
+          for Field Blur, one oval, one band, one curve or one circle. For several spin centres or a
+          path that changes direction, run the filter more than once, each time with a selection.
+          The <Link href="/photoshop-alternative">Photoshop alternative</Link> and{" "}
+          <Link href="/photopea-alternative">Photopea alternative</Link> pages compare more.
+        </p>
+        <h2>Questions people ask</h2>
+        <h3>Can I blur only the background without selecting the subject?</h3>
+        <p>
+          Yes, if the subject is roughly oval or sits in a band: Iris Blur and Tilt-Shift keep that
+          area sharp. For a complicated outline, select the subject and use Lens Blur on the
+          inverted selection.
+        </p>
+        <h3>Is the preview the same as the final result?</h3>
+        <p>
+          On most photos, yes. On very large layers the preview is calculated at a reduced size so
+          the dialog stays responsive. The result you apply is always full resolution.
+        </p>
+        <h3>Can I change the blur after clicking OK?</h3>
+        <p>
+          Only on a smart object, where the filter stays in the Smart filters list. On a pixel layer
+          the blur becomes part of the pixels, and undo is the way back.
+        </p>
+        <h3>Is my photo uploaded to apply the blur?</h3>
+        <p>No. Every Blur Gallery filter runs in your browser; Picstea has no server for images.</p>
+        <p>
+          The <Link href="/docs/filters">filters guide</Link> lists every filter in the menu.{" "}
+          <EditorLink>Open Picstea</EditorLink> and try Tilt-Shift on a photo taken from up high.
+        </p>
+      </>
+    ),
+  },
 ];
 
 const showDrafts = process.env.NODE_ENV !== "production";

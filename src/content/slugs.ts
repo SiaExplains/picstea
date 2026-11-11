@@ -51,6 +51,7 @@ export const POST_SLUGS: Readonly<Record<string, "draft" | "published">> = {
   "copy-and-paint-in-perspective-with-vanishing-point": "published",
   "paragraph-text-and-custom-fonts": "published",
   "make-a-gradient-background-for-a-banner": "published",
+  "blur-gallery-tilt-shift-iris-path-spin-blur": "published",
 };
 
 /** Author pages (`/authors/<slug>`); a unit test keeps this in sync with `authors.ts`. */
