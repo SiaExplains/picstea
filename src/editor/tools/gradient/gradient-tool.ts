@@ -1,4 +1,4 @@
-import { setRasterContent } from "../../core/commands";
+import { setRasterContent, setRasterContentAndBounds } from "../../core/commands";
 import { rgba } from "../../core/color";
 import type { EditorDocument, RasterLayer } from "../../core/document/types";
 import { fromTransform, invertMatrix } from "../../core/geometry/matrix";
@@ -7,12 +7,13 @@ import type { Point } from "../../core/viewport/viewport";
 import {
   clipToSelection,
   context2d,
-  paintRasterLayer,
+  paintRasterLayerGrowing,
   releaseSurface,
   type PixelEnv,
   type Surface,
 } from "../../pixels/layer-pixels";
-import type { CompositePreview } from "../../rendering/compositing/compositor";
+import type { CompositePreview, LayerRect } from "../../rendering/compositing/compositor";
+import { grownBox, paintArea } from "../../pixels/grow";
 import type { Overlay } from "../../rendering/overlay";
 import { editablePixelLayer } from "../pixel-target";
 import type { Tool, ToolContext, ToolPointer } from "../tool";
@@ -63,6 +64,7 @@ export class GradientTool implements Tool {
   readonly id = "gradient";
   private drag: Drag | null = null;
   private readonly overrides = new Map<string, Surface>();
+  private readonly overrideRects = new Map<string, LayerRect>();
 
   cursor(): string {
     return "crosshair";
@@ -89,21 +91,42 @@ export class GradientTool implements Tool {
     const { toolSettings, colors } = ctx.store.getState();
     const paint = renderGradient(ctx, doc, drag.start, drag.end, toolSettings.gradient, colors);
     try {
-      // The same drawing as paintRasterLayer, into a reused surface instead of a new asset.
+      // The same drawing as paintRasterLayerGrowing, into a reused surface instead of a new
+      // asset; it covers the box the layer will grow to (ADR-0043).
       const { layer } = drag;
-      const preview = drag.preview ?? ctx.createSurface(layer.width, layer.height);
+      const area = paintArea(doc, layer);
+      const { x: tx, y: ty } = layer.transform;
+      const extent = doc.selection?.bounds ?? { x: 0, y: 0, width: doc.width, height: doc.height };
+      const box = area
+        ? (grownBox(
+            layer,
+            { x: extent.x - tx, y: extent.y - ty, width: extent.width, height: extent.height },
+            area,
+          ) ?? { x: 0, y: 0, width: layer.width, height: layer.height })
+        : { x: 0, y: 0, width: layer.width, height: layer.height };
+      if (
+        drag.preview &&
+        (drag.preview.width !== box.width || drag.preview.height !== box.height)
+      ) {
+        releaseSurface(drag.preview);
+        drag.preview = null;
+      }
+      const preview = drag.preview ?? ctx.createSurface(box.width, box.height);
       const p = context2d(preview);
       p.setTransform(1, 0, 0, 1, 0, 0);
-      p.clearRect(0, 0, layer.width, layer.height);
+      p.clearRect(0, 0, box.width, box.height);
       const base = layer.assetId ? ctx.assets.getBitmap(layer.assetId) : undefined;
-      if (base) p.drawImage(base, 0, 0, layer.width, layer.height);
-      const toLocal = invertMatrix(fromTransform(layer.transform));
-      if (!toLocal) return;
+      if (base) p.drawImage(base, -box.x, -box.y, layer.width, layer.height);
+      const inverse = invertMatrix(fromTransform(layer.transform));
+      if (!inverse) return;
+      const toLocal = [1, 0, 0, 1, -box.x, -box.y] as const;
       p.setTransform(...toLocal);
+      p.transform(...inverse);
       p.drawImage(paint, 0, 0);
       p.setTransform(1, 0, 0, 1, 0, 0);
       drag.preview = preview;
       this.overrides.set(layer.id, preview);
+      this.overrideRects.set(layer.id, box);
     } finally {
       releaseSurface(paint);
     }
@@ -114,6 +137,7 @@ export class GradientTool implements Tool {
     const drag = this.drag;
     this.drag = null;
     this.overrides.clear();
+    this.overrideRects.clear();
     if (!drag) return;
     releaseSurface(drag.preview);
     const doc = ctx.store.getSession()?.document;
@@ -124,9 +148,19 @@ export class GradientTool implements Tool {
     const { toolSettings, colors } = ctx.store.getState();
     const paint = renderGradient(ctx, doc, drag.start, drag.end, toolSettings.gradient, colors);
     try {
-      const assetId = paintRasterLayer(ctx, drag.layer, paint);
-      if (assetId) {
-        const result = ctx.store.dispatch(setRasterContent(drag.layer.id, assetId, "Gradient"));
+      const painted = paintRasterLayerGrowing(
+        ctx,
+        doc,
+        drag.layer,
+        paint,
+        doc.selection?.bounds ?? null,
+      );
+      if (painted) {
+        const result = ctx.store.dispatch(
+          painted.box
+            ? setRasterContentAndBounds(drag.layer.id, painted.assetId, painted.box, "Gradient")
+            : setRasterContent(drag.layer.id, painted.assetId, "Gradient"),
+        );
         if (!result.ok) ctx.notify("error", result.error);
         ctx.pixelsCommitted();
       }
@@ -140,6 +174,7 @@ export class GradientTool implements Tool {
     if (this.drag) releaseSurface(this.drag.preview);
     this.drag = null;
     this.overrides.clear();
+    this.overrideRects.clear();
     ctx.invalidate();
   }
 
@@ -150,7 +185,9 @@ export class GradientTool implements Tool {
   }
 
   preview(): CompositePreview | undefined {
-    return this.overrides.size > 0 ? { overrides: this.overrides } : undefined;
+    return this.overrides.size > 0
+      ? { overrides: this.overrides, overrideRects: this.overrideRects }
+      : undefined;
   }
 }
 

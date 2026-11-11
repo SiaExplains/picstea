@@ -154,7 +154,11 @@ export interface EyedropperSettings {
 }
 
 export interface ToolSettings {
-  readonly move: { readonly autoSelect: boolean };
+  readonly move: {
+    readonly autoSelect: boolean;
+    /** Scaling a shape also scales its stroke and layer effects (ADR-0043). Off as in Photoshop. */
+    readonly scaleStyles: boolean;
+  };
   readonly marquee: MarqueeSettings;
   readonly lasso: LassoSettings;
   readonly wand: WandSettings;
@@ -191,7 +195,7 @@ export const MIN_BRUSH_SIZE = 1;
 export const MAX_BRUSH_SIZE = 1000;
 
 export const DEFAULT_TOOL_SETTINGS: ToolSettings = {
-  move: { autoSelect: true },
+  move: { autoSelect: true, scaleStyles: false },
   marquee: { shape: "rect", mode: "replace" },
   lasso: { kind: "freehand", mode: "replace" },
   wand: { tolerance: 32, contiguous: true, sampleAll: false, mode: "replace" },

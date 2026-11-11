@@ -7,7 +7,7 @@ import {
 } from "../document/factory";
 import { findLayerDeep, flattenTopFirst, locateLayer } from "../document/tree";
 import type { EditorDocument, GroupLayer, Layer } from "../document/types";
-import { CommandError } from "./command";
+import { CommandError, replaceLayer } from "./command";
 import { setAdjustment } from "./adjustment-commands";
 import { cropDocument, setLayerTransform } from "./content-commands";
 import { DEFAULT_EFFECTS, setLayerEffect } from "./effect-commands";
@@ -209,16 +209,33 @@ describe("masks", () => {
     expect(() => setMaskEnabled("a", true).apply(d)).toThrow(/no mask/);
   });
 
-  it("a linked mask follows a move but not a scale", () => {
+  it("a linked mask follows a move, a scale and a rotation; an unlinked one stays", () => {
     const d = addLayerMask("a").apply(doc());
     const moved = setLayerTransform("a", { x: 7, y: 3, scaleX: 1, scaleY: 1, rotation: 0 }).apply(
       d,
     );
     expect(findLayerDeep(moved.layers, "a")?.mask).toMatchObject({ x: 7, y: 3 });
+    expect(findLayerDeep(moved.layers, "a")?.mask?.pendingTransform).toBeUndefined();
+    // A scale leaves a pending transform (baked into new pixels when the gesture ends).
     const scaled = setLayerTransform("a", { x: 7, y: 3, scaleX: 2, scaleY: 1, rotation: 0 }).apply(
       d,
     );
-    expect(findLayerDeep(scaled.layers, "a")?.mask).toMatchObject({ x: 0, y: 0 });
+    expect(findLayerDeep(scaled.layers, "a")?.mask).toMatchObject({
+      x: 0,
+      y: 0,
+      pendingTransform: [2, 0, 0, 1, 7, 3],
+    });
+    // Further steps of the same gesture compose with it.
+    const again = setLayerTransform("a", { x: 7, y: 3, scaleX: 4, scaleY: 1, rotation: 0 }).apply(
+      scaled,
+    );
+    expect(findLayerDeep(again.layers, "a")?.mask?.pendingTransform).toEqual([4, 0, 0, 1, 7, 3]);
+    const layer = findLayerDeep(d.layers, "a")!;
+    const unlinked = replaceLayer(d, { ...layer, mask: { ...layer.mask!, linked: false } });
+    const kept = setLayerTransform("a", { x: 7, y: 3, scaleX: 2, scaleY: 1, rotation: 0 }).apply(
+      unlinked,
+    );
+    expect(findLayerDeep(kept.layers, "a")?.mask?.pendingTransform).toBeUndefined();
   });
 });
 

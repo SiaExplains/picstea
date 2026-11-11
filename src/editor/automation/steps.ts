@@ -1,7 +1,7 @@
 import { adjustmentDefinition, parseAdjustment } from "../adjustments/registry";
 import { parseHexColor } from "../core/color";
 import type { SelectionModification } from "../core/commands/selection-commands";
-import type { Adjustment } from "../core/document/types";
+import { BLEND_MODES, type Adjustment, type GroupBlendMode } from "../core/document/types";
 import { ALIGN_LABELS, type AlignEdge } from "../core/geometry/snapping";
 import { DISTRIBUTE_LABELS, type DistributeMode } from "../core/geometry/multi-transform";
 import {
@@ -33,7 +33,12 @@ export type ActionStep =
   | { readonly type: "newLayer" }
   | { readonly type: "duplicateLayer" }
   | { readonly type: "fillLayer"; readonly color: string }
-  | { readonly type: "cropToSelection" };
+  | { readonly type: "cropToSelection" }
+  // Properties of the selected layers at playback (0.48.0).
+  | { readonly type: "layerOpacity"; readonly opacity: number }
+  | { readonly type: "layerBlend"; readonly mode: GroupBlendMode }
+  | { readonly type: "layerVisibility"; readonly visible: boolean }
+  | { readonly type: "layerLock"; readonly locked: boolean };
 
 const SELECT_LABELS = { all: "Select All", deselect: "Deselect", inverse: "Select Inverse" };
 const MODIFY_LABELS = { feather: "Feather", expand: "Expand", contract: "Contract" };
@@ -67,6 +72,14 @@ export function stepLabel(step: ActionStep): string {
       return `New Fill Layer ${step.color}`;
     case "cropToSelection":
       return "Crop to Selection";
+    case "layerOpacity":
+      return "Layer Opacity";
+    case "layerBlend":
+      return "Blend Mode";
+    case "layerVisibility":
+      return step.visible ? "Show Layers" : "Hide Layers";
+    case "layerLock":
+      return step.locked ? "Lock Layers" : "Unlock Layers";
   }
 }
 
@@ -131,6 +144,24 @@ export function parseStep(value: unknown): ActionStep | null {
       return { type: "duplicateLayer" };
     case "cropToSelection":
       return { type: "cropToSelection" };
+    case "layerOpacity": {
+      const opacity = own(value, "opacity");
+      return typeof opacity === "number" && opacity >= 0 && opacity <= 1
+        ? { type: "layerOpacity", opacity }
+        : null;
+    }
+    case "layerBlend": {
+      const mode = oneOf(own(value, "mode"), [...BLEND_MODES, "pass-through"] as GroupBlendMode[]);
+      return mode ? { type: "layerBlend", mode } : null;
+    }
+    case "layerVisibility": {
+      const visible = own(value, "visible");
+      return typeof visible === "boolean" ? { type: "layerVisibility", visible } : null;
+    }
+    case "layerLock": {
+      const locked = own(value, "locked");
+      return typeof locked === "boolean" ? { type: "layerLock", locked } : null;
+    }
     default:
       return null;
   }

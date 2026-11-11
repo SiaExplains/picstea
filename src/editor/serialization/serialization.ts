@@ -1,4 +1,5 @@
-import type { EditorDocument } from "../core/document/types";
+import type { EditorDocument, ShapeLayer } from "../core/document/types";
+import { bakeShapeScale } from "../core/geometry/shape-scale";
 import { upgradeLegacyEffects } from "../core/effects/model";
 import { ValidationError, validateDocument } from "./validate";
 
@@ -8,7 +9,7 @@ import { ValidationError, validateDocument } from "./validate";
  * To change the stored shape: bump CURRENT_SCHEMA_VERSION, add a migration from the previous
  * version, and update the validator. Never edit a released migration.
  */
-export const CURRENT_SCHEMA_VERSION = 9;
+export const CURRENT_SCHEMA_VERSION = 10;
 
 export interface SerializedProject {
   readonly schemaVersion: number;
@@ -62,7 +63,47 @@ export const MIGRATIONS: Readonly<Record<number, Migration>> = {
    * paragraphs, kerning on.
    */
   8: (document) => upgradeTextIn(document),
+  /*
+   * v10 (0.48.0) keeps a shape's size in its geometry, not its scale, and strokes keep their
+   * width when scaled (ADR-0043). Scaled shapes get the scale baked in, with the stroke widened
+   * by the same factor, so they look as before.
+   */
+  9: (document) => upgradeShapesIn(document),
 };
+
+/** Recursively bake the scale of shape layers (v10), including groups and smart object contents. */
+function upgradeShapesIn(document: unknown): unknown {
+  if (typeof document !== "object" || document === null) return document;
+  const doc = document as { layers?: unknown };
+  if (!Array.isArray(doc.layers)) return document;
+  return { ...doc, layers: doc.layers.map(upgradeShapeLayer) };
+}
+
+function upgradeShapeLayer(value: unknown): unknown {
+  if (typeof value !== "object" || value === null) return value;
+  let layer: Record<string, unknown> = { ...(value as Record<string, unknown>) };
+  const t = layer.transform as { scaleX?: unknown; scaleY?: unknown } | undefined;
+  const valid =
+    layer.kind === "shape" &&
+    typeof t?.scaleX === "number" &&
+    typeof t.scaleY === "number" &&
+    typeof layer.width === "number" &&
+    typeof layer.height === "number" &&
+    typeof layer.cornerRadius === "number" &&
+    (layer.path === undefined ||
+      Array.isArray((layer.path as { subpaths?: unknown } | null)?.subpaths)) &&
+    (layer.stroke === null || typeof (layer.stroke as { width?: unknown })?.width === "number");
+  // Anything malformed is left for validation to reject.
+  if (valid) {
+    layer = bakeShapeScale(layer as unknown as ShapeLayer, {
+      scaleStroke: true,
+      scaleEffects: false,
+    }) as unknown as Record<string, unknown>;
+  }
+  if (Array.isArray(layer.children)) layer.children = layer.children.map(upgradeShapeLayer);
+  if (layer.kind === "smart") layer.content = upgradeShapesIn(layer.content);
+  return layer;
+}
 
 /** Recursively give text layers the v9 fields, including in groups and smart object contents. */
 function upgradeTextIn(document: unknown): unknown {
@@ -110,7 +151,11 @@ export function serializeDocument(doc: EditorDocument): SerializedProject {
   const persisted: EditorDocument = { ...doc };
   delete (persisted as { selection?: unknown }).selection;
   // JSON round trip guarantees a plain, structured-clone-safe value with no shared references.
-  return { schemaVersion: CURRENT_SCHEMA_VERSION, document: JSON.parse(JSON.stringify(persisted)) };
+  // A mask's pending transform exists only during a gesture (ADR-0043) and is never saved.
+  const json = JSON.stringify(persisted, (key, value) =>
+    key === "pendingTransform" ? undefined : value,
+  );
+  return { schemaVersion: CURRENT_SCHEMA_VERSION, document: JSON.parse(json) };
 }
 
 export type DeserializeResult =

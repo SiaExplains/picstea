@@ -115,6 +115,8 @@ const MENUS: readonly Submenu[] = [
     "-",
     "layer.group",
     "layer.ungroup",
+    "layer.toggleVisibility",
+    "layer.toggleLock",
     "-",
     sub(N_("Arrange"), ["layer.moveUp", "layer.moveDown"]),
     sub(N_("Align"), [

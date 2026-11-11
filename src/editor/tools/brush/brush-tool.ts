@@ -1,12 +1,13 @@
 import { msg } from "../../core/message";
-import { setMaskContent, setRasterContent } from "../../core/commands";
+import { setMaskContent, setRasterContent, setRasterContentAndBounds } from "../../core/commands";
 import { luminance, rgba } from "../../core/color";
 import { activeLayer } from "../../core/document/queries";
 import type { Layer, LayerMask } from "../../core/document/types";
 import { applyMatrix, fromTransform, invertMatrix, type Matrix } from "../../core/geometry/matrix";
 import { stepBrushSize, type BrushSettings } from "../../core/tool-settings";
 import type { Point } from "../../core/viewport/viewport";
-import type { CompositePreview } from "../../rendering/compositing/compositor";
+import type { CompositePreview, LayerRect } from "../../rendering/compositing/compositor";
+import { grownBox, paintArea, type Rect } from "../../pixels/grow";
 import type { Overlay } from "../../rendering/overlay";
 import { selectionSurface } from "../../pixels/layer-pixels";
 import { pickColor } from "../eyedropper/eyedropper-tool";
@@ -98,6 +99,14 @@ interface Stroke {
   readonly aliased: boolean;
   /** Area (layer pixels) touched by dabs since the last refresh; only it is recomposed. */
   dirty: { x0: number; y0: number; x1: number; y1: number } | null;
+  /**
+   * When the layer may grow (ADR-0043): the stroke's surfaces cover this area, in layer pixels
+   * (the layer's box plus the canvas), and `painted` collects everything the dabs touched.
+   */
+  readonly area: Rect | null;
+  readonly layerWidth: number;
+  readonly layerHeight: number;
+  painted: { x0: number; y0: number; x1: number; y1: number } | null;
 }
 
 type PaintTarget =
@@ -114,6 +123,7 @@ export class BrushTool implements Tool {
   private hover: Point | null = null;
   private readonly overrides = new Map<string, Surface>();
   private readonly maskOverrides = new Map<string, Surface>();
+  private readonly overrideRects = new Map<string, LayerRect>();
 
   constructor(readonly id: "brush" | "pencil" | "eraser") {}
 
@@ -188,9 +198,18 @@ export class BrushTool implements Tool {
     let toLocal: Matrix | null;
     let radius: number;
     let tipColor: string;
+    let area: Rect | null = null;
     if (target.kind === "content") {
       ({ width, height } = target.layer);
       toLocal = invertMatrix(fromTransform(target.layer.transform));
+      // Brush and pencil strokes may grow the layer past its box (never the eraser).
+      const doc = ctx.store.getSession()?.document;
+      area = !this.erase && doc ? paintArea(doc, target.layer) : null;
+      if (area && toLocal) {
+        width = area.width;
+        height = area.height;
+        toLocal = [1, 0, 0, 1, toLocal[4] - area.x, toLocal[5] - area.y];
+      }
       // Brush size is in document pixels; convert to layer pixels for scaled layers.
       const t = target.layer.transform;
       const scale = Math.sqrt(Math.abs(t.scaleX * t.scaleY)) || 1;
@@ -205,9 +224,12 @@ export class BrushTool implements Tool {
     }
     if (!toLocal) return;
 
+    const layerWidth = target.kind === "content" ? target.layer.width : width;
+    const layerHeight = target.kind === "content" ? target.layer.height : height;
     const base = ctx.createSurface(width, height);
     const bctx = context(base);
-    if (existing) bctx.drawImage(existing, 0, 0, width, height);
+    if (existing && area) bctx.drawImage(existing, -area.x, -area.y, layerWidth, layerHeight);
+    else if (existing) bctx.drawImage(existing, 0, 0, width, height);
     else if (target.kind === "mask") {
       // An empty mask reveals everything.
       bctx.fillStyle = "#ffffff";
@@ -244,6 +266,10 @@ export class BrushTool implements Tool {
       aliased,
       dirty: { x0: 0, y0: 0, x1: width, y1: height },
       target: target.kind,
+      area,
+      layerWidth,
+      layerHeight,
+      painted: null,
       // Like professional editors: the brush paints the foreground grey on a mask, the eraser
       // paints the background grey.
       level: luminance(this.erase ? colors.background : colors.foreground),
@@ -252,6 +278,7 @@ export class BrushTool implements Tool {
       target.layer.id,
       this.stroke.preview,
     );
+    if (area) this.overrideRects.set(target.layer.id, area);
     this.stamp(this.stroke.interpolator.start(applyMatrix(toLocal, pointer.doc)));
     this.refresh(ctx);
   }
@@ -274,17 +301,41 @@ export class BrushTool implements Tool {
     this.stroke = null;
     this.overrides.clear();
     this.maskOverrides.clear();
+    this.overrideRects.clear();
     release(stroke.base);
     release(stroke.buffer);
     release(stroke.tip);
     release(stroke.clip);
     release(stroke.scratch);
-    const asset = ctx.assets.addBitmap(stroke.preview, stroke.width, stroke.height);
-    const result = ctx.store.dispatch(
-      stroke.target === "mask"
-        ? setMaskContent(stroke.layerId, asset.id, this.erase ? "Erase Mask" : "Paint Mask")
-        : setRasterContent(stroke.layerId, asset.id, this.erase ? "Eraser" : "Brush Stroke"),
-    );
+    const label = this.erase ? "Eraser" : "Brush Stroke";
+    let command;
+    if (stroke.area) {
+      // Keep the old box, or grow it towards what was painted (ADR-0043).
+      const a = stroke.area;
+      const p = stroke.painted;
+      const painted = p && {
+        x: p.x0 + a.x,
+        y: p.y0 + a.y,
+        width: p.x1 - p.x0,
+        height: p.y1 - p.y0,
+      };
+      const box = grownBox({ width: stroke.layerWidth, height: stroke.layerHeight }, painted, a);
+      const crop = box ?? { x: 0, y: 0, width: stroke.layerWidth, height: stroke.layerHeight };
+      const out = ctx.createSurface(crop.width, crop.height);
+      context(out).drawImage(stroke.preview, a.x - crop.x, a.y - crop.y);
+      release(stroke.preview);
+      const asset = ctx.assets.addBitmap(out, crop.width, crop.height);
+      command = box
+        ? setRasterContentAndBounds(stroke.layerId, asset.id, box, label)
+        : setRasterContent(stroke.layerId, asset.id, label);
+    } else {
+      const asset = ctx.assets.addBitmap(stroke.preview, stroke.width, stroke.height);
+      command =
+        stroke.target === "mask"
+          ? setMaskContent(stroke.layerId, asset.id, this.erase ? "Erase Mask" : "Paint Mask")
+          : setRasterContent(stroke.layerId, asset.id, label);
+    }
+    const result = ctx.store.dispatch(command);
     if (!result.ok) ctx.notify("error", result.error);
     ctx.pixelsCommitted();
     ctx.invalidate();
@@ -303,6 +354,17 @@ export class BrushTool implements Tool {
       d.y1 = Math.max(d.y1, p.y + pad);
     }
     stroke.dirty = d;
+    if (stroke.area) {
+      // What the dabs themselves cover (not the first full refresh), for growing the layer.
+      const all = stroke.painted ?? { x0: Infinity, y0: Infinity, x1: -Infinity, y1: -Infinity };
+      for (const p of points) {
+        all.x0 = Math.max(0, Math.min(all.x0, p.x - pad));
+        all.y0 = Math.max(0, Math.min(all.y0, p.y - pad));
+        all.x1 = Math.min(stroke.width, Math.max(all.x1, p.x + pad));
+        all.y1 = Math.min(stroke.height, Math.max(all.y1, p.y + pad));
+      }
+      stroke.painted = all;
+    }
     for (const p of points) {
       if (stroke.aliased) {
         ctx.drawImage(stroke.tip, Math.round(p.x - stroke.half), Math.round(p.y - stroke.half));
@@ -376,6 +438,7 @@ export class BrushTool implements Tool {
     this.stroke = null;
     this.overrides.clear();
     this.maskOverrides.clear();
+    this.overrideRects.clear();
     if (stroke) {
       release(stroke.base);
       release(stroke.buffer);
@@ -400,7 +463,11 @@ export class BrushTool implements Tool {
   }
 
   preview(): CompositePreview | undefined {
-    if (this.overrides.size > 0) return { overrides: this.overrides };
+    if (this.overrides.size > 0) {
+      return this.overrideRects.size > 0
+        ? { overrides: this.overrides, overrideRects: this.overrideRects }
+        : { overrides: this.overrides };
+    }
     if (this.maskOverrides.size > 0) return { maskOverrides: this.maskOverrides };
     return undefined;
   }

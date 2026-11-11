@@ -27,8 +27,8 @@ tree. Every list is ordered bottom-most first.
 
 **Masks.** `BaseLayer.mask` is a raster mask in document space. Its alpha is the reveal amount,
 and `assetId: null` reveals everything. Outside the mask's rectangle everything is revealed.
-- Linked masks follow pure moves of their layer. Scaling or rotating the layer leaves the mask
-  in place (documented limitation).
+- Linked masks follow moves of their layer, and since 0.48.0 also its scale and rotation
+  (ADR-0043).
 - Painting targets the mask through the store's `editTarget`. The brush moves alpha towards the
   foreground grey and the eraser towards the background grey, using
   `a' = a·(1−k) + L·k` via `destination-out` and then `lighter`.

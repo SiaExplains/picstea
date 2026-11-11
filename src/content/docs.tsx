@@ -127,7 +127,7 @@ export const DOCS: readonly DocPage[] = [
     title: "Layers, groups and masks",
     description:
       "How Picstea's layers work: pixel, shape, text, fill and adjustment layers, groups, blend modes, opacity, masks and effects.",
-    updated: "2026-10-19",
+    updated: "2026-11-11",
     body: () => (
       <>
         <p>
@@ -142,6 +142,8 @@ export const DOCS: readonly DocPage[] = [
           </li>
           <li>
             <strong>Shape layers</strong> — rectangles, ellipses and lines that stay editable.
+            Scaling a shape keeps its stroke width; turn on Scale strokes &amp; effects in the Move
+            tool&apos;s options to scale the stroke and layer effects with it.
           </li>
           <li>
             <strong>Text layers</strong> — text you type on the canvas and can edit any time. Click
@@ -184,7 +186,8 @@ export const DOCS: readonly DocPage[] = [
         <h2>Opacity and blend modes</h2>
         <p>
           Each layer has an opacity and one of 16 blend modes (Multiply, Screen, Overlay and more)
-          in the Properties panel.
+          in the Properties panel. With several layers selected, both apply to all of them at once;
+          if their values differ, the panel shows a dash until you set a new one.
         </p>
         <h2>Groups</h2>
         <p>
@@ -207,8 +210,9 @@ export const DOCS: readonly DocPage[] = [
           </li>
           <li>
             Selected layers move, scale, rotate and flip together, and can be grouped, duplicated or
-            deleted in one step. The Properties panel shows the settings of the active layer (the
-            one you selected last).
+            deleted in one step. Opacity and blend mode in the Properties panel, the lock button and
+            Layer → Hide Layers / Lock Layers change all of them in one step too. Other settings in
+            the Properties panel are for the active layer (the one you selected last).
           </li>
           <li>Painting, filters and adjustments still work on the active layer only.</li>
         </ul>
@@ -225,7 +229,8 @@ export const DOCS: readonly DocPage[] = [
           Layer → Raster Mask → Add Layer Mask hides parts of a layer without erasing them. Click
           the mask thumbnail, then paint black to hide, white to reveal and grey for partial
           transparency. Shift-click the thumbnail to turn the mask off temporarily. With a selection
-          active, the new mask reveals only the selection.
+          active, the new mask reveals only the selection. A mask moves, scales and rotates with its
+          layer while the two are linked.
         </p>
         <h2>Clipping masks</h2>
         <p>
@@ -301,7 +306,7 @@ export const DOCS: readonly DocPage[] = [
         <p>Drag layers onto the trash to delete them, or onto New Layer to duplicate them.</p>
         <h2>Limitations</h2>
         <ul>
-          <li>Masks follow a layer when it moves, but not when it is scaled or rotated.</li>
+          <li>A group&apos;s vector mask does not follow when the group is scaled or rotated.</li>
           <li>
             Stretching a selection that contains rotated layers keeps each of those layers
             rectangular (Picstea has no skew): their centres move correctly, but their shape is not
@@ -377,12 +382,14 @@ export const DOCS: readonly DocPage[] = [
     title: "Painting, fills and gradients",
     description:
       "Brush, pencil, eraser, paint bucket, gradient and eyedropper in Picstea, and how they work with layers, masks and selections.",
-    updated: "2026-10-19",
+    updated: "2026-11-11",
     body: () => (
       <>
         <p>
           Painting tools work on pixel layers and on masks. Add an empty pixel layer with Layer →
-          New Layer before painting on a new document.
+          New Layer before painting on a new document. A pixel layer grows when you paint outside it
+          with the brush, pencil, paint bucket or gradient, or fill a selection outside it; one undo
+          puts it back. Layers you have scaled or rotated keep their size instead.
         </p>
         <ul>
           <li>
@@ -754,7 +761,8 @@ export const DOCS: readonly DocPage[] = [
         <h2>Vector masks</h2>
         <p>
           With a work path, Layer → Vector Mask → Add Vector Mask from Path hides the active layer
-          outside the path. The mask moves with the layer and can be edited with Direct Selection.
+          outside the path. The mask moves, scales and rotates with the layer and can be edited with
+          Direct Selection.
         </p>
         <h2>Limitations</h2>
         <ul>
@@ -833,7 +841,7 @@ export const DOCS: readonly DocPage[] = [
     title: "Actions, batch processing, colours and history",
     description:
       "Record actions in Picstea and replay them on any image or a whole batch of files, pick exact colours, keep swatches, and step back through the History panel.",
-    updated: "2026-10-09",
+    updated: "2026-11-11",
     body: () => (
       <>
         <p>
@@ -867,7 +875,8 @@ export const DOCS: readonly DocPage[] = [
           <li>Open the Actions panel and choose New…, name the action and choose Record.</li>
           <li>
             Edit as usual. These operations are recorded: filters (with their settings), adjustment
-            layers (with the settings they have when you stop), Select All, Deselect, Inverse,
+            layers (with the settings they have when you stop), opacity, blend mode, Hide/Show and
+            Lock/Unlock of the selected layers, Select All, Deselect, Inverse,
             Feather/Expand/Contract, Fill, Clear, New Layer, Duplicate Layer, New Fill Layer, Flip,
             Align and Crop to Selection.
           </li>

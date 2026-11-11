@@ -6,6 +6,10 @@ import {
   duplicateLayers,
   groupLayers,
   setLayerLocked,
+  setLayersBlendMode,
+  setLayersLocked,
+  setLayersOpacity,
+  setLayersVisibility,
   transformLayers,
   translateLayers,
 } from "./commands";
@@ -90,6 +94,47 @@ describe("layer selection", () => {
       "A",
       "G",
     ]);
+  });
+});
+
+describe("properties of several layers (0.48.0)", () => {
+  const layer = (store: EditorStore, id: string) => findLayerDeep(doc(store).layers, id)!;
+
+  it("sets opacity on every selected layer, as one merged undo step", () => {
+    const { store, ids } = setup();
+    const before = store.getSession()!.history.past.length;
+    store.dispatch(setLayersOpacity([ids.a, ids.b, ids.d], 0.8));
+    store.dispatch(setLayersOpacity([ids.d, ids.a, ids.b], 0.5));
+    expect([ids.a, ids.b, ids.d].map((id) => layer(store, id).opacity)).toEqual([0.5, 0.5, 0.5]);
+    expect(layer(store, ids.c).opacity).toBe(1);
+    expect(store.getSession()!.history.past.length).toBe(before + 1);
+    store.undo();
+    expect(layer(store, ids.a).opacity).toBe(1);
+  });
+
+  it("skips locked layers and pass-through on non-groups, but fails if nothing changes", () => {
+    const { store, ids } = setup();
+    store.dispatch(setLayerLocked(ids.b, true));
+    store.dispatch(setLayersOpacity([ids.a, ids.b], 0.4));
+    expect([layer(store, ids.a).opacity, layer(store, ids.b).opacity]).toEqual([0.4, 1]);
+    expect(store.dispatch(setLayersOpacity([ids.b], 0.4)).ok).toBe(false);
+    store.dispatch(setLayersBlendMode([ids.g, ids.a], "pass-through"));
+    expect([layer(store, ids.g).blendMode, layer(store, ids.a).blendMode]).toEqual([
+      "pass-through",
+      "normal",
+    ]);
+    store.dispatch(setLayersBlendMode([ids.a, ids.c], "multiply"));
+    expect(layer(store, ids.c).blendMode).toBe("multiply");
+  });
+
+  it("hides, shows, locks and unlocks several layers", () => {
+    const { store, ids } = setup();
+    store.dispatch(setLayersVisibility([ids.a, ids.e], false));
+    expect([layer(store, ids.a).visible, layer(store, ids.e).visible]).toEqual([false, false]);
+    store.dispatch(setLayersLocked([ids.a, ids.c], true));
+    expect([layer(store, ids.a).locked, layer(store, ids.c).locked]).toEqual([true, true]);
+    store.dispatch(setLayersVisibility([ids.a, ids.e], true));
+    expect(layer(store, ids.a).visible).toBe(true);
   });
 });
 

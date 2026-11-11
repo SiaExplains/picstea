@@ -1,6 +1,7 @@
 import { describeError, silentLogger, type Logger } from "@/lib/logging/logger";
 import type { LayerMask } from "../core/document/types";
 import { walkLayers } from "../core/document/tree";
+import { bakeShapeScale, hasShapeScale } from "../core/geometry/shape-scale";
 import { MAX_DOCUMENT_NAME_LENGTH, transformCanvas } from "../core/commands/document-commands";
 import type { Matrix } from "../core/geometry/matrix";
 import { AUTO_NAMES, autoLevels, type AutoKind } from "../adjustments/auto";
@@ -29,6 +30,7 @@ import {
   modifySelection,
   selectAllCommand,
   setRasterContent,
+  setRasterContentAndBounds,
   setSelection,
   type SelectionModification,
   deleteLayer,
@@ -60,6 +62,11 @@ import {
   flattenImage,
   rasterizeLayerStyle,
   setLayerLabel,
+  bakeLayers,
+  setLayersBlendMode,
+  setLayersLocked,
+  setLayersOpacity,
+  setLayersVisibility,
   type BakedPixels,
   replaceSmartContent,
   setSmartFilters,
@@ -92,6 +99,7 @@ import type {
   Adjustment,
   AdjustmentType,
   EditorDocument,
+  GroupBlendMode,
   Guide,
   Layer,
   LayerLabel,
@@ -192,6 +200,7 @@ import {
   readLayerPixels,
   readPixelsBelow,
   paintRasterLayer,
+  paintRasterLayerGrowing,
   readPixels,
   samplePixel,
   releaseSurface,
@@ -433,6 +442,7 @@ export class EditorController {
         if (this.textEdit.get()) this.commitTextEdit();
       }
       this.initializeViewport();
+      this.bakeTransforms();
       this.scheduleAutosave();
       const doc = this.store.getSession()?.document ?? null;
       if (doc && doc !== lastFontDoc) {
@@ -1095,6 +1105,45 @@ export class EditorController {
     return doc ? samplePixel(this, doc, x, y) : null;
   }
 
+  /**
+   * Opacity (0–1) of every selected layer, one undo step; a slider drag merges and is recorded
+   * as one action step (consecutive opacity steps replace each other).
+   */
+  setSelectedLayersOpacity(opacity: number): void {
+    const ids = this.selectedLayers();
+    if (ids.length === 0) return;
+    this.recordIfOk({ type: "layerOpacity", opacity: Math.min(1, Math.max(0, opacity)) }, () =>
+      this.execute(setLayersOpacity(ids, opacity)),
+    );
+  }
+
+  /** Blend mode of every selected layer ("pass-through" changes only groups). */
+  setSelectedLayersBlendMode(mode: GroupBlendMode): void {
+    const ids = this.selectedLayers();
+    if (ids.length === 0) return;
+    this.recordIfOk({ type: "layerBlend", mode }, () =>
+      this.execute(setLayersBlendMode(ids, mode)),
+    );
+  }
+
+  /** Layer → Hide Layers / Show Layers: every selected layer. */
+  setSelectedLayersVisible(visible: boolean): void {
+    const ids = this.selectedLayers();
+    if (ids.length === 0) return;
+    this.recordIfOk({ type: "layerVisibility", visible }, () =>
+      this.execute(setLayersVisibility(ids, visible)),
+    );
+  }
+
+  /** Lock or unlock every selected layer. */
+  setSelectedLayersLocked(locked: boolean): void {
+    const ids = this.selectedLayers();
+    if (ids.length === 0) return;
+    this.recordIfOk({ type: "layerLock", locked }, () =>
+      this.execute(setLayersLocked(ids, locked)),
+    );
+  }
+
   /** Colour-label the selected layers (null clears it). */
   setSelectedLayersLabel(label: LayerLabel | null): void {
     const ids = this.selectedLayers();
@@ -1697,6 +1746,25 @@ export class EditorController {
     label: string,
   ): boolean {
     try {
+      // Fill and Stroke may grow the layer to the selection (or canvas); Clear never does.
+      const doc = this.store.getSession()?.document;
+      if (operation === "source-over" && doc) {
+        const result = paintRasterLayerGrowing(
+          this,
+          doc,
+          layer,
+          paint,
+          doc.selection?.bounds ?? null,
+        );
+        if (!result) return false;
+        const changed = this.execute(
+          result.box
+            ? setRasterContentAndBounds(layer.id, result.assetId, result.box, label)
+            : setRasterContent(layer.id, result.assetId, label),
+        );
+        this.enforcePixelBudget();
+        return changed;
+      }
       const assetId = paintRasterLayer(this, layer, paint, operation);
       if (!assetId) return false;
       const changed = this.execute(setRasterContent(layer.id, assetId, label));
@@ -1888,6 +1956,48 @@ export class EditorController {
     return changed;
   }
 
+  private baking = false;
+
+  /**
+   * When a transform has ended (its history step is no longer an open gesture), bake what it left
+   * pending on the layers it changed (ADR-0043): a shape's scale goes into its geometry (the
+   * stroke keeps its width unless "Scale strokes & effects" is on), and a linked mask's pending
+   * transform is redrawn into new pixels — once, from the original pixels, so quality doesn't
+   * degrade over a drag. The result replaces the transform's own undo step.
+   */
+  private bakeTransforms(): void {
+    if (this.baking) return;
+    const session = this.store.getSession();
+    const last = session?.history.past.at(-1);
+    if (!session || !last || last.after !== session.document || last.mergeUntilSealed) return;
+    const scaleStyles = this.store.getState().toolSettings.move.scaleStyles;
+    const baked: Layer[] = [];
+    walkLayers(session.document.layers, (layer) => {
+      if (findLayerDeep(last.before.layers, layer.id) === layer) return;
+      let next: Layer = layer;
+      if (next.kind === "shape" && hasShapeScale(next)) {
+        next = bakeShapeScale(next, { scaleStroke: scaleStyles, scaleEffects: scaleStyles });
+      }
+      const pending = next.mask?.pendingTransform;
+      if (next.mask && pending) {
+        const { pendingTransform: _, ...plain } = next.mask;
+        void _;
+        const mask = this.transformMask(plain, pending);
+        // Still loading: leave it pending; the next change tries again.
+        if (mask) next = { ...next, mask };
+      }
+      if (next !== layer) baked.push(next);
+    });
+    if (baked.length === 0) return;
+    this.baking = true;
+    try {
+      this.store.dispatch(bakeLayers(baked, last.label));
+      this.store.collapseHistory(last.before, last.label);
+    } finally {
+      this.baking = false;
+    }
+  }
+
   /** A raster mask through a matrix: its box moves, and its pixels are redrawn into the new box. */
   private transformMask(mask: LayerMask, m: Matrix): LayerMask | null {
     const box = transformRect(mask, m);
@@ -1900,6 +2010,9 @@ export class EditorController {
     if (!bitmap) return null;
     const surface = this.createSurface(width, height);
     const ctx = context2d(surface);
+    // Outside the old mask everything is revealed: start opaque, cut out the mask's new place.
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, width, height);
     // Mask pixels → document (old) → document (new) → this surface.
     ctx.setTransform(
       m[0],
@@ -1909,6 +2022,7 @@ export class EditorController {
       m[0] * mask.x + m[2] * mask.y + m[4] - x,
       m[1] * mask.x + m[3] * mask.y + m[5] - y,
     );
+    ctx.clearRect(0, 0, mask.width, mask.height);
     ctx.drawImage(bitmap, 0, 0, mask.width, mask.height);
     const asset = this.assets.addBitmap(surface, width, height);
     return { ...mask, assetId: asset.id, x, y, width, height };
@@ -2998,7 +3112,15 @@ export class EditorController {
       this.stopRecording();
       return;
     }
-    this.updateAction(id, (a) => ({ ...a, steps: [...a.steps, step] }));
+    this.updateAction(id, (a) => {
+      // A slider drag sends many opacity changes: keep only the last.
+      const last = a.steps.at(-1);
+      const steps =
+        step.type === "layerOpacity" && last?.type === "layerOpacity"
+          ? [...a.steps.slice(0, -1), step]
+          : [...a.steps, step];
+      return { ...a, steps };
+    });
   }
 
   /** Run `operation`, recording `step` unless it reported an error. */
@@ -3100,6 +3222,19 @@ export class EditorController {
         return;
       case "cropToSelection":
         this.cropToSelection();
+        return;
+      case "layerOpacity":
+        this.setSelectedLayersOpacity(step.opacity);
+        this.store.sealHistory();
+        return;
+      case "layerBlend":
+        this.setSelectedLayersBlendMode(step.mode);
+        return;
+      case "layerVisibility":
+        this.setSelectedLayersVisible(step.visible);
+        return;
+      case "layerLock":
+        this.setSelectedLayersLocked(step.locked);
         return;
     }
   }

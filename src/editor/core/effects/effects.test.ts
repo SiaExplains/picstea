@@ -314,7 +314,7 @@ describe("schema v7", () => {
     expect(Array.isArray(migrated.effects?.bevel)).toBe(true);
     // Saved again, it is a current-version project that loads unchanged.
     const again = JSON.parse(JSON.stringify(serializeDocument(result.document)));
-    expect(again.schemaVersion).toBe(9);
+    expect(again.schemaVersion).toBe(10);
     expect(deserializeProject(again)).toMatchObject({ ok: true, migratedFrom: null });
     // Smart object contents are upgraded by the same step.
     const step = MIGRATIONS[6]({ layers: [smart] }) as {

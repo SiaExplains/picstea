@@ -27,6 +27,10 @@ const STEPS: ActionStep[] = [
   { type: "duplicateLayer" },
   { type: "fillLayer", color: "#00ff00" },
   { type: "cropToSelection" },
+  { type: "layerOpacity", opacity: 0.5 },
+  { type: "layerBlend", mode: "multiply" },
+  { type: "layerVisibility", visible: false },
+  { type: "layerLock", locked: true },
 ];
 
 describe("action steps", () => {
@@ -56,6 +60,10 @@ describe("action steps", () => {
       { type: "modifySelection", kind: "expand", radius: 10_000 },
       { type: "fill", color: "javascript:alert(1)" },
       { type: "fillLayer" },
+      { type: "layerOpacity", opacity: 2 },
+      { type: "layerBlend", mode: "constructor" },
+      { type: "layerVisibility", visible: "yes" },
+      { type: "layerLock" },
     ]) {
       expect(parseStep(bad)).toBeNull();
     }

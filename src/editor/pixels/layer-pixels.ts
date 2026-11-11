@@ -6,6 +6,7 @@ import type { SurfaceFactory } from "../rendering/canvas/canvas2d-renderer";
 import { compositeDocument, type CompositeContext } from "../rendering/compositing/compositor";
 import type { RgbaPixels } from "../selection/flood";
 import type { PixelBounds, SelectionMask } from "../selection/mask";
+import { grownBox, paintArea, type Rect as GrowRect } from "./grow";
 
 /**
  * Pixel access shared by the selection-aware tools and Edit commands (ADR-0010): reading
@@ -156,6 +157,47 @@ export function paintRasterLayer(
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.globalCompositeOperation = "source-over";
   return env.assets.addBitmap(out, layer.width, layer.height).id;
+}
+
+/**
+ * Like `paintRasterLayer`, but the layer may grow towards `painted` (document pixels; the paint's
+ * extent, e.g. the selection's bounds) when it is neither scaled nor rotated (ADR-0043). Returns
+ * the new asset and, if the layer grew, its new box in layer pixels for
+ * `setRasterContentAndBounds`; null if the layer is still loading.
+ */
+export function paintRasterLayerGrowing(
+  env: PixelEnv,
+  doc: EditorDocument,
+  layer: RasterLayer,
+  paint: Surface,
+  painted: PixelBounds | null,
+): { assetId: string; box: GrowRect | null } | null {
+  const area = paintArea(doc, layer);
+  const { x: tx, y: ty } = layer.transform;
+  const extent = painted ?? { x: 0, y: 0, width: doc.width, height: doc.height };
+  const box =
+    area &&
+    grownBox(
+      layer,
+      { x: extent.x - tx, y: extent.y - ty, width: extent.width, height: extent.height },
+      area,
+    );
+  if (!box) {
+    const assetId = paintRasterLayer(env, layer, paint);
+    return assetId ? { assetId, box: null } : null;
+  }
+  let existing: CanvasImageSource | undefined;
+  if (layer.assetId) {
+    existing = env.assets.getBitmap(layer.assetId);
+    if (!existing) return null;
+  }
+  const out = env.createSurface(box.width, box.height);
+  const ctx = context2d(out);
+  if (existing) ctx.drawImage(existing, -box.x, -box.y, layer.width, layer.height);
+  ctx.setTransform(1, 0, 0, 1, -tx - box.x, -ty - box.y);
+  ctx.drawImage(paint, 0, 0);
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  return { assetId: env.assets.addBitmap(out, box.width, box.height).id, box };
 }
 
 /** A document-sized surface filled with a colour inside the selection (everywhere without one). */

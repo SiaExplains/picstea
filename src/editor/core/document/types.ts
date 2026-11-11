@@ -57,8 +57,14 @@ export interface LayerMask {
   readonly y: number;
   readonly width: number;
   readonly height: number;
-  /** Moves with the layer when the layer is moved. */
+  /** Moves, scales and rotates with the layer when the layer is transformed. */
   readonly linked: boolean;
+  /**
+   * A transform still to be applied to the mask's pixels (document space, `[a,b,c,d,e,f]`),
+   * set while its layer is scaled or rotated and baked into new pixels when the gesture ends
+   * (ADR-0043). Never saved.
+   */
+  readonly pendingTransform?: readonly [number, number, number, number, number, number];
 }
 
 /** A colour at a position (0…1) along a gradient (Gradient Map, gradient overlay). */

@@ -1,4 +1,12 @@
-import { translatePath } from "../path/path";
+import { mapPath, translatePath } from "../path/path";
+import {
+  applyMatrix,
+  fromTransform,
+  IDENTITY,
+  invertMatrix,
+  multiplyMatrix,
+  type Matrix,
+} from "../geometry/matrix";
 import type { SelectionMask } from "../../selection/mask";
 import { withoutSelection } from "./selection-commands";
 import { isHexColor } from "../document/factory";
@@ -72,26 +80,35 @@ export function setLayerTransform(
       ) {
         return doc;
       }
-      // A pure move carries a linked mask along; scaling/rotating leaves the mask in place.
+      // Linked masks follow the layer (ADR-0043). A pure move shifts them; a scale or rotation
+      // maps a vector mask's path, and gives a raster mask a pending transform that the
+      // controller bakes into new pixels when the gesture ends.
       const moved =
         t.scaleX === transform.scaleX &&
         t.scaleY === transform.scaleY &&
         t.rotation === transform.rotation;
-      const mask =
-        layer.mask && layer.mask.linked && moved
-          ? {
-              ...layer.mask,
-              x: layer.mask.x + transform.x - t.x,
-              y: layer.mask.y + transform.y - t.y,
-            }
-          : layer.mask;
-      const vectorMask =
-        layer.vectorMask && layer.vectorMask.linked && moved
-          ? {
-              ...layer.vectorMask,
-              path: translatePath(layer.vectorMask.path, transform.x - t.x, transform.y - t.y),
-            }
-          : layer.vectorMask;
+      const inverse = moved ? null : invertMatrix(fromTransform(t));
+      const delta = inverse ? multiplyMatrix(fromTransform(transform), inverse) : null;
+      let mask = layer.mask;
+      if (mask?.linked && moved && !mask.pendingTransform) {
+        mask = { ...mask, x: mask.x + transform.x - t.x, y: mask.y + transform.y - t.y };
+      } else if (mask?.linked) {
+        const step: Matrix = delta ?? [1, 0, 0, 1, transform.x - t.x, transform.y - t.y];
+        const pending = multiplyMatrix(step, mask.pendingTransform ?? IDENTITY);
+        mask = { ...mask, pendingTransform: [...pending] };
+      }
+      let vectorMask = layer.vectorMask;
+      if (vectorMask?.linked && moved) {
+        vectorMask = {
+          ...vectorMask,
+          path: translatePath(vectorMask.path, transform.x - t.x, transform.y - t.y),
+        };
+      } else if (vectorMask?.linked && delta) {
+        vectorMask = {
+          ...vectorMask,
+          path: mapPath(vectorMask.path, (p) => applyMatrix(delta, p)),
+        };
+      }
       return replaceLayer(doc, {
         ...layer,
         transform: { ...transform },
@@ -156,6 +173,64 @@ export function setRasterContent(layerId: string, assetId: string | null, label:
       requireUnlocked(layer, doc);
       if (layer.assetId === assetId) return doc;
       return replaceLayer(doc, { ...layer, assetId });
+    },
+  };
+}
+
+/**
+ * New pixels for a layer that grew while painting (ADR-0043): content, size and position change
+ * together, so undo restores the old box. `rect` is the new box in the layer's own pixels (its
+ * old top-left is 0,0). Only for layers that are not scaled, rotated or flipped. The position is
+ * set directly, not through `setLayerTransform`, so masks (document space) stay where they are.
+ */
+export function setRasterContentAndBounds(
+  layerId: string,
+  assetId: string,
+  rect: { readonly x: number; readonly y: number; readonly width: number; readonly height: number },
+  label: string,
+): Command {
+  return {
+    type: "layer.rasterContentBounds",
+    label,
+    apply(doc) {
+      const layer = requireLayer(doc, layerId);
+      if (layer.kind !== "raster") throw new CommandError("Only pixel layers can be painted on.");
+      requireUnlocked(layer, doc);
+      const t = layer.transform;
+      if (t.scaleX !== 1 || t.scaleY !== 1 || t.rotation !== 0) {
+        throw new CommandError("Only unscaled, unrotated layers can grow.");
+      }
+      if (![rect.x, rect.y].every(Number.isInteger))
+        throw new CommandError("Invalid layer bounds.");
+      const size = checkDimensions(rect.width, rect.height);
+      if (!size.ok) throw new CommandError(size.reason);
+      return replaceLayer(doc, {
+        ...layer,
+        assetId,
+        width: rect.width,
+        height: rect.height,
+        transform: { ...t, x: t.x + rect.x, y: t.y + rect.y },
+      });
+    },
+  };
+}
+
+/**
+ * Swap in finished versions of layers after a transform (ADR-0043): shapes with their scale baked
+ * into their geometry, masks with their pending transform baked into new pixels. The controller
+ * folds this into the transform's own undo step.
+ */
+export function bakeLayers(layers: readonly Layer[], label: string): Command {
+  return {
+    type: "layers.bake",
+    label,
+    apply(doc) {
+      let next = doc;
+      for (const layer of layers) {
+        requireLayer(next, layer.id);
+        next = replaceLayer(next, layer);
+      }
+      return next;
     },
   };
 }
