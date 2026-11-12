@@ -1,10 +1,12 @@
 import { applyAdjustment } from "../../adjustments/pixel-ops";
+import { drawMapped, perspectiveMap, warpMap, type MeshMap } from "../../core/geometry/mesh";
 import type {
   AdjustmentLayer,
   EditorDocument,
   Layer,
   LayerMask,
   ShapeLayer,
+  SmartDistortion,
   TextLayer,
 } from "../../core/document/types";
 import { insertLayerAt, locateLayer } from "../../core/document/tree";
@@ -95,6 +97,11 @@ export interface AssetResolver {
 }
 
 /** Live, uncommitted content shown in place of (or in addition to) document layers. */
+/** The map a smart object's distortion draws its content through (layer coordinates). */
+export function distortionMap(d: SmartDistortion): MeshMap | null {
+  return d.kind === "perspective" ? perspectiveMap(d.corners) : warpMap(d.mesh);
+}
+
 export interface LayerRect {
   readonly x: number;
   readonly y: number;
@@ -341,7 +348,12 @@ function drawLayer(
         Math.max(Math.abs(layer.transform.scaleX), Math.abs(layer.transform.scaleY));
       const level = smartLevel(layer.content, scale);
       const surface = renderSmartObject(layer, level, assets, options, pending, compositeDocument);
-      if (surface) ctx.drawImage(surface, 0, 0, layer.content.width, layer.content.height);
+      if (!surface) return;
+      const { width, height } = layer.content;
+      const map = layer.distortion && distortionMap(layer.distortion);
+      // A distorted smart object is drawn through its mesh (ADR-0044).
+      if (map) drawMapped(ctx, surface, width, height, map, 24, surface.width / width);
+      else ctx.drawImage(surface, 0, 0, width, height);
       return;
     }
   }

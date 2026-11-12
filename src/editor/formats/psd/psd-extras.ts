@@ -86,6 +86,76 @@ export interface PsdPlaced {
   readonly id: string;
   /** Corners in document space: top-left, top-right, bottom-right, bottom-left (x, y pairs). */
   readonly corners: readonly number[];
+  /** Perspective/distort corners in document space, when not a plain affine placement. */
+  readonly perspective?: readonly number[];
+  /** A warp (ADR-0044): a preset with its amounts (−1…1), or a custom mesh in 0…1 of the box. */
+  readonly warp?: {
+    readonly style: string;
+    readonly bend: number;
+    readonly horizontal: number;
+    readonly vertical: number;
+    readonly mesh?: readonly number[];
+  };
+}
+
+/** Photoshop warp styles → Picstea's (ADR-0044); shells become arcs, the closest shapes. */
+const PSD_WARP_STYLES: Record<string, string> = {
+  warpArc: "arc",
+  warpArcLower: "arcLower",
+  warpArcUpper: "arcUpper",
+  warpArch: "arch",
+  warpBulge: "bulge",
+  warpShellLower: "arcLower",
+  warpShellUpper: "arcUpper",
+  warpFlag: "flag",
+  warpWave: "wave",
+  warpFish: "fish",
+  warpRise: "rise",
+  warpFisheye: "fisheye",
+  warpInflate: "inflate",
+  warpSqueeze: "squeeze",
+  warpTwist: "twist",
+};
+
+/** A placed layer's warp, or undefined when there is none or it can't be read. */
+function decodeWarp(warp: Descriptor | undefined): PsdPlaced["warp"] | "unreadable" | undefined {
+  const style = warp && getEnum(warp, "warpStyle");
+  if (!warp || !style || style === "warpNone") return undefined;
+  const percent = (key: string) => {
+    const v = getNumber(warp, key) ?? 0;
+    return Number.isFinite(v) ? Math.max(-1, Math.min(1, v / 100)) : 0;
+  };
+  const amounts = {
+    bend: percent("warpValue"),
+    horizontal: percent("warpPerspective"),
+    vertical: percent("warpPerspectiveOther"),
+  };
+  if (style !== "warpCustom") {
+    const mapped = PSD_WARP_STYLES[style];
+    return mapped ? { style: mapped, ...amounts } : "unreadable";
+  }
+  // Custom: 16 points (Hrzn, Vrtc) in the warp's bounds.
+  const points = getDescriptor(getDescriptor(warp, "customEnvelopeWarp"), "meshPoints");
+  const xs = getList(points, "Hrzn");
+  const ys = getList(points, "Vrtc");
+  const bounds = getDescriptor(warp, "bounds");
+  const left = getNumber(bounds, "Left") ?? 0;
+  const top = getNumber(bounds, "Top ") ?? 0;
+  const right = getNumber(bounds, "Rght") ?? 0;
+  const bottom = getNumber(bounds, "Btom") ?? 0;
+  if (!xs || !ys || xs.length !== 16 || ys.length !== 16 || right <= left || bottom <= top) {
+    return "unreadable";
+  }
+  const mesh: number[] = [];
+  for (let i = 0; i < 16; i++) {
+    const x = xs[i];
+    const y = ys[i];
+    if (typeof x !== "number" || typeof y !== "number" || !Number.isFinite(x + y)) {
+      return "unreadable";
+    }
+    mesh.push((x - left) / (right - left), (y - top) / (bottom - top));
+  }
+  return { style: "custom", ...amounts, mesh };
 }
 
 /** Block keys whose bodies the reader keeps for `decodeExtras`. */
@@ -691,6 +761,7 @@ function decodePlaced(key: string, body: Uint8Array, notes: Set<string>): PsdPla
   let id: string | undefined;
   let corners: number[] = [];
   let d: Descriptor | undefined;
+  let perspective: number[] | undefined;
   if (key === "SoLd" || key === "SoLE") {
     if (r.ascii(4) !== "soLD") return undefined;
     r.u32();
@@ -700,9 +771,13 @@ function decodePlaced(key: string, body: Uint8Array, notes: Set<string>): PsdPla
     const nonAffine = (getList(d, "nonAffineTransform") ?? []).map((v) =>
       typeof v === "number" ? v : NaN,
     );
-    if (nonAffine.length === 8 && nonAffine.some((v, i) => Math.abs(v - corners[i]) > 0.01)) {
-      notes.add("Smart objects with perspective were imported as pixels.");
-      return undefined;
+    if (
+      nonAffine.length === 8 &&
+      nonAffine.every((v) => Number.isFinite(v) && Math.abs(v) <= 1e6) &&
+      nonAffine.some((v, i) => Math.abs(v - corners[i]) > 0.01)
+    ) {
+      // Kept as an editable perspective distortion (ADR-0044).
+      perspective = nonAffine;
     }
   } else {
     if (r.ascii(4) !== "plcL") return undefined;
@@ -712,8 +787,8 @@ function decodePlaced(key: string, body: Uint8Array, notes: Set<string>): PsdPla
     r.skip(16); // page, total pages, anti-alias, type
     for (let i = 0; i < 8; i++) corners.push(r.f64());
   }
-  const warp = getDescriptor(d, "warp");
-  if (warp && getEnum(warp, "warpStyle") && getEnum(warp, "warpStyle") !== "warpNone") {
+  const warp = decodeWarp(getDescriptor(d, "warp"));
+  if (warp === "unreadable") {
     notes.add("Warped smart objects were imported as pixels.");
     return undefined;
   }
@@ -728,7 +803,12 @@ function decodePlaced(key: string, body: Uint8Array, notes: Set<string>): PsdPla
   ) {
     return undefined;
   }
-  return { id, corners };
+  return {
+    id,
+    corners,
+    ...(perspective ? { perspective } : {}),
+    ...(warp ? { warp } : {}),
+  };
 }
 
 export interface ExtrasContext {

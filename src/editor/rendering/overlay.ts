@@ -16,6 +16,18 @@ export type Overlay =
       readonly handles: boolean;
     }
   | { readonly kind: "crop"; readonly rect: Rect }
+  /**
+   * A warp (ADR-0044): the outline traced through `outline` (points around the edge), the 4 × 4
+   * control points (`handles`) and the grid between them.
+   */
+  | {
+      readonly kind: "mesh";
+      readonly outline: readonly Point[];
+      readonly grid: readonly (readonly Point[])[];
+      readonly handles: readonly Point[];
+    }
+  /** A quad being edited with corner handles only (Perspective Crop). */
+  | { readonly kind: "quad"; readonly corners: readonly Point[]; readonly shade: boolean }
   | { readonly kind: "brush"; readonly center: Point; readonly radius: number }
   /** Clone/heal source position: a crosshair. */
   | { readonly kind: "source"; readonly center: Point }

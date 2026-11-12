@@ -10,6 +10,7 @@ export type ToolId =
   | "lasso"
   | "wand"
   | "crop"
+  | "perspective-crop"
   | "eyedropper"
   | "brush"
   | "pencil"
@@ -50,9 +51,13 @@ export interface BrushSettings {
 
 export interface ShapeSettings {
   /** Paths come from the Pen tool; a polygon is drawn as an editable path shape. */
-  readonly kind: Exclude<ShapeKind, "path"> | "polygon";
+  readonly kind: Exclude<ShapeKind, "path"> | "polygon" | "custom";
   /** Polygon corners, 3 … 64. */
   readonly sides: number;
+  /** Polygon as a star: how far the inner corners go in, 0 (none) … 0.95 (ADR-0044). */
+  readonly starIndent: number;
+  /** For "custom": the built-in shape (tools/shape/custom-shapes.ts). */
+  readonly customShape: string;
   readonly fillEnabled: boolean;
   readonly fill: string;
   readonly strokeEnabled: boolean;
@@ -149,11 +154,36 @@ export interface RedEyeSettings {
   readonly darken: number;
 }
 
+/** Crop ratio presets (ADR-0044). */
+export const CROP_RATIOS = [
+  "free",
+  "original",
+  "1:1",
+  "4:5",
+  "5:4",
+  "3:2",
+  "2:3",
+  "16:9",
+  "9:16",
+  "custom",
+] as const;
+export type CropRatio = (typeof CROP_RATIOS)[number];
+
+export interface CropSettings {
+  readonly ratio: CropRatio;
+  /** For "custom": width : height. */
+  readonly ratioW: number;
+  readonly ratioH: number;
+  /** Trim pixel layers to the new canvas (off: cropping keeps hidden pixels, ADR-0044). */
+  readonly deletePixels: boolean;
+}
+
 export interface EyedropperSettings {
   readonly sampleAll: boolean;
 }
 
 export interface ToolSettings {
+  readonly crop: CropSettings;
   readonly move: {
     readonly autoSelect: boolean;
     /** Scaling a shape also scales its stroke and layer effects (ADR-0043). Off as in Photoshop. */
@@ -195,6 +225,7 @@ export const MIN_BRUSH_SIZE = 1;
 export const MAX_BRUSH_SIZE = 1000;
 
 export const DEFAULT_TOOL_SETTINGS: ToolSettings = {
+  crop: { ratio: "free", ratioW: 1, ratioH: 1, deletePixels: false },
   move: { autoSelect: true, scaleStyles: false },
   marquee: { shape: "rect", mode: "replace" },
   lasso: { kind: "freehand", mode: "replace" },
@@ -226,6 +257,8 @@ export const DEFAULT_TOOL_SETTINGS: ToolSettings = {
     strokeWidth: 4,
     cornerRadius: 0,
     sides: 6,
+    starIndent: 0,
+    customShape: "arrow-right",
   },
   pen: { mode: "shape" },
   text: {

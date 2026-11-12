@@ -1,4 +1,5 @@
 import { describeError, silentLogger, type Logger } from "@/lib/logging/logger";
+import type { DistortMode } from "../tools/move/distort-tool";
 import type { LayerMask } from "../core/document/types";
 import { walkLayers } from "../core/document/tree";
 import { bakeShapeScale, hasShapeScale } from "../core/geometry/shape-scale";
@@ -423,6 +424,11 @@ export class EditorController {
       beginTextEdit: (request) => this.beginTextEdit(request),
       view: () => this.view.get(),
       screenSize: () => this.viewportSize.get(),
+      rotateCanvas: (degrees) => {
+        if (!this.transformImage({ kind: "angle", degrees, label: "Straighten" })) return null;
+        const doc = this.store.getSession()?.document;
+        return doc ? { width: doc.width, height: doc.height } : null;
+      },
     });
     this.fonts = options.fonts ?? new FontLibrary(null);
     // A font that finished loading changes how text measures and draws.
@@ -841,6 +847,48 @@ export class EditorController {
   /** Edit → Free Transform: the selected pixels when there is a selection, else the layer. */
   freeTransform(): void {
     void this.tools.beginFreeTransform();
+  }
+
+  /**
+   * Edit → Transform → Skew, Distort, Perspective or Warp (ADR-0044). Pixels and smart objects
+   * are transformed directly; text and shapes become smart objects first (so they stay editable
+   * inside), as Photoshop offers to.
+   */
+  async distort(mode: DistortMode): Promise<boolean> {
+    if (this.textEdit.get()) this.commitTextEdit();
+    const doc = this.store.getSession()?.document;
+    const layer = doc ? activeLayer(doc) : undefined;
+    if (!doc || !layer) return false;
+    const onPixels =
+      (!!doc.selection?.bounds && (layer.kind === "raster" || !!layer.mask)) ||
+      layer.kind === "raster" ||
+      layer.kind === "smart";
+    if (!onPixels) {
+      if (layer.kind !== "text" && layer.kind !== "shape") {
+        this.notify("error", "Select a pixel layer, a smart object, text or a shape to transform.");
+        return false;
+      }
+      this.convertToSmartObject();
+      const converted = activeLayer(this.store.getSession()!.document);
+      if (converted?.kind !== "smart") return false;
+      this.notify(
+        "info",
+        msg('"{layer}" became a smart object so it can be distorted and stay editable.', {
+          layer: layer.name,
+        }),
+      );
+    }
+    const id = activeLayer(this.store.getSession()!.document)!.id;
+    const started = await this.tools.beginDistort(mode, id);
+    if (started) {
+      this.notify(
+        "info",
+        mode === "warp"
+          ? "Drag the grid or pick a warp style. Enter applies, Esc cancels."
+          : "Drag the handles. Enter applies, Esc cancels.",
+      );
+    }
+    return started;
   }
 
   cropToSelection(): void {

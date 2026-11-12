@@ -1,6 +1,7 @@
 import { createGroup } from "../../core/commands/group-commands";
 import { isFontFamilyName, normalizeParagraphs, normalizeRuns } from "../../core/document/text";
-import type { CharStyle } from "../../core/document/types";
+import type { CharStyle, SmartDistortion } from "../../core/document/types";
+import { presetMesh, WARP_STYLES, type WarpStyle } from "../../core/geometry/warp-presets";
 import { BUNDLED_FONTS, familyForPostscript, postscriptNameFor } from "../../fonts/font-catalog";
 import type { TextLayout } from "../../core/document/text-layout";
 import type { TextLayer } from "../../core/document/types";
@@ -255,6 +256,37 @@ export function psdToDocument(
   return { document, warnings: [...warnings] };
 }
 
+/** A placed smart object's perspective or warp as a Picstea distortion (ADR-0044). */
+export function placedDistortion(
+  placed: PsdPlaced,
+  w: number,
+  h: number,
+): SmartDistortion | undefined {
+  if (placed.perspective) return { kind: "perspective", corners: [...placed.perspective] };
+  const warp = placed.warp;
+  if (!warp) return undefined;
+  if (warp.mesh) {
+    return {
+      kind: "warp",
+      style: "custom",
+      mesh: warp.mesh.map((v, i) => v * (i % 2 ? h : w)),
+    };
+  }
+  if (!(WARP_STYLES as readonly string[]).includes(warp.style)) return undefined;
+  return {
+    kind: "warp",
+    style: warp.style,
+    mesh: [
+      ...presetMesh(w, h, {
+        style: warp.style as WarpStyle,
+        bend: warp.bend,
+        horizontal: warp.horizontal,
+        vertical: warp.vertical,
+      }),
+    ],
+  };
+}
+
 /** Position, scale, rotation and flip that map a w × h box onto four placement corners. */
 export function transformFromCorners(corners: readonly number[], w: number, h: number): Transform {
   const [x0, y0, x1, y1, , , x3, y3] = corners;
@@ -401,6 +433,8 @@ function convertPsdFile(
         activeLayerId: raster.id,
       };
     }
+    const { width: w, height: h } = content;
+    const distortion = placedDistortion(placed, w, h);
     const smart: SmartObjectLayer = {
       id: createId("layer"),
       kind: "smart",
@@ -409,8 +443,13 @@ function convertPsdFile(
       locked: false,
       opacity: 1,
       blendMode: "normal",
-      transform: transformFromCorners(placed.corners, content.width, content.height),
+      // A perspective placement keeps its corners in the distortion, on an unmoved layer.
+      transform:
+        distortion?.kind === "perspective"
+          ? { x: 0, y: 0, scaleX: 1, scaleY: 1, rotation: 0 }
+          : transformFromCorners(placed.corners, w, h),
       content,
+      ...(distortion ? { distortion } : {}),
     };
     return smart;
   };

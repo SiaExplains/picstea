@@ -102,7 +102,15 @@ export const TOOL_GROUPS: readonly ToolGroup[] = [
     ],
   },
   { id: "wand", action: "tool.wand", members: [{ id: "wand", label: "Magic Wand", tool: "wand" }] },
-  { id: "crop", action: "tool.crop", members: [{ id: "crop", label: "Crop", tool: "crop" }] },
+  {
+    id: "crop",
+    action: "tool.crop",
+    next: "tool.next.crop",
+    members: [
+      { id: "crop", label: "Crop", tool: "crop" },
+      { id: "perspective-crop", label: "Perspective Crop", tool: "perspective-crop" },
+    ],
+  },
   {
     id: "eyedropper",
     action: "tool.eyedropper",
@@ -250,9 +258,11 @@ export const TOOL_GROUPS: readonly ToolGroup[] = [
           (s) => s.kind === "rect" && s.cornerRadius > 0,
         ),
       },
-      ...(["ellipse", "polygon", "line"] as const).map((kind) => ({
+      ...(["ellipse", "polygon", "line", "custom"] as const).map((kind) => ({
         id: `shape-${kind}`,
-        label: { ellipse: "Ellipse", polygon: "Polygon", line: "Line" }[kind],
+        label: { ellipse: "Ellipse", polygon: "Polygon", line: "Line", custom: "Custom Shape" }[
+          kind
+        ],
         tool: "shape" as const,
         preset: preset(
           "shape",

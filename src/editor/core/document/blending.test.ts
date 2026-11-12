@@ -149,7 +149,7 @@ describe("Blend If commands and projects", () => {
     );
     d = setLayerChannels("a", { r: true, g: false, b: true }).apply(d);
     const raw = JSON.parse(JSON.stringify(serializeDocument(d)));
-    expect(raw.schemaVersion).toBe(10);
+    expect(raw.schemaVersion).toBe(11);
     const back = deserializeProject(raw);
     expect(back).toMatchObject({ ok: true });
     if (back.ok) expect(layerA(back.document)).toEqual(layerA(d));
