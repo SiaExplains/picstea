@@ -3,7 +3,7 @@
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
-## [0.49.0] — 2026-11-11
+## [0.49.0] — 2026-11-12
 
 ### Added
 
@@ -28,6 +28,14 @@ All notable changes to this project are documented here. The format follows
 - **The editor opens a little faster**: code for Photoshop files, filters and exports, the tool
   options and the Image dialogs now loads when it is first needed, so the first download is
   smaller than before this release despite the new tools.
+
+## [0.48.1] — 2026-11-12
+
+### Added
+
+- Blog post **Pixelate or black out private info in screenshots**: hiding names, account numbers
+  and faces with selections, Edit → Fill with Foreground, Filter → Pixelate → Mosaic and rounded
+  bars, and which export formats keep only the visible pixels.
 
 ## [0.48.0] — 2026-11-11
 

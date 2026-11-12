@@ -2072,6 +2072,180 @@ export const POSTS: readonly BlogPost[] = [
       </>
     ),
   },
+  {
+    slug: "pixelate-or-black-out-private-info-in-screenshots",
+    title: "Pixelate or black out private info in screenshots",
+    description:
+      "Hide names, emails, account numbers and faces in a screenshot with Picstea's Mosaic filter, selections and solid fills, then export a flat PNG. Nothing uploads.",
+    published: "2026-11-12",
+    draft: false,
+    body: () => (
+      <>
+        <p>
+          To hide private details in a screenshot with Picstea, select each area with the{" "}
+          <strong>Rectangular Marquee</strong>, <strong>Elliptical Marquee</strong> or{" "}
+          <strong>Polygonal Lasso</strong>, then either fill it with black using{" "}
+          <strong>Edit → Fill with Foreground</strong> (Shift+F5) or pixelate it with{" "}
+          <strong>Filter → Pixelate → Mosaic…</strong>. Export the result with{" "}
+          <strong>File → Export As…</strong> as a PNG, which saves only the flattened pixels. Use
+          the solid fill for text. Mosaic and blur suit faces and photos, where you want the image
+          to stay readable as a picture. The screenshot is opened and edited in your browser and
+          stays on your device; nothing is uploaded, which matters when the thing you&apos;re hiding
+          is the reason you didn&apos;t want to send the file anywhere.
+        </p>
+        <p>
+          The example is a screenshot of a banking app you want to share with a support team: your
+          name and email at the top, a round profile photo, an IBAN in the middle and a photo of a
+          card that someone took at an angle.
+        </p>
+        <h2>How do I open the screenshot?</h2>
+        <p>
+          Drop the file onto the editor or choose <strong>File → Open Image…</strong> (Cmd/Ctrl+O).
+          A PNG or JPEG screenshot opens as a single pixel layer, which is the kind of layer filters
+          and fills work on. If you&apos;d like to compare before and after, press Cmd/Ctrl+J with
+          nothing selected to duplicate the layer, and hide the copy with its eye icon. Delete that
+          copy before you save anything with layers (more on that below).
+        </p>
+        <h2>How do I black out text completely?</h2>
+        <p>
+          A solid box is the safest way to hide text such as a name, email address or account
+          number. It replaces the pixels, so there&apos;s nothing left to reconstruct.
+        </p>
+        <ol>
+          <li>
+            Pick the <strong>Rectangular Marquee</strong> (M) and drag over the name. Hold Shift and
+            drag again over the email and the IBAN to add those areas to the same selection.
+          </li>
+          <li>Press D to reset the colours, so the foreground is black.</li>
+          <li>
+            Choose <strong>Edit → Fill with Foreground</strong> or press Shift+F5. Every selected
+            area turns solid black in one undo step.
+          </li>
+          <li>Press Cmd/Ctrl+D to deselect.</li>
+        </ol>
+        <p>
+          Make the boxes a little larger than the text. Descenders and the edges of letters that
+          stick out of a box can give away more than you&apos;d expect. If the outline is slightly
+          off, drag inside the selection to move it, or use the arrow keys, before you fill.
+        </p>
+        <h2>How do I pixelate a face or profile photo?</h2>
+        <p>
+          For the round profile photo, a mosaic hides the person and still looks tidy. Hold the
+          Marquee tool&apos;s button (or right-click it) and choose{" "}
+          <strong>Elliptical Marquee</strong>, or press Shift+M to switch to it. Hold Shift while
+          dragging to get a circle, and Alt to draw from the centre.
+        </p>
+        <p>
+          Then choose <strong>Filter → Pixelate → Mosaic…</strong>. The only setting is{" "}
+          <strong>Cell size</strong>, from 2 to 200 px with 10 px as the default. Each square cell
+          becomes the average colour of the pixels in it, and only the selected area changes. For a
+          small avatar a few cells across are enough; on a face that fills more of the frame, raise
+          the cell size until features such as eyes and mouth are gone. Watch the canvas while you
+          move the slider, then press <strong>OK</strong>.
+        </p>
+        <p>
+          To pixelate another area with the same cell size, select it and choose{" "}
+          <strong>Filter → Last Filter</strong> (Cmd/Ctrl+Alt+F). It repeats Mosaic without opening
+          the dialog.
+        </p>
+        <p>
+          If you&apos;d rather blur, <strong>Filter → Blur → Gaussian Blur…</strong> has a{" "}
+          <strong>Radius</strong> from 0.1 to 250 px. A light blur or a small mosaic on text can
+          leave the shapes of the words visible enough to guess, so keep those for photos and use
+          the black fill for anything written.
+        </p>
+        <h2>What about an area that isn&apos;t a rectangle?</h2>
+        <p>
+          The card in the screenshot was photographed at an angle, so its number runs diagonally. A
+          rectangle around it would cover half the screen. Use the <strong>Polygonal Lasso</strong>{" "}
+          instead: hold the Lasso tool&apos;s button and pick it, or press Shift+L. Click once at
+          each corner of the number, then double-click or press Enter to close the shape. Backspace
+          removes the last point if you misclick, and Escape throws the whole outline away. Fill it
+          or pixelate it the same way as above.
+        </p>
+        <p>
+          The <Link href="/docs/selections">selections guide</Link> has the rest of the selection
+          shortcuts, including Alt to subtract from a selection.
+        </p>
+        <h2>Can I use neat rounded bars instead?</h2>
+        <p>
+          Yes. If the screenshot is going into a slide or a bug report, rounded bars look cleaner
+          than hard black boxes. Choose the <strong>Rounded Rectangle</strong> from the shape
+          tool&apos;s flyout (U, then Shift+U to cycle). It starts with a 16 px corner radius, which
+          you can change in the <strong>Radius</strong> field of the options bar. New shapes are
+          filled in blue by default, so set the <strong>Fill</strong> colour in the options bar to
+          black or grey first, then drag a bar over each line of text.
+        </p>
+        <p>
+          Each bar is its own shape layer sitting above the screenshot, and the text is still there
+          underneath. That&apos;s fine for a PNG, JPEG or WebP export, which flattens everything
+          into one image. It is a problem in any format that keeps layers, which the next section
+          covers. If you want the bars burned in for good, choose{" "}
+          <strong>Layer → Flatten Image</strong> before saving anything else.
+        </p>
+        <h2>Which format should I export?</h2>
+        <p>
+          Choose <strong>File → Export As…</strong> and pick <strong>PNG</strong>. PNG is lossless,
+          so the black boxes keep sharp edges and screenshot text stays crisp. JPEG and WebP work
+          too if the file needs to be smaller; the{" "}
+          <Link href="/blog/png-vs-jpeg-vs-webp">PNG vs JPEG vs WebP post</Link> explains the
+          trade-off. These three formats and PDF are written from the flattened image, so only the
+          visible pixels end up in the file.
+        </p>
+        <p>
+          Be careful with the formats that keep layers. A <strong>PSD</strong> export keeps every
+          layer, so a shape bar and the text under it both go into the file, and anyone can hide the
+          bar in another editor. <strong>SVG</strong> keeps shapes as vectors and embeds the other
+          layers as images, with the same result. A <strong>.picstea</strong> project from{" "}
+          <strong>File → Save Project As…</strong> keeps everything, including the hidden backup
+          copy from earlier. Send the PNG, and keep the project for yourself if you want it. The{" "}
+          <Link href="/docs/file-formats">file formats page</Link> lists what each format keeps.
+        </p>
+        <h2>How do other editors do this?</h2>
+        <p>
+          The steps carry over between editors. Photoshop Elements has the same filter under{" "}
+          <strong>Filter → Pixelate → Mosaic</strong>, described in Adobe&apos;s help as redrawing
+          the layer as square blocks of colour with an adjustable cell size. In GIMP the equivalent
+          is <strong>Filters → Blur → Pixelize…</strong>. Picstea keeps Mosaic where Photoshop
+          Elements users look for it, and it runs in a browser tab without an install or an account.
+          If you&apos;re weighing up editors more generally, the{" "}
+          <Link href="/gimp-alternative">GIMP comparison</Link> and the{" "}
+          <Link href="/photoshop-alternative">Photoshop comparison</Link> go through what each one
+          does and doesn&apos;t have.
+        </p>
+        <h2>Questions people ask</h2>
+        <h3>Can someone undo a mosaic?</h3>
+        <p>
+          Not from the exported PNG, which holds only the pixelated pixels. With small cells over
+          text the blocks can still hint at the letters, so use a solid fill for names and numbers.
+        </p>
+        <h3>Why is the Mosaic filter greyed out?</h3>
+        <p>
+          Filters work on pixel layers and smart objects that aren&apos;t locked. If a shape or text
+          layer is active, click the screenshot layer in the Layers panel first. On a smart object
+          the filter is added as a smart filter, which can be switched off again, so for redaction
+          use a plain pixel layer.
+        </p>
+        <h3>Can I hide the same areas on a lot of screenshots at once?</h3>
+        <p>
+          Not really. Picstea can record filters and fills as an action and run it over a batch of
+          files, but selections drawn with the marquee or lasso aren&apos;t recorded, so an action
+          can&apos;t place the boxes for you. Redaction is done one screenshot at a time. The{" "}
+          <Link href="/blog/record-actions-and-batch-process-images">actions and batch post</Link>{" "}
+          shows what can be recorded.
+        </p>
+        <h3>Is the screenshot uploaded anywhere?</h3>
+        <p>
+          No. Picstea opens, edits and exports the image in your browser and has no server for
+          images, so the unredacted version never leaves your device.
+        </p>
+        <p>
+          <EditorLink>Open Picstea</EditorLink>, drop in a screenshot and black out the first line
+          you don&apos;t want anyone else to read.
+        </p>
+      </>
+    ),
+  },
 ];
 
 const showDrafts = process.env.NODE_ENV !== "production";
