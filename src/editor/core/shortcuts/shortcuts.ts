@@ -58,6 +58,7 @@ export type ActionId =
   | "tool.next.marquee"
   | "tool.next.lasso"
   | "tool.next.eyedropper"
+  | "tool.next.crop"
   | "tool.next.heal"
   | "tool.next.brush"
   | "tool.next.eraser"
@@ -146,6 +147,7 @@ export const DEFAULT_KEYMAP: Readonly<Record<ActionId, readonly string[]>> = {
   "tool.next.marquee": ["Shift+M"],
   "tool.next.lasso": ["Shift+L"],
   "tool.next.eyedropper": ["Shift+I"],
+  "tool.next.crop": ["Shift+C"],
   "tool.next.heal": ["Shift+J"],
   "tool.next.brush": ["Shift+B"],
   "tool.next.eraser": ["Shift+E"],

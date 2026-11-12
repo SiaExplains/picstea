@@ -11,6 +11,7 @@ export const DOC_SLUGS: readonly string[] = [
   "guides-grid-and-snapping",
   "filters",
   "paths-and-the-pen-tool",
+  "transform-warp-and-crop",
   "smart-objects-and-smart-filters",
   "actions-batch-colours-and-history",
   "file-formats",

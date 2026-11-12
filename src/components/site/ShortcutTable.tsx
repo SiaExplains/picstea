@@ -64,6 +64,7 @@ const LABELS: Record<ActionId, string> = {
   "tool.zoom": "Zoom tool",
   "tool.next.marquee": "Next marquee tool",
   "tool.next.lasso": "Next lasso tool",
+  "tool.next.crop": "Switch Crop / Perspective Crop",
   "tool.next.eyedropper": "Next of Eyedropper, Color Sampler, Ruler",
   "tool.next.heal": "Next healing tool",
   "tool.next.brush": "Next of Brush, Pencil, Color Replacement",

@@ -1,0 +1,1433 @@
+"use client";
+
+import { useCallback, useRef, useState, useSyncExternalStore } from "react";
+import { CUSTOM_SHAPE_IDS, CUSTOM_SHAPE_LABELS } from "@/editor/tools/shape/custom-shapes";
+import { CROP_RATIOS, type CropRatio } from "@/editor/core/tool-settings";
+import type { DistortState } from "@/editor/tools/move/distort-tool";
+import { WARP_LABELS, WARP_STYLES, type WarpStyle } from "@/editor/core/geometry/warp-presets";
+import { SELECTION_MODES, type SelectionMode } from "@/editor/selection/ops";
+import type { ShapeKind } from "@/editor/core/document/types";
+import { LazyFontPicker as FontPicker } from "./LazyFontPicker";
+import { type ToolId } from "@/editor/core/editor-store";
+import { primaryBinding } from "@/editor/core/shortcuts/shortcuts";
+import {
+  activateMember,
+  isMemberActive,
+  rememberedTool,
+  shownMember,
+  TOOL_GROUPS,
+  type ToolGroup,
+} from "@/editor/core/tool-groups";
+import { ContextMenu, type ContextMenuEntry } from "./ContextMenu";
+import { measureLine } from "@/editor/tools/measure/measure-tools";
+import { useActiveSession, useController, useEditorState, useIsMac } from "./editor-context";
+import styles from "./editor.module.css";
+import {
+  BucketIcon,
+  EyedropperIcon,
+  GradientIcon,
+  LassoIcon,
+  MarqueeIcon,
+  PencilIcon,
+  WandIcon,
+  BrushIcon,
+  CropIcon,
+  PerspectiveCropIcon,
+  CustomShapeIcon,
+  EraserIcon,
+  CloneIcon,
+  HealIcon,
+  ToneIcon,
+  HandIcon,
+  MoveIcon,
+  PathSelectIcon,
+  PenIcon,
+  SwapIcon,
+  TextIcon,
+  ZoomIcon,
+  EllipseMarqueeIcon,
+  PolygonLassoIcon,
+  SamplerIcon,
+  RulerIcon,
+  SpotHealIcon,
+  RedEyeIcon,
+  ColorReplaceIcon,
+  BackgroundEraserIcon,
+  MagicEraserIcon,
+  FocusIcon,
+  SharpenIcon,
+  SmudgeIcon,
+  BurnIcon,
+  SpongeIcon,
+  PenAddIcon,
+  PenDeleteIcon,
+  ConvertPointIcon,
+  PathMoveIcon,
+  RectShapeIcon,
+  RoundedRectIcon,
+  EllipseShapeIcon,
+  PolygonShapeIcon,
+  LineShapeIcon,
+  ResetColorsIcon,
+} from "./icons";
+import type { UiAction, UiActionId } from "./use-editor-actions";
+import { useT } from "./i18n";
+import { N_ } from "@/i18n/editor/catalog";
+
+/** Icon for every toolbar group member (ADR-0027). */
+const MEMBER_ICONS: Record<string, React.ReactNode> = {
+  move: <MoveIcon size={18} />,
+  "marquee-rect": <MarqueeIcon size={18} />,
+  "marquee-ellipse": <EllipseMarqueeIcon size={18} />,
+  lasso: <LassoIcon size={18} />,
+  "lasso-polygonal": <PolygonLassoIcon size={18} />,
+  wand: <WandIcon size={18} />,
+  crop: <CropIcon size={18} />,
+  "perspective-crop": <PerspectiveCropIcon size={18} />,
+  eyedropper: <EyedropperIcon size={18} />,
+  "color-sampler": <SamplerIcon size={18} />,
+  ruler: <RulerIcon size={18} />,
+  "spot-heal": <SpotHealIcon size={18} />,
+  heal: <HealIcon size={18} />,
+  "red-eye": <RedEyeIcon size={18} />,
+  brush: <BrushIcon size={18} />,
+  pencil: <PencilIcon size={18} />,
+  "color-replace": <ColorReplaceIcon size={18} />,
+  clone: <CloneIcon size={18} />,
+  eraser: <EraserIcon size={18} />,
+  "bg-eraser": <BackgroundEraserIcon size={18} />,
+  "magic-eraser": <MagicEraserIcon size={18} />,
+  gradient: <GradientIcon size={18} />,
+  bucket: <BucketIcon size={18} />,
+  blur: <FocusIcon size={18} />,
+  sharpen: <SharpenIcon size={18} />,
+  smudge: <SmudgeIcon size={18} />,
+  dodge: <ToneIcon size={18} />,
+  burn: <BurnIcon size={18} />,
+  sponge: <SpongeIcon size={18} />,
+  text: <TextIcon size={18} />,
+  pen: <PenIcon size={18} />,
+  "anchor-add": <PenAddIcon size={18} />,
+  "anchor-delete": <PenDeleteIcon size={18} />,
+  "anchor-convert": <ConvertPointIcon size={18} />,
+  "path-move": <PathMoveIcon size={18} />,
+  "path-select": <PathSelectIcon size={18} />,
+  "shape-rect": <RectShapeIcon size={18} />,
+  "shape-rounded": <RoundedRectIcon size={18} />,
+  "shape-ellipse": <EllipseShapeIcon size={18} />,
+  "shape-polygon": <PolygonShapeIcon size={18} />,
+  "shape-line": <LineShapeIcon size={18} />,
+  "shape-custom": <CustomShapeIcon size={18} />,
+  hand: <HandIcon size={18} />,
+  zoom: <ZoomIcon size={18} />,
+};
+
+/** Hold the pointer this long on a group to open its flyout (as in Photoshop). */
+const LONG_PRESS_MS = 450;
+
+function ToolGroupButton({ group }: { group: ToolGroup }) {
+  const controller = useController();
+  const state = useEditorState((s) => s);
+  const isMac = useIsMac();
+  const t = useT();
+  const [flyout, setFlyout] = useState<{ x: number; y: number } | null>(null);
+  const press = useRef<number | null>(null);
+  const opened = useRef(false);
+  const member = shownMember(group, state, rememberedTool(group, state));
+  const shortcut = primaryBinding(group.action, isMac);
+  const many = group.members.length > 1;
+  const closeFlyout = useCallback(() => setFlyout(null), []);
+
+  const open = (el: HTMLElement) => {
+    const r = el.getBoundingClientRect();
+    setFlyout({ x: r.right + 4, y: r.top });
+  };
+  const clearPress = () => {
+    if (press.current !== null) window.clearTimeout(press.current);
+    press.current = null;
+  };
+
+  return (
+    <>
+      <button
+        type="button"
+        className={`${styles.toolButton} ${many ? styles.toolGroup : ""}`}
+        aria-pressed={isMemberActive(member, state)}
+        aria-label={t("{label} tool", { label: t(member.label) })}
+        aria-haspopup={many ? "menu" : undefined}
+        aria-expanded={many ? !!flyout : undefined}
+        aria-keyshortcuts={shortcut || undefined}
+        title={
+          many
+            ? t("{label} ({shortcut}) · right-click or hold for more", {
+                label: t(member.label),
+                shortcut,
+              })
+            : `${t(member.label)} (${shortcut})`
+        }
+        data-tool-group={group.id}
+        onPointerDown={(e) => {
+          if (!many || e.button !== 0) return;
+          opened.current = false;
+          const el = e.currentTarget;
+          press.current = window.setTimeout(() => {
+            opened.current = true;
+            open(el);
+          }, LONG_PRESS_MS);
+        }}
+        onPointerUp={clearPress}
+        onPointerLeave={clearPress}
+        onClick={() => {
+          // A long press opened the flyout instead.
+          if (opened.current) return;
+          activateMember(controller.store, member);
+        }}
+        onContextMenu={(e) => {
+          if (!many) return;
+          e.preventDefault();
+          open(e.currentTarget);
+        }}
+        onKeyDown={(e) => {
+          if (!many) return;
+          if (
+            e.key === "ArrowRight" ||
+            e.key === "ContextMenu" ||
+            (e.shiftKey && e.key === "F10")
+          ) {
+            e.preventDefault();
+            e.stopPropagation();
+            open(e.currentTarget);
+          }
+        }}
+      >
+        {MEMBER_ICONS[member.id]}
+      </button>
+      {flyout && (
+        <ContextMenu
+          x={flyout.x}
+          y={flyout.y}
+          label={t("{label} tools", { label: t(member.label) })}
+          onClose={closeFlyout}
+          items={group.members.map((m): ContextMenuEntry => ({
+            kind: "item",
+            label: t(m.label),
+            enabled: true,
+            checked: m === member,
+            icon: <span className={styles.flyoutIcon}>{MEMBER_ICONS[m.id]}</span>,
+            shortcut,
+            run: () => activateMember(controller.store, m),
+          }))}
+        />
+      )}
+    </>
+  );
+}
+
+/** Only implemented tools are shown — no placeholder buttons (docs/15 rule 6). */
+export function Toolbar({
+  actions,
+  onEditColor,
+}: {
+  actions: Record<UiActionId, UiAction>;
+  onEditColor: (which: "foreground" | "background") => void;
+}) {
+  const colors = useEditorState((s) => s.colors);
+  const t = useT();
+  return (
+    <nav className={styles.toolbar} aria-label={t("Tools")}>
+      {TOOL_GROUPS.map((group) => (
+        <ToolGroupButton key={group.id} group={group} />
+      ))}
+      <div className={styles.toolSeparator} role="separator" />
+      <div className={styles.swatches}>
+        {(["foreground", "background"] as const).map((which) => (
+          <button
+            key={which}
+            type="button"
+            className={`${styles.swatch} ${which === "foreground" ? styles.swatchForeground : styles.swatchBackground}`}
+            style={{ background: colors[which] }}
+            aria-label={which === "foreground" ? t("Foreground colour") : t("Background colour")}
+            title={
+              which === "foreground"
+                ? t("Foreground colour {color}", { color: colors[which] })
+                : t("Background colour {color}", { color: colors[which] })
+            }
+            data-color={colors[which]}
+            onClick={() => onEditColor(which)}
+          />
+        ))}
+      </div>
+      <div className={styles.swatchButtons}>
+        <button
+          type="button"
+          className={styles.iconButton}
+          aria-label={`${t(actions["colors.reset"].label)} (D)`}
+          title={`${t("Default colours: black and white")} (D)`}
+          onClick={actions["colors.reset"].run}
+        >
+          <ResetColorsIcon size={12} />
+        </button>
+        <button
+          type="button"
+          className={styles.iconButton}
+          aria-label={`${t(actions["colors.swap"].label)} (X)`}
+          title={`${t("Swap colours")} (X)`}
+          onClick={actions["colors.swap"].run}
+        >
+          <SwapIcon size={14} />
+        </button>
+      </div>
+    </nav>
+  );
+}
+
+function NumberOption({
+  label,
+  value,
+  min,
+  max,
+  step = 1,
+  suffix,
+  onChange,
+}: {
+  label: string;
+  value: number;
+  min: number;
+  max: number;
+  step?: number;
+  suffix?: string;
+  onChange: (value: number) => void;
+}) {
+  return (
+    <label className={styles.optionGroup}>
+      {label}
+      <input
+        className={`${styles.input} ${styles.numberInput}`}
+        type="number"
+        min={min}
+        max={max}
+        step={step}
+        value={value}
+        onChange={(e) => {
+          const n = Number(e.target.value);
+          if (e.target.value !== "" && Number.isFinite(n))
+            onChange(Math.min(max, Math.max(min, n)));
+        }}
+      />
+      {suffix}
+    </label>
+  );
+}
+
+function BrushOptions({ tool }: { tool: "brush" | "pencil" | "eraser" }) {
+  const controller = useController();
+  const t = useT();
+  const settings = useEditorState((s) => s.toolSettings[tool]);
+  const set = (patch: Partial<typeof settings>) => controller.store.updateToolSettings(tool, patch);
+  return (
+    <>
+      <NumberOption
+        label={t("Size")}
+        value={settings.size}
+        min={1}
+        max={1000}
+        suffix="px"
+        onChange={(size) => set({ size })}
+      />
+      {tool !== "pencil" && (
+        <NumberOption
+          label={t("Hardness")}
+          value={Math.round(settings.hardness * 100)}
+          min={0}
+          max={100}
+          suffix="%"
+          onChange={(v) => set({ hardness: v / 100 })}
+        />
+      )}
+      <NumberOption
+        label={t("Opacity")}
+        value={Math.round(settings.opacity * 100)}
+        min={1}
+        max={100}
+        suffix="%"
+        onChange={(v) => set({ opacity: v / 100 })}
+      />
+      <span>
+        {tool === "eraser"
+          ? t("[ and ] change size")
+          : t("[ and ] change size · Alt-click picks a colour")}
+      </span>
+    </>
+  );
+}
+
+/** Size and hardness, shared by the retouching tools. */
+function TipOptions({
+  tool,
+}: {
+  tool: "clone" | "heal" | "tone" | "focus" | "spot-heal" | "bg-eraser" | "color-replace";
+}) {
+  const controller = useController();
+  const size = useEditorState((s) => s.toolSettings[tool].size);
+  const hardness = useEditorState((s) => s.toolSettings[tool].hardness);
+  const t = useT();
+  return (
+    <>
+      <NumberOption
+        label={t("Size")}
+        value={size}
+        min={1}
+        max={1000}
+        suffix="px"
+        onChange={(v) => controller.store.updateToolSettings(tool, { size: v })}
+      />
+      <NumberOption
+        label={t("Hardness")}
+        value={Math.round(hardness * 100)}
+        min={0}
+        max={100}
+        suffix="%"
+        onChange={(v) => controller.store.updateToolSettings(tool, { hardness: v / 100 })}
+      />
+    </>
+  );
+}
+
+function Segmented<T extends string>({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  value: T;
+  options: readonly (readonly [T, string])[];
+  onChange: (value: T) => void;
+}) {
+  return (
+    <div className={styles.segmented} role="group" aria-label={label}>
+      {options.map(([v, text]) => (
+        <button key={v} type="button" aria-pressed={value === v} onClick={() => onChange(v)}>
+          {text}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function SourceBrushOptions({ tool }: { tool: "clone" | "heal" }) {
+  const controller = useController();
+  const t = useT();
+  const settings = useEditorState((s) => s.toolSettings[tool]);
+  const set = (patch: Partial<typeof settings>) => controller.store.updateToolSettings(tool, patch);
+  return (
+    <>
+      <TipOptions tool={tool} />
+      {tool === "clone" && (
+        <NumberOption
+          label={t("Opacity")}
+          value={Math.round(settings.opacity * 100)}
+          min={1}
+          max={100}
+          suffix="%"
+          onChange={(v) => set({ opacity: v / 100 })}
+        />
+      )}
+      <label className={styles.optionGroup}>
+        <input
+          type="checkbox"
+          checked={settings.aligned}
+          onChange={(e) => set({ aligned: e.target.checked })}
+        />
+        {t("Aligned")}
+      </label>
+      <label className={styles.optionGroup}>
+        {t("Sample")}
+        <select
+          className={styles.input}
+          value={settings.sample}
+          onChange={(e) => set({ sample: e.target.value === "all" ? "all" : "current" })}
+        >
+          <option value="current">{t("Current layer")}</option>
+          <option value="all">{t("All layers")}</option>
+        </select>
+      </label>
+      <span>{t("Alt-click sets the source · [ and ] change size")}</span>
+    </>
+  );
+}
+
+function ToneOptions() {
+  const controller = useController();
+  const t = useT();
+  const settings = useEditorState((s) => s.toolSettings.tone);
+  const set = (patch: Partial<typeof settings>) =>
+    controller.store.updateToolSettings("tone", patch);
+  return (
+    <>
+      <Segmented
+        label={t("Tone mode")}
+        value={settings.mode}
+        options={[
+          ["dodge", t("Dodge")],
+          ["burn", t("Burn")],
+          ["sponge", t("Sponge")],
+        ]}
+        onChange={(mode) => set({ mode })}
+      />
+      <TipOptions tool="tone" />
+      {settings.mode === "sponge" ? (
+        <>
+          <label className={styles.optionGroup}>
+            {t("Mode")}
+            <select
+              className={styles.input}
+              value={settings.sponge}
+              onChange={(e) =>
+                set({ sponge: e.target.value === "saturate" ? "saturate" : "desaturate" })
+              }
+            >
+              <option value="desaturate">{t("Desaturate")}</option>
+              <option value="saturate">{t("Saturate")}</option>
+            </select>
+          </label>
+          <NumberOption
+            label={t("Flow")}
+            value={Math.round(settings.flow * 100)}
+            min={1}
+            max={100}
+            suffix="%"
+            onChange={(v) => set({ flow: v / 100 })}
+          />
+        </>
+      ) : (
+        <>
+          <label className={styles.optionGroup}>
+            {t("Range")}
+            <select
+              className={styles.input}
+              value={settings.range}
+              onChange={(e) =>
+                set({
+                  range:
+                    e.target.value === "shadows"
+                      ? "shadows"
+                      : e.target.value === "highlights"
+                        ? "highlights"
+                        : "midtones",
+                })
+              }
+            >
+              <option value="shadows">{t("Shadows")}</option>
+              <option value="midtones">{t("Midtones")}</option>
+              <option value="highlights">{t("Highlights")}</option>
+            </select>
+          </label>
+          <NumberOption
+            label={t("Exposure")}
+            value={Math.round(settings.exposure * 100)}
+            min={1}
+            max={100}
+            suffix="%"
+            onChange={(v) => set({ exposure: v / 100 })}
+          />
+        </>
+      )}
+    </>
+  );
+}
+
+function FocusOptions() {
+  const controller = useController();
+  const t = useT();
+  const settings = useEditorState((s) => s.toolSettings.focus);
+  const set = (patch: Partial<typeof settings>) =>
+    controller.store.updateToolSettings("focus", patch);
+  return (
+    <>
+      <Segmented
+        label={t("Focus mode")}
+        value={settings.mode}
+        options={[
+          ["blur", t("Blur")],
+          ["sharpen", t("Sharpen")],
+          ["smudge", t("Smudge")],
+        ]}
+        onChange={(mode) => set({ mode })}
+      />
+      <TipOptions tool="focus" />
+      <NumberOption
+        label={t("Strength")}
+        value={Math.round(settings.strength * 100)}
+        min={1}
+        max={100}
+        suffix="%"
+        onChange={(v) => set({ strength: v / 100 })}
+      />
+    </>
+  );
+}
+
+const MODE_LABELS: Record<SelectionMode, string> = {
+  replace: N_("New"),
+  add: N_("Add"),
+  subtract: N_("Subtract"),
+  intersect: N_("Intersect"),
+};
+
+function SelectionModeOption({ tool }: { tool: "marquee" | "lasso" | "wand" }) {
+  const controller = useController();
+  const mode = useEditorState((s) => s.toolSettings[tool].mode);
+  const t = useT();
+  return (
+    <div className={styles.segmented} role="group" aria-label={t("Selection mode")}>
+      {SELECTION_MODES.map((m) => (
+        <button
+          key={m}
+          type="button"
+          aria-pressed={mode === m}
+          onClick={() => controller.store.updateToolSettings(tool, { mode: m })}
+        >
+          {t(MODE_LABELS[m])}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function SegmentedOption<T extends string>({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  value: T;
+  options: readonly { id: T; label: string }[];
+  onChange: (value: T) => void;
+}) {
+  return (
+    <div className={styles.segmented} role="group" aria-label={label}>
+      {options.map((o) => (
+        <button
+          key={o.id}
+          type="button"
+          aria-pressed={value === o.id}
+          onClick={() => onChange(o.id)}
+        >
+          {o.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function CheckOption({
+  label,
+  checked,
+  onChange,
+}: {
+  label: string;
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+}) {
+  return (
+    <label className={styles.optionGroup}>
+      <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} />
+      {label}
+    </label>
+  );
+}
+
+function MarqueeOptions() {
+  const controller = useController();
+  const shape = useEditorState((s) => s.toolSettings.marquee.shape);
+  const t = useT();
+  return (
+    <>
+      <SegmentedOption
+        label={t("Marquee shape")}
+        value={shape}
+        options={[
+          { id: "rect", label: t("Rectangle") },
+          { id: "ellipse", label: t("Ellipse") },
+        ]}
+        onChange={(v) => controller.store.updateToolSettings("marquee", { shape: v })}
+      />
+      <SelectionModeOption tool="marquee" />
+      <span>{t("Shift adds · Alt subtracts · drag inside to move")}</span>
+    </>
+  );
+}
+
+function LassoOptions() {
+  const controller = useController();
+  const kind = useEditorState((s) => s.toolSettings.lasso.kind);
+  const t = useT();
+  return (
+    <>
+      <SegmentedOption
+        label={t("Lasso type")}
+        value={kind}
+        options={[
+          { id: "freehand", label: t("Freehand") },
+          { id: "polygonal", label: t("Polygonal") },
+        ]}
+        onChange={(v) => controller.store.updateToolSettings("lasso", { kind: v })}
+      />
+      <SelectionModeOption tool="lasso" />
+      <span>
+        {kind === "polygonal"
+          ? t("Click to add points · double-click or Enter closes")
+          : t("Drag around an area")}
+      </span>
+    </>
+  );
+}
+
+function FloodOptions({ tool }: { tool: "wand" | "bucket" | "magic-eraser" }) {
+  const controller = useController();
+  const t = useT();
+  const settings = useEditorState((s) => s.toolSettings[tool]);
+  const set = (patch: Partial<typeof settings>) => controller.store.updateToolSettings(tool, patch);
+  return (
+    <>
+      <NumberOption
+        label={t("Tolerance")}
+        value={settings.tolerance}
+        min={0}
+        max={255}
+        onChange={(tolerance) => set({ tolerance })}
+      />
+      <CheckOption
+        label={t("Contiguous")}
+        checked={settings.contiguous}
+        onChange={(contiguous) => set({ contiguous })}
+      />
+      <CheckOption
+        label={t("Sample all layers")}
+        checked={settings.sampleAll}
+        onChange={(sampleAll) => set({ sampleAll })}
+      />
+      {tool === "wand" && <SelectionModeOption tool="wand" />}
+    </>
+  );
+}
+
+/** Background Eraser and Color Replacement: brush tip plus colour tolerance. */
+function SampledBrushOptions({ tool }: { tool: "bg-eraser" | "color-replace" }) {
+  const controller = useController();
+  const tolerance = useEditorState((s) => s.toolSettings[tool].tolerance);
+  const t = useT();
+  return (
+    <>
+      <TipOptions tool={tool} />
+      <NumberOption
+        label={t("Tolerance")}
+        value={tolerance}
+        min={0}
+        max={255}
+        onChange={(v) => controller.store.updateToolSettings(tool, { tolerance: v })}
+      />
+      <span>
+        {tool === "bg-eraser"
+          ? t("Erases colours like the one under the first dab")
+          : t(
+              "Paints the foreground colour over colours like the one under the first dab, keeping their shading",
+            )}
+      </span>
+    </>
+  );
+}
+
+function RedEyeOptions() {
+  const controller = useController();
+  const t = useT();
+  const settings = useEditorState((s) => s.toolSettings["red-eye"]);
+  const set = (patch: Partial<typeof settings>) =>
+    controller.store.updateToolSettings("red-eye", patch);
+  return (
+    <>
+      <NumberOption
+        label={t("Pupil size")}
+        value={settings.size}
+        min={2}
+        max={500}
+        suffix="px"
+        onChange={(size) => set({ size })}
+      />
+      <NumberOption
+        label={t("Darken")}
+        value={Math.round(settings.darken * 100)}
+        min={0}
+        max={100}
+        suffix="%"
+        onChange={(v) => set({ darken: v / 100 })}
+      />
+      <span>{t("Click or paint over red pupils")}</span>
+    </>
+  );
+}
+
+const hex2 = (n: number) => n.toString(16).padStart(2, "0");
+
+/** Color Sampler readout: each point's current colour, kept live while you edit. */
+function SamplerOptions() {
+  const controller = useController();
+  const samplers = useEditorState((s) => s.measure.samplers);
+  const t = useT();
+  // Re-read the colours whenever the document changes.
+  useActiveSession();
+  return (
+    <>
+      {samplers.length === 0 && <span>{t("Click to place up to four colour sample points")}</span>}
+      <ul className={styles.samplerList} aria-label={t("Colour samples")}>
+        {samplers.map((p, i) => {
+          const c = controller.sampleColor(p.x, p.y);
+          const label = c ? `#${hex2(c[0])}${hex2(c[1])}${hex2(c[2])}` : "…";
+          return (
+            <li key={i}>
+              <span
+                className={styles.samplerSwatch}
+                style={{ background: c ? label : "transparent" }}
+              />
+              <strong>#{i + 1}</strong> {c ? `R ${c[0]} G ${c[1]} B ${c[2]}` : t("loading")}{" "}
+              <code>{label}</code>
+            </li>
+          );
+        })}
+      </ul>
+      {samplers.length > 0 && (
+        <button
+          type="button"
+          className={styles.button}
+          onClick={() => controller.store.setMeasure({ samplers: [] })}
+        >
+          {t("Clear")}
+        </button>
+      )}
+      {samplers.length > 0 && <span>{t("Drag a point to move it · Alt-click removes it")}</span>}
+    </>
+  );
+}
+
+function RulerOptions() {
+  const controller = useController();
+  const ruler = useEditorState((s) => s.measure.ruler);
+  const t = useT();
+  if (!ruler)
+    return <span>{t("Drag to measure a distance and an angle · Shift snaps to 45°")}</span>;
+  const m = measureLine(ruler.from, ruler.to);
+  const f = (v: number) => (Math.round(v * 10) / 10).toString();
+  return (
+    <>
+      <output className={styles.rulerReadout} aria-label={t("Measurement")}>
+        X {f(m.x)} · Y {f(m.y)} · W {f(m.width)} · H {f(m.height)} · A {f(m.angle)}° · L{" "}
+        {f(m.length)} px
+      </output>
+      <button
+        type="button"
+        className={styles.button}
+        onClick={() => controller.store.setMeasure({ ruler: null })}
+      >
+        {t("Clear")}
+      </button>
+    </>
+  );
+}
+
+function GradientOptions() {
+  const controller = useController();
+  const t = useT();
+  const settings = useEditorState((s) => s.toolSettings.gradient);
+  const set = (patch: Partial<typeof settings>) =>
+    controller.store.updateToolSettings("gradient", patch);
+  return (
+    <>
+      <SegmentedOption
+        label={t("Gradient type")}
+        value={settings.kind}
+        options={[
+          { id: "linear", label: t("Linear") },
+          { id: "radial", label: t("Radial") },
+        ]}
+        onChange={(kind) => set({ kind })}
+      />
+      <SegmentedOption
+        label={t("Gradient colours")}
+        value={settings.to}
+        options={[
+          { id: "background", label: t("To background") },
+          { id: "transparent", label: t("To transparent") },
+        ]}
+        onChange={(to) => set({ to })}
+      />
+      <NumberOption
+        label={t("Opacity")}
+        value={Math.round(settings.opacity * 100)}
+        min={1}
+        max={100}
+        suffix="%"
+        onChange={(v) => set({ opacity: v / 100 })}
+      />
+      <span>{t("Drag to draw · Shift snaps to 45°")}</span>
+    </>
+  );
+}
+
+function EyedropperOptions() {
+  const controller = useController();
+  const sampleAll = useEditorState((s) => s.toolSettings.eyedropper.sampleAll);
+  const t = useT();
+  return (
+    <>
+      <CheckOption
+        label={t("Sample all layers")}
+        checked={sampleAll}
+        onChange={(v) => controller.store.updateToolSettings("eyedropper", { sampleAll: v })}
+      />
+      <span>{t("Click sets the foreground colour · Alt-click the background colour")}</span>
+    </>
+  );
+}
+
+function ShapeOptions() {
+  const controller = useController();
+  const t = useT();
+  const settings = useEditorState((s) => s.toolSettings.shape);
+  const set = (patch: Partial<typeof settings>) =>
+    controller.store.updateToolSettings("shape", patch);
+  const kinds: { id: Exclude<ShapeKind, "path"> | "polygon" | "custom"; label: string }[] = [
+    { id: "rect", label: t("Rectangle") },
+    { id: "ellipse", label: t("Ellipse") },
+    { id: "polygon", label: t("Polygon") },
+    { id: "line", label: t("Line") },
+    { id: "custom", label: t("Custom Shape") },
+  ];
+  return (
+    <>
+      <div className={styles.segmented} role="group" aria-label={t("Shape")}>
+        {kinds.map((k) => (
+          <button
+            key={k.id}
+            type="button"
+            aria-pressed={settings.kind === k.id}
+            onClick={() => set({ kind: k.id })}
+          >
+            {k.label}
+          </button>
+        ))}
+      </div>
+      {settings.kind !== "line" && (
+        <label className={styles.optionGroup}>
+          <input
+            type="checkbox"
+            checked={settings.fillEnabled}
+            onChange={(e) => set({ fillEnabled: e.target.checked })}
+          />
+          {t("Fill")}
+          <input
+            type="color"
+            aria-label={t("Fill colour")}
+            value={settings.fill}
+            onChange={(e) => set({ fill: e.target.value })}
+          />
+        </label>
+      )}
+      <label className={styles.optionGroup}>
+        <input
+          type="checkbox"
+          checked={settings.strokeEnabled || settings.kind === "line"}
+          disabled={settings.kind === "line"}
+          onChange={(e) => set({ strokeEnabled: e.target.checked })}
+        />
+        {t("Stroke")}
+        <input
+          type="color"
+          aria-label={t("Stroke colour")}
+          value={settings.stroke}
+          onChange={(e) => set({ stroke: e.target.value, strokeEnabled: true })}
+        />
+      </label>
+      <NumberOption
+        label={t("Width")}
+        value={settings.strokeWidth}
+        min={1}
+        max={500}
+        suffix="px"
+        onChange={(strokeWidth) => set({ strokeWidth })}
+      />
+      {settings.kind === "polygon" && (
+        <>
+          <NumberOption
+            label={t("Sides")}
+            value={settings.sides}
+            min={3}
+            max={64}
+            onChange={(sides) => set({ sides })}
+          />
+          <NumberOption
+            label={t("Star")}
+            value={Math.round(settings.starIndent * 100)}
+            min={0}
+            max={95}
+            suffix="%"
+            onChange={(v) => set({ starIndent: v / 100 })}
+          />
+        </>
+      )}
+      {settings.kind === "custom" && (
+        <label className={styles.optionGroup}>
+          {t("Shape")}
+          <select
+            className={styles.select}
+            value={settings.customShape}
+            onChange={(e) => set({ customShape: e.target.value })}
+          >
+            {CUSTOM_SHAPE_IDS.map((id) => (
+              <option key={id} value={id}>
+                {t(CUSTOM_SHAPE_LABELS[id])}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
+      {settings.kind === "rect" && (
+        <NumberOption
+          label={t("Radius")}
+          value={settings.cornerRadius}
+          min={0}
+          max={5000}
+          suffix="px"
+          onChange={(cornerRadius) => set({ cornerRadius })}
+        />
+      )}
+      <span>{t("Shift: square · Alt: from centre")}</span>
+    </>
+  );
+}
+
+function TextOptions() {
+  const controller = useController();
+  const settings = useEditorState((s) => s.toolSettings.text);
+  const t = useT();
+  const alignLabels = {
+    left: t("Left"),
+    center: t("Center"),
+    right: t("Right"),
+    justify: t("Justify"),
+  };
+  const edit = useSyncExternalStore(
+    controller.textEdit.subscribe,
+    controller.textEdit.get,
+    () => null,
+  );
+  // While typing, options change the text being edited (the selected characters, or all of
+  // them); otherwise they set the defaults for new text.
+  const style = edit ? edit.style : settings;
+  const set = (patch: Partial<typeof settings>) => {
+    controller.store.updateToolSettings("text", patch);
+    if (!edit) return;
+    const { align, ...character } = patch;
+    if (Object.keys(character).length > 0) controller.applyCharacterStyle(character);
+    if (align) controller.applyParagraphStyle({ align });
+  };
+  return (
+    <>
+      <div className={styles.optionGroup}>
+        {t("Font")}
+        <FontPicker
+          label={t("Font")}
+          value={style.fontFamily}
+          onChange={(fontFamily) => set({ fontFamily })}
+        />
+      </div>
+      <NumberOption
+        label={t("Size")}
+        value={style.fontSize}
+        min={1}
+        max={2000}
+        suffix="px"
+        onChange={(fontSize) => set({ fontSize })}
+      />
+      <div className={styles.segmented} role="group" aria-label={t("Style")}>
+        <button
+          type="button"
+          aria-pressed={style.fontWeight === 700}
+          onPointerDown={(e) => e.preventDefault()}
+          onClick={() => set({ fontWeight: style.fontWeight === 700 ? 400 : 700 })}
+        >
+          <b>B</b>
+        </button>
+        <button
+          type="button"
+          aria-pressed={style.italic}
+          onPointerDown={(e) => e.preventDefault()}
+          onClick={() => set({ italic: !style.italic })}
+        >
+          <i>I</i>
+        </button>
+      </div>
+      <div className={styles.segmented} role="group" aria-label={t("Alignment")}>
+        {(["left", "center", "right", "justify"] as const).map((align) => (
+          <button
+            key={align}
+            type="button"
+            aria-pressed={style.align === align}
+            onPointerDown={(e) => e.preventDefault()}
+            onClick={() => set({ align })}
+          >
+            {alignLabels[align]}
+          </button>
+        ))}
+      </div>
+      <span>
+        {edit
+          ? t("⌘/Ctrl+Enter or click outside to finish · Esc cancels")
+          : t("Click to add text, or drag a box for text that wraps")}
+      </span>
+    </>
+  );
+}
+
+const CROP_RATIO_LABELS: Record<CropRatio, string> = {
+  free: N_("Free"),
+  original: N_("Original ratio"),
+  "1:1": "1:1",
+  "4:5": "4:5",
+  "5:4": "5:4",
+  "3:2": "3:2",
+  "2:3": "2:3",
+  "16:9": "16:9",
+  "9:16": "9:16",
+  custom: N_("Custom ratio"),
+};
+
+function CropOptions() {
+  const controller = useController();
+  const t = useT();
+  const crop = useEditorState((s) => s.toolSettings.crop);
+  const update = (patch: Partial<typeof crop>) => {
+    controller.store.updateToolSettings("crop", patch);
+    if (patch.ratio !== undefined || patch.ratioW !== undefined || patch.ratioH !== undefined) {
+      controller.tools.cropRatioChanged();
+    }
+  };
+  const side = (key: "ratioW" | "ratioH", label: string) => (
+    <input
+      className={styles.input}
+      type="number"
+      min={1}
+      max={100}
+      style={{ width: 48 }}
+      aria-label={t(label)}
+      value={crop[key]}
+      onChange={(e) => {
+        const v = Number(e.target.value);
+        if (Number.isFinite(v) && v > 0) update({ [key]: v });
+      }}
+    />
+  );
+  return (
+    <>
+      <label className={styles.optionGroup}>
+        {t("Ratio")}
+        <select
+          className={styles.select}
+          value={crop.ratio}
+          onChange={(e) => update({ ratio: e.target.value as CropRatio })}
+        >
+          {CROP_RATIOS.map((r) => (
+            <option key={r} value={r}>
+              {t(CROP_RATIO_LABELS[r])}
+            </option>
+          ))}
+        </select>
+      </label>
+      {crop.ratio === "custom" && (
+        <span className={styles.optionGroup}>
+          {side("ratioW", "Ratio width")}:{side("ratioH", "Ratio height")}
+        </span>
+      )}
+      <button
+        type="button"
+        className={styles.button}
+        onClick={() => controller.tools.straightenCrop()}
+      >
+        {t("Straighten")}
+      </button>
+      <label className={styles.optionGroup}>
+        <input
+          type="checkbox"
+          checked={crop.deletePixels}
+          onChange={(e) => update({ deletePixels: e.target.checked })}
+        />
+        {t("Delete cropped pixels")}
+      </label>
+      <button
+        type="button"
+        className={`${styles.button} ${styles.primary}`}
+        onClick={() => controller.tools.applyCrop()}
+      >
+        {t("Apply crop")}
+      </button>
+      <button type="button" className={styles.button} onClick={() => controller.tools.resetCrop()}>
+        {t("Reset")}
+      </button>
+      <span>{t("Enter applies · Esc resets")}</span>
+    </>
+  );
+}
+
+function PathButtons({ actions }: { actions: Record<UiActionId, UiAction> }) {
+  const t = useT();
+  const ids: UiActionId[] = ["path.makeSelection", "path.vectorMask", "path.shape", "path.delete"];
+  const labels: Partial<Record<UiActionId, string>> = {
+    "path.makeSelection": t("Selection"),
+    "path.vectorMask": t("Mask"),
+    "path.shape": t("Shape"),
+    "path.delete": t("Delete Path"),
+  };
+  return (
+    <div className={styles.segmented} role="group" aria-label={t("Work path")}>
+      {ids.map((id) => (
+        <button
+          key={id}
+          type="button"
+          disabled={!actions[id].enabled}
+          onClick={actions[id].run}
+          title={t(actions[id].label)}
+        >
+          {labels[id]}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function PenOptions({ actions }: { actions: Record<UiActionId, UiAction> }) {
+  const controller = useController();
+  const mode = useEditorState((s) => s.toolSettings.pen.mode);
+  const t = useT();
+  return (
+    <>
+      <div className={styles.segmented} role="group" aria-label={t("Pen mode")}>
+        {(["shape", "path"] as const).map((m) => (
+          <button
+            key={m}
+            type="button"
+            aria-pressed={mode === m}
+            onClick={() => controller.store.updateToolSettings("pen", { mode: m })}
+          >
+            {m === "shape" ? t("Shape") : t("Path")}
+          </button>
+        ))}
+      </div>
+      <PathButtons actions={actions} />
+      <span>
+        {t("Click for corners, drag for curves · click the first point to close · Enter finishes")}
+      </span>
+    </>
+  );
+}
+
+// Local labels: importing them from the tool would load it with the editor (it is lazy).
+const DISTORT_LABELS: Record<DistortState["mode"], string> = {
+  skew: N_("Skew"),
+  distort: N_("Distort"),
+  perspective: N_("Perspective"),
+  warp: N_("Warp"),
+};
+
+/** Options while Skew/Distort/Perspective/Warp is open (ADR-0044). */
+export function DistortOptions({ state }: { state: DistortState }) {
+  const controller = useController();
+  const t = useT();
+  const percent = (v: number) => Math.round(v * 100);
+  const amount = (label: string, key: "bend" | "horizontal" | "vertical") => (
+    <label className={styles.optionGroup}>
+      {t(label)}
+      <input
+        className={styles.input}
+        type="number"
+        min={-100}
+        max={100}
+        style={{ width: 56 }}
+        value={percent(state.warp[key])}
+        disabled={state.warp.custom}
+        onChange={(e) => {
+          const v = Number(e.target.value);
+          if (e.target.value !== "" && Number.isFinite(v)) {
+            controller.tools.setWarp({ [key]: Math.max(-100, Math.min(100, v)) / 100 });
+          }
+        }}
+      />
+      %
+    </label>
+  );
+  return (
+    <>
+      <span className={styles.optionsLabel}>{t(DISTORT_LABELS[state.mode])}</span>
+      {state.mode === "warp" && (
+        <>
+          <label className={styles.optionGroup}>
+            {t("Warp")}
+            <select
+              className={styles.select}
+              value={state.warp.custom ? "custom" : state.warp.style}
+              onChange={(e) => {
+                if (e.target.value !== "custom") {
+                  controller.tools.setWarp({
+                    style: e.target.value as WarpStyle,
+                    bend: state.warp.bend === 0 ? 0.5 : state.warp.bend,
+                  });
+                }
+              }}
+            >
+              <option value="custom">{t(WARP_LABELS.custom)}</option>
+              {WARP_STYLES.map((style) => (
+                <option key={style} value={style}>
+                  {t(WARP_LABELS[style])}
+                </option>
+              ))}
+            </select>
+          </label>
+          {amount("Bend", "bend")}
+          {amount("H", "horizontal")}
+          {amount("V", "vertical")}
+        </>
+      )}
+      <button
+        type="button"
+        className={styles.button}
+        onClick={() => controller.tools.finishDistort(true)}
+      >
+        {t("Apply")}
+      </button>
+      <button
+        type="button"
+        className={styles.button}
+        onClick={() => controller.tools.finishDistort(false)}
+      >
+        {t("Cancel")}
+      </button>
+    </>
+  );
+}
+
+/** The options of every tool except Move, loaded the first time such a tool is picked. */
+export function ToolOptions({
+  activeTool,
+  actions,
+}: {
+  activeTool: ToolId;
+  actions: Record<UiActionId, UiAction>;
+}) {
+  const t = useT();
+  const controller = useController();
+  const button = (id: UiActionId, label?: string) => (
+    <button
+      type="button"
+      className={styles.button}
+      disabled={!actions[id].enabled}
+      onClick={actions[id].run}
+    >
+      {label ?? t(actions[id].label)}
+    </button>
+  );
+  return (
+    <>
+      {activeTool === "crop" && <CropOptions />}
+      {activeTool === "perspective-crop" && (
+        <>
+          <span>{t("Drag a box, then move its corners onto the edges to straighten")}</span>
+          <button
+            type="button"
+            className={`${styles.button} ${styles.primary}`}
+            onClick={() => controller.tools.applyCrop()}
+          >
+            {t("Apply crop")}
+          </button>
+          <button
+            type="button"
+            className={styles.button}
+            onClick={() => controller.tools.resetCrop()}
+          >
+            {t("Reset")}
+          </button>
+        </>
+      )}
+      {activeTool === "marquee" && <MarqueeOptions />}
+      {activeTool === "lasso" && <LassoOptions />}
+      {(activeTool === "wand" || activeTool === "bucket" || activeTool === "magic-eraser") && (
+        <FloodOptions tool={activeTool} />
+      )}
+      {activeTool === "magic-eraser" && (
+        <span>{t("Click to erase an area of similar colour")}</span>
+      )}
+      {activeTool === "color-sampler" && <SamplerOptions />}
+      {activeTool === "ruler" && <RulerOptions />}
+      {activeTool === "spot-heal" && (
+        <>
+          <TipOptions tool="spot-heal" />
+          <span>{t("Paint over spots — the texture comes from around them automatically")}</span>
+        </>
+      )}
+      {activeTool === "red-eye" && <RedEyeOptions />}
+      {(activeTool === "bg-eraser" || activeTool === "color-replace") && (
+        <SampledBrushOptions tool={activeTool} />
+      )}
+      {(activeTool === "path-move" ||
+        activeTool === "anchor-add" ||
+        activeTool === "anchor-delete" ||
+        activeTool === "anchor-convert") && (
+        <>
+          <PathButtons actions={actions} />
+          <span>
+            {
+              {
+                "path-move": t("Drag a path to move all of it"),
+                "anchor-add": t("Click a path segment to add a point"),
+                "anchor-delete": t("Click a point to delete it"),
+                "anchor-convert": t(
+                  "Click a point for corner ↔ smooth · drag it to pull out handles",
+                ),
+              }[activeTool]
+            }
+          </span>
+        </>
+      )}
+      {activeTool === "eyedropper" && <EyedropperOptions />}
+      {(activeTool === "brush" || activeTool === "pencil" || activeTool === "eraser") && (
+        <BrushOptions tool={activeTool} />
+      )}
+      {(activeTool === "clone" || activeTool === "heal") && (
+        <SourceBrushOptions tool={activeTool} />
+      )}
+      {activeTool === "tone" && <ToneOptions />}
+      {activeTool === "focus" && <FocusOptions />}
+      {activeTool === "gradient" && <GradientOptions />}
+      {activeTool === "shape" && <ShapeOptions />}
+      {activeTool === "pen" && <PenOptions actions={actions} />}
+      {activeTool === "path-select" && (
+        <>
+          <PathButtons actions={actions} />
+          <span>
+            {t(
+              "Drag anchors or handles · Alt-click an anchor for corner/smooth · Delete removes it",
+            )}
+          </span>
+        </>
+      )}
+      {activeTool === "text" && <TextOptions />}
+      {activeTool === "zoom" && (
+        <>
+          {button("view.zoomIn", t("Zoom in"))}
+          {button("view.zoomOut", t("Zoom out"))}
+          <span>{t("Click to zoom in · Alt-click to zoom out")}</span>
+        </>
+      )}
+      {activeTool === "hand" && <span>{t("Drag to pan · Hold Space with any tool to pan")}</span>}
+    </>
+  );
+}

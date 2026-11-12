@@ -32,6 +32,7 @@ import {
   type LayerMask,
   type Transform,
   type SmartFilter,
+  type SmartDistortion,
 } from "../core/document/types";
 
 /**
@@ -336,7 +337,17 @@ function layer(value: unknown, path: string, depth: number, budget: Budget): Lay
       const filters = Array.isArray(o.filters)
         ? o.filters.map((f, i) => smartFilter(f, `${path}.filters[${i}]`))
         : undefined;
-      return { ...base, kind: "smart", content, ...(filters ? { filters } : {}) };
+      const distortion =
+        o.distortion === undefined
+          ? undefined
+          : smartDistortion(o.distortion, `${path}.distortion`);
+      return {
+        ...base,
+        kind: "smart",
+        content,
+        ...(filters ? { filters } : {}),
+        ...(distortion ? { distortion } : {}),
+      };
     }
     case "fill": {
       return { ...base, kind: "fill", color: hexColor(o.color, `${path}.color`) };
@@ -404,6 +415,26 @@ function layer(value: unknown, path: string, depth: number, budget: Budget): Lay
     default:
       fail(`${path}.kind`, "known layer kind");
   }
+}
+
+/** A smart object's distortion (ADR-0044): 4 finite corners, or 16 control points and a style. */
+function smartDistortion(value: unknown, path: string): SmartDistortion {
+  const o = obj(value, path);
+  const points = (v: unknown, count: number, at: string) => {
+    if (!Array.isArray(v) || v.length !== count) fail(at, `${count} numbers`);
+    return v.map((n, i) => num(n, `${at}[${i}]`));
+  };
+  if (o.kind === "perspective") {
+    return { kind: "perspective", corners: points(o.corners, 8, `${path}.corners`) };
+  }
+  if (o.kind === "warp") {
+    return {
+      kind: "warp",
+      mesh: points(o.mesh, 32, `${path}.mesh`),
+      style: str(o.style, `${path}.style`, 32),
+    };
+  }
+  return fail(`${path}.kind`, "perspective|warp");
 }
 
 function hexColor(value: unknown, path: string): string {

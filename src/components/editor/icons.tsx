@@ -118,6 +118,19 @@ export const CropIcon = (p: IconProps) => (
   </Svg>
 );
 
+export const PerspectiveCropIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M4 1.5V12h10.5M1.5 4H12v10.5" />
+    <path d="M6 6.5 10.5 5.5 10 10 5.5 10.5Z" strokeDasharray="1.5 1" />
+  </Svg>
+);
+
+export const CustomShapeIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M8 14C6 12.3 1.5 9.6 1.5 5.6 1.5 3.4 3.1 2 4.8 2c1.3 0 2.4.8 3.2 2 .8-1.2 1.9-2 3.2-2 1.7 0 3.3 1.4 3.3 3.6 0 4-4.5 6.7-6.5 8.4Z" />
+  </Svg>
+);
+
 export const BrushIcon = (p: IconProps) => (
   <Svg {...p}>
     <path d="M13.5 2.5 7 9" />

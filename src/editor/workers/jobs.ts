@@ -1,8 +1,5 @@
 import type { EditorDocument, Layer } from "../core/document/types";
-import type { Message, Msg } from "../core/message";
-import { FormatError } from "../formats/binary/bytes";
 import { exportAs, type ExportRequest } from "../formats/export/document-export";
-import { ExportError } from "../formats/export/raster-export";
 import { decodeHeic, type DecodedHeic } from "../formats/heic/heic";
 import { renderRgba } from "../formats/layer-render";
 import { bitmapPixels, resolveDraft, type PsdDraft } from "../formats/psd/psd-draft";
@@ -271,29 +268,8 @@ export function outputTransfer(name: JobName, output: unknown): Transferable[] {
 }
 
 /** Errors cross the worker boundary as plain data; user-facing format errors keep their type. */
-export interface JobError {
-  readonly name: string;
-  readonly message: string;
-  /** The translatable template of a user-facing error (ADR-0039). */
-  readonly template?: Msg;
-}
-
-export const toJobError = (error: unknown): JobError => ({
-  name: error instanceof Error ? error.name : "Error",
-  message: error instanceof Error ? error.message : String(error),
-  ...(error instanceof FormatError || error instanceof ExportError
-    ? error.template && { template: error.template }
-    : {}),
-});
-
-export function fromJobError(error: JobError): Error {
-  const message: Message = error.template ?? error.message;
-  if (error.name === "FormatError") return new FormatError(message);
-  if (error.name === "ExportError") return new ExportError(message);
-  const e = new Error(error.message);
-  e.name = error.name;
-  return e;
-}
+// Error transport lives in job-errors.ts so the main thread needn't load every job (ADR-0044).
+export { fromJobError, toJobError, type JobError } from "./job-errors";
 
 /** Split RGBA into the PDF's RGB image and alpha soft mask (omitted when fully opaque). */
 function encodePdf(pixels: RgbaPixels, ppi: number, title: string): Promise<Uint8Array> {

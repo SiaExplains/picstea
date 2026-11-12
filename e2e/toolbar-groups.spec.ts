@@ -90,7 +90,7 @@ test("Magic Eraser and Red Eye change real pixels", async ({ page }) => {
   await page.getByRole("button", { name: "New Layer" }).click();
   await setForegroundColor(page, "#d02020");
   await page.keyboard.press("b");
-  await page.getByLabel("Size").first().fill("40");
+  await page.getByRole("spinbutton", { name: "Size" }).first().fill("40");
   await drag(page, [100, 100], [200, 100]);
   const red = await pixel(page, 150, 100);
   expect(red[0]).toBeGreaterThan(180);
@@ -156,7 +156,7 @@ test("Background Eraser, Color Replacement and Spot Healing paint real pixels", 
   await page.getByRole("button", { name: "New Layer" }).click();
   await setForegroundColor(page, "#d02020");
   await page.keyboard.press("b");
-  await page.getByLabel("Size").first().fill("60");
+  await page.getByRole("spinbutton", { name: "Size" }).first().fill("60");
   await drag(page, [80, 120], [320, 120]);
 
   // Color Replacement: the red stroke takes the foreground hue, keeping its shading.
@@ -177,12 +177,12 @@ test("Background Eraser, Color Replacement and Spot Healing paint real pixels", 
   await setForegroundColor(page, "#000000");
   // B returns to the last tool used in the brush group (Color Replacement), so pick the Brush.
   await chooseTool(page, "brush", "Brush");
-  await page.getByLabel("Size").first().fill("10");
+  await page.getByRole("spinbutton", { name: "Size" }).first().fill("10");
   const dot = await at(page, 200, 120);
   await page.mouse.click(dot.x, dot.y);
   expect((await pixel(page, 200, 120))[0]).toBeLessThan(60);
   await chooseTool(page, "heal", "Spot Healing Brush");
-  await page.getByLabel("Size").first().fill("24");
+  await page.getByRole("spinbutton", { name: "Size" }).first().fill("24");
   await page.mouse.click(dot.x, dot.y);
   await expect(lastHistory(page)).toHaveText("Spot Healing Brush");
   expect((await pixel(page, 200, 120))[0]).toBeGreaterThan(120);

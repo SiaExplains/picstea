@@ -1,13 +1,11 @@
-import {
-  fromJobError,
-  JOBS,
-  outputTransfer,
-  toJobError,
-  type JobError,
-  type JobInput,
-  type JobName,
-  type JobOutput,
-} from "./jobs";
+import { fromJobError, toJobError, type JobError } from "./job-errors";
+import type { JobInput, JobName, JobOutput } from "./jobs";
+
+/**
+ * The jobs themselves (PSD, filters, export…), loaded only when they run on this thread: in the
+ * worker, or as the fallback when there is none. The editor page doesn't download them up front.
+ */
+const loadJobs = () => import("./jobs");
 
 /** Runs CPU-heavy jobs off the UI thread when it can (ADR-0012). */
 export interface JobRunner {
@@ -25,6 +23,7 @@ export interface JobRunner {
 export const mainThreadRunner: JobRunner = {
   offThread: false,
   async run(name, input) {
+    const { JOBS } = await loadJobs();
     return (await JOBS[name](input as never)) as never;
   },
   dispose() {},
@@ -117,6 +116,7 @@ export function serveJobs(scope: {
   scope.addEventListener("message", async (event: MessageEvent) => {
     const { id, name, input } = event.data as { id: number; name: JobName; input: unknown };
     try {
+      const { JOBS, outputTransfer } = await loadJobs();
       if (!Object.hasOwn(JOBS, name)) throw new Error("Unknown job.");
       const output = await JOBS[name](input as never);
       scope.postMessage({ id, ok: true, output }, outputTransfer(name, output));

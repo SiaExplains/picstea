@@ -135,6 +135,7 @@ test("every sitemap page has complete metadata, valid links and good lab vitals"
     if (r.cls > 0.1) problems.push(`${where}: CLS ${r.cls.toFixed(3)}`);
     // Script budget from the 2026-10 audit (editor 270 KB, site pages 145 KB) plus headroom.
     // Editor raised to 360 KB in 0.45.0 for paragraph text and fonts (354 KB, owner-approved).
+    // 0.49.0: 347 KB after worker jobs and tool options/dialogs became lazy (ADR-0044).
     const editor = ["/", "/es", "/pt-br", "/de"].includes(r.path);
     const budget = editor ? 360 * 1024 : 200 * 1024;
     if (r.scriptBytes > budget)

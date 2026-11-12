@@ -1,4 +1,7 @@
 import type { Message } from "../core/message";
+import { LazyTool } from "../tools/lazy-tool";
+import type { DistortMode, DistortState, DistortTool } from "../tools/move/distort-tool";
+import type { WarpSettings } from "../core/geometry/warp-presets";
 import type { AssetStore } from "../assets/asset-store";
 import type { EditorStore } from "../core/editor-store";
 import type { ContentSizer } from "../core/geometry/layer-geometry";
@@ -46,6 +49,8 @@ export interface ToolManagerHost {
   view(): ViewSettings;
   /** Size of the canvas viewport in CSS pixels. */
   screenSize(): Size;
+  /** Rotate the whole canvas (Straighten); the new canvas size, or null if refused. */
+  rotateCanvas?(degrees: number): { width: number; height: number } | null;
 }
 
 /**
@@ -55,13 +60,22 @@ export interface ToolManagerHost {
 export class ToolManager {
   /** Bumped whenever tool feedback changes and the canvas should be redrawn. */
   readonly revision = new Observable(0);
-  readonly crop = new CropTool();
+  readonly crop: CropTool;
+  /** Perspective Crop (ADR-0044), loaded when first picked. */
+  readonly perspectiveCrop = new LazyTool("perspective-crop", async () => {
+    const { PerspectiveCropTool } = await import("../tools/crop/perspective-crop-tool");
+    return new PerspectiveCropTool();
+  });
   readonly pen = new PenTool();
   /** Select → Transform Selection: overrides the active tool until applied or cancelled. */
   readonly selectionTransform = new TransformSelectionTool();
   /** Free Transform of selected pixels: overrides the active tool until applied or cancelled. */
   /** Loaded the first time it is used (most sessions never transform selected pixels). */
   private pixelTransform: PixelTransformTool | null = null;
+  /** Edit → Transform → Skew/Distort/Perspective/Warp (ADR-0044); loaded on first use. */
+  private distortTool: DistortTool | null = null;
+  /** The open distort transform, for the options bar (null when none). */
+  readonly distort = new Observable<DistortState | null>(null);
   /** Moving guides with the Move tool and creating them from the rulers. */
   readonly guides = new GuideDrag();
   private readonly tools: Partial<Record<ToolId, Tool>>;
@@ -77,12 +91,14 @@ export class ToolManager {
   private readonly unsubscribe: () => void;
 
   constructor(private readonly host: ToolManagerHost) {
+    this.crop = new CropTool((degrees) => host.rotateCanvas?.(degrees) ?? null);
     this.tools = {
       move: new MoveTool(),
       marquee: new MarqueeTool(),
       lasso: new LassoTool(),
       wand: new MagicWandTool(),
       crop: this.crop,
+      "perspective-crop": this.perspectiveCrop,
       eyedropper: new EyedropperTool(),
       brush: new BrushTool("brush"),
       pencil: new BrushTool("pencil"),
@@ -134,6 +150,7 @@ export class ToolManager {
         this.guides.cancel(this.context);
         if (this.selectionTransform.active) this.selectionTransform.end(this.context);
         if (this.pixelTransform?.active) this.pixelTransform.end(this.context);
+        if (this.distortTool?.active) this.distortTool.end(this.context);
         this.activeId = next.activeTool;
         this.documentId = next.activeDocumentId;
         this.context.invalidate();
@@ -145,6 +162,9 @@ export class ToolManager {
       ) {
         this.pixelTransform.end(this.context);
       }
+      if (this.distortTool?.active && this.distortTool.isStale(host.store.getSession()?.document)) {
+        this.distortTool.end(this.context);
+      }
     });
   }
 
@@ -155,6 +175,7 @@ export class ToolManager {
   private active(): Tool | undefined {
     if (this.selectionTransform.active) return this.selectionTransform;
     if (this.pixelTransform?.active) return this.pixelTransform;
+    if (this.distortTool?.active) return this.distortTool;
     return this.tools[this.host.store.getState().activeTool];
   }
 
@@ -192,6 +213,33 @@ export class ToolManager {
         "Drag the handles to transform the selected pixels. Enter applies, Esc cancels.",
       );
     }
+  }
+
+  /** Start Skew, Distort, Perspective or Warp on `layerId` (ADR-0044). */
+  async beginDistort(mode: DistortMode, layerId: string): Promise<boolean> {
+    if (!this.distortTool) {
+      const { DistortTool } = await import("../tools/move/distort-tool");
+      if (!this.distortTool) {
+        this.distortTool = new DistortTool();
+        this.distortTool.state.subscribe(() => this.distort.set(this.distortTool!.state.get()));
+      }
+    }
+    this.active()?.cancel(this.context);
+    if (this.pixelTransform?.active) this.pixelTransform.end(this.context);
+    if (this.distortTool.active) this.distortTool.end(this.context);
+    return this.distortTool.begin(this.context, mode, layerId);
+  }
+
+  /** Options bar: change the warp preset or its amounts. */
+  setWarp(settings: Partial<WarpSettings>): void {
+    this.distortTool?.setWarp(this.context, settings);
+  }
+
+  /** Apply (Enter) or cancel (Esc) the open distort transform. */
+  finishDistort(apply: boolean): void {
+    if (!this.distortTool?.active) return;
+    if (apply) this.distortTool.apply(this.context);
+    else this.distortTool.end(this.context);
   }
 
   /** True when the active tool consumes canvas pointer input (Hand/Zoom do not). */
@@ -290,11 +338,34 @@ export class ToolManager {
   }
 
   applyCrop(): void {
+    if (this.host.store.getState().activeTool === "perspective-crop") {
+      (this.perspectiveCrop.loaded as { apply?: (ctx: ToolContext) => boolean } | null)?.apply?.(
+        this.context,
+      );
+      return;
+    }
     this.crop.apply(this.context);
   }
 
   resetCrop(): void {
+    if (this.host.store.getState().activeTool === "perspective-crop") {
+      (this.perspectiveCrop.loaded as { reset?: (ctx: ToolContext) => void } | null)?.reset?.(
+        this.context,
+      );
+      return;
+    }
     this.crop.reset(this.context);
+  }
+
+  /** A crop ratio preset was picked in the options bar. */
+  cropRatioChanged(): void {
+    this.crop.ratioChanged(this.context);
+  }
+
+  /** Crop options → Straighten: the next drag on the canvas draws the level line. */
+  straightenCrop(): void {
+    this.crop.straightening = true;
+    this.host.notify("info", "Drag along a line that should be level (or upright).");
   }
 
   overlays(): readonly Overlay[] {

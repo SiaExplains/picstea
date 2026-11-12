@@ -1,6 +1,15 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent } from "react";
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type DragEvent,
+} from "react";
 import { createShortcutMatcher } from "@/editor/core/shortcuts/shortcuts";
 import type { SelectionModification } from "@/editor/core/commands";
 import { isDirty } from "@/editor/core/editor-store";
@@ -16,7 +25,6 @@ import { MenuBar } from "./MenuBar";
 import { NewDocumentDialog } from "./NewDocumentDialog";
 import { BusyOverlay, Notices } from "./Notices";
 import { PropertiesPanel } from "./PropertiesPanel";
-import { CanvasSizeDialog, ImageSizeDialog, TrimDialog } from "./ImageDialogs";
 import {
   ColorRangeDialog,
   ModifySelectionDialog,
@@ -42,6 +50,18 @@ import { PANEL_LIMITS, PanelSplitter, usePanelSizes } from "./PanelSplitter";
 import { useEditorActions, type ActionHosts } from "./use-editor-actions";
 import { useT } from "./i18n";
 
+// Image menu dialogs load when first opened (ADR-0044: keeps the editor's first download small).
+const ImageSizeDialog = lazy(() =>
+  import("./ImageDialogs").then((m) => ({ default: m.ImageSizeDialog })),
+);
+const CanvasSizeDialog = lazy(() =>
+  import("./ImageDialogs").then((m) => ({ default: m.CanvasSizeDialog })),
+);
+const TrimDialog = lazy(() => import("./ImageDialogs").then((m) => ({ default: m.TrimDialog })));
+const RotateDialog = lazy(() =>
+  import("./ImageDialogs").then((m) => ({ default: m.RotateDialog })),
+);
+
 const matchShortcut = createShortcutMatcher();
 
 type PickMode = "open" | "place" | "placeEmbedded";
@@ -59,7 +79,9 @@ export function EditorShell() {
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const [modifyKind, setModifyKind] = useState<SelectionModification | null>(null);
   const [strokeOpen, setStrokeOpen] = useState(false);
-  const [imageDialog, setImageDialog] = useState<"size" | "canvas" | "trim" | null>(null);
+  const [imageDialog, setImageDialog] = useState<"size" | "canvas" | "trim" | "rotate" | null>(
+    null,
+  );
   const [colorRangeOpen, setColorRangeOpen] = useState(false);
   const [filterId, setFilterId] = useState<FilterId | null>(null);
   const [smartTarget, setSmartTarget] = useState<SmartFilterTarget | undefined>(undefined);
@@ -89,6 +111,7 @@ export function EditorShell() {
       openStrokeDialog: () => setStrokeOpen(true),
       openImageSizeDialog: () => setImageDialog("size"),
       openCanvasSizeDialog: () => setImageDialog("canvas"),
+      openRotateDialog: () => setImageDialog("rotate"),
       openTrimDialog: () => setImageDialog("trim"),
       openColorRangeDialog: () => setColorRangeOpen(true),
       // The dialog only opens when the active layer can be filtered (otherwise a notice says why).
@@ -286,9 +309,12 @@ export function EditorShell() {
       <ExportDialog open={exportDialogOpen} onClose={() => setExportDialogOpen(false)} />
       <ModifySelectionDialog kind={modifyKind} onClose={() => setModifyKind(null)} />
       {strokeOpen && <StrokeDialog open onClose={() => setStrokeOpen(false)} />}
-      {imageDialog === "size" && <ImageSizeDialog onClose={() => setImageDialog(null)} />}
-      {imageDialog === "canvas" && <CanvasSizeDialog onClose={() => setImageDialog(null)} />}
-      {imageDialog === "trim" && <TrimDialog onClose={() => setImageDialog(null)} />}
+      <Suspense fallback={null}>
+        {imageDialog === "size" && <ImageSizeDialog onClose={() => setImageDialog(null)} />}
+        {imageDialog === "canvas" && <CanvasSizeDialog onClose={() => setImageDialog(null)} />}
+        {imageDialog === "trim" && <TrimDialog onClose={() => setImageDialog(null)} />}
+        {imageDialog === "rotate" && <RotateDialog onClose={() => setImageDialog(null)} />}
+      </Suspense>
       {colorRangeOpen && <ColorRangeDialog open onClose={() => setColorRangeOpen(false)} />}
       {filterId && (
         <FilterDialog

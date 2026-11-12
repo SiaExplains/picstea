@@ -134,20 +134,21 @@ const FACTS = [
   "Layer styles: all ten Photoshop effects (drop shadow, inner shadow, outer and inner glow, bevel and emboss with contour and texture, satin, colour, gradient and pattern overlay, stroke) with contours, several copies, Fill opacity, Blend If, channel restrictions, global light and saved styles, in a Layer Style dialog.",
   "Selections: rectangular and elliptical marquee, freehand and polygonal lasso, magic wand, Color Range, select layer pixels, feather/expand/contract, transform selection. The Move tool moves the selected pixels (Alt-drag moves a copy; arrow keys nudge).",
   "Painting and retouching: brush, pencil, eraser, background and magic eraser, paint bucket, gradient, colour replacement, clone stamp, healing and spot healing brush, red eye, dodge, burn, sponge, blur, sharpen and smudge.",
-  "Vector tools: pen with add/delete/convert anchor point, path and direct selection, rectangle, rounded rectangle, ellipse, polygon and line shapes, editable text.",
+  "Vector tools: pen with add/delete/convert anchor point, path and direct selection, rectangle, rounded rectangle, ellipse, polygon, star, line and 17 custom shapes (arrows, speech bubbles, heart and more), editable text.",
+  "Transform: free transform, skew, distort, perspective and warp (13 presets or a custom grid), editable on smart objects; crop with ratio presets, straighten, arbitrary rotation and Perspective Crop.",
   "Smart objects with non-destructive smart filters; Photoshop's full Filter menu with live preview: blurs and Blur Gallery, Distort, Noise, Pixelate, Render, Sharpen, Stylize, Other and Fourier, plus Filter Gallery, Lens Correction, Camera Raw, Liquify and Vanishing Point.",
   "Actions (record and replay edits), batch processing of many files into a ZIP, history panel, swatches, colour sampler and ruler, rulers, guides, grid and snapping.",
   "Available in English, Spanish (/es), Portuguese (Brazil) (/pt-br) and German (/de): the editor UI and the guide, converter and comparison pages; docs, blog and legal pages are English. Translations are machine-drafted.",
   "Opens PNG, JPEG, WebP, GIF, SVG, HEIC/HEIF (iPhone photos, decoded on the device with libheif), PSD (8-bit RGB and greyscale) and .picstea projects; exports PNG, JPEG, WebP, SVG, PDF and layered PSD.",
   "File → Convert… (also linked as /?convert=<pair> from the converter pages, including /convert/heic-to-jpg) converts up to 200 files to PNG, JPEG or WebP without opening them; several files are saved as one ZIP. PSDs use the flattened image stored in the file.",
-  "PSD import keeps layers, groups, masks, blend modes, editable text, adjustment layers, shapes, smart objects, clipping and vector masks and common layer styles.",
+  "PSD import keeps layers, groups, masks, blend modes, editable text, adjustment layers, shapes, smart objects (including perspective and warp), clipping and vector masks and common layer styles.",
   `Made by Siavash Ghanbari (${SITE.url}/authors/siavash-ghanbari), who writes and checks every guide on the blog and explains technology on YouTube as SiaBarry.`,
 ];
 
 const LIMITS = [
   "Cannot open PSB, 16/32-bit or CMYK PSD files, TIFF, PDF or camera RAW files yet.",
-  "Some Photoshop features open as pixels: Selective Color and Color Lookup, warped text and Photoshop smart filters; Photoshop pattern images are replaced by built-in patterns.",
-  "No AI generation, object selection or content-aware fill; no perspective crop or vertical text yet.",
+  "Some Photoshop features open as pixels: Selective Color and Color Lookup and Photoshop smart filters; warped text opens as editable text without its warp; Photoshop pattern images are replaced by built-in patterns.",
+  "No AI generation, object selection or content-aware fill; no vertical text yet.",
   "Designed for a mouse or trackpad and keyboard; on phones the layout adapts but works best on larger screens.",
 ];
 

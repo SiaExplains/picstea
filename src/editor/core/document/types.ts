@@ -395,7 +395,19 @@ export interface SmartObjectLayer extends BaseLayer {
   readonly kind: "smart";
   readonly content: EditorDocument;
   readonly filters?: readonly SmartFilter[];
+  /** Skew, distort, perspective or warp, kept editable (ADR-0044; schema v11). */
+  readonly distortion?: SmartDistortion;
 }
+
+/**
+ * A non-affine transform of a smart object, in its layer's own coordinates (the content box is
+ * 0,0 – content width × height; the layer transform applies on top).
+ */
+export type SmartDistortion =
+  /** The content box's corners, clockwise from top-left: x0 y0 x1 y1 x2 y2 x3 y3. */
+  | { readonly kind: "perspective"; readonly corners: readonly number[] }
+  /** 16 bicubic control points (x, y), row by row; `style` names the preset it came from. */
+  | { readonly kind: "warp"; readonly mesh: readonly number[]; readonly style: string };
 
 /*
  * Adding a kind requires a renderer case, a validator case, geometry sizing and — if it changes

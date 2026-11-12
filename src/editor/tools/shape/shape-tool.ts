@@ -9,26 +9,40 @@ import type { CompositePreview } from "../../rendering/compositing/compositor";
 import type { SnapLine } from "../../core/geometry/snapping";
 import type { Overlay } from "../../rendering/overlay";
 import { snappedPointer, type Tool, type ToolContext, type ToolPointer } from "../tool";
+import {
+  CUSTOM_SHAPE_IDS,
+  CUSTOM_SHAPE_LABELS,
+  customShapePath,
+  type CustomShapeId,
+} from "./custom-shapes";
 
-const SHAPE_NAMES: Record<ShapeKind | "polygon", string> = {
+const SHAPE_NAMES: Record<ShapeKind | "polygon" | "custom", string> = {
   rect: "Rectangle",
   ellipse: "Ellipse",
   line: "Line",
   path: "Shape",
   polygon: "Polygon",
+  custom: "Shape",
 };
 
-/** A regular polygon inscribed in a box (first corner at the top), as a closed path. */
+/**
+ * A regular polygon inscribed in a box (first corner at the top), as a closed path. With
+ * `starIndent` > 0 it is a star: inner corners between the points, that far in (0 … 0.95).
+ */
 export function polygonPath(
   box: { x: number; y: number; width: number; height: number },
   sides: number,
+  starIndent = 0,
 ): VectorPath {
   const n = Math.max(3, Math.min(64, Math.round(sides)));
+  const indent = Math.max(0, Math.min(0.95, starIndent));
   const cx = box.x + box.width / 2;
   const cy = box.y + box.height / 2;
-  const anchors = Array.from({ length: n }, (_, i) => {
-    const a = -Math.PI / 2 + (i * 2 * Math.PI) / n;
-    return corner(cx + (Math.cos(a) * box.width) / 2, cy + (Math.sin(a) * box.height) / 2);
+  const points = indent > 0 ? n * 2 : n;
+  const anchors = Array.from({ length: points }, (_, i) => {
+    const a = -Math.PI / 2 + (i * 2 * Math.PI) / points;
+    const r = indent > 0 && i % 2 === 1 ? 1 - indent : 1;
+    return corner(cx + (Math.cos(a) * box.width * r) / 2, cy + (Math.sin(a) * box.height * r) / 2);
   });
   return { subpaths: [{ closed: true, anchors }] };
 }
@@ -81,7 +95,23 @@ export function shapeFromDrag(
   const rect = rectFromPoints(from, to);
   if (rect.width < MIN_DRAG || rect.height < MIN_DRAG) return null;
   if (kind === "polygon") {
-    return createPathShapeLayer({ path: polygonPath(rect, settings.sides), fill, stroke, name });
+    return createPathShapeLayer({
+      path: polygonPath(rect, settings.sides, settings.starIndent),
+      fill,
+      stroke,
+      name: settings.starIndent > 0 ? "Star" : name,
+    });
+  }
+  if (kind === "custom") {
+    const id = (CUSTOM_SHAPE_IDS as readonly string[]).includes(settings.customShape)
+      ? (settings.customShape as CustomShapeId)
+      : "arrow-right";
+    return createPathShapeLayer({
+      path: customShapePath(id, rect),
+      fill,
+      stroke,
+      name: CUSTOM_SHAPE_LABELS[id],
+    });
   }
   return createShapeLayer({
     shape: kind,

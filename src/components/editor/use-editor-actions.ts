@@ -61,6 +61,13 @@ import {
   type Locale,
 } from "@/i18n/locales";
 
+const DISTORT_MENU_LABELS = {
+  skew: "Skew",
+  distort: "Distort",
+  perspective: "Perspective",
+  warp: "Warp",
+} as const;
+
 export type UiActionId =
   | ActionId
   | `adjust.${AdjustmentType}`
@@ -94,6 +101,10 @@ export type UiActionId =
   | "layer.toggleVectorMask"
   | "layer.newGroup"
   | "layer.toggleVisibility"
+  | "edit.skew"
+  | "edit.distort"
+  | "edit.perspective"
+  | "edit.warp"
   | "layer.toggleLock"
   | "layer.addMask"
   | "layer.deleteMask"
@@ -133,6 +144,7 @@ export type UiActionId =
   | "image.rotateCw"
   | "image.rotateCcw"
   | "image.rotate180"
+  | "image.rotateArbitrary"
   | "image.flipH"
   | "image.flipV"
   | "image.trim"
@@ -171,6 +183,7 @@ export interface ActionHosts {
   openStrokeDialog: () => void;
   openImageSizeDialog: () => void;
   openCanvasSizeDialog: () => void;
+  openRotateDialog: () => void;
   openTrimDialog: () => void;
 }
 
@@ -233,6 +246,18 @@ export function useEditorActions(hosts: ActionHosts): Record<UiActionId, UiActio
       !layer.locked;
     const selection = doc?.selection;
     const hasSelection = !!selection;
+    const distortAction = (mode: keyof typeof DISTORT_MENU_LABELS): UiAction => ({
+      label: DISTORT_MENU_LABELS[mode],
+      enabled:
+        !!layer &&
+        !layer.locked &&
+        (layer.kind === "raster" ||
+          layer.kind === "smart" ||
+          layer.kind === "text" ||
+          layer.kind === "shape" ||
+          (hasSelection && !!layer.mask)),
+      run: () => void controller.distort(mode),
+    });
     const hasWorkPath = !!doc?.workPath;
     const isPathShape = layer?.kind === "shape" && layer.shape === "path";
     const onPixels = hasSelection && layer?.kind === "raster" && !layer.locked;
@@ -350,6 +375,11 @@ export function useEditorActions(hosts: ActionHosts): Record<UiActionId, UiActio
         label: "90° Counter-Clockwise",
         enabled: hasDoc,
         run: () => void controller.transformImage({ kind: "rotate", turns: 3 }),
+      },
+      "image.rotateArbitrary": {
+        label: "Arbitrary…",
+        enabled: hasDoc,
+        run: hosts.openRotateDialog,
       },
       "image.rotate180": {
         label: "180°",
@@ -712,6 +742,11 @@ export function useEditorActions(hosts: ActionHosts): Record<UiActionId, UiActio
           },
         ]),
       ) as Record<`adjust.${AdjustmentType}`, UiAction>),
+      // Skew/Distort/Perspective/Warp (ADR-0044): pixels, smart objects, text and shapes.
+      "edit.skew": distortAction("skew"),
+      "edit.distort": distortAction("distort"),
+      "edit.perspective": distortAction("perspective"),
+      "edit.warp": distortAction("warp"),
       "layer.flipH": {
         label: "Flip Horizontal",
         enabled: canTransform,
@@ -901,6 +936,7 @@ export function useEditorActions(hosts: ActionHosts): Record<UiActionId, UiActio
       "tool.zoom": tool("zoom", N_("Zoom Tool")),
       "tool.next.marquee": nextTool("marquee", N_("Next Marquee Tool")),
       "tool.next.lasso": nextTool("lasso", N_("Next Lasso Tool")),
+      "tool.next.crop": nextTool("crop", N_("Crop or Perspective Crop")),
       "tool.next.eyedropper": nextTool("eyedropper", N_("Next Eyedropper, Sampler or Ruler")),
       "tool.next.heal": nextTool("heal", N_("Next Healing Tool")),
       "tool.next.brush": nextTool("brush", N_("Next Brush Tool")),

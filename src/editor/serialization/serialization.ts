@@ -9,7 +9,7 @@ import { ValidationError, validateDocument } from "./validate";
  * To change the stored shape: bump CURRENT_SCHEMA_VERSION, add a migration from the previous
  * version, and update the validator. Never edit a released migration.
  */
-export const CURRENT_SCHEMA_VERSION = 10;
+export const CURRENT_SCHEMA_VERSION = 11;
 
 export interface SerializedProject {
   readonly schemaVersion: number;
@@ -69,6 +69,11 @@ export const MIGRATIONS: Readonly<Record<number, Migration>> = {
    * by the same factor, so they look as before.
    */
   9: (document) => upgradeShapesIn(document),
+  /*
+   * v11 (0.49.0) added an optional distortion to smart objects: skew, distort, perspective or
+   * warp (ADR-0044). Every v10 document is a valid v11 document.
+   */
+  10: (document) => document,
 };
 
 /** Recursively bake the scale of shape layers (v10), including groups and smart object contents. */

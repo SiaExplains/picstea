@@ -268,6 +268,39 @@ export class Canvas2DRenderer implements Renderer {
         }
         break;
       }
+      case "mesh": {
+        const outline = overlay.outline.map(toScreen);
+        this.strokeOutline(ctx, () => {
+          ctx.beginPath();
+          outline.forEach((p, i) => (i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)));
+          ctx.closePath();
+          for (const line of overlay.grid) {
+            line
+              .map(toScreen)
+              .forEach((p, i) => (i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)));
+          }
+        });
+        for (const p of overlay.handles) this.drawHandle(ctx, toScreen(p));
+        break;
+      }
+      case "quad": {
+        const pts = overlay.corners.map(toScreen);
+        if (overlay.shade) {
+          ctx.fillStyle = this.theme.cropShade;
+          ctx.beginPath();
+          ctx.rect(0, 0, screen.width, screen.height);
+          pts.forEach((p, i) => (i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)));
+          ctx.closePath();
+          ctx.fill("evenodd");
+        }
+        this.strokeOutline(ctx, () => {
+          ctx.beginPath();
+          pts.forEach((p, i) => (i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)));
+          ctx.closePath();
+        });
+        for (const p of pts) this.drawHandle(ctx, p);
+        break;
+      }
       case "crop": {
         const tl = toScreen(overlay.rect);
         const br = toScreen({

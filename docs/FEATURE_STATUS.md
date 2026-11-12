@@ -1,6 +1,6 @@
 # Feature status
 
-Last updated: 2026-11-11 · version 0.48.0 · live at https://www.picstea.com · see `CHANGELOG.md` for each release and `docs/adr/` (ADR-0001 to ADR-0043) for decisions
+Last updated: 2026-11-11 · version 0.49.0 · live at https://www.picstea.com · see `CHANGELOG.md` for each release and `docs/adr/` (ADR-0001 to ADR-0044) for decisions
 
 Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ deferred
 
@@ -57,12 +57,14 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 | Feature | Status | Notes |
 |---|---|---|
 | Move tool (drag, auto-select, nudge) | ✅ | |
-| Free transform (scale, rotate, flip, numeric X/Y/W/H/angle) | ✅ | Linked masks follow scale and rotation; shapes keep their stroke width ("Scale strokes & effects" option) (0.48.0, ADR-0043). Skew/perspective 📋 |
+| Free transform (scale, rotate, flip, numeric X/Y/W/H/angle) | ✅ | Linked masks follow scale and rotation; shapes keep their stroke width ("Scale strokes & effects" option) (0.48.0, ADR-0043) |
+| Edit → Transform → Skew, Distort, Perspective, Warp (13 presets + custom mesh) | ✅ | 0.49.0, ADR-0044; pixels, selections, smart objects (editable, schema v11); text and shapes become smart objects first. Cmd/Ctrl-drag in Free Transform 📋 |
 | Pixel layers grow when brush, pencil, Fill, Stroke, Paint Bucket or Gradient paint outside their box | ✅ | 0.48.0, ADR-0043; unscaled, unrotated layers; 64 px steps; one undo step |
-| Crop (non-destructive) | ✅ | Aspect-ratio presets 📋 |
+| Crop (non-destructive) | ✅ | Ratio presets, Straighten, "Delete cropped pixels" (0.49.0, ADR-0044) |
+| Perspective Crop | ✅ | 0.49.0, ADR-0044 |
 | Brush (size, hardness, opacity) | ✅ | Pen pressure 📋 |
 | Eraser | ✅ | |
-| Shapes: rectangle (rounded), ellipse, line | ✅ | Polygon 📋 |
+| Shapes: rectangle (rounded), ellipse, line, polygon and star, 17 custom shapes | ✅ | Star and custom shapes 0.49.0 (ADR-0044); `.csh` import 📋 |
 | Text: on-canvas editing, font, size, bold/italic, colour, align, line height, spacing | ✅ | |
 | Paragraph text (box, wrapping, reflow), mixed styles, Character and Paragraph panels, point ↔ paragraph | ✅ | ADR-0041; schema v9. Text on a path, vertical text, hyphenation 📋 |
 | Fonts: bundled Google Fonts (27, self-hosted), local fonts (Local Font Access), uploaded TTF/OTF/WOFF/WOFF2 | ✅ | ADR-0040; local fonts in Chromium only |
@@ -92,7 +94,7 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 | Clear, Fill, Cut/Copy/Paste, Layer via Copy, Mask from Selection, Crop to Selection | ✅ | Copy also goes to the system clipboard where allowed |
 | Pencil, Paint Bucket, Gradient (linear/radial), Eyedropper | ✅ | Gradient presets/editor 📋 |
 | Moving selected pixels with the Move tool, on pixel layers and masks; Free Transform (Mod+T) of selected pixels | ✅ | Alt-drag moves a copy; arrows nudge. Pixels moved past a pixel layer's or mask's own edge are clipped until layers can grow |
-| Quick mask, refine edge, saving selections, clipping masks, polygon shape | 📋 | |
+| Quick mask, refine edge, saving selections | 📋 | Clipping masks and polygon shapes ✅ |
 
 ## Gate 6 — Formats
 
@@ -151,7 +153,7 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 | Three sponsorship slots in the editor column; silent looping video sponsorships (FocusCrew, Emojar, WikiDigit, GoAll.ai; three at random per view, in random positions) | ✅ | ADR-0034; reduced motion shows the still frame |
 | Media-only sponsor tiles with an overlaid "Sponsored" label; compact empty slots | ✅ | ADR-0035 |
 | Website in the editor's dark theme | ✅ | ADR-0035 |
-| Image Size…, Canvas Size… (9 anchors, relative), Image Rotation (90°/180°, flip canvas) | ✅ | ADR-0033; layers transformed, not resampled; arbitrary angle 📋 |
+| Image Size…, Canvas Size… (9 anchors, relative), Image Rotation (90°/180°, arbitrary angle, flip canvas) | ✅ | ADR-0033; layers transformed, not resampled; arbitrary angle and Straighten 0.49.0 (ADR-0044) |
 | Trim…, Reveal All, Duplicate document | ✅ | ADR-0033 |
 | Auto Tone, Auto Contrast, Auto Color (as a Levels adjustment layer) | ✅ | ADR-0033 |
 | Layer Style dialog (double-click a layer / Blending Options…) | ✅ | Live, one undo step; full Photoshop options (ADR-0030) |
@@ -165,7 +167,7 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 | Spot Healing, Red Eye, Background / Magic Eraser, Color Replacement | ✅ | ADR-0027 |
 | Color Sampler (4 points), Ruler | ✅ | UI state, not saved |
 | Path Selection, Add / Delete Anchor Point, Convert Point; Rounded Rectangle and Polygon shapes | ✅ | ADR-0027 |
-| Perspective Crop, Vertical Type, Quick/Object Selection, Magnetic Lasso, Content-Aware Move, Patch | 📋 | Later rounds |
+| Vertical Type, Quick/Object Selection, Magnetic Lasso, Content-Aware Move, Patch | 📋 | Later rounds |
 | AI crawlers named in robots.txt; /llms.txt and /llms-full.txt | ✅ | ADR-0028 |
 | Social preview image on every page; consistent Open Graph (site name, type, locale) | ✅ | `pageOpenGraph()`; the editor home, author and legal pages use `public/og-image.png` |
 | Per-page social preview images (title card per page and language, blog cover photos) | ✅ | 0.46.0; static `/og/<locale>/<page>.png` from `src/lib/seo/og-pages.ts` and `og-card.tsx` |

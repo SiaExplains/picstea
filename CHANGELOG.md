@@ -3,6 +3,32 @@
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.49.0] — 2026-11-12
+
+### Added
+
+- **Skew, Distort, Perspective and Warp** in Edit → Transform. Drag corners and edges, or bend a
+  layer with one of 13 warp styles (Arc, Bulge, Flag, Wave, Fisheye, Twist and more) or by
+  dragging the warp grid. They work on pixel layers, on a selection, and on smart objects, where
+  the change stays editable. Text and shapes are turned into smart objects first, so their text
+  stays editable inside.
+- **Photoshop files with perspective or warped smart objects** now open with the effect kept and
+  editable, instead of as flat pixels.
+- **Crop presets**: 1:1, 4:5, 3:2, 16:9 and more, the original ratio, or your own; and a
+  **Delete cropped pixels** option.
+- **Straighten**: in the Crop tool, draw along a horizon and the picture is rotated level.
+  Image → Image Rotation → Arbitrary… rotates by any angle.
+- **Perspective Crop** (Shift+C): drag the corners onto a tilted document, sign or wall, and it
+  comes out straight and rectangular.
+- **Custom shapes**: arrows, speech and thought bubbles, heart, check mark, cloud, location pin and
+  more, as editable shapes; and **stars** from the polygon tool.
+
+### Changed
+
+- **The editor opens a little faster**: code for Photoshop files, filters and exports, the tool
+  options and the Image dialogs now loads when it is first needed, so the first download is
+  smaller than before this release despite the new tools.
+
 ## [0.48.1] — 2026-11-12
 
 ### Added

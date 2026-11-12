@@ -776,6 +776,100 @@ export const DOCS: readonly DocPage[] = [
     ),
   },
   {
+    slug: "transform-warp-and-crop",
+    title: "Transform, warp and crop",
+    description:
+      "Skew, distort, perspective and warp layers in Picstea, crop to a ratio, straighten a photo, fix perspective with Perspective Crop and draw custom shapes.",
+    updated: "2026-11-11",
+    body: () => (
+      <>
+        <p>
+          Free Transform (Cmd/Ctrl+T) scales and rotates a layer, or the selected pixels. For
+          anything that isn&apos;t a plain scale or rotation, use Edit → Transform.
+        </p>
+        <h2>Skew, Distort and Perspective</h2>
+        <ul>
+          <li>
+            <strong>Skew</strong> slants the layer: drag an edge handle along its edge, or a corner
+            along one side.
+          </li>
+          <li>
+            <strong>Distort</strong> moves each corner freely, for example to fit a picture onto a
+            screen or a sign in a photo.
+          </li>
+          <li>
+            <strong>Perspective</strong> moves a corner and its partner on the same edge in opposite
+            directions, so the layer seems to lean away from you.
+          </li>
+          <li>Drag inside to move everything. Enter applies, Esc cancels; it is one undo step.</li>
+        </ul>
+        <h2>Warp</h2>
+        <p>
+          Edit → Transform → Warp shows a grid over the layer. Pick a style in the options bar —
+          Arc, Arc Lower, Arc Upper, Arch, Bulge, Flag, Wave, Fish, Rise, Fisheye, Inflate, Squeeze
+          or Twist — and set its Bend and its horizontal (H) and vertical (V) distortion, or drag
+          the grid&apos;s points to bend the layer by hand (Custom). Enter applies.
+        </p>
+        <h2>What they work on</h2>
+        <ul>
+          <li>
+            On a pixel layer, the pixels are redrawn. With a selection, only the selected pixels
+            change.
+          </li>
+          <li>
+            On a <strong>smart object</strong> the change stays editable: choose the same command
+            again to adjust it, and the contents keep their full quality.
+          </li>
+          <li>
+            Text and shapes become smart objects first, so you can still edit the text inside (Layer
+            → Edit Contents).
+          </li>
+          <li>A linked mask follows the change.</li>
+          <li>
+            Photoshop files with perspective or warped smart objects open with the effect kept and
+            editable.
+          </li>
+        </ul>
+        <h2>Cropping to a ratio</h2>
+        <p>
+          With the Crop tool (C), pick a ratio in the options bar: Free, the original ratio, 1:1,
+          4:5, 5:4, 3:2, 2:3, 16:9, 9:16 or your own. The box keeps that ratio while you draw and
+          resize it; in Free mode, Shift keeps the current one. Crop normally keeps the pixels
+          outside the canvas, so you can move layers back in later; tick{" "}
+          <strong>Delete cropped pixels</strong> to remove them.
+        </p>
+        <h2>Straightening a photo</h2>
+        <p>
+          In the Crop tool, choose <strong>Straighten</strong>, then drag along a line that should
+          be level, such as a horizon (or upright, such as a wall). The picture rotates to match and
+          the crop box fits inside it; press Enter to crop. Image → Image Rotation → Arbitrary…
+          rotates by any angle you type.
+        </p>
+        <h2>Perspective Crop</h2>
+        <p>
+          The Perspective Crop tool (Shift+C switches between it and Crop) straightens something
+          photographed at an angle, such as a document, a painting or a building. Drag a box, move
+          its four corners onto the corners of the object, and press Enter: that area becomes the
+          new, rectangular canvas.
+        </p>
+        <h2>Custom shapes and stars</h2>
+        <p>
+          In the shape tools, Custom Shape draws arrows, speech and thought bubbles, a heart, a
+          check mark, a cross, a plus, a location pin, a cloud, lightning, a tag and a banner. Pick
+          one in the options bar; Shift keeps its proportions. The Polygon tool draws a star when
+          you set Star above 0 %. All of them are editable shapes you can change with the path
+          tools.
+        </p>
+        <h2>Limitations</h2>
+        <ul>
+          <li>A distorted smart object&apos;s Move-tool frame is still its undistorted box.</li>
+          <li>Warp styles look close to Photoshop&apos;s, but not identical.</li>
+          <li>Custom shape files from Photoshop (.csh) can&apos;t be imported yet.</li>
+        </ul>
+      </>
+    ),
+  },
+  {
     slug: "smart-objects-and-smart-filters",
     title: "Smart objects and smart filters",
     description:

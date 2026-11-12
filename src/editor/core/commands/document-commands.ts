@@ -1,6 +1,6 @@
 import { mapPath, translatePath } from "../path/path";
 import { mapLayers } from "../document/tree";
-import type { Layer, LayerMask, Transform } from "../document/types";
+import type { EditorDocument, Layer, LayerMask, Transform } from "../document/types";
 import { transformGuide } from "../geometry/canvas-transform";
 import { applyMatrix, type Matrix } from "../geometry/matrix";
 import { withoutSelection } from "./selection-commands";
@@ -68,6 +68,10 @@ export interface CanvasTransformPlan {
  * Image Size, Image Rotation and Flip Canvas (ADR-0033): the canvas, every layer, mask, vector
  * mask, the work path and the guides through one matrix. The selection is dropped.
  */
+const axisAligned = (m: readonly number[]) =>
+  (Math.abs(m[1]) < 1e-9 && Math.abs(m[2]) < 1e-9) ||
+  (Math.abs(m[0]) < 1e-9 && Math.abs(m[3]) < 1e-9);
+
 export function transformCanvas(plan: CanvasTransformPlan): Command {
   return {
     type: "document.transformCanvas",
@@ -101,10 +105,40 @@ export function transformCanvas(plan: CanvasTransformPlan): Command {
         width: plan.width,
         height: plan.height,
         layers,
-        guides: doc.guides.map((g) => transformGuide(g, plan.matrix)),
+        // Guides stay horizontal or vertical: a rotation by any other angle removes them.
+        guides: axisAligned(plan.matrix)
+          ? doc.guides.map((g) => transformGuide(g, plan.matrix))
+          : [],
         ...(workPath ? { workPath } : {}),
         ...(plan.resolution ? { resolution: plan.resolution } : {}),
       };
+    },
+  };
+}
+
+/**
+ * Replace the whole canvas with a rebuilt document of the same id (Perspective Crop, ADR-0044):
+ * new size, layers, guides and work path in one undo step. The selection is cleared.
+ */
+export function replaceDocumentContent(next: EditorDocument, label: string): Command {
+  return {
+    type: "document.replace",
+    label,
+    apply(doc) {
+      if (next.id !== doc.id) throw new CommandError("That document is no longer open.");
+      const size = checkDimensions(next.width, next.height);
+      if (!size.ok) throw new CommandError(size.reason);
+      const result: EditorDocument = {
+        ...doc,
+        width: next.width,
+        height: next.height,
+        layers: next.layers,
+        guides: next.guides,
+        ...(next.workPath ? { workPath: next.workPath } : {}),
+      };
+      if (!next.workPath) delete (result as { workPath?: unknown }).workPath;
+      delete (result as { selection?: unknown }).selection;
+      return result;
     },
   };
 }

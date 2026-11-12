@@ -6,6 +6,8 @@ import { PRESET_CATEGORIES } from "@/editor/core/document/presets";
 import { BUILT_IN_STYLES } from "@/editor/core/effects/presets";
 import { CONTOUR_NAMES, EFFECT_NAMES, PATTERN_NAMES } from "@/editor/core/effects/model";
 import { ALIGN_LABELS } from "@/editor/core/geometry/snapping";
+import { WARP_LABELS } from "@/editor/core/geometry/warp-presets";
+import { CUSTOM_SHAPE_LABELS } from "@/editor/tools/shape/custom-shapes";
 import { DISTRIBUTE_LABELS } from "@/editor/core/geometry/multi-transform";
 import { TOOL_GROUPS } from "@/editor/core/tool-groups";
 import { CONVERSIONS } from "@/editor/formats/convert";
@@ -78,6 +80,8 @@ export function collectEditorKeys(): Set<string> {
   }
 
   // Engine registries.
+  for (const label of Object.values(WARP_LABELS)) add(label);
+  for (const label of Object.values(CUSTOM_SHAPE_LABELS)) add(label);
   for (const group of FILTER_GROUPS) add(group);
   for (const f of FILTERS) {
     add(f.name);

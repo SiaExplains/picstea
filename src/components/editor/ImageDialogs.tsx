@@ -319,3 +319,54 @@ export function TrimDialog({ onClose }: { onClose: () => void }) {
     </DialogFrame>
   );
 }
+
+/** Image → Image Rotation → Arbitrary… (ADR-0044): any angle; the canvas grows to fit. */
+export function RotateDialog({ onClose }: { onClose: () => void }) {
+  const controller = useController();
+  const t = useT();
+  const [angle, setAngle] = useState("15");
+  const [clockwise, setClockwise] = useState(true);
+  const degrees = Number(angle);
+  const valid = angle.trim() !== "" && Number.isFinite(degrees) && Math.abs(degrees) <= 360;
+  return (
+    <DialogFrame
+      id="rotate-title"
+      title={t("Rotate Canvas")}
+      onClose={onClose}
+      valid={valid}
+      error={valid ? null : t("Enter an angle between -360 and 360.")}
+      onSubmit={() => {
+        controller.transformImage({ kind: "angle", degrees: clockwise ? degrees : -degrees });
+        onClose();
+      }}
+    >
+      <label className={styles.field}>
+        <span className={styles.fieldLabel}>{t("Angle")}</span>
+        <input
+          className={styles.input}
+          type="number"
+          step={0.1}
+          value={angle}
+          onChange={(e) => setAngle(e.target.value)}
+        />
+      </label>
+      <fieldset className={styles.field}>
+        <legend className={styles.srOnly}>{t("Direction")}</legend>
+        {[
+          [true, N_("Clockwise")],
+          [false, N_("Counter-clockwise")],
+        ].map(([value, label]) => (
+          <label key={String(value)} className={styles.smallLabel}>
+            <input
+              type="radio"
+              name="rotate-direction"
+              checked={clockwise === value}
+              onChange={() => setClockwise(value as boolean)}
+            />
+            <span>{t(label as string)}</span>
+          </label>
+        ))}
+      </fieldset>
+    </DialogFrame>
+  );
+}
