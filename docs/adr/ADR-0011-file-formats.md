@@ -16,7 +16,8 @@ clear trade-off.
   `DecompressionStream`. ZIP, PSD and PDF are written in-house, covering only what Picstea needs,
   so every byte of the hostile-input parsers is ours to validate. `ag-psd` (broader PSD support)
   and `pdf.js` (PDF import) were considered and rejected for now: a large parser surface for
-  features we do not represent yet.
+  features we do not represent yet. **Superseded for PDF import by ADR-0045 (0.50.0):** PDF.js is
+  vendored and loaded only to open PDFs.
 - **Detection by content.** `formats/open-file.ts` decides what a file is from its bytes; names
   and declared MIME types are ignored.
 - **Shared hardening.** `formats/binary/bytes.ts` is a bounds-checked reader that throws

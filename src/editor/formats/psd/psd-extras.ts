@@ -32,6 +32,7 @@ import {
   getNumber,
   getString,
   readVersionedDescriptor,
+  UnitValue,
   type Descriptor,
   type DescriptorValue,
 } from "./descriptor";
@@ -147,9 +148,11 @@ function decodeWarp(warp: Descriptor | undefined): PsdPlaced["warp"] | "unreadab
     return "unreadable";
   }
   const mesh: number[] = [];
+  // Photoshop stores the points as unit doubles (UnFl), read as UnitValues.
+  const plain = (v: unknown) => (v instanceof UnitValue ? v.value : v);
   for (let i = 0; i < 16; i++) {
-    const x = xs[i];
-    const y = ys[i];
+    const x = plain(xs[i]);
+    const y = plain(ys[i]);
     if (typeof x !== "number" || typeof y !== "number" || !Number.isFinite(x + y)) {
       return "unreadable";
     }

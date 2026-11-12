@@ -130,6 +130,7 @@ export const de: Catalog = {
   Best: "Optimal",
   Bevel: "Abgeflachte Kante",
   "Bevel and Emboss": "Abgeflachte Kante und Relief",
+  "BigTIFF files are not supported yet.": "BigTIFF-Dateien werden noch nicht unterstützt.",
   Billboard: "Billboard",
   Black: "Schwarz",
   "Black & White": "Schwarzweiß",
@@ -173,6 +174,11 @@ export const de: Catalog = {
   "Business card (EU)": "Visitenkarte (EU)",
   "Business card (US)": "Visitenkarte (US)",
   "By (px)": "Um (px)",
+  "CMYK TIFF files are not supported yet. Save the image as RGB.":
+    "CMYK-TIFF-Dateien werden noch nicht unterstützt. Speichere das Bild als RGB.",
+  "Camera RAW files can't be opened yet.": "Kamera-RAW-Dateien können noch nicht geöffnet werden.",
+  "Camera RAW files can't be opened yet. Export the photo as JPEG or TIFF first.":
+    "Kamera-RAW-Dateien können noch nicht geöffnet werden. Exportiere das Foto zuerst als JPEG oder TIFF.",
   "Camera Raw": "Camera Raw",
   Cancel: "Abbrechen",
   "Canvas Size": "Arbeitsfläche",
@@ -191,6 +197,7 @@ export const de: Catalog = {
   "Chisel Hard": "Hart meißeln",
   "Chisel Soft": "Weich meißeln",
   Choke: "Unterfüllen",
+  "Choose a page from 1 to {count}.": "Wähle eine Seite von 1 bis {count}.",
   "Choose an action. Record one in the Actions panel first.":
     "Wähle eine Aktion. Zeichne zuerst eine im Aktionen-Bedienfeld auf.",
   "Choose at least one file.": "Wähle mindestens eine Datei.",
@@ -518,6 +525,8 @@ export const de: Catalog = {
   "Flip Horizontal": "Horizontal spiegeln",
   "Flip V": "Vert. spiegeln",
   "Flip Vertical": "Vertikal spiegeln",
+  "Floating-point TIFF files are not supported yet.":
+    "TIFF-Dateien mit Gleitkommawerten werden noch nicht unterstützt.",
   Flow: "Fluss",
   "Focus band": "Schärfebereich",
   "Focus mode": "Fokusmodus",
@@ -869,6 +878,7 @@ export const de: Catalog = {
   Opacity: "Deckkraft",
   "Opacity percent": "Deckkraft in Prozent",
   "Open Image": "Bild öffnen",
+  "Open PDF": "PDF öffnen",
   "Open a document first.": "Öffne zuerst ein Dokument.",
   "Open a document to see its history.": "Öffne ein Dokument, um sein Protokoll zu sehen.",
   "Open documents": "Geöffnete Dokumente",
@@ -901,13 +911,22 @@ export const de: Catalog = {
   PDF: "PDF",
   "PDF files can be exported but not opened yet. Open an image or PSD instead.":
     "PDF-Dateien können exportiert, aber noch nicht geöffnet werden. Öffne stattdessen ein Bild oder eine PSD.",
+  "PDF files cannot be converted here.": "PDF-Dateien können hier nicht umgewandelt werden.",
   PNG: "PNG",
   "PNG to JPG": "PNG in JPG",
   "PNG to WebP": "PNG in WebP",
   "PNG, JPEG, WebP, GIF, SVG, HEIC or PSD, up to {max} files. Or drop them here.":
     "PNG, JPEG, WebP, GIF, SVG, HEIC oder PSD, bis zu {max} Dateien. Oder zieh sie hierher.",
+  "PNG, JPEG, WebP, GIF, SVG, HEIC, TIFF, PDF or PSD, up to {max} files. Or drop them here.":
+    "PNG, JPEG, WebP, GIF, SVG, HEIC, TIFF, PDF oder PSD, bis zu {max} Dateien. Oder zieh sie hierher.",
   PSD: "PSD",
   "PSD to PNG": "PSD in PNG",
+  "Page (of {count})": "Seite (von {count})",
+  "Page 1 opens at {width} × {height} px.": "Seite 1 wird mit {width} × {height} px geöffnet.",
+  "Page 1 would be too large at this resolution; choose a lower one.":
+    "Seite 1 wäre bei dieser Auflösung zu groß; wähle eine niedrigere.",
+  "Page {page} is too large at {ppi} ppi. Choose a lower resolution.":
+    "Seite {page} ist bei {ppi} ppi zu groß. Wähle eine niedrigere Auflösung.",
   "Paint Bucket": "Füllwerkzeug",
   "Paint Bucket Tool": "Füllwerkzeug",
   "Paint black to hide, white to reveal. Click the mask thumbnail in Layers to paint on it.":
@@ -1052,6 +1071,7 @@ export const de: Catalog = {
   "Resize History, Swatches and Actions": "Größe von Protokoll, Farbfeldern und Aktionen ändern",
   "Resize Properties": "Größe der Eigenschaften ändern",
   "Resize panels": "Größe der Bedienfelder ändern",
+  Resolution: "Auflösung",
   "Resolution (pixels/inch)": "Auflösung (Pixel/Zoll)",
   "Resolution (ppi)": "Auflösung (ppi)",
   "Resolution must be between 1 and 100000 pixels/inch.":
@@ -1259,8 +1279,11 @@ export const de: Catalog = {
   "Swatch {name}": "Farbfeld {name}",
   Swatches: "Farbfelder",
   System: "System",
+  "TIFF files cannot be converted here.": "TIFF-Dateien können hier nicht umgewandelt werden.",
   "TIFF files cannot be opened in the browser yet. Save the image as PNG first.":
     "TIFF-Dateien können im Browser noch nicht geöffnet werden. Speichere das Bild zuerst als PNG.",
+  "TIFF files with separate colour planes are not supported yet.":
+    "TIFF-Dateien mit getrennten Farbebenen werden noch nicht unterstützt.",
   Tabloid: "Tabloid",
   Technique: "Technik",
   Temperature: "Temperatur",
@@ -1273,10 +1296,16 @@ export const de: Catalog = {
   Texture: "Struktur",
   "Texture Dilation": "Struktur-Dilatation",
   "That action no longer exists.": "Diese Aktion existiert nicht mehr.",
+  "That page doesn't exist.": "Diese Seite gibt es nicht.",
   "That project no longer exists.": "Dieses Projekt existiert nicht mehr.",
   "The HEIC decoder could not be loaded. Check your connection and try again.":
     "Der HEIC-Decoder konnte nicht geladen werden. Prüfe deine Verbindung und versuch es noch einmal.",
+  "The PDF could not be opened.": "Die PDF konnte nicht geöffnet werden.",
+  "The PDF file is damaged.": "Die PDF-Datei ist beschädigt.",
+  "The PDF reader could not be loaded. Check your connection and try again.":
+    "Der PDF-Leser konnte nicht geladen werden. Prüfe deine Verbindung und versuche es erneut.",
   "The PSD file header is damaged.": "Der Dateikopf der PSD ist beschädigt.",
+  "The TIFF file is damaged.": "Die TIFF-Datei ist beschädigt.",
   "The ZIP file could not be saved.": "Die ZIP-Datei konnte nicht gespeichert werden.",
   "The actions file could not be saved.": "Die Aktionsdatei konnte nicht gespeichert werden.",
   "The batch output reached 1 GB. The remaining files were skipped.":
@@ -1291,6 +1320,7 @@ export const de: Catalog = {
   "The document was closed before the image finished loading.":
     "Das Dokument wurde geschlossen, bevor das Bild fertig geladen war.",
   "The editor ran into a problem": "Im Editor ist ein Problem aufgetreten",
+  "The file contains an invalid length.": "Die Datei enthält eine ungültige Länge.",
   "The file contains an invalid offset.": "Die Datei enthält einen ungültigen Offset.",
   "The file could not be saved.": "Die Datei konnte nicht gespeichert werden.",
   "The file ends unexpectedly or a length is invalid.":
@@ -1345,6 +1375,8 @@ export const de: Catalog = {
   "This HEIC file is damaged or uses a feature Picstea can't read.":
     "Diese HEIC-Datei ist beschädigt oder verwendet eine Funktion, die Picstea nicht lesen kann.",
   "This Layer": "Diese Ebene",
+  "This PDF is protected with a password. Remove the password, then open it again.":
+    "Diese PDF ist mit einem Passwort geschützt. Entferne das Passwort und öffne sie dann erneut.",
   "This PSD has no flattened image to place.":
     "Diese PSD hat kein reduziertes Bild zum Platzieren.",
   "This PSD has no flattened image. Open it in the editor and export it instead.":
@@ -1359,6 +1391,8 @@ export const de: Catalog = {
     "Diese SVG-Datei ist beschädigt und kann nicht geöffnet werden.",
   "This SVG uses features the browser will not convert to pixels.":
     "Diese SVG verwendet Funktionen, die der Browser nicht in Pixel umwandelt.",
+  "This TIFF colour mode is not supported.": "Dieser TIFF-Farbmodus wird nicht unterstützt.",
+  "This TIFF compression is not supported.": "Diese TIFF-Komprimierung wird nicht unterstützt.",
   "This actions file was made by a newer version of Picstea.":
     "Diese Aktionsdatei wurde mit einer neueren Version von Picstea erstellt.",
   "This browser cannot create {format} images.":
@@ -1379,6 +1413,8 @@ export const de: Catalog = {
   "This file is too large to place.": "Diese Datei ist zu groß zum Platzieren.",
   "This file type is not supported. Picstea opens PNG, JPEG, WebP, GIF, SVG, HEIC, PSD and .picstea files.":
     "Dieser Dateityp wird nicht unterstützt. Picstea öffnet PNG-, JPEG-, WebP-, GIF-, SVG-, HEIC-, PSD- und .picstea-Dateien.",
+  "This file type is not supported. Picstea opens PNG, JPEG, WebP, GIF, SVG, HEIC, TIFF, PDF, PSD, PSB and .picstea files.":
+    "Dieser Dateityp wird nicht unterstützt. Picstea öffnet PNG, JPEG, WebP, GIF, SVG, HEIC, TIFF, PDF, PSD, PSB und .picstea-Dateien.",
   "This file uses {depth}-bit colour. Only 8-bit PSD files can be opened for now.":
     "Diese Datei verwendet {depth}-Bit-Farbe. Derzeit können nur 8-Bit-PSD-Dateien geöffnet werden.",
   "This file uses {mode} colour mode. Convert it to RGB first.":
@@ -1386,6 +1422,7 @@ export const de: Catalog = {
   "This is not a Photoshop (PSD) file.": "Das ist keine Photoshop-Datei (PSD).",
   "This is not a Picstea actions file.": "Das ist keine Picstea-Aktionsdatei.",
   "This is not a Picstea project file.": "Das ist keine Picstea-Projektdatei.",
+  "This is not a TIFF file.": "Das ist keine TIFF-Datei.",
   "This is not a valid Picstea project file.": "Das ist keine gültige Picstea-Projektdatei.",
   "This layer covers the whole canvas and cannot be aligned.":
     "Diese Ebene bedeckt die ganze Arbeitsfläche und kann nicht ausgerichtet werden.",
@@ -1508,6 +1545,8 @@ export const de: Catalog = {
   "X post": "X-Beitrag",
   "X profile": "X-Profil",
   XGA: "XGA",
+  "YCbCr TIFF files are only supported with JPEG compression.":
+    "YCbCr-TIFF-Dateien werden nur mit JPEG-Komprimierung unterstützt.",
   Yellow: "Gelb",
   "Yellow angle": "Winkel Gelb",
   "Yellow – Blue": "Gelb – Blau",
@@ -1556,6 +1595,8 @@ export const de: Catalog = {
   "view.newGuide": "view.newGuide",
   "view.zoomIn": "view.zoomIn",
   "view.zoomOut": "view.zoomOut",
+  "{bits}-bit TIFF files are not supported.":
+    "TIFF-Dateien mit {bits} Bit werden nicht unterstützt.",
   "{category} sizes": "Größen: {category}",
   "{channel} curve. Click to add a point; drag a point off the graph to remove it.":
     "Kurve {channel}. Klicken fügt einen Punkt hinzu; einen Punkt aus dem Diagramm ziehen entfernt ihn.",

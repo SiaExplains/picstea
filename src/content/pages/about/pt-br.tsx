@@ -75,6 +75,14 @@ const copy: PageCopy = {
         esse arquivo por uma compilação própria da biblioteca.
       </p>
       <p>
+        Para abrir arquivos PDF, o Picstea usa o{" "}
+        <a href="https://mozilla.github.io/pdf.js/" rel="noopener">
+          PDF.js
+        </a>{" "}
+        6.4.299 (Apache License 2.0), servido sem modificações por este site e carregado só quando
+        você abre um PDF. Licença: <a href="/vendor/pdfjs/6.4.299/LICENSE-pdfjs.txt">PDF.js</a>.
+      </p>
+      <p>
         As Google Fonts da lista de fontes são servidas pelo próprio site do Picstea sob a licença
         SIL Open Font License 1.1 (<a href="/fonts/LICENSES.txt">fontes e seus autores</a>).
       </p>

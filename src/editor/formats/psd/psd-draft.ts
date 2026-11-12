@@ -47,6 +47,10 @@ export interface PsdDraft {
   readonly resolution?: number;
   readonly layers: readonly DraftNode[];
   readonly composite: ImageBitmap;
+  /** Global light for layer styles (ADR-0045). */
+  readonly globalLight?: { readonly angle: number; readonly altitude: number };
+  /** Global tagged blocks, e.g. embedded smart object contents (`lnk2`). */
+  readonly globalBlocks?: readonly PsdBlock[];
 }
 
 /** Read an ImageBitmap's pixels with an OffscreenCanvas (main thread or worker). */
@@ -107,7 +111,13 @@ export function resolveDraft(draft: PsdDraft): PsdFile {
         ...(node.blending ? { blending: node.blending } : {}),
       };
       if (node.kind === "group") {
-        return { ...base, kind: "group", open: node.open, children: convert(node.children) };
+        return {
+          ...base,
+          kind: "group",
+          open: node.open,
+          children: convert(node.children),
+          ...(node.blocks?.length ? { blocks: node.blocks } : {}),
+        };
       }
       const blocks = node.blocks?.length ? { blocks: node.blocks } : {};
       const empty = {
@@ -137,5 +147,7 @@ export function resolveDraft(draft: PsdDraft): PsdFile {
     resolution: draft.resolution,
     layers: convert(draft.layers),
     composite: bitmapPixels(draft.composite).data,
+    ...(draft.globalLight ? { globalLight: draft.globalLight } : {}),
+    ...(draft.globalBlocks?.length ? { globalBlocks: draft.globalBlocks } : {}),
   };
 }

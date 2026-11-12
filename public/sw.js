@@ -18,7 +18,9 @@ const STATIC_CACHE = "picstea-static-v1";
 const PAGE_CACHE = "picstea-pages-v1";
 const KEEP = [STATIC_CACHE, PAGE_CACHE];
 const MAX_STATIC_ENTRIES = 400;
-const STATIC_FILE = /\.(?:m?js|css|png|jpe?g|webp|svg|ico|woff2?|webmanifest)$/;
+// Includes PDF.js's data files (character maps, fonts, WebAssembly, ICC profiles; ADR-0045).
+const STATIC_FILE =
+  /\.(?:m?js|css|png|jpe?g|webp|svg|ico|woff2?|webmanifest|bcmap|pfb|ttf|wasm|icc)$/;
 
 /**
  * What to do with a request: "static" (cache-first), "page" (network-first) or "skip" (leave it

@@ -45,7 +45,7 @@ export const DOCS: readonly DocPage[] = [
             Sizes you use are listed under Recent.
           </li>
           <li>
-            <strong>Open image</strong> — PNG, JPEG, WebP, GIF, SVG, HEIC, PSD or a{" "}
+            <strong>Open image</strong> — PNG, JPEG, WebP, GIF, SVG, HEIC, TIFF, PDF, PSD or a{" "}
             <code>.picstea</code> project file. You can also drop a file anywhere on the page or
             paste an image.
           </li>
@@ -1009,7 +1009,7 @@ export const DOCS: readonly DocPage[] = [
     title: "File formats: PSD, PNG, JPEG, WebP, SVG, PDF",
     description:
       "Which file types Picstea opens and exports, what each format keeps, and how to move projects between Picstea and other tools.",
-    updated: "2026-10-20",
+    updated: "2026-11-12",
     body: () => (
       <>
         <h2>Opening files</h2>
@@ -1039,6 +1039,22 @@ export const DOCS: readonly DocPage[] = [
             is kept for offline use. Only the main photo is read (no Live Photo video or depth).
           </li>
           <li>
+            <strong>TIFF</strong> — 1, 8 and 16-bit grey, RGB and palette images, with or without
+            transparency, uncompressed or with LZW, ZIP (Deflate), PackBits or JPEG compression.
+            Layered TIFFs saved by Photoshop open with their layers; otherwise the first image opens
+            as one layer.
+          </li>
+          <li>
+            <strong>PDF</strong> — a page opens as a picture. With several pages, Picstea asks which
+            page and at what resolution (72–300 ppi). The first PDF loads a PDF reader (PDF.js) from
+            Picstea&apos;s own site; it runs on your device and is kept for offline use.
+            Password-protected PDFs need their password removed first.
+          </li>
+          <li>
+            <strong>PSB</strong> (Photoshop&apos;s large document format) opens like a PSD, within
+            the same size limit (12,000 px per side, 36 megapixels).
+          </li>
+          <li>
             <strong>.picstea</strong> project files open exactly as they were saved.
           </li>
         </ul>
@@ -1051,10 +1067,10 @@ export const DOCS: readonly DocPage[] = [
           </li>
           <li>
             <strong>PSD</strong> — layers, groups, masks, vector masks, clipping masks, opacity,
-            blend modes and adjustment layers (except Temperature/Tint, Black &amp; White, Photo
-            Filter and Gradient Map, which are in the flattened image only). Text stays editable
-            (text with layer effects becomes pixels); shapes, smart objects and effects become
-            pixels.
+            blend modes and adjustment layers (except Temperature/Tint, which Photoshop doesn&apos;t
+            have; it is in the flattened image only). Text, shapes, fill layers, layer styles and
+            smart objects (with their perspective or warp) stay editable in Photoshop. Layer styles
+            that use a pattern, and smart objects with smart filters, become pixels.
           </li>
           <li>
             <strong>SVG</strong> — shapes and text stay vectors; other layers are embedded as
@@ -1066,15 +1082,15 @@ export const DOCS: readonly DocPage[] = [
         </ul>
         <h2>Converting without opening</h2>
         <p>
-          File → Convert… turns PNG, JPEG, WebP, GIF, SVG, HEIC and PSD files into PNG, JPEG or WebP
-          without opening them as documents. Pick up to 200 files: one is saved directly, several
-          are saved as one ZIP file. PSD files use the flattened image stored in the file. Nothing
-          is uploaded or kept in the browser.
+          File → Convert… turns PNG, JPEG, WebP, GIF, SVG, HEIC, TIFF, PDF and PSD files into PNG,
+          JPEG or WebP without opening them as documents. Pick up to 200 files: one is saved
+          directly, several are saved as one ZIP file. PSD files use the flattened image stored in
+          the file. Nothing is uploaded or kept in the browser.
         </p>
         <h2>Not supported yet</h2>
         <p>
-          Opening PDF and TIFF files, PSB (large document) files, 16/32-bit and CMYK PSDs. Picstea
-          says so clearly when you try.
+          Camera RAW files (DNG, CR2, NEF, ARW), BigTIFF, CMYK TIFFs and 16/32-bit or CMYK PSDs.
+          Picstea says so clearly when you try. PDF files open one page at a time, as pictures.
         </p>
       </>
     ),

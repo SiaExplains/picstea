@@ -130,6 +130,7 @@ export const ptBr: Catalog = {
   Best: "Melhor",
   Bevel: "Chanfro",
   "Bevel and Emboss": "Chanfro e entalhe",
+  "BigTIFF files are not supported yet.": "Arquivos BigTIFF ainda não são compatíveis.",
   Billboard: "Billboard",
   Black: "Preto",
   "Black & White": "Preto e branco",
@@ -173,6 +174,11 @@ export const ptBr: Catalog = {
   "Business card (EU)": "Cartão de visita (UE)",
   "Business card (US)": "Cartão de visita (EUA)",
   "By (px)": "Em (px)",
+  "CMYK TIFF files are not supported yet. Save the image as RGB.":
+    "Arquivos TIFF em CMYK ainda não são compatíveis. Salve a imagem em RGB.",
+  "Camera RAW files can't be opened yet.": "Arquivos RAW de câmera ainda não podem ser abertos.",
+  "Camera RAW files can't be opened yet. Export the photo as JPEG or TIFF first.":
+    "Arquivos RAW de câmera ainda não podem ser abertos. Exporte a foto como JPEG ou TIFF primeiro.",
   "Camera Raw": "Camera Raw",
   Cancel: "Cancelar",
   "Canvas Size": "Tamanho da tela",
@@ -191,6 +197,7 @@ export const ptBr: Catalog = {
   "Chisel Hard": "Cinzel duro",
   "Chisel Soft": "Cinzel suave",
   Choke: "Obstruir",
+  "Choose a page from 1 to {count}.": "Escolha uma página de 1 a {count}.",
   "Choose an action. Record one in the Actions panel first.":
     "Escolha uma ação. Primeiro, grave uma no painel Ações.",
   "Choose at least one file.": "Escolha pelo menos um arquivo.",
@@ -517,6 +524,8 @@ export const ptBr: Catalog = {
   "Flip Horizontal": "Virar na horizontal",
   "Flip V": "Virar V",
   "Flip Vertical": "Virar na vertical",
+  "Floating-point TIFF files are not supported yet.":
+    "Arquivos TIFF de ponto flutuante ainda não são compatíveis.",
   Flow: "Fluxo",
   "Focus band": "Faixa de foco",
   "Focus mode": "Modo de foco",
@@ -869,6 +878,7 @@ export const ptBr: Catalog = {
   Opacity: "Opacidade",
   "Opacity percent": "Porcentagem de opacidade",
   "Open Image": "Abrir imagem",
+  "Open PDF": "Abrir PDF",
   "Open a document first.": "Primeiro, abra um documento.",
   "Open a document to see its history.": "Abra um documento para ver o histórico dele.",
   "Open documents": "Documentos abertos",
@@ -900,13 +910,22 @@ export const ptBr: Catalog = {
   PDF: "PDF",
   "PDF files can be exported but not opened yet. Open an image or PSD instead.":
     "Arquivos PDF podem ser exportados, mas ainda não abertos. Em vez disso, abra uma imagem ou um PSD.",
+  "PDF files cannot be converted here.": "Arquivos PDF não podem ser convertidos aqui.",
   PNG: "PNG",
   "PNG to JPG": "PNG para JPG",
   "PNG to WebP": "PNG para WebP",
   "PNG, JPEG, WebP, GIF, SVG, HEIC or PSD, up to {max} files. Or drop them here.":
     "PNG, JPEG, WebP, GIF, SVG, HEIC ou PSD, até {max} arquivos. Ou solte-os aqui.",
+  "PNG, JPEG, WebP, GIF, SVG, HEIC, TIFF, PDF or PSD, up to {max} files. Or drop them here.":
+    "PNG, JPEG, WebP, GIF, SVG, HEIC, TIFF, PDF ou PSD, até {max} arquivos. Ou solte-os aqui.",
   PSD: "PSD",
   "PSD to PNG": "PSD para PNG",
+  "Page (of {count})": "Página (de {count})",
+  "Page 1 opens at {width} × {height} px.": "A página 1 abre com {width} × {height} px.",
+  "Page 1 would be too large at this resolution; choose a lower one.":
+    "A página 1 ficaria grande demais nesta resolução; escolha uma menor.",
+  "Page {page} is too large at {ppi} ppi. Choose a lower resolution.":
+    "A página {page} é grande demais a {ppi} ppi. Escolha uma resolução menor.",
   "Paint Bucket": "Lata de tinta",
   "Paint Bucket Tool": "Ferramenta Lata de tinta",
   "Paint black to hide, white to reveal. Click the mask thumbnail in Layers to paint on it.":
@@ -1051,6 +1070,7 @@ export const ptBr: Catalog = {
   "Resize History, Swatches and Actions": "Redimensionar Histórico, Amostras e Ações",
   "Resize Properties": "Redimensionar Propriedades",
   "Resize panels": "Redimensionar painéis",
+  Resolution: "Resolução",
   "Resolution (pixels/inch)": "Resolução (pixels/polegada)",
   "Resolution (ppi)": "Resolução (ppi)",
   "Resolution must be between 1 and 100000 pixels/inch.":
@@ -1256,8 +1276,11 @@ export const ptBr: Catalog = {
   "Swatch {name}": "Amostra {name}",
   Swatches: "Amostras",
   System: "Sistema",
+  "TIFF files cannot be converted here.": "Arquivos TIFF não podem ser convertidos aqui.",
   "TIFF files cannot be opened in the browser yet. Save the image as PNG first.":
     "Arquivos TIFF ainda não podem ser abertos no navegador. Primeiro, salve a imagem como PNG.",
+  "TIFF files with separate colour planes are not supported yet.":
+    "Arquivos TIFF com planos de cor separados ainda não são compatíveis.",
   Tabloid: "Tabloide",
   Technique: "Técnica",
   Temperature: "Temperatura",
@@ -1270,10 +1293,16 @@ export const ptBr: Catalog = {
   Texture: "Textura",
   "Texture Dilation": "Dilatação da textura",
   "That action no longer exists.": "Essa ação não existe mais.",
+  "That page doesn't exist.": "Essa página não existe.",
   "That project no longer exists.": "Esse projeto não existe mais.",
   "The HEIC decoder could not be loaded. Check your connection and try again.":
     "Não foi possível carregar o decodificador HEIC. Verifique sua conexão e tente novamente.",
+  "The PDF could not be opened.": "Não foi possível abrir o PDF.",
+  "The PDF file is damaged.": "O arquivo PDF está danificado.",
+  "The PDF reader could not be loaded. Check your connection and try again.":
+    "Não foi possível carregar o leitor de PDF. Verifique sua conexão e tente de novo.",
   "The PSD file header is damaged.": "O cabeçalho do arquivo PSD está danificado.",
+  "The TIFF file is damaged.": "O arquivo TIFF está danificado.",
   "The ZIP file could not be saved.": "Não foi possível salvar o arquivo ZIP.",
   "The actions file could not be saved.": "Não foi possível salvar o arquivo de ações.",
   "The batch output reached 1 GB. The remaining files were skipped.":
@@ -1288,6 +1317,7 @@ export const ptBr: Catalog = {
   "The document was closed before the image finished loading.":
     "O documento foi fechado antes de a imagem terminar de carregar.",
   "The editor ran into a problem": "O editor encontrou um problema",
+  "The file contains an invalid length.": "O arquivo contém um comprimento inválido.",
   "The file contains an invalid offset.": "O arquivo contém um deslocamento inválido.",
   "The file could not be saved.": "Não foi possível salvar o arquivo.",
   "The file ends unexpectedly or a length is invalid.":
@@ -1343,6 +1373,8 @@ export const ptBr: Catalog = {
   "This HEIC file is damaged or uses a feature Picstea can't read.":
     "Este arquivo HEIC está danificado ou usa um recurso que o Picstea não consegue ler.",
   "This Layer": "Esta camada",
+  "This PDF is protected with a password. Remove the password, then open it again.":
+    "Este PDF está protegido por senha. Remova a senha e abra-o de novo.",
   "This PSD has no flattened image to place.": "Este PSD não tem imagem achatada para inserir.",
   "This PSD has no flattened image. Open it in the editor and export it instead.":
     "Este PSD não tem imagem achatada. Em vez disso, abra-o no editor e exporte-o.",
@@ -1356,6 +1388,8 @@ export const ptBr: Catalog = {
     "Este arquivo SVG está danificado e não pode ser aberto.",
   "This SVG uses features the browser will not convert to pixels.":
     "Este SVG usa recursos que o navegador não converte em pixels.",
+  "This TIFF colour mode is not supported.": "Este modo de cor de TIFF não é compatível.",
+  "This TIFF compression is not supported.": "Esta compressão de TIFF não é compatível.",
   "This actions file was made by a newer version of Picstea.":
     "Este arquivo de ações foi criado por uma versão mais recente do Picstea.",
   "This browser cannot create {format} images.":
@@ -1376,6 +1410,8 @@ export const ptBr: Catalog = {
   "This file is too large to place.": "Este arquivo é grande demais para inserir.",
   "This file type is not supported. Picstea opens PNG, JPEG, WebP, GIF, SVG, HEIC, PSD and .picstea files.":
     "Este tipo de arquivo não é compatível. O Picstea abre arquivos PNG, JPEG, WebP, GIF, SVG, HEIC, PSD e .picstea.",
+  "This file type is not supported. Picstea opens PNG, JPEG, WebP, GIF, SVG, HEIC, TIFF, PDF, PSD, PSB and .picstea files.":
+    "Este tipo de arquivo não é compatível. O Picstea abre arquivos PNG, JPEG, WebP, GIF, SVG, HEIC, TIFF, PDF, PSD, PSB e .picstea.",
   "This file uses {depth}-bit colour. Only 8-bit PSD files can be opened for now.":
     "Este arquivo usa cores de {depth} bits. Por enquanto, só arquivos PSD de 8 bits podem ser abertos.",
   "This file uses {mode} colour mode. Convert it to RGB first.":
@@ -1383,6 +1419,7 @@ export const ptBr: Catalog = {
   "This is not a Photoshop (PSD) file.": "Este não é um arquivo do Photoshop (PSD).",
   "This is not a Picstea actions file.": "Este não é um arquivo de ações do Picstea.",
   "This is not a Picstea project file.": "Este não é um arquivo de projeto do Picstea.",
+  "This is not a TIFF file.": "Este não é um arquivo TIFF.",
   "This is not a valid Picstea project file.":
     "Este não é um arquivo de projeto válido do Picstea.",
   "This layer covers the whole canvas and cannot be aligned.":
@@ -1505,6 +1542,8 @@ export const ptBr: Catalog = {
   "X post": "Post do X",
   "X profile": "Perfil do X",
   XGA: "XGA",
+  "YCbCr TIFF files are only supported with JPEG compression.":
+    "Arquivos TIFF em YCbCr só são compatíveis com compressão JPEG.",
   Yellow: "Amarelo",
   "Yellow angle": "Ângulo do amarelo",
   "Yellow – Blue": "Amarelo – Azul",
@@ -1553,6 +1592,7 @@ export const ptBr: Catalog = {
   "view.newGuide": "view.newGuide",
   "view.zoomIn": "view.zoomIn",
   "view.zoomOut": "view.zoomOut",
+  "{bits}-bit TIFF files are not supported.": "Arquivos TIFF de {bits} bits não são compatíveis.",
   "{category} sizes": "Tamanhos de {category}",
   "{channel} curve. Click to add a point; drag a point off the graph to remove it.":
     "Curva {channel}. Clique para adicionar um ponto; arraste um ponto para fora do gráfico para removê-lo.",

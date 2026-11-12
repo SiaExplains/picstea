@@ -3,6 +3,24 @@
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.50.0] — 2026-11-12
+
+### Added
+
+- **Open TIFF files**, including layered TIFFs saved by Photoshop, which open with their layers.
+- **Open PDF files**: a page opens as a picture; with several pages you choose the page and the
+  resolution. The PDF reader loads only when you open a PDF and runs on your device.
+- **Open PSB files** (Photoshop's large document format).
+- TIFF and PDF also work with Place, Place Embedded, drag and drop, paste and File → Convert….
+
+### Changed
+
+- **PSD export keeps much more editable in Photoshop**: shapes stay shapes, fill layers stay fill
+  layers, layer styles stay layer styles, smart objects stay smart objects (with their perspective
+  or warp), and Photo Filter, Gradient Map and Black & White stay adjustment layers. Only styles
+  that use a pattern and smart objects with smart filters are still turned into pixels.
+- Warped smart objects from Photoshop with a custom warp now open with the warp kept.
+
 ## [0.49.0] — 2026-11-12
 
 ### Added

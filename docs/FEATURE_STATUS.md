@@ -1,6 +1,6 @@
 # Feature status
 
-Last updated: 2026-11-11 · version 0.49.0 · live at https://www.picstea.com · see `CHANGELOG.md` for each release and `docs/adr/` (ADR-0001 to ADR-0044) for decisions
+Last updated: 2026-11-12 · version 0.50.0 · live at https://www.picstea.com · see `CHANGELOG.md` for each release and `docs/adr/` (ADR-0001 to ADR-0045) for decisions
 
 Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ deferred
 
@@ -107,7 +107,8 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 | SVG export (vector shapes/text, images for the rest) | ✅ | Flattened when adjustment layers are present |
 | SVG import (rasterised safely via `<img>`) | ✅ | |
 | PDF export (one page, lossless with alpha) | ✅ | |
-| PDF import, TIFF, PSB, 16/32-bit and CMYK PSD | 📋 | Clear error messages today |
+| TIFF (incl. Photoshop layered TIFF), PDF pages (PDF.js, vendored), PSB | ✅ | 0.50.0, ADR-0045 |
+| Camera RAW, BigTIFF, CMYK TIFF, 16/32-bit and CMYK PSD | 📋 | Clear error messages today |
 
 ## Gate 7 — Performance
 
@@ -231,7 +232,7 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 | Smart filters (any filter; hide, edit, reorder, delete) | ✅ | Run on the main thread at render scale, cached |
 | Place Embedded (image, SVG, PSD with layers, .picstea) | ✅ | Place keeps creating pixel layers |
 | Rasterize Layer (smart objects, shapes, text) | ✅ | Keeps opacity, blend, masks, effects, clipping |
-| Linked smart objects, PSD smart object import/export | 🟡 | PSD import ✅ (9d); linked files and PSD export 📋 |
+| Linked smart objects, PSD smart object import/export | 🟡 | PSD import ✅ (9d); PSD export ✅ (embedded, with perspective/warp; 0.50.0); linked files 📋 |
 
 ### 9d
 
@@ -245,7 +246,7 @@ Legend: ✅ complete · 🚧 in progress · 📋 planned · ⛔ blocked · ⏸ d
 | Import: smart objects with embedded PNG/JPEG/WebP/GIF/PSD | ✅ | Warped, perspective, smart-filtered and linked ones open as pixels |
 | Export: adjustment layers (8 kinds) and vector masks | ✅ | Temperature/Tint, Black & White in the flattened image only |
 | Export: text as editable Photoshop text (TySh/EngineData) | ✅ | ADR-0041; text with layer effects is rasterised |
-| Export: shapes, smart objects, effects as editable Photoshop data | 📋 | Rasterised with a notice |
+| Export: shapes, fill layers, layer styles, smart objects, Photo Filter, Gradient Map, Black & White as editable Photoshop data | ✅ | 0.50.0, ADR-0045; pattern styles and smart filters still rasterised with a notice |
 
 ### 9e
 

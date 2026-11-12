@@ -89,6 +89,14 @@ export class ByteReader {
     return v;
   }
 
+  /** A 64-bit length (PSB); refused beyond what a JavaScript number holds exactly. */
+  u64(): number {
+    const high = this.u32();
+    const low = this.u32();
+    if (high >= 2 ** 21) throw new FormatError("The file contains an invalid length.");
+    return high * 2 ** 32 + low;
+  }
+
   i32(): number {
     this.need(4);
     const v = this.view.getInt32(this.offset, this.littleEndian);

@@ -137,16 +137,28 @@ describe("PSD write → read", () => {
   });
 });
 
+describe("PSB (Large Document Format, 0.50.0)", () => {
+  it("reads the same layers, groups, masks and image as from a PSD", async () => {
+    const bytes = writePsd(sample(), { psb: true });
+    expect(new DataView(bytes.buffer).getUint16(4)).toBe(2);
+    const { file: fromPsb, warnings } = await readPsd(bytes);
+    const { file: fromPsd } = await readPsd(writePsd(sample()));
+    expect(warnings).toEqual([]);
+    expect(fromPsb.layers).toEqual(fromPsd.layers);
+    expect(fromPsb.composite).toEqual(fromPsd.composite);
+  });
+});
+
 describe("PSD reader hardening", () => {
   const valid = writePsd(sample());
 
-  it("refuses non-PSD data, PSB, 16-bit and CMYK files", async () => {
+  it("refuses non-PSD data, unknown versions, 16-bit and CMYK files", async () => {
     await expect(readPsd(new TextEncoder().encode("hello world, not a psd"))).rejects.toThrow(
       /not a Photoshop/,
     );
-    const psb = valid.slice();
-    psb[5] = 2;
-    await expect(readPsd(psb)).rejects.toThrow(/PSB/);
+    const future = valid.slice();
+    future[5] = 3;
+    await expect(readPsd(future)).rejects.toThrow(/version/);
     const deep = valid.slice();
     deep[23] = 16;
     await expect(readPsd(deep)).rejects.toThrow(/16-bit/);
