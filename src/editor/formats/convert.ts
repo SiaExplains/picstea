@@ -58,6 +58,14 @@ export interface ConvertEnv {
   readonly decodeHeic?: (
     bytes: Uint8Array,
   ) => Promise<{ width: number; height: number; rgba: Uint8ClampedArray }>;
+  /** TIFF images (ADR-0045); absent where they can't be decoded. */
+  readonly decodeTiff?: (
+    bytes: Uint8Array,
+  ) => Promise<{ width: number; height: number; rgba: Uint8ClampedArray }>;
+  /** A PDF's first page as a picture (ADR-0045); absent outside the browser. */
+  readonly renderPdf?: (
+    bytes: Uint8Array,
+  ) => Promise<{ image: CanvasImageSource; width: number; height: number }>;
   /** The flattened image stored in a PSD (null when it was saved without one). */
   readonly readPsdComposite: (
     bytes: Uint8Array,
@@ -126,10 +134,24 @@ async function decodeSource(env: ConvertEnv, file: Blob, bytes: Uint8Array): Pro
       );
       return { image, ...size, dispose: () => {} };
     }
+    case "pdf": {
+      if (!env.renderPdf) throw new FormatError("PDF files cannot be converted here.");
+      const page = await env.renderPdf(bytes);
+      checked(page.width, page.height);
+      return { ...page, dispose: () => release(page.image as Surface) };
+    }
+    case "tiff":
     case "heic":
     case "psd": {
+      if (kind.kind === "tiff" && !env.decodeTiff) {
+        throw new FormatError("TIFF files cannot be converted here.");
+      }
       const { width, height, rgba } =
-        kind.kind === "heic" ? await heic(env, bytes) : await env.readPsdComposite(bytes);
+        kind.kind === "heic"
+          ? await heic(env, bytes)
+          : kind.kind === "tiff"
+            ? await env.decodeTiff!(bytes)
+            : await env.readPsdComposite(bytes);
       if (!rgba) {
         throw new FormatError(
           "This PSD has no flattened image. Open it in the editor and export it instead.",

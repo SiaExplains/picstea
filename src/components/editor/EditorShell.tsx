@@ -3,6 +3,7 @@
 import {
   lazy,
   Suspense,
+  useSyncExternalStore,
   useCallback,
   useEffect,
   useMemo,
@@ -58,6 +59,9 @@ const CanvasSizeDialog = lazy(() =>
   import("./ImageDialogs").then((m) => ({ default: m.CanvasSizeDialog })),
 );
 const TrimDialog = lazy(() => import("./ImageDialogs").then((m) => ({ default: m.TrimDialog })));
+const PdfImportDialog = lazy(() =>
+  import("./ImageDialogs").then((m) => ({ default: m.PdfImportDialog })),
+);
 const RotateDialog = lazy(() =>
   import("./ImageDialogs").then((m) => ({ default: m.RotateDialog })),
 );
@@ -67,11 +71,18 @@ const matchShortcut = createShortcutMatcher();
 type PickMode = "open" | "place" | "placeEmbedded";
 
 function imageFiles(list: FileList | null | undefined): File[] {
-  return [...(list ?? [])].filter((file) => file.type.startsWith("image/") || file.type === "");
+  return [...(list ?? [])].filter(
+    (file) => file.type.startsWith("image/") || file.type === "application/pdf" || file.type === "",
+  );
 }
 
 export function EditorShell() {
   const controller = useController();
+  const pdfChoice = useSyncExternalStore(
+    controller.pdfChoice.subscribe,
+    controller.pdfChoice.get,
+    () => null,
+  );
   const session = useActiveSession();
   const isMac = useIsMac();
   const t = useT();
@@ -314,6 +325,9 @@ export function EditorShell() {
         {imageDialog === "canvas" && <CanvasSizeDialog onClose={() => setImageDialog(null)} />}
         {imageDialog === "trim" && <TrimDialog onClose={() => setImageDialog(null)} />}
         {imageDialog === "rotate" && <RotateDialog onClose={() => setImageDialog(null)} />}
+        {pdfChoice && (
+          <PdfImportDialog choice={pdfChoice} onClose={() => controller.pdfChoice.set(null)} />
+        )}
       </Suspense>
       {colorRangeOpen && <ColorRangeDialog open onClose={() => setColorRangeOpen(false)} />}
       {filterId && (

@@ -1,4 +1,6 @@
 import type { EditorDocument, Layer } from "../core/document/types";
+import { decodeTiff, type DecodedTiff } from "../formats/tiff/tiff-read";
+import { FormatError } from "../formats/binary/bytes";
 import { exportAs, type ExportRequest } from "../formats/export/document-export";
 import { decodeHeic, type DecodedHeic } from "../formats/heic/heic";
 import { renderRgba } from "../formats/layer-render";
@@ -41,6 +43,8 @@ export interface JobTypes {
   psdRead: { input: Uint8Array; output: PsdReadResult };
   /** HEIC/HEIF photo → RGBA through the vendored libheif (ADR-0038). */
   heicDecode: { input: Uint8Array; output: DecodedHeic };
+  /** TIFF → RGBA, plus Photoshop's layer data when present (ADR-0045). */
+  tiffDecode: { input: Uint8Array; output: DecodedTiff };
   flood: {
     input: { pixels: RgbaPixels; x: number; y: number; tolerance: number; contiguous: boolean };
     output: SelectionMask;
@@ -172,6 +176,7 @@ export const JOBS: {
   psdWrite: (file) => writePsd(file),
   psdRead: (bytes) => readPsd(bytes),
   heicDecode: (bytes) => decodeHeic(bytes),
+  tiffDecode: (bytes) => decodeTiff(bytes, decodeJpegStrip),
   flood: ({ pixels, x, y, tolerance, contiguous }) =>
     floodRegion(pixels, x, y, tolerance, contiguous),
   colorRange: ({ pixels, color, fuzziness }) => colorRange(pixels, color, fuzziness),
@@ -242,6 +247,8 @@ export function outputTransfer(name: JobName, output: unknown): Transferable[] {
       return [(output as Uint32Array).buffer];
     case "heicDecode":
       return [(output as DecodedHeic).rgba.buffer];
+    case "tiffDecode":
+      return [(output as DecodedTiff).rgba.buffer];
     case "psdRead": {
       const result = output as PsdReadResult;
       // A Set: an ArrayBuffer may only be listed once.
@@ -292,4 +299,19 @@ function encodePdf(pixels: RgbaPixels, ppi: number, title: string): Promise<Uint
     image: { kind: "lossless", rgb, alpha: opaque ? undefined : alpha },
     title,
   });
+}
+
+/** One JPEG strip or tile of a TIFF, through the browser's own decoder. */
+async function decodeJpegStrip(bytes: Uint8Array) {
+  const bitmap = await createImageBitmap(new Blob([bytes as BlobPart], { type: "image/jpeg" }));
+  try {
+    const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    if (!ctx) throw new FormatError("2D canvas is not available.");
+    ctx.drawImage(bitmap, 0, 0);
+    const { data } = ctx.getImageData(0, 0, bitmap.width, bitmap.height);
+    return { width: bitmap.width, height: bitmap.height, data };
+  } finally {
+    bitmap.close();
+  }
 }

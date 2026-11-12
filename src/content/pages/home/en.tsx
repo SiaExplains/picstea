@@ -38,7 +38,7 @@ const LINKS = [
   ["/image-resizer", "Resize an image"],
   ["/image-compressor", "Compress an image"],
   ["/photo-filters", "Photo filters"],
-  ["/convert", "Convert images (HEIC, WebP, PNG, JPG, SVG, PSD)"],
+  ["/convert", "Convert images (HEIC, TIFF, PDF, WebP, PNG, JPG, PSD)"],
   ["/blur-background", "How to blur a photo background"],
   ["/make-background-transparent", "How to make a background transparent"],
   ["/photoshop-alternative", "A free Photoshop alternative"],
@@ -68,7 +68,7 @@ const copy: HomeCopy = {
       ],
       [
         "Open and export",
-        "PNG, JPEG, WebP, GIF, SVG, HEIC and layered PSD in; PSD, SVG, PDF and images out.",
+        "PNG, JPEG, WebP, GIF, SVG, HEIC, TIFF, PDF and layered PSD in; PSD, SVG, PDF and images out.",
       ],
     ],
     newHere: "New here? Read the {link}.",
@@ -144,10 +144,10 @@ const copy: HomeCopy = {
 
         <h2>File formats</h2>
         <p>
-          Picstea opens PNG, JPEG, WebP, GIF, SVG, HEIC (iPhone photos), Photoshop PSD (8-bit RGB
-          and greyscale) and its own .picstea projects. It exports PNG, JPEG, WebP, SVG, PDF and
-          layered PSD. It cannot open PSB, 16/32-bit or CMYK PSD files, TIFF, PDF or camera RAW
-          files yet.
+          Picstea opens PNG, JPEG, WebP, GIF, SVG, HEIC (iPhone photos), TIFF, PDF pages, Photoshop
+          PSD and PSB (8-bit RGB and greyscale) and its own .picstea projects. It exports PNG, JPEG,
+          WebP, SVG, PDF and layered PSD with editable text, shapes, styles and smart objects. It
+          cannot open 16/32-bit or CMYK PSD files or camera RAW files yet.
         </p>
 
         <h2>Frequently asked questions</h2>

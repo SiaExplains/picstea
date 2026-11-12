@@ -11,7 +11,7 @@ export const PAGE_UPDATED: Readonly<Record<string, string>> = {
   "/blur-background": "2026-10-20",
   "/canva-alternative": "2026-10-20",
   "/convert": "2026-10-20",
-  "/faq": "2026-10-20",
+  "/faq": "2026-11-12",
   "/gimp-alternative": "2026-10-20",
   "/image-compressor": "2026-10-20",
   "/image-resizer": "2026-10-20",
@@ -34,7 +34,7 @@ export const PAGE_UPDATED: Readonly<Record<string, string>> = {
  * When the editor at `/` last changed: the date of the latest release with user-visible editor
  * changes. Sent as the home page's sitemap lastmod, which IndexNow pings read (ADR-0042).
  */
-export const SITE_UPDATED = "2026-11-11";
+export const SITE_UPDATED = "2026-11-12";
 
 /** Date shared by every /convert/<pair> page (src/content/converters). */
 export const CONVERTERS_UPDATED = "2026-10-20";

@@ -46,9 +46,27 @@ describe("Gate 9h PSD adjustments", () => {
     }
   });
 
-  it("keeps Photo Filter and Gradient Map in the flattened image on export", () => {
-    expect(encodeAdjustment(adjustmentDefinition("photo-filter").defaults)).toBeNull();
-    expect(encodeAdjustment(adjustmentDefinition("gradient-map").defaults)).toBeNull();
+  it("exports Photo Filter, Gradient Map and Black & White as adjustment layers (0.50.0)", () => {
+    const cases: Adjustment[] = [
+      { type: "photo-filter", color: "#3366ff", density: 40, preserveLuminosity: false },
+      {
+        type: "gradient-map",
+        stops: [
+          { position: 0, color: "#000000" },
+          { position: 0.5, color: "#ff0000" },
+          { position: 1, color: "#ffffff" },
+        ],
+        reverse: true,
+      },
+      { type: "black-white" },
+    ];
+    for (const a of cases) {
+      const block = encodeAdjustment(a)!;
+      expect(block, a.type).not.toBeNull();
+      const decoded = decodeAdjustment(block.key, block.data, new Map([[block.key, block.data]]));
+      expect(decoded?.adjustment, a.type).toEqual(a);
+    }
+    expect(encodeAdjustment(adjustmentDefinition("temperature-tint").defaults)).toBeNull();
   });
 
   it("reads Photo Filter (RGB and Lab) and Gradient Map blocks", () => {

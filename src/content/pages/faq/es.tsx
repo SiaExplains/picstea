@@ -21,7 +21,7 @@ const copy: PageCopy = {
     },
     {
       q: "¿Qué archivos puedo abrir?",
-      a: "PNG, JPEG, WebP, GIF, SVG, HEIC (fotos de iPhone), PSD (RGB y escala de grises de 8 bits) y archivos de proyecto .picstea.",
+      a: "PNG, JPEG, WebP, GIF, SVG, HEIC (fotos de iPhone), TIFF, PDF (una página cada vez), PSD y PSB (RGB y escala de grises de 8 bits) y archivos de proyecto .picstea.",
     },
     {
       q: "¿En qué formatos puedo exportar?",

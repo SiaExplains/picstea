@@ -41,7 +41,7 @@ const LINKS = [
   ["/image-resizer", "Redimensionar uma imagem"],
   ["/image-compressor", "Comprimir uma imagem"],
   ["/photo-filters", "Filtros de foto"],
-  ["/convert", "Converter imagens (HEIC, WebP, PNG, JPG, SVG, PSD)"],
+  ["/convert", "Converter imagens (HEIC, TIFF, PDF, WebP, PNG, JPG, PSD)"],
   ["/blur-background", "Como desfocar o fundo de uma foto"],
   ["/make-background-transparent", "Como deixar um fundo transparente"],
   ["/photoshop-alternative", "Uma alternativa grátis ao Photoshop"],
@@ -74,7 +74,7 @@ const copy: HomeCopy = {
       ],
       [
         "Abra e exporte",
-        "Entrada: PNG, JPEG, WebP, GIF, SVG, HEIC e PSD com camadas; saída: PSD, SVG, PDF e imagens.",
+        "Entrada: PNG, JPEG, WebP, GIF, SVG, HEIC, TIFF, PDF e PSD com camadas; saída: PSD, SVG, PDF e imagens.",
       ],
     ],
     newHere: "Primeira vez aqui? Leia o {link}.",
@@ -153,10 +153,11 @@ const copy: HomeCopy = {
 
         <h2>Formatos de arquivo</h2>
         <p>
-          O Picstea abre PNG, JPEG, WebP, GIF, SVG, HEIC (fotos do iPhone), PSD do Photoshop (RGB e
-          tons de cinza de 8 bits) e os próprios projetos .picstea. Ele exporta PNG, JPEG, WebP,
-          SVG, PDF e PSD com camadas. Ainda não abre arquivos PSB, PSD de 16/32 bits ou CMYK, TIFF,
-          PDF nem RAW de câmera.
+          O Picstea abre PNG, JPEG, WebP, GIF, SVG, HEIC (fotos do iPhone), TIFF, páginas de PDF,
+          PSD e PSB do Photoshop (RGB e tons de cinza de 8 bits) e os próprios projetos .picstea.
+          Ele exporta PNG, JPEG, WebP, SVG, PDF e PSD com camadas, com texto, formas, estilos e
+          objetos inteligentes editáveis. Ainda não abre PSD de 16/32 bits ou CMYK nem RAW de
+          câmera.
         </p>
 
         <h2>Perguntas frequentes</h2>

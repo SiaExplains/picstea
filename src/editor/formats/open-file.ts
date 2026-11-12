@@ -1,4 +1,5 @@
 import { looksLikeHeic } from "./heic/heic";
+import { isCameraRaw, isTiffHeader } from "./tiff/tiff-sniff";
 import { looksLikeZip } from "./project/project-file";
 import { readImageHeader } from "./raster/image-header";
 import { looksLikeSvg } from "./svg/svg-import";
@@ -12,6 +13,8 @@ export type FileKind =
   | { kind: "psd" }
   | { kind: "heic" }
   | { kind: "project" }
+  | { kind: "tiff" }
+  | { kind: "pdf" }
   | { kind: "unsupported"; message: string };
 
 const ascii = (bytes: Uint8Array, length: number) =>
@@ -23,25 +26,27 @@ export function detectFileKind(bytes: Uint8Array): FileKind {
   if (ascii(bytes, 4) === "8BPS") return { kind: "psd" };
   if (looksLikeHeic(bytes)) return { kind: "heic" };
   if (looksLikeZip(bytes)) return { kind: "project" };
-  if (ascii(bytes, 5) === "%PDF-") {
-    return {
-      kind: "unsupported",
-      message: "PDF files can be exported but not opened yet. Open an image or PSD instead.",
-    };
+  if (ascii(bytes, 5) === "%PDF-") return { kind: "pdf" };
+  if (isTiffHeader(bytes)) {
+    // Camera RAW formats (DNG, CR2, NEF, ARW) are TIFF-based; they need their own decoder.
+    if (isCameraRaw(bytes)) {
+      return {
+        kind: "unsupported",
+        message: "Camera RAW files can't be opened yet. Export the photo as JPEG or TIFF first.",
+      };
+    }
+    return { kind: "tiff" };
   }
-  if (ascii(bytes, 4) === "II*\0" || ascii(bytes, 4) === "MM\0*") {
-    return {
-      kind: "unsupported",
-      message: "TIFF files cannot be opened in the browser yet. Save the image as PNG first.",
-    };
+  if (ascii(bytes, 4) === "II+\0" || ascii(bytes, 4) === "MM\0+") {
+    return { kind: "unsupported", message: "BigTIFF files are not supported yet." };
   }
   if (looksLikeSvg(bytes)) return { kind: "svg" };
   return {
     kind: "unsupported",
     message:
-      "This file type is not supported. Picstea opens PNG, JPEG, WebP, GIF, SVG, HEIC, PSD and .picstea files.",
+      "This file type is not supported. Picstea opens PNG, JPEG, WebP, GIF, SVG, HEIC, TIFF, PDF, PSD, PSB and .picstea files.",
   };
 }
 
 export const OPEN_ACCEPT =
-  ".png,.jpg,.jpeg,.webp,.gif,.svg,.heic,.heif,.psd,.picstea,image/png,image/jpeg,image/webp,image/gif,image/svg+xml,image/heic,image/heif,image/vnd.adobe.photoshop";
+  ".png,.jpg,.jpeg,.webp,.gif,.svg,.heic,.heif,.tif,.tiff,.pdf,.psd,.psb,.picstea,image/png,image/jpeg,image/webp,image/gif,image/svg+xml,image/heic,image/heif,image/tiff,application/pdf,image/vnd.adobe.photoshop";

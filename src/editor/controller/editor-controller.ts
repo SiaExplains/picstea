@@ -1,4 +1,6 @@
 import { describeError, silentLogger, type Logger } from "@/lib/logging/logger";
+/** PDF pages open at this resolution unless the user picks another (ADR-0045). */
+const DEFAULT_PDF_PPI = 150;
 import type { DistortMode } from "../tools/move/distort-tool";
 import type { LayerMask } from "../core/document/types";
 import { walkLayers } from "../core/document/tree";
@@ -1247,6 +1249,16 @@ export class EditorController {
           content = single(layer, layer.width, layer.height);
           break;
         }
+        case "tiff": {
+          const layer = await this.tiffLayer(bytes, name);
+          content = single(layer, layer.width, layer.height);
+          break;
+        }
+        case "pdf": {
+          const layer = await this.pdfLayer(bytes, name, 1, DEFAULT_PDF_PPI);
+          content = single(layer, layer.width, layer.height);
+          break;
+        }
         case "psd": {
           const { file: psd, warnings } = await this.jobs.run("psdRead", bytes, [bytes.buffer]);
           const { psdToDocument } = await import("../formats/psd/psd-convert");
@@ -2366,20 +2378,56 @@ export class EditorController {
           this.enforcePixelBudget();
           return { ok: true };
         }
-        case "psd": {
-          const { file: psd, warnings } = await this.jobs.run("psdRead", bytes, [bytes.buffer]);
-          const { psdToDocument } = await import("../formats/psd/psd-convert");
-          const imported = psdToDocument(
-            this,
-            psd,
-            baseName(filename),
-            warnings,
-            this.knownFonts(),
-          );
-          this.openSession(imported.document, { transient });
-          this.reportWarnings("Opened with changes", imported.warnings);
+        case "psd":
+          return await this.openPsdBytes(bytes, baseName(filename), transient);
+        case "tiff": {
+          const decoded = await this.jobs.run("tiffDecode", bytes, [bytes.buffer]);
+          // A layered TIFF from Photoshop opens with its layers, through the PSD reader.
+          if (decoded.photoshopLayers) {
+            const { photoshopLayersToPsd } = await import("../formats/tiff/tiff-layers");
+            const psd = photoshopLayersToPsd(
+              decoded.photoshopLayers,
+              decoded.width,
+              decoded.height,
+              decoded.rgba,
+            );
+            if (psd) {
+              try {
+                return await this.openPsdBytes(psd, baseName(filename), transient);
+              } catch (error) {
+                // Damaged layer data: fall back to the flattened image below.
+                this.logger.warn("layered TIFF fell back to flat", describeError(error));
+              }
+            }
+          }
+          const layer = this.rgbaLayer(decoded, baseName(filename));
+          const doc = createDocument({
+            name: baseName(filename),
+            width: decoded.width,
+            height: decoded.height,
+            background: { kind: "transparent" },
+            ...(decoded.resolution ? { resolution: decoded.resolution } : {}),
+          });
+          this.openSession({ ...doc, layers: [layer], activeLayerId: layer.id }, { transient });
           this.enforcePixelBudget();
           return { ok: true };
+        }
+        case "pdf": {
+          const { openPdf } = await import("../formats/pdf/pdf-read");
+          const pdf = await openPdf(bytes);
+          const first = await pdf.pageSize(1);
+          pdf.close();
+          // Several pages, or a batch/transient open: ask which page (single pages open directly).
+          if (pdf.pageCount > 1 && !transient) {
+            this.pdfChoice.set({
+              bytes,
+              filename,
+              pageCount: pdf.pageCount,
+              firstPage: first,
+            });
+            return { ok: true };
+          }
+          return await this.openPdfPage(bytes, filename, 1, DEFAULT_PDF_PPI, transient);
         }
         case "project": {
           const project = await readProjectFile(bytes, (k) =>
@@ -2411,6 +2459,11 @@ export class EditorController {
           createSurface: this.createSurface,
           rasterizeSvg: this.rasterizeSvg,
           decodeHeic: (bytes) => this.jobs.run("heicDecode", bytes, [bytes.buffer]),
+          decodeTiff: (bytes) => this.jobs.run("tiffDecode", bytes, [bytes.buffer]),
+          renderPdf: async (bytes) => {
+            const canvas = await this.renderPdfPage(bytes, 1, DEFAULT_PDF_PPI);
+            return { image: canvas, width: canvas.width, height: canvas.height };
+          },
           readPsdComposite: async (bytes) => {
             const { file: psd } = await this.jobs.run("psdRead", bytes, [bytes.buffer]);
             return { width: psd.width, height: psd.height, rgba: psd.composite };
@@ -2445,6 +2498,10 @@ export class EditorController {
         layer = await this.svgLayer(bytes, baseName(filename));
       } else if (kind.kind === "heic") {
         layer = await this.heicLayer(bytes, baseName(filename));
+      } else if (kind.kind === "tiff") {
+        layer = await this.tiffLayer(bytes, baseName(filename));
+      } else if (kind.kind === "pdf") {
+        layer = await this.pdfLayer(bytes, baseName(filename), 1, DEFAULT_PDF_PPI);
       } else {
         const { file: psd } = await this.jobs.run("psdRead", bytes, [bytes.buffer]);
         const flat = psd.composite;
@@ -2514,6 +2571,107 @@ export class EditorController {
   }
 
   /** Decode a HEIC photo in the worker into a new pixel layer (ADR-0038). */
+  /** Open PSD/PSB bytes as a new document. */
+  private async openPsdBytes(bytes: Uint8Array, name: string, transient: boolean): Promise<Result> {
+    const { file: psd, warnings } = await this.jobs.run("psdRead", bytes, [bytes.buffer]);
+    const { psdToDocument } = await import("../formats/psd/psd-convert");
+    const imported = psdToDocument(this, psd, name, warnings, this.knownFonts());
+    this.openSession(imported.document, { transient });
+    this.reportWarnings("Opened with changes", imported.warnings);
+    this.enforcePixelBudget();
+    return { ok: true };
+  }
+
+  /**
+   * A PDF with several pages waiting for the user to pick a page and resolution (the PDF import
+   * dialog shows while this is set; ADR-0045).
+   */
+  readonly pdfChoice = new Observable<{
+    bytes: Uint8Array;
+    filename: string;
+    pageCount: number;
+    /** Page 1 in points, to show the resulting size. */
+    firstPage: { width: number; height: number };
+  } | null>(null);
+
+  /** The PDF import dialog's choice: open `page` at `ppi`. */
+  openPdfPage(
+    bytes: Uint8Array,
+    filename: string,
+    page: number,
+    ppi: number,
+    transient = false,
+  ): Promise<Result> {
+    this.pdfChoice.set(null);
+    return this.withBusy("Opening…", async () => {
+      try {
+        const layer = await this.pdfLayer(bytes, baseName(filename), page, ppi);
+        const doc = createDocument({
+          name: baseName(filename),
+          width: layer.width,
+          height: layer.height,
+          background: { kind: "color", color: "#ffffff" },
+          resolution: ppi,
+        });
+        this.openSession({ ...doc, layers: [layer], activeLayerId: layer.id }, { transient });
+        this.enforcePixelBudget();
+        return { ok: true };
+      } catch (error) {
+        return this.fail(
+          error instanceof FormatError
+            ? (error.template ?? error.message)
+            : "The file could not be opened.",
+        );
+      }
+    });
+  }
+
+  private async renderPdfPage(
+    bytes: Uint8Array,
+    page: number,
+    ppi: number,
+  ): Promise<HTMLCanvasElement> {
+    const { openPdf } = await import("../formats/pdf/pdf-read");
+    const pdf = await openPdf(bytes);
+    try {
+      if (page < 1 || page > pdf.pageCount) throw new FormatError("That page doesn't exist.");
+      return await pdf.render(page, ppi);
+    } finally {
+      pdf.close();
+    }
+  }
+
+  /** A PDF page as a pixel layer. */
+  private async pdfLayer(
+    bytes: Uint8Array,
+    name: string,
+    page: number,
+    ppi: number,
+  ): Promise<RasterLayer> {
+    const canvas = await this.renderPdfPage(bytes, page, ppi);
+    const asset = this.assets.addBitmap(canvas, canvas.width, canvas.height);
+    return createRasterLayer({
+      assetId: asset.id,
+      width: canvas.width,
+      height: canvas.height,
+      name,
+    });
+  }
+
+  /** A TIFF's (flattened) image as a pixel layer. */
+  private async tiffLayer(bytes: Uint8Array, name: string): Promise<RasterLayer> {
+    return this.rgbaLayer(await this.jobs.run("tiffDecode", bytes, [bytes.buffer]), name);
+  }
+
+  private rgbaLayer(
+    image: { width: number; height: number; rgba: Uint8ClampedArray },
+    name: string,
+  ): RasterLayer {
+    const { width, height, rgba } = image;
+    const asset = this.assets.addBitmap(rgbaToSurface(this, rgba, width, height), width, height);
+    return createRasterLayer({ assetId: asset.id, width, height, name });
+  }
+
   private async heicLayer(bytes: Uint8Array, name: string): Promise<RasterLayer> {
     const { width, height, rgba } = await this.jobs.run("heicDecode", bytes, [bytes.buffer]);
     const asset = this.assets.addBitmap(rgbaToSurface(this, rgba, width, height), width, height);

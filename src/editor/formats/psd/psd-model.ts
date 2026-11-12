@@ -76,6 +76,8 @@ export type PsdLinkedFile =
 export interface PsdGroup extends PsdNodeBase {
   readonly kind: "group";
   readonly open: boolean;
+  /** Extra tagged blocks to write on export (group effects and vector masks, ADR-0045). */
+  readonly blocks?: readonly PsdBlock[];
   /** Bottom-most first. */
   readonly children: readonly PsdNode[];
 }

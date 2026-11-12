@@ -1,4 +1,10 @@
 import { createGroup } from "../../core/commands/group-commands";
+import { encodeLinkedFiles, encodePlaced } from "./smart-write";
+import { writePsd } from "./psd-write";
+import { resolveDraft } from "./psd-draft";
+import { applyMatrix, fromTransform } from "../../core/geometry/matrix";
+import { encodeEffects, exportableEffects } from "./effects-write";
+import { encodeShapeStroke, encodeSolidColor, shapeOutline } from "./shape-write";
 import { isFontFamilyName, normalizeParagraphs, normalizeRuns } from "../../core/document/text";
 import type { CharStyle, SmartDistortion } from "../../core/document/types";
 import { presetMesh, WARP_STYLES, type WarpStyle } from "../../core/geometry/warp-presets";
@@ -115,6 +121,8 @@ export async function documentToPsdDraft(
   const { encodeTextBlock } = hasText(doc.layers)
     ? await import("./engine-data-write")
     : { encodeTextBlock: null };
+  // Smart object contents, embedded once in the file's global lnk2 block (ADR-0045).
+  const linked: { id: string; name: string; data: Uint8Array }[] = [];
   const convert = async (layers: readonly Layer[]): Promise<DraftNode[]> => {
     const out: DraftNode[] = [];
     for (const layer of layers) {
@@ -122,9 +130,7 @@ export async function documentToPsdDraft(
       const adjustmentBlock =
         layer.kind === "adjustment" ? encodeAdjustment(layer.adjustment) : null;
       if (layer.kind === "adjustment" && !adjustmentBlock) {
-        warnings.add(
-          "Temperature/Tint, Black & White, Photo Filter and Gradient Map adjustments are included in the flattened image only.",
-        );
+        warnings.add("Temperature/Tint adjustments are included in the flattened image only.");
         continue;
       }
       const base = {
@@ -148,25 +154,63 @@ export async function documentToPsdDraft(
         continue;
       }
       if (layer.kind === "group") {
+        const groupBlocks = [];
         if (hasEffects(layer)) {
-          warnings.add("Effects on groups are included in the flattened image only.");
+          if (exportableEffects(layer.effects!)) groupBlocks.push(encodeEffects(layer.effects!));
+          else warnings.add("Effects on groups are included in the flattened image only.");
         }
-        if (layer.vectorMask?.enabled) {
-          warnings.add("Vector masks on groups are included in the flattened image only.");
+        if (layer.vectorMask) {
+          groupBlocks.push({
+            key: "vmsk",
+            data: encodeVectorMask(layer.vectorMask, doc.width, doc.height),
+          });
         }
         out.push({
           ...base,
           kind: "group",
           open: layer.expanded,
           children: await convert(layer.children),
+          ...(groupBlocks.length ? { blocks: groupBlocks } : {}),
         });
         continue;
       }
-      if (hasEffects(layer)) warnings.add("Layer effects were merged into the layer pixels.");
-      if (layer.kind === "shape") warnings.add("Shapes were converted to pixels.");
+      // Layer styles stay editable (lfx2) unless they use patterns (ADR-0045).
+      const editableEffects = hasEffects(layer) && exportableEffects(layer.effects!);
+      if (hasEffects(layer) && !editableEffects) {
+        warnings.add("Layer styles with patterns were merged into the layer pixels.");
+      }
+      const styleBlocks = editableEffects
+        ? [
+            encodeEffects(layer.effects!),
+            ...(layer.fillOpacity !== undefined && layer.fillOpacity < 1
+              ? [{ key: "iOpa", data: Uint8Array.of(Math.round(layer.fillOpacity * 255), 0, 0, 0) }]
+              : []),
+          ]
+        : [];
+      // Shapes stay editable: their outline, fill and stroke as Photoshop vector data (ADR-0045).
+      const shapeBlocks =
+        layer.kind === "shape"
+          ? [
+              {
+                key: "vsms",
+                data: encodeVectorMask(
+                  { path: shapeOutline(layer), enabled: true, linked: true },
+                  doc.width,
+                  doc.height,
+                ),
+              },
+              encodeSolidColor(layer.fill ?? layer.stroke?.color ?? "#000000"),
+              encodeShapeStroke(layer),
+            ]
+          : [];
+      if (layer.kind === "shape" && layer.vectorMask) {
+        warnings.add("Vector masks on shapes were left out (the shape is its own vector mask).");
+      }
+      // Fill layers stay fill layers.
+      const fillBlocks = layer.kind === "fill" ? [encodeSolidColor(layer.color)] : [];
       // Text stays editable (ADR-0041) unless effects had to be merged into its pixels.
       const textBlock =
-        layer.kind === "text" && !hasEffects(layer) && encodeTextBlock
+        layer.kind === "text" && (!hasEffects(layer) || editableEffects) && encodeTextBlock
           ? {
               key: "TySh",
               data: encodeTextBlock(
@@ -193,7 +237,38 @@ export async function documentToPsdDraft(
       if (layer.kind === "text" && !textBlock) {
         warnings.add("Text with layer effects was converted to pixels.");
       }
-      if (layer.kind === "smart") warnings.add("Smart objects were converted to pixels.");
+      // Smart objects stay smart objects: their contents become an embedded PSD.
+      let smartBlock: { key: string; data: Uint8Array } | null = null;
+      if (layer.kind === "smart" && layer.filters?.length) {
+        warnings.add("Smart objects with smart filters were converted to pixels.");
+      } else if (layer.kind === "smart") {
+        const nested = await documentToPsdDraft(env, layer.content);
+        for (const w of nested.warnings) warnings.add(w);
+        const id = createId("smart");
+        linked.push({ id, name: `${layer.name}.psd`, data: writePsd(resolveDraft(nested.draft)) });
+        const { width: w, height: h } = layer.content;
+        const m = fromTransform(layer.transform);
+        const toDoc = (pts: readonly number[]) => {
+          const out: number[] = [];
+          for (let i = 0; i < pts.length; i += 2) {
+            const p = applyMatrix(m, { x: pts[i], y: pts[i + 1] });
+            out.push(p.x, p.y);
+          }
+          return out;
+        };
+        const d = layer.distortion;
+        smartBlock = encodePlaced(
+          id,
+          w,
+          h,
+          toDoc([0, 0, w, 0, w, h, 0, h]),
+          d?.kind === "perspective"
+            ? { kind: "perspective", quad: toDoc(d.corners) }
+            : d?.kind === "warp"
+              ? { kind: "warp", mesh: d.mesh }
+              : undefined,
+        );
+      }
       // The layer's own look, without its opacity, blend mode or mask (stored separately).
       const plain = {
         ...layer,
@@ -207,19 +282,28 @@ export async function documentToPsdDraft(
         blendIf: undefined,
         channels: undefined,
         clipped: false,
+        // Editable styles are drawn by Photoshop, so the pixels are the layer without them.
+        ...(editableEffects ? { effects: undefined, fillOpacity: undefined } : {}),
       } as Layer;
-      const vectorBlock = layer.vectorMask
-        ? { key: "vmsk", data: encodeVectorMask(layer.vectorMask, doc.width, doc.height) }
-        : null;
+      const vectorBlock =
+        layer.vectorMask && layer.kind !== "shape"
+          ? { key: "vmsk", data: encodeVectorMask(layer.vectorMask, doc.width, doc.height) }
+          : null;
+      const blocks = [
+        vectorBlock,
+        textBlock,
+        smartBlock,
+        ...shapeBlocks,
+        ...fillBlocks,
+        ...styleBlocks,
+      ].filter((b) => b !== null);
       const region = leafRegion(env, doc, layer);
       out.push({
         ...base,
         kind: "pixels",
         region: region ? { x: region.x, y: region.y } : null,
         bitmap: region ? await renderBitmap(env, doc, [plain], region) : null,
-        ...(vectorBlock || textBlock
-          ? { blocks: [vectorBlock, textBlock].filter((b) => b !== null) }
-          : {}),
+        ...(blocks.length > 0 ? { blocks } : {}),
       });
     }
     return out;
@@ -232,6 +316,8 @@ export async function documentToPsdDraft(
       resolution: doc.resolution,
       layers,
       composite: await renderBitmap(env, doc),
+      globalLight: doc.globalLight ?? { angle: 120, altitude: 30 },
+      ...(linked.length ? { globalBlocks: [encodeLinkedFiles(linked)] } : {}),
     },
     warnings: [...warnings],
   };

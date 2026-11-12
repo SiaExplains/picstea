@@ -55,7 +55,8 @@ test("PSD export keeps layers and groups and opens again in Picstea", async ({ p
   const psd = await exportAs(page, "PSD");
   expect(psd.name).toBe("Layered.psd");
   expect(ascii(psd.bytes, 0, 4)).toBe("8BPS");
-  await expect(page.getByText(/Shapes were converted to pixels/)).toBeVisible();
+  // Shapes stay editable shapes in the PSD (ADR-0045).
+  await expect(page.getByText(/Shapes were converted to pixels/)).toHaveCount(0);
 
   await openFile(page, {
     name: psd.name,
@@ -67,6 +68,11 @@ test("PSD export keeps layers and groups and opens again in Picstea", async ({ p
   await page.getByRole("button", { name: "100%" }).click();
   expect(isBlue(await pixel(page, 350, 300))).toBe(true);
   expect(isDark(await pixel(page, 120, 50))).toBe(true);
+  // The rectangle came back as a shape layer, with its fill and stroke settings.
+  await page.getByTestId("layer-row").and(page.locator('[data-layer-name="Rectangle 1"]')).click();
+  await expect(
+    page.locator('[data-panel="properties"]').getByRole("checkbox", { name: /^Fill/ }),
+  ).toBeVisible();
   expect(offending).toEqual([]);
   expect(errors).toEqual([]);
 });
@@ -141,7 +147,7 @@ test("SVG files open as pixels and their scripts never run", async ({ page }) =>
   expect(errors).toEqual([]);
 });
 
-test("GIF opens; TIFF, PDF and junk get clear messages", async ({ page }) => {
+test("GIF opens; damaged TIFF, PDF and junk get clear messages", async ({ page }) => {
   const errors = trackErrors(page);
   await openEditor(page);
   const gif = Buffer.from("R0lGODlhAQABAIAAAP8AAP///yH5BAAAAAAALAAAAAABAAEAAAICRAEAOw==", "base64");
@@ -154,20 +160,25 @@ test("GIF opens; TIFF, PDF and junk get clear messages", async ({ page }) => {
     mimeType: "image/tiff",
     buffer: Buffer.from("II*\0rest"),
   });
-  await expect(page.getByText(/TIFF files cannot be opened/)).toBeVisible();
+  // TIFF and PDF open since 0.50.0 (ADR-0045); damaged ones say so.
+  await expect(page.getByText(/The TIFF file is damaged/)).toBeVisible();
   await openFile(page, {
     name: "doc.pdf",
     mimeType: "application/pdf",
     buffer: Buffer.from("%PDF-1.7 x"),
   });
-  await expect(page.getByText(/PDF files can be exported but not opened/)).toBeVisible();
+  await expect(page.getByText(/The PDF file is damaged|The PDF could not be opened/)).toBeVisible();
   await openFile(page, {
     name: "x.psd",
     mimeType: "image/vnd.adobe.photoshop",
     buffer: Buffer.from("8BPS\0\x02"),
   });
+  // A cut-off PSB/PSD header (PSB opens since 0.50.0): the newest notice says what's wrong.
   await expect(
-    page.getByText(/PSB|ends unexpectedly|damaged/).filter({ visible: true }),
+    page
+      .getByText(/ends unexpectedly|damaged|could not be opened/)
+      .filter({ visible: true })
+      .last(),
   ).toBeVisible();
   expect(errors).toEqual([]);
 });

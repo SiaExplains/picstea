@@ -180,9 +180,12 @@ export function ConvertDialog({
           <p className={styles.muted} style={{ margin: "4px 0 0", gridColumn: "2" }}>
             {files.length > 0
               ? t("{count} file(s) selected", { count: files.length })
-              : t("PNG, JPEG, WebP, GIF, SVG, HEIC or PSD, up to {max} files. Or drop them here.", {
-                  max: MAX_BATCH_FILES,
-                })}
+              : t(
+                  "PNG, JPEG, WebP, GIF, SVG, HEIC, TIFF, PDF or PSD, up to {max} files. Or drop them here.",
+                  {
+                    max: MAX_BATCH_FILES,
+                  },
+                )}
           </p>
         </div>
         <fieldset style={{ border: 0, margin: 0, padding: 0 }}>

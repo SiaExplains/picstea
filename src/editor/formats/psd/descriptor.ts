@@ -272,7 +272,15 @@ export type WritableValue =
   | { readonly type: "TEXT"; readonly value: string }
   | { readonly type: "tdta"; readonly value: Uint8Array }
   | { readonly type: "VlLs"; readonly values: readonly WritableValue[] }
-  | { readonly type: "Objc"; readonly descriptor: WritableDescriptor };
+  | { readonly type: "Objc"; readonly descriptor: WritableDescriptor }
+  /** A list of doubles with one unit (warp mesh coordinates). */
+  | { readonly type: "UnFl"; readonly unit: string; readonly values: readonly number[] }
+  /** An object array: a class whose items are unit-double lists (warp meshes). */
+  | {
+      readonly type: "ObAr";
+      readonly classId: string;
+      readonly items: readonly (readonly [string, { unit: string; values: readonly number[] }])[];
+    };
 
 export interface WritableDescriptor {
   readonly classId: string;
@@ -321,6 +329,21 @@ function writeValue(w: ByteWriter, value: WritableValue): void {
       break;
     case "Objc":
       writeDescriptorBody(w, value.descriptor);
+      break;
+    case "UnFl":
+      w.ascii(value.unit).u32(value.values.length);
+      for (const v of value.values) w.f64(v);
+      break;
+    case "ObAr":
+      w.u32(16);
+      writeUnicodeString(w, "");
+      writeId(w, value.classId);
+      w.u32(value.items.length);
+      for (const [key, list] of value.items) {
+        writeId(w, key);
+        w.ascii("UnFl").ascii(list.unit).u32(list.values.length);
+        for (const v of list.values) w.f64(v);
+      }
       break;
   }
 }

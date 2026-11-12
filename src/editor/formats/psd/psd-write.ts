@@ -23,6 +23,31 @@ interface Channel {
   readonly data: Uint8Array;
 }
 
+/**
+ * Writing a PSB (Large Document Format) instead of a PSD: the same file with wider lengths. Set
+ * only for the duration of one `writePsd` call (used to test the PSB reader; export writes PSD).
+ */
+let psb = false;
+
+/** Block keys whose length is 64-bit in PSB files. */
+const LONG_KEYS = new Set([
+  "LMsk",
+  "Lr16",
+  "Lr32",
+  "Layr",
+  "Mt16",
+  "Mt32",
+  "Mtrn",
+  "Alph",
+  "FMsk",
+  "lnk2",
+  "FEid",
+  "FXid",
+  "PxSD",
+]);
+
+const u64 = (w: ByteWriter, n: number) => w.u32(Math.floor(n / 2 ** 32)).u32(n >>> 0);
+
 /** Compression 1 (RLE): row byte counts, then PackBits rows. */
 function rleChannel(plane: Uint8Array, width: number, height: number): Uint8Array {
   const w = new ByteWriter();
@@ -30,7 +55,10 @@ function rleChannel(plane: Uint8Array, width: number, height: number): Uint8Arra
   if (width === 0 || height === 0) return w.toBytes();
   const rows: Uint8Array[] = [];
   for (let y = 0; y < height; y++) rows.push(packBits(plane.subarray(y * width, (y + 1) * width)));
-  for (const r of rows) w.u16(r.length);
+  for (const r of rows) {
+    if (psb) w.u32(r.length);
+    else w.u16(r.length);
+  }
   for (const r of rows) w.bytes(r);
   return w.toBytes();
 }
@@ -61,7 +89,9 @@ function pascalName(w: ByteWriter, name: string): void {
 function block(w: ByteWriter, key: string, body: Uint8Array): void {
   w.ascii("8BIM").ascii(key);
   const padded = body.length % 2 === 0 ? body : Uint8Array.from([...body, 0]);
-  w.u32(padded.length).bytes(padded);
+  if (psb && LONG_KEYS.has(key)) u64(w, padded.length);
+  else w.u32(padded.length);
+  w.bytes(padded);
 }
 
 function unicodeName(name: string): Uint8Array {
@@ -140,6 +170,7 @@ function records(nodes: readonly PsdNode[], out: Record[] = []): Record[] {
       blendKey: node.blendKey,
       channels: withMask(emptyChannels(), node.mask),
       mask: node.mask,
+      ...(node.blocks?.length ? { blocks: node.blocks } : {}),
       section: { type: node.open ? 1 : 2, blendKey: node.blendKey },
     });
   }
@@ -149,7 +180,11 @@ function records(nodes: readonly PsdNode[], out: Record[] = []): Record[] {
 function writeRecord(w: ByteWriter, r: Record): void {
   w.i32(r.rect.top).i32(r.rect.left).i32(r.rect.bottom).i32(r.rect.right);
   w.u16(r.channels.length);
-  for (const c of r.channels) w.i16(c.id).u32(c.data.length);
+  for (const c of r.channels) {
+    w.i16(c.id);
+    if (psb) u64(w, c.data.length);
+    else w.u32(c.data.length);
+  }
   // A group's own record carries "pass" in its section divider; the record itself uses norm.
   const recordBlend = r.section && r.blendKey === "pass" ? "norm" : r.blendKey;
   w.ascii("8BIM").ascii(recordBlend);
@@ -189,10 +224,24 @@ function writeRecord(w: ByteWriter, r: Record): void {
   w.u32(bytes.length).bytes(bytes);
 }
 
-export function writePsd(file: PsdFile): Uint8Array {
+export function writePsd(file: PsdFile, options: { psb?: boolean } = {}): Uint8Array {
+  psb = options.psb === true;
+  try {
+    return writeFile(file);
+  } finally {
+    psb = false;
+  }
+}
+
+function writeFile(file: PsdFile): Uint8Array {
   const w = new ByteWriter();
   // Header: 4 channels (RGB + transparency of the merged image), 8 bits, RGB mode.
-  w.ascii("8BPS").u16(1).bytes(new Uint8Array(6)).u16(4).u32(file.height).u32(file.width);
+  w.ascii("8BPS")
+    .u16(psb ? 2 : 1)
+    .bytes(new Uint8Array(6))
+    .u16(4)
+    .u32(file.height)
+    .u32(file.width);
   w.u16(8).u16(3);
   w.u32(0); // colour mode data
 
@@ -208,6 +257,11 @@ export function writePsd(file: PsdFile): Uint8Array {
     .u16(1)
     .u16(1);
   resources.ascii("8BIM").u16(1005).u16(0).u32(16).bytes(res.toBytes());
+  // Global light for layer styles (1037 angle, 1049 altitude), read back on import.
+  if (file.globalLight) {
+    resources.ascii("8BIM").u16(1037).u16(0).u32(4).i32(Math.round(file.globalLight.angle));
+    resources.ascii("8BIM").u16(1049).u16(0).u32(4).i32(Math.round(file.globalLight.altitude));
+  }
   const resourceBytes = resources.toBytes();
   w.u32(resourceBytes.length).bytes(resourceBytes);
 
@@ -223,11 +277,15 @@ export function writePsd(file: PsdFile): Uint8Array {
     infoBytes = Uint8Array.from([...infoBytes, ...new Uint8Array(4 - (infoBytes.length % 4))]);
   }
   const layerSection = new ByteWriter();
-  layerSection.u32(infoBytes.length).bytes(infoBytes);
+  if (psb) u64(layerSection, infoBytes.length);
+  else layerSection.u32(infoBytes.length);
+  layerSection.bytes(infoBytes);
   layerSection.u32(0); // global layer mask info
   for (const b of file.globalBlocks ?? []) block(layerSection, b.key, b.data);
   const layerBytes = layerSection.toBytes();
-  w.u32(layerBytes.length).bytes(layerBytes);
+  if (psb) u64(w, layerBytes.length);
+  else w.u32(layerBytes.length);
+  w.bytes(layerBytes);
 
   // Merged image: RLE, all row counts for every channel first, then the rows.
   const count = file.width * file.height;
@@ -239,7 +297,10 @@ export function writePsd(file: PsdFile): Uint8Array {
     }
   }
   w.u16(1);
-  for (const r of rows) w.u16(r.length);
+  for (const r of rows) {
+    if (psb) w.u32(r.length);
+    else w.u16(r.length);
+  }
   for (const r of rows) w.bytes(r);
   return w.toBytes();
 }

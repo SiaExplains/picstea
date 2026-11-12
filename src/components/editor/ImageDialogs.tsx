@@ -370,3 +370,76 @@ export function RotateDialog({ onClose }: { onClose: () => void }) {
     </DialogFrame>
   );
 }
+
+const PDF_RESOLUTIONS = [72, 96, 150, 200, 300] as const;
+
+/** Opening a PDF with several pages (ADR-0045): which page, and at what resolution. */
+export function PdfImportDialog({
+  choice,
+  onClose,
+}: {
+  choice: {
+    bytes: Uint8Array;
+    filename: string;
+    pageCount: number;
+    firstPage: { width: number; height: number };
+  };
+  onClose: () => void;
+}) {
+  const controller = useController();
+  const t = useT();
+  const [page, setPage] = useState("1");
+  const [ppi, setPpi] = useState<number>(150);
+  const n = Number(page);
+  const valid = Number.isInteger(n) && n >= 1 && n <= choice.pageCount;
+  // The first page's size at this resolution (other pages may differ).
+  const width = Math.round((choice.firstPage.width * ppi) / 72);
+  const height = Math.round((choice.firstPage.height * ppi) / 72);
+  const tooLarge = Math.max(width, height) > MAX_DIMENSION;
+  return (
+    <DialogFrame
+      id="pdf-import-title"
+      title={t("Open PDF")}
+      onClose={onClose}
+      valid={valid}
+      error={valid ? null : t("Choose a page from 1 to {count}.", { count: choice.pageCount })}
+      onSubmit={() => {
+        void controller.openPdfPage(choice.bytes, choice.filename, n, ppi);
+        onClose();
+      }}
+    >
+      <label className={styles.field}>
+        <span className={styles.fieldLabel}>
+          {t("Page (of {count})", { count: choice.pageCount })}
+        </span>
+        <input
+          className={styles.input}
+          type="number"
+          min={1}
+          max={choice.pageCount}
+          value={page}
+          onChange={(e) => setPage(e.target.value)}
+        />
+      </label>
+      <label className={styles.field}>
+        <span className={styles.fieldLabel}>{t("Resolution")}</span>
+        <select
+          className={styles.select}
+          value={ppi}
+          onChange={(e) => setPpi(Number(e.target.value))}
+        >
+          {PDF_RESOLUTIONS.map((r) => (
+            <option key={r} value={r}>
+              {r} ppi
+            </option>
+          ))}
+        </select>
+      </label>
+      <p className={styles.muted}>
+        {tooLarge
+          ? t("Page 1 would be too large at this resolution; choose a lower one.")
+          : t("Page 1 opens at {width} × {height} px.", { width, height })}
+      </p>
+    </DialogFrame>
+  );
+}

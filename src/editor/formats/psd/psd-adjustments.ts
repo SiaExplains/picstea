@@ -12,6 +12,7 @@ import {
   getNumber,
   readUnicodeString,
   readVersionedDescriptor,
+  writeUnicodeString,
   writeVersionedDescriptor,
 } from "./descriptor";
 
@@ -386,13 +387,85 @@ export function encodeAdjustment(a: Adjustment): { key: string; data: Uint8Array
       row(a.red); // grey (monochrome)
       return { key: "mixr", data: w.toBytes() };
     }
-    case "temperature-tint":
-    case "black-white":
+    case "black-white": {
+      // Photoshop's default mix (ADR-0045); Picstea's Black & White has no colour sliders.
+      const num = (v: number) => ({ type: "long" as const, value: v });
+      writeVersionedDescriptor(w, {
+        classId: "null",
+        items: [
+          ["Rd  ", num(40)],
+          ["Yllw", num(60)],
+          ["Grn ", num(40)],
+          ["Cyn ", num(60)],
+          ["Bl  ", num(20)],
+          ["Mgnt", num(80)],
+          ["useTint", { type: "bool", value: false }],
+          [
+            "tintColor",
+            {
+              type: "Objc",
+              descriptor: {
+                classId: "RGBC",
+                items: [
+                  ["Rd  ", { type: "doub", value: 225 }],
+                  ["Grn ", { type: "doub", value: 211 }],
+                  ["Bl  ", { type: "doub", value: 179 }],
+                ],
+              },
+            },
+          ],
+          ["bwPresetKind", { type: "long", value: 1 }],
+        ],
+      });
+      return { key: "blwh", data: w.toBytes() };
+    }
     case "photo-filter":
-    case "gradient-map":
+      // Version 2: an RGB colour record (the importer and Photoshop both read it).
+      w.u16(2);
+      writeColor(w, a.color);
+      w.u32(Math.round(clampNumber(a.density, 1, 100))).u8(a.preserveLuminosity ? 1 : 0);
+      return { key: "phfl", data: w.toBytes() };
+    case "gradient-map": {
+      const stops = [...a.stops].sort((x, y) => x.position - y.position);
+      w.u16(1)
+        .u8(a.reverse ? 1 : 0)
+        .u8(0);
+      writeUnicodeString(w, "Custom");
+      w.u16(stops.length);
+      for (const stop of stops) {
+        w.u32(Math.round(clampNumber(stop.position, 0, 1) * 4096)).u32(50);
+        writeColor(w, stop.color);
+        w.u16(0);
+      }
+      // Transparency stops: fully opaque at both ends.
+      w.u16(2);
+      for (const location of [0, 4096]) w.u32(location).u32(50).u16(255);
+      // Expansion count, interpolation, length, mode, seed, showing transparency, vector
+      // colour, roughness, colour model, min and max colour (Photoshop's defaults).
+      w.u16(2).u16(4096).u16(32).u16(0).u32(0).u16(0).u16(0).u32(2048).u16(3);
+      for (let i = 0; i < 4; i++) w.u16(0);
+      for (let i = 0; i < 4; i++) w.u16(65535);
+      w.u16(0);
+      return { key: "grdm", data: w.toBytes() };
+    }
+    case "temperature-tint":
+      // Photoshop has no Temperature/Tint adjustment layer.
       return null;
   }
 }
+
+/** A PSD colour record: RGB space and three 16-bit values (plus an unused fourth). */
+function writeColor(w: ByteWriter, hex: string): void {
+  const n = Number.parseInt(hex.slice(1), 16);
+  w.u16(0)
+    .u16(((n >> 16) & 255) * 257)
+    .u16(((n >> 8) & 255) * 257)
+    .u16((n & 255) * 257)
+    .u16(0);
+}
+
+const clampNumber = (v: number, lo: number, hi: number) =>
+  Number.isFinite(v) ? Math.min(hi, Math.max(lo, v)) : lo;
 
 /** A PSD colour record (colour space + four 16-bit values); RGB only, else undefined. */
 function readColor(r: ByteReader): string | undefined {

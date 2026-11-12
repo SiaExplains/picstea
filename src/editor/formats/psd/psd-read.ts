@@ -96,12 +96,35 @@ function pascal(r: ByteReader, padTo: number): string {
   return name;
 }
 
-function readRecord(r: ByteReader): RawRecord {
+/** Block keys whose length is 64-bit in PSB files. */
+const LONG_KEYS = new Set([
+  "LMsk",
+  "Lr16",
+  "Lr32",
+  "Layr",
+  "Mt16",
+  "Mt32",
+  "Mtrn",
+  "Alph",
+  "FMsk",
+  "lnk2",
+  "FEid",
+  "FXid",
+  "PxSD",
+]);
+
+/** A tagged block's length: 64-bit for some keys in PSB files. */
+const blockLength = (r: ByteReader, key: string, psb: boolean) =>
+  psb && LONG_KEYS.has(key) ? r.u64() : r.u32();
+
+function readRecord(r: ByteReader, psb = false): RawRecord {
   const rect = readRect(r);
   const channelCount = r.u16();
   if (channelCount > 56) throw new FormatError("A layer has too many channels.");
   const channels: ChannelInfo[] = [];
-  for (let i = 0; i < channelCount; i++) channels.push({ id: r.i16(), length: r.u32() });
+  for (let i = 0; i < channelCount; i++) {
+    channels.push({ id: r.i16(), length: psb ? r.u64() : r.u32() });
+  }
   if (r.ascii(4) !== "8BIM") throw new FormatError("A layer record is damaged.");
   const blendKey = r.ascii(4);
   const opacity = r.u8();
@@ -132,7 +155,7 @@ function readRecord(r: ByteReader): RawRecord {
     const signature = extra.ascii(4);
     if (signature !== "8BIM" && signature !== "8B64") break;
     const key = extra.ascii(4);
-    const raw = extra.bytesView(Math.min(extra.u32(), extra.remaining));
+    const raw = extra.bytesView(Math.min(blockLength(extra, key, psb), extra.remaining));
     const body = new ByteReader(raw);
     if (EXTRA_KEYS.has(key) && !blocks.has(key)) blocks.set(key, raw.slice());
     switch (key) {
@@ -224,6 +247,7 @@ async function readChannel(
   width: number,
   height: number,
   out: Uint8Array,
+  psb = false,
 ): Promise<void> {
   const compression = r.u16();
   const size = width * height;
@@ -237,7 +261,8 @@ async function readChannel(
       return;
     case 1: {
       const counts: number[] = [];
-      for (let y = 0; y < height; y++) counts.push(r.u16());
+      // PSB stores each row's byte count in 4 bytes, PSD in 2.
+      for (let y = 0; y < height; y++) counts.push(psb ? r.u32() : r.u16());
       for (let y = 0; y < height; y++) unpackBits(r.bytesView(counts[y]), out, y * width, width);
       return;
     }
@@ -262,10 +287,10 @@ async function readChannel(
 function checkHeader(r: ByteReader) {
   if (r.ascii(4) !== "8BPS") throw new FormatError("This is not a Photoshop (PSD) file.");
   const version = r.u16();
-  if (version === 2) {
-    throw new FormatError("Large Document Format (PSB) files are not supported yet.");
+  // Version 2 is the Large Document Format (PSB): the same structure with wider lengths.
+  if (version !== 1 && version !== 2) {
+    throw new FormatError("This Photoshop file version is not supported.");
   }
-  if (version !== 1) throw new FormatError("This Photoshop file version is not supported.");
   r.skip(6);
   const channels = r.u16();
   const height = r.u32();
@@ -289,7 +314,7 @@ function checkHeader(r: ByteReader) {
       }),
     );
   }
-  return { channels, width, height, mode };
+  return { channels, width, height, mode, psb: version === 2 };
 }
 
 /** Grey or RGB channels into RGBA. */
@@ -368,15 +393,18 @@ async function readPsdFile(
   }
 
   // Layers.
-  const layerSection = r.sub(r.u32());
+  const psb = header.psb;
+  const layerSection = r.sub(psb ? r.u64() : r.u32());
   const nodes: PsdNode[] = [];
   if (layerSection.remaining >= 4) {
-    const info = layerSection.sub(Math.min(layerSection.u32(), layerSection.remaining));
+    const info = layerSection.sub(
+      Math.min(psb ? layerSection.u64() : layerSection.u32(), layerSection.remaining),
+    );
     if (info.remaining >= 2) {
       const count = Math.abs(info.i16());
       if (count > MAX_PSD_LAYERS) throw new FormatError("This file has too many layers.");
       const records: RawRecord[] = [];
-      for (let i = 0; i < count; i++) records.push(readRecord(info));
+      for (let i = 0; i < count; i++) records.push(readRecord(info, psb));
 
       const decoded: (PsdNode | Divider)[] = [];
       const ctx = { width: header.width, height: header.height, globalAngle };
@@ -394,11 +422,11 @@ async function readPsdFile(
             const mh = rectHeight(rec.mask.rect);
             spend(mw * mh);
             maskData = new Uint8Array(mw * mh);
-            await readChannel(data, mw, mh, maskData);
+            await readChannel(data, mw, mh, maskData, psb);
           } else if (channel.id >= -1 && channel.id <= 2) {
             spend(w * h);
             const plane = new Uint8Array(w * h);
-            await readChannel(data, w, h, plane);
+            await readChannel(data, w, h, plane, psb);
             planes.set(channel.id, plane);
           }
           // Other channels (real user masks -3, spot channels) are skipped by length.
@@ -456,7 +484,9 @@ async function readPsdFile(
       const signature = layerSection.ascii(4);
       if (signature !== "8BIM" && signature !== "8B64") break;
       const key = layerSection.ascii(4);
-      const body = layerSection.sub(Math.min(layerSection.u32(), layerSection.remaining));
+      const body = layerSection.sub(
+        Math.min(blockLength(layerSection, key, psb), layerSection.remaining),
+      );
       if (key === "lnk2" || key === "lnkD" || key === "lnk3") {
         try {
           linked = linked.concat(await readLinkedFiles(body, depth, budget, warnings));
@@ -479,7 +509,9 @@ async function readPsdFile(
     const ids = gray ? [0, -1] : [0, 1, 2, -1];
     if (compression === 1) {
       const counts: number[] = [];
-      for (let i = 0; i < header.channels * header.height; i++) counts.push(r.u16());
+      for (let i = 0; i < header.channels * header.height; i++) {
+        counts.push(psb ? r.u32() : r.u16());
+      }
       let row = 0;
       for (let c = 0; c < header.channels; c++) {
         const plane = new Uint8Array(count);

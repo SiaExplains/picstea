@@ -225,7 +225,7 @@ describe("adjustment blocks", () => {
 
   it("has no Photoshop block for Temperature/Tint and Black & White", () => {
     expect(encodeAdjustment({ type: "temperature-tint", temperature: 10, tint: 0 })).toBeNull();
-    expect(encodeAdjustment({ type: "black-white" })).toBeNull();
+    expect(encodeAdjustment({ type: "black-white" })?.key).toBe("blwh");
   });
 
   it("clamps out-of-range values from files", () => {

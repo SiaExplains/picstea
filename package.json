@@ -1,6 +1,6 @@
 {
   "name": "picstea",
-  "version": "0.49.0",
+  "version": "0.50.0",
   "private": true,
   "description": "Picstea — a local-first, browser-native image editor.",
   "scripts": {
@@ -61,6 +61,7 @@
     "fake-indexeddb": "^6.2.5",
     "jsdom": "^30.1.2",
     "libheif-js": "1.23.5",
+    "pdfjs-dist": "6.4.299",
     "prettier": "^3.9.9",
     "typescript": "^5",
     "vitest": "^4.1.11"
