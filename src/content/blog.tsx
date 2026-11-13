@@ -2246,6 +2246,203 @@ export const POSTS: readonly BlogPost[] = [
       </>
     ),
   },
+  {
+    slug: "straighten-document-photo-picstea-vs-photoshop-gimp",
+    title: "Straighten a document photo: Picstea vs Photoshop",
+    description:
+      "Turn a phone photo of a page taken at an angle into a flat, square-on document with Perspective Crop and Straighten, in Picstea, Photoshop and GIMP.",
+    published: "2026-11-13",
+    draft: false,
+    body: () => (
+      <>
+        <p>
+          To flatten a photo of a document that was taken at an angle, use a perspective crop: you
+          put four corners on the four corners of the page, and the editor stretches that area into
+          a rectangle. In Picstea that is the <strong>Perspective Crop</strong> tool (press C, then
+          Shift+C), and you finish with Enter. Photoshop has a tool with the same name that works
+          the same way. GIMP gets there with its Perspective transform tool. If the page is only
+          rotated, as a crooked scan is, the <strong>Straighten</strong> button in the Crop tool is
+          enough. Picstea runs in your browser, so the photo stays on your device and nothing is
+          uploaded.
+        </p>
+        <p>
+          The example is a signed two-page rental agreement. You photographed page one on a desk
+          with your phone, standing slightly to the left, so the page is a lopsided trapezoid with
+          the desk showing around it. Page two came out of a flatbed scanner a few degrees crooked.
+          The landlord wants both as tidy PDFs.
+        </p>
+        <h2>How do I flatten the angled photo in Picstea?</h2>
+        <ol>
+          <li>
+            Open <EditorLink>the Picstea editor</EditorLink> and drop the photo in, or choose{" "}
+            <strong>File → Open Image…</strong> (Cmd/Ctrl+O). iPhone HEIC photos open too.
+          </li>
+          <li>
+            Press C for the Crop tool, then Shift+C to switch to <strong>Perspective Crop</strong>.
+            Shift+C switches back again.
+          </li>
+          <li>Drag a rough box over the page.</li>
+          <li>
+            Drag each of the four corners onto a corner of the paper. Zoom in if the corners are
+            hard to see. Dragging inside the box moves all four at once.
+          </li>
+          <li>
+            Press Enter or click <strong>Apply crop</strong>. The area inside the four corners
+            becomes the new canvas, as a rectangle. Esc or <strong>Reset</strong> clears the box so
+            you can start again.
+          </li>
+        </ol>
+        <p>
+          The whole thing is one undo step, so Cmd/Ctrl+Z brings the original photo back. A corner
+          stops moving if dragging it further would fold the box over itself, because the four
+          corners have to stay a four-sided shape.
+        </p>
+        <p>
+          Perspective Crop changes the whole document, with every layer in it. Pixel layers are
+          redrawn, masks follow, and text and shape layers are turned into smart objects first so
+          the text can still be edited inside them. Guides are removed. For a single phone photo
+          none of that matters, but it does if you run the tool on a layered file.
+        </p>
+        <h2>Why does the page come out a little too wide or too tall?</h2>
+        <p>
+          Picstea works out the size of the result from the box you drew. The new width is the
+          average of the top and bottom edges, and the new height is the average of the left and
+          right edges. A photo taken from a steep angle shortens the page in one direction, so the
+          result can look slightly squashed next to the real sheet. The tool has no width and height
+          fields to force a paper size.
+        </p>
+        <p>
+          To correct it, open <strong>Image → Image Size…</strong>, untick{" "}
+          <strong>Constrain proportions</strong> and type a width and height in the ratio of the
+          paper. A4 is 210 × 297 mm, so 2100 × 2970 pixels has the right shape. You&apos;ll get a
+          closer result with less fixing if you take the photo from directly above the page.
+        </p>
+        <h2>What if the page is only crooked, like a scan?</h2>
+        <p>
+          Page two has no perspective problem. Its edges are parallel and it is just rotated, so it
+          needs the ordinary Crop tool:
+        </p>
+        <ol>
+          <li>Press C.</li>
+          <li>
+            Click <strong>Straighten</strong> in the options bar.
+          </li>
+          <li>
+            Drag along something that should be level or upright: a line of text, a table rule, or
+            the edge of the sheet.
+          </li>
+          <li>
+            Picstea rotates the canvas by that angle and fits the crop box inside the rotated
+            picture, so the empty corners are left out. Adjust the box if you like, then press
+            Enter.
+          </li>
+        </ol>
+        <p>
+          The line is matched to whichever axis is nearer, so a line drawn along the side of the
+          page straightens to vertical and one drawn along a row of text straightens to horizontal.
+          If you already know the angle, <strong>Image → Image Rotation → Arbitrary…</strong> takes
+          a number in steps of 0.1° with a choice of Clockwise or Counter-clockwise, and the canvas
+          grows to fit.
+        </p>
+        <p>
+          While you are in the Crop tool, the <strong>Ratio</strong> menu has Free, Original ratio,
+          1:1, 4:5, 5:4, 3:2, 2:3, 16:9, 9:16 and Custom ratio. Crop normally keeps the pixels
+          outside the new canvas, so a layer can be moved back into view later. Tick{" "}
+          <strong>Delete cropped pixels</strong> to remove them instead. The{" "}
+          <Link href="/docs/transform-warp-and-crop">transform, warp and crop documentation</Link>{" "}
+          covers each option.
+        </p>
+        <h2>How does Photoshop do it?</h2>
+        <p>
+          Almost identically. Adobe&apos;s help pages describe holding the Crop tool to pick the
+          Perspective Crop tool, drawing a marquee around the object, moving its corners to the
+          object&apos;s edges and pressing Enter or Return. For rotation, Photoshop&apos;s Crop tool
+          has a Straighten control in the options bar that you use by drawing a line along something
+          that should be level, and a Delete Cropped Pixels checkbox that works the way
+          Picstea&apos;s does.
+        </p>
+        <p>
+          The difference is in how you get the editor. Adobe sells Photoshop only as a Creative
+          Cloud subscription, while Picstea is free, runs in a browser tab and needs no account. If
+          you already pay for Photoshop, use it for this; one crooked contract isn&apos;t much of a
+          reason to subscribe if you don&apos;t. There is a longer comparison on the{" "}
+          <Link href="/photoshop-alternative">Photoshop alternative page</Link>.
+        </p>
+        <h2>How does GIMP do it?</h2>
+        <p>
+          GIMP is free and open source, and you install it on your computer. It splits the job
+          across two tools in a different way.
+        </p>
+        <ul>
+          <li>
+            For rotation, the Measure tool (<strong>Tools → Measure</strong>) has a{" "}
+            <strong>Straighten</strong> button. You drag a measuring line along the crooked edge and
+            click the button. In its default Auto mode it snaps to the smaller angle to vertical or
+            horizontal, which is the same nearest-axis behaviour as Picstea&apos;s.
+          </li>
+          <li>
+            For perspective, the Perspective tool (
+            <strong>Tools → Transform Tools → Perspective</strong>, Shift+P) is a transform tool.
+            Its options include a <strong>Direction</strong> setting,{" "}
+            <strong>Corrective (Backward)</strong>, which the GIMP manual says is for repairing
+            images with geometric errors, and a <strong>Clipping</strong> setting,{" "}
+            <strong>Crop to result</strong>, which leaves out the transparent corners the transform
+            creates.
+          </li>
+        </ul>
+        <p>
+          Both routes work. GIMP gives you more settings to choose, and Picstea asks for four corner
+          drags and Enter. The <Link href="/gimp-alternative">GIMP alternative page</Link> compares
+          the two editors more widely.
+        </p>
+        <h2>How do I clean up the page and save it as a PDF?</h2>
+        <p>
+          A photographed page is usually grey where it should be white. Choose{" "}
+          <strong>Layer → New Adjustment Layer → Levels</strong> and drag the white input left until
+          the paper turns white, then bring the black input right until the text is solid. The{" "}
+          <Link href="/blog/levels-and-curves-explained">Levels and Curves post</Link> explains what
+          each slider does. <strong>Image → Auto Contrast</strong> is the one-click version.
+        </p>
+        <p>
+          Then choose <strong>File → Export As…</strong> and pick <strong>PDF</strong>. It saves one
+          page at the document&apos;s resolution, without lossy compression. Each document exports
+          as its own PDF, so the two pages of the agreement become two files. Pick{" "}
+          <strong>JPEG</strong> if the landlord would rather have a small image. The{" "}
+          <Link href="/docs/file-formats">file formats documentation</Link> lists what every export
+          format keeps.
+        </p>
+        <h2>Questions people ask</h2>
+        <h3>Can I use Edit → Transform → Perspective for this?</h3>
+        <p>
+          You can, but it is the wrong tool for a whole photo. The commands in{" "}
+          <strong>Edit → Transform</strong> (Skew, Distort, Perspective and Warp) reshape one layer
+          and leave the canvas alone, so you would still have to crop afterwards. They are meant for
+          fitting a layer onto something in the picture, such as a screenshot onto a laptop screen.
+        </p>
+        <h3>Does straightening make the picture smaller?</h3>
+        <p>
+          A little. After rotating, the crop box is fitted inside the rotated picture so that no
+          empty corners show, and the wider the angle, the more of the edges it trims. You can drag
+          the box out again before pressing Enter if you would rather keep the edges and the empty
+          corners with them.
+        </p>
+        <h3>Can I fix several photographed pages in one go?</h3>
+        <p>
+          No. The four corners sit in a different place on every photo, so each page is opened and
+          corrected by hand.
+        </p>
+        <h3>Is the document uploaded anywhere?</h3>
+        <p>
+          No. Picstea opens, corrects and exports the file in your browser and has no server for
+          images, so a contract or an ID stays on your device.
+        </p>
+        <p>
+          <EditorLink>Open Picstea</EditorLink>, drop in a photo of a page, press C and then
+          Shift+C, and put the four corners on the paper.
+        </p>
+      </>
+    ),
+  },
 ];
 
 const showDrafts = process.env.NODE_ENV !== "production";

@@ -3,6 +3,14 @@
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.50.1] — 2026-11-13
+
+### Added
+
+- Blog post **Straighten a document photo: Picstea vs Photoshop**: flattening a page photographed
+  at an angle with Perspective Crop, levelling a crooked scan with Straighten, how Photoshop and
+  GIMP do the same job, and exporting the result as a PDF.
+
 ## [0.50.0] — 2026-11-12
 
 ### Added

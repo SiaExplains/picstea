@@ -54,6 +54,7 @@ export const POST_SLUGS: Readonly<Record<string, "draft" | "published">> = {
   "make-a-gradient-background-for-a-banner": "published",
   "blur-gallery-tilt-shift-iris-path-spin-blur": "published",
   "pixelate-or-black-out-private-info-in-screenshots": "published",
+  "straighten-document-photo-picstea-vs-photoshop-gimp": "published",
 };
 
 /** Author pages (`/authors/<slug>`); a unit test keeps this in sync with `authors.ts`. */
