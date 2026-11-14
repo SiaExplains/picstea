@@ -3,6 +3,14 @@
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.50.2] — 2026-11-14
+
+### Added
+
+- Blog post **Put a logo on a mug photo with Warp**: making a mug mockup by placing a logo as a
+  smart object, bending it with Edit → Transform → Warp and Perspective, blending it in with
+  Multiply, Blend If and a mask, and swapping the design through Edit Contents.
+
 ## [0.50.1] — 2026-11-13
 
 ### Added
