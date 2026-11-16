@@ -2443,6 +2443,190 @@ export const POSTS: readonly BlogPost[] = [
       </>
     ),
   },
+  {
+    slug: "put-a-logo-on-a-mug-with-warp",
+    title: "Put a logo on a mug photo with Warp",
+    description:
+      "Make a mug mockup in your browser: place a logo as a smart object, bend it with Edit → Transform → Warp, blend it into the glaze and swap the design later.",
+    published: "2026-11-14",
+    draft: false,
+    body: () => (
+      <>
+        <p>
+          To put a flat logo onto a curved mug in a photo, place the logo as a smart object, then
+          bend it with <strong>Edit → Transform → Warp</strong> so its top and bottom edges follow
+          the rim and the base. Set the layer&apos;s blend mode to <strong>Multiply</strong> so the
+          mug&apos;s shading shows through, and paint a mask where the handle or a hand covers the
+          print. Because the logo is a smart object, the warp stays editable and you can replace the
+          design later without bending it again. Picstea does all of this in your browser; the photo
+          and the logo stay on your device and nothing is uploaded.
+        </p>
+        <p>
+          The example: you sell printed mugs and have one good photo of a plain white mug, shot from
+          a little above, with the handle on the right. You want to show three customer logos on it
+          without a reshoot.
+        </p>
+        <h2>How do I add the logo so it can be bent without losing quality?</h2>
+        <ol>
+          <li>
+            Open the mug photo in the <EditorLink>editor</EditorLink> with{" "}
+            <strong>File → Open Image…</strong>, or drop it onto the page.
+          </li>
+          <li>
+            Choose <strong>File → Place → Place Embedded…</strong> and pick the logo. PNG, JPEG,
+            WebP, SVG, PSD (with its layers), TIFF, PDF (the first page) and <code>.picstea</code>{" "}
+            projects all work. The logo arrives as a smart object, at its own size, in the middle of
+            the canvas.
+          </li>
+          <li>
+            Press <strong>Cmd/Ctrl+T</strong> (Free Transform) and scale it down to the width of the
+            print area. Press Enter.
+          </li>
+        </ol>
+        <p>
+          A smart object keeps the original logo inside it and is redrawn from that original at
+          whatever size and shape it ends up, so scaling and warping several times doesn&apos;t blur
+          it. <strong>File → Place → Place Image as Layer…</strong> would give you a plain pixel
+          layer instead, and on a pixel layer a warp is baked into the pixels as soon as you press
+          Enter. The <Link href="/blog/smart-objects-explained">smart objects post</Link> covers the
+          idea in more depth.
+        </p>
+        <h2>How do I bend the logo around the mug?</h2>
+        <p>
+          With the logo layer selected, choose <strong>Edit → Transform → Warp</strong>. A 4 × 4
+          grid appears over the layer, and the options bar shows a <strong>Warp</strong> menu, three
+          number fields (<strong>Bend</strong>, <strong>H</strong> and <strong>V</strong>, each from
+          −100 to 100 %) and <strong>Apply</strong> and <strong>Cancel</strong> buttons.
+        </p>
+        <p>
+          The menu lists Custom and 13 styles: Arc, Arc Lower, Arc Upper, Arch, Bulge, Flag, Wave,
+          Fish, Rise, Fisheye, Inflate, Squeeze and Twist. On a mug seen from slightly above, the
+          rim and the base both look like shallow smiles, so the print has to curve down in the
+          middle. Two good starting points:
+        </p>
+        <ul>
+          <li>
+            <strong>Arch</strong> moves the whole logo up or down in the middle by the same amount,
+            top and bottom together. Choose it and type a negative <strong>Bend</strong>, such as
+            −15 %, to make the middle dip.
+          </li>
+          <li>
+            <strong>Arc Lower</strong> bends only the bottom edge, which helps when the photo was
+            taken closer to eye level and the top of the print is nearly straight.
+          </li>
+        </ul>
+        <p>
+          <strong>H</strong> and <strong>V</strong> add horizontal and vertical distortion on top of
+          the style. Small values are usually enough. Then compare the curve of the logo with the
+          curve of the rim. If they don&apos;t quite match, drag any of the grid&apos;s 16 points.
+          As soon as you move one by hand the menu switches to <strong>Custom</strong>, and the
+          number fields are disabled because the grid no longer comes from a preset. Pulling the two
+          outer columns of points slightly inwards makes the logo look as if it turns away from you
+          at the sides of the mug.
+        </p>
+        <p>
+          Press Enter or click <strong>Apply</strong>. Esc cancels. The whole warp is one undo step.
+        </p>
+        <h2>What if the mug is photographed at an angle?</h2>
+        <p>
+          If the mug leans or the camera was off to one side, fix the perspective first and warp
+          second. Choose <strong>Edit → Transform → Perspective</strong> and drag a corner: its
+          partner on the same edge moves the opposite way, so the logo leans away from you. Press
+          Enter. When you then choose <strong>Edit → Transform → Warp</strong> on the same smart
+          object, the grid starts from that perspective shape and you bend from there.
+        </p>
+        <p>
+          <strong>Edit → Transform → Distort</strong> lets you move each corner freely. It is the
+          right tool for flat surfaces in the same shoot, such as a card leaning against the mug or
+          a price sign. <strong>Skew</strong> slants the layer along one edge. The{" "}
+          <Link href="/docs/transform-warp-and-crop">transform, warp and crop docs</Link> list what
+          each command does.
+        </p>
+        <h2>How do I make the print look like part of the mug?</h2>
+        <p>A freshly warped logo still sits on top of the photo like a sticker. To fix that:</p>
+        <ol>
+          <li>
+            In the Layers panel, set the logo layer to <strong>Multiply</strong>. White parts of the
+            logo disappear and the mug&apos;s shading darkens the print where the mug curves away
+            from the light. For a logo on a dark mug, try <strong>Screen</strong> instead.
+          </li>
+          <li>
+            A glazed mug usually has a bright streak that should sit on top of the print. Choose{" "}
+            <strong>Layer → Layer Style → Blending Options…</strong> and use{" "}
+            <strong>Blend If</strong>: Alt-drag the white thumb of the{" "}
+            <strong>Underlying Layer</strong> slider to split it, so the brightest parts of the
+            photo show through the logo with a soft edge. The{" "}
+            <Link href="/blog/layer-styles-blend-if-and-the-image-menu">Blend If post</Link>{" "}
+            explains the sliders.
+          </li>
+          <li>
+            If the handle or a hand overlaps the print, choose{" "}
+            <strong>Layer → Raster Mask → Add Layer Mask</strong> and paint black on the mask with
+            the Brush where the logo should be hidden. The mask is linked to the layer, so it moves
+            with it.
+          </li>
+        </ol>
+        <p>
+          If the print still looks too crisp next to a slightly soft photo, lower the layer&apos;s
+          opacity a little, to around 90 %.
+        </p>
+        <h2>How do I swap in the next customer&apos;s logo?</h2>
+        <p>
+          Double-click the smart object&apos;s thumbnail in the Layers panel, or choose{" "}
+          <strong>Layer → Smart Object → Edit Contents</strong>. The logo opens in its own tab.
+          Delete the old logo there, place the new one, and save with Cmd/Ctrl+S or close the tab.
+          Back in the mug photo, the new logo comes out with the same warp, blend mode, Blend If
+          settings and mask. Then choose <strong>File → Export As…</strong> and pick{" "}
+          <strong>JPEG</strong> or <strong>WebP</strong> for the shop listing, and repeat for the
+          third logo.
+        </p>
+        <p>
+          Size the new logo to fill about the same area of the contents tab as the old one did. The
+          warp bends the whole contents box, so a small logo in a corner of it ends up in the wrong
+          place on the mug.
+        </p>
+        <h2>How does this compare with Photoshop?</h2>
+        <p>
+          Photoshop has the same command at <strong>Edit → Transform → Warp</strong>, with preset
+          styles and a custom grid, and a warp on a smart object stays editable there too. It also
+          has a <strong>Cylinder</strong> warp preset, added in Photoshop 23.4, which is made for
+          labels on bottles, cans and mugs. Picstea has no Cylinder preset, so you build the curve
+          from Arch or Arc Lower and finish it by dragging points. Picstea&apos;s warp styles are
+          close to Photoshop&apos;s but not identical. Photoshop is a paid subscription that you
+          install; the <Link href="/photoshop-alternative">Photoshop alternative page</Link>{" "}
+          compares the two in more detail.
+        </p>
+        <h2>Questions people ask</h2>
+        <h3>Can I warp text without turning it into pixels?</h3>
+        <p>
+          Yes. When you choose Warp on a text layer, Picstea turns it into a smart object first. The
+          text is still inside and you can edit it with Layer → Smart Object → Edit Contents.
+        </p>
+        <h3>Can I go back and change the warp later?</h3>
+        <p>
+          On a smart object, yes: choose Edit → Transform → Warp again and the grid comes back as
+          you left it, with the points ready to drag. The style and the Bend, H and V values
+          aren&apos;t stored, so a saved warp always reopens as Custom. On a pixel layer the warp is
+          final once you press Enter, apart from undo.
+        </p>
+        <h3>Will the warp survive if I save as PSD?</h3>
+        <p>
+          Picstea writes smart objects with their warp or perspective into PSD files, and PSDs from
+          Photoshop with warped or perspective smart objects open with the effect kept and editable.
+          The <Link href="/docs/file-formats">file formats docs</Link> list what else a PSD keeps.
+        </p>
+        <h3>Why is the Move tool frame a rectangle after warping?</h3>
+        <p>
+          A distorted smart object&apos;s Move-tool frame is still its undistorted box. It&apos;s a
+          known limitation, and the warped logo itself is drawn correctly.
+        </p>
+        <p>
+          <EditorLink>Open Picstea</EditorLink>, drop in a product photo and choose File → Place →
+          Place Embedded… to start your first mockup.
+        </p>
+      </>
+    ),
+  },
 ];
 
 const showDrafts = process.env.NODE_ENV !== "production";
