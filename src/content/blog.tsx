@@ -2810,6 +2810,197 @@ export const POSTS: readonly BlogPost[] = [
       </>
     ),
   },
+  {
+    slug: "fix-red-eye-and-flash-photos-online",
+    title: "Fix red eye and flash problems in a photo",
+    description:
+      "Remove red eye, flash dust spots, a colour cast and dark corners from a flash photo in Picstea, with the tools and menu paths to use and what each one can't do.",
+    published: "2026-11-16",
+    draft: false,
+    body: () => (
+      <>
+        <p>
+          To fix red eye in Picstea, pick the <strong>Red Eye</strong> tool (it shares a toolbar
+          slot with the healing brushes, shortcut J), set <strong>Pupil size</strong> a little
+          larger than the pupil and click or paint over each red pupil. Only strongly red pixels
+          change, so the iris and eyelid stay as they were. A flash photo usually has other problems
+          too: bright dust specks lit by the flash, an orange or blue cast where flash meets room
+          light, and dark corners. Picstea has a tool for each of these, and the photo stays on your
+          device the whole time; nothing is uploaded.
+        </p>
+        <p>
+          The example here is a phone photo from a birthday dinner, taken with the flash on: two
+          people with red pupils, a few white specks floating in front of the dark wall behind them,
+          warm orange light from the ceiling lamps, and a frame that gets darker towards the
+          corners.
+        </p>
+        <h2>Before you start: keep a clean copy</h2>
+        <ol>
+          <li>
+            Open <EditorLink>the Picstea editor</EditorLink> and drop the photo onto it, or choose{" "}
+            <strong>File → Open Image…</strong>.
+          </li>
+          <li>
+            Choose <strong>Layer → Duplicate Layer</strong> (Cmd/Ctrl+J). You&apos;ll retouch the
+            copy, and you can hide it at any time to compare with the original underneath.
+          </li>
+        </ol>
+        <p>
+          The Red Eye tool and the Spot Healing Brush paint on pixel layers. If you click with them
+          on a text layer, a shape or a smart object, Picstea says the tool works on pixel layers
+          and nothing changes. Do the retouching before you turn anything into a smart object.
+        </p>
+        <h2>How do I remove red eye?</h2>
+        <ol>
+          <li>
+            Press J to get the healing tool group, then Shift+J until the <strong>Red Eye</strong>{" "}
+            icon shows. You can also right-click or hold the healing icon in the toolbar and pick it
+            from the flyout.
+          </li>
+          <li>
+            In the options bar, set <strong>Pupil size</strong>. It is the brush diameter in
+            document pixels (2 to 500 px, default 30). Zoom in and make it a bit bigger than the red
+            area.
+          </li>
+          <li>
+            Set <strong>Darken</strong> (0 to 100%, default 50%). Higher values give a darker pupil.
+            Around 50% looks natural on most faces; push it up if the pupils still look grey.
+          </li>
+          <li>Click on each red pupil, or paint over it if one click doesn&apos;t cover it.</li>
+        </ol>
+        <p>
+          Under the brush, a pixel only changes when its red value is at least 60 and at least 1.5
+          times the average of its green and blue. Those pixels lose their red and get darker. Skin
+          and lips are usually not red enough to pass that test, so a slightly sloppy stroke
+          doesn&apos;t paint the face grey. Each click or stroke is one step in{" "}
+          <strong>History</strong>, so Cmd/Ctrl+Z takes back just that eye.
+        </p>
+        <p>
+          The tool only removes red, though. Pets often reflect a flash as green, yellow or white
+          eye shine, and the Red Eye tool leaves those colours alone. For a pet, paint the pupil
+          with the <strong>Brush</strong> on a new layer in a dark colour, or darken it with{" "}
+          <strong>Burn</strong>. Photoshop Elements has a separate <strong>Pet Eye</strong> option
+          for this; Picstea does not.
+        </p>
+        <h2>How do I clean up flash dust specks?</h2>
+        <p>
+          The flash lights up dust and tiny drops close to the lens, and they show as soft white
+          dots on a dark background. Each one is small and sits on plain wall or fabric, the case
+          the <strong>Spot Healing Brush</strong> handles best.
+        </p>
+        <ol>
+          <li>
+            Press Shift+J until the <strong>Spot Healing Brush</strong> is active (or pick it from
+            the healing flyout).
+          </li>
+          <li>
+            Set <strong>Size</strong> slightly larger than a speck and leave{" "}
+            <strong>Hardness</strong> around the default 50% so the edge blends.
+          </li>
+          <li>Click each speck, or drag over a short run of them.</li>
+        </ol>
+        <p>
+          You don&apos;t Alt-click a source first. When you press the mouse button, Picstea looks at
+          eight patches around the spot, one and a half brush widths away in each direction, and
+          compares each with the ring of pixels right around the speck. The patch whose average
+          colour matches that ring best becomes the source, and the healing pass then matches its
+          tone to the surroundings. That works well for a speck on a plain wall. Near an edge, such
+          as a speck on someone&apos;s shoulder against the wall, a patch from the wrong side can
+          win; switch to the <strong>Healing Brush</strong> and Alt-click a clean spot yourself.
+          There is no content-aware fill for larger objects yet.
+        </p>
+        <h2>How do I fix the orange colour cast?</h2>
+        <p>
+          Choose <strong>Image → Auto Color</strong>. Picstea reads the histogram of the whole
+          image, stretches each colour channel, then sets each channel&apos;s midtone so the average
+          colour comes out neutral grey. It ignores the darkest and lightest 0.1% of pixels so a few
+          specular highlights from the flash don&apos;t throw it off.
+        </p>
+        <p>
+          The result is added as a <strong>Levels</strong> adjustment layer named &quot;Auto
+          Color&quot;, so nothing is baked in. If it overcorrects and the faces look cold, lower the
+          layer&apos;s opacity in the Layers panel, or select the layer and fine-tune the red, green
+          and blue channels in the Properties panel. If the image already uses the full range,
+          Picstea tells you so and adds nothing. For a deliberate warm-to-cool shift instead of a
+          neutral one, a <strong>Temperature/Tint</strong> adjustment layer from{" "}
+          <strong>Layer → New Adjustment Layer</strong> gives you a slider.
+        </p>
+        <h2>How do I brighten dark corners?</h2>
+        <p>
+          Phone lenses and small flashes both darken the edges of the frame. The fix is in{" "}
+          <strong>Filter → Lens Correction…</strong>, and it is worth applying it as a smart filter
+          so you can come back to it.
+        </p>
+        <ol>
+          <li>
+            Select the retouched layer and choose{" "}
+            <strong>Layer → Smart Object → Convert to Smart Object</strong>.
+          </li>
+          <li>
+            Choose <strong>Filter → Lens Correction…</strong>. Move <strong>Vignette amount</strong>{" "}
+            to the right (up to 100) to lighten the corners; values to the left darken them instead.
+          </li>
+          <li>
+            Use <strong>Vignette midpoint</strong> (0 to 100, default 50) to set how far in from the
+            edge the correction reaches. Lower values start it closer to the centre.
+          </li>
+        </ol>
+        <p>
+          The same dialog has <strong>Remove distortion</strong> for the bulge a wide phone lens
+          gives to faces near the edge of the frame, and <strong>Fix red/cyan fringe</strong> and{" "}
+          <strong>Fix blue/yellow fringe</strong> for coloured edges along high-contrast lines.
+          Because the layer is a smart object, the filter is listed in the Properties panel, where
+          you can click its name to change the settings later, hide it or delete it.
+        </p>
+        <h2>How does this compare with Photoshop Elements?</h2>
+        <p>
+          Photoshop Elements uses an Eye tool with <strong>Pupil Radius</strong> and{" "}
+          <strong>Darken Amount</strong> settings, an Auto Correct button, a Pet Eye check box, and
+          an option to fix red eye automatically when photos are imported. Its Spot Healing Brush
+          has Proximity Match, Create Texture and Content-Aware types. Picstea&apos;s Red Eye tool
+          has the two manual settings only, with no automatic eye detection and no pet mode, and its
+          Spot Healing Brush has one mode that picks a nearby patch. Picstea runs in a browser tab
+          and needs no install. If you are weighing it against Adobe&apos;s full editor, the{" "}
+          <Link href="/photoshop-alternative">Photoshop alternative</Link> page lists what is and
+          isn&apos;t there.
+        </p>
+        <h2>Saving the result</h2>
+        <p>
+          Choose <strong>File → Export As…</strong> and pick JPEG for sharing the photo. If you want
+          to come back to the layers, the Levels adjustment and the smart filter later, also save
+          the file with <strong>File → Save Project As…</strong>. The{" "}
+          <Link href="/docs/retouching">Retouching</Link> docs cover the other brushes, and{" "}
+          <Link href="/docs/smart-objects-and-smart-filters">Smart objects and smart filters</Link>{" "}
+          explains how smart filters behave.
+        </p>
+        <h2>Questions people ask</h2>
+        <h3>Does the Red Eye tool find eyes automatically?</h3>
+        <p>
+          No. You click or paint over each pupil yourself. The tool decides which pixels under the
+          brush are red enough to change, but it doesn&apos;t look for faces or eyes.
+        </p>
+        <h3>Why didn&apos;t the Red Eye tool change my dog&apos;s eyes?</h3>
+        <p>
+          Animal eye shine is often green, yellow or white, and the tool only changes strongly red
+          pixels. Darken the pupil with Burn, or paint it on a new layer with the Brush.
+        </p>
+        <h3>Can I use these tools on a smart object or a text layer?</h3>
+        <p>
+          The Red Eye tool and the Spot Healing Brush work on pixel layers only. Rasterize the layer
+          first with <strong>Layer → Rasterize Layer</strong>, or do the retouching before you
+          convert the photo to a smart object.
+        </p>
+        <h3>Is the photo uploaded anywhere?</h3>
+        <p>
+          No. The tools, Auto Color and the filters all run in your browser, and Picstea has no
+          server that receives images.
+        </p>
+        <p>
+          <EditorLink>Open Picstea</EditorLink> and drop in a flash photo to try it.
+        </p>
+      </>
+    ),
+  },
 ];
 
 const showDrafts = process.env.NODE_ENV !== "production";

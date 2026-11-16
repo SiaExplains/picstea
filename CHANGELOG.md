@@ -3,6 +3,14 @@
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.50.4] — 2026-11-16
+
+### Added
+
+- Blog post **Fix red eye and flash problems in a photo**: the Red Eye tool, the Spot Healing
+  Brush for flash dust specks, Image → Auto Color for a colour cast, and Lens Correction as a smart
+  filter for dark corners, with a short comparison to Photoshop Elements.
+
 ## [0.50.3] — 2026-11-16
 
 ### Added
