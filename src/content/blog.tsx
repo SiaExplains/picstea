@@ -2627,6 +2627,189 @@ export const POSTS: readonly BlogPost[] = [
       </>
     ),
   },
+  {
+    slug: "open-tiff-pdf-and-psb-files-in-your-browser",
+    title: "Open TIFF, PDF and PSB files in your browser",
+    description:
+      "How Picstea opens TIFF files with their Photoshop layers, turns a PDF page into an image at the resolution you pick, and reads PSB files, all on your device.",
+    published: "2026-11-16",
+    draft: false,
+    body: () => (
+      <>
+        <p>
+          You can open a TIFF, a PDF or a PSB file in Picstea the same way you open a JPEG: choose{" "}
+          <strong>File → Open Image…</strong> (Cmd/Ctrl+O) or drop the file on the editor. A TIFF
+          opens as an image, and a layered TIFF saved by Photoshop opens with its layers. A PDF page
+          opens as a picture, and if the PDF has several pages Picstea asks which page and at what
+          resolution. A PSB opens like a PSD, as long as it fits Picstea&apos;s size limit.
+          Everything is read in your browser, so the files stay on your device and nothing is
+          uploaded.
+        </p>
+        <p>
+          Say a printer has sent back the files for a café&apos;s new menu: a product photo saved as
+          a layered TIFF from Photoshop, a four-page PDF proof of the printed menu, and a PSB of the
+          poster artwork. You want to fix the photo, pull page three of the proof out as an image
+          for Instagram, and check the poster&apos;s layers.
+        </p>
+        <h2>How do I open a layered TIFF from Photoshop?</h2>
+        <ol>
+          <li>
+            Open <EditorLink>the Picstea editor</EditorLink> and choose{" "}
+            <strong>File → Open Image…</strong>, or drag the <code>.tif</code> file onto the window.
+          </li>
+          <li>
+            If Photoshop saved the layers inside the TIFF, Picstea hands that layer data to its PSD
+            reader, so its layers, groups, masks and blend modes are read the same way as in a PSD.
+            Anything that can&apos;t be kept is listed when the file opens.
+          </li>
+          <li>
+            If the TIFF has no layers, or its layer data is damaged, the flattened image opens as a
+            single layer on a transparent canvas. The resolution stored in the file (its ppi) is
+            kept.
+          </li>
+        </ol>
+        <p>
+          Picstea decodes TIFF itself in a background worker. It reads 1, 8 and 16-bit grey, RGB and
+          palette images, with or without transparency, in strips or tiles, uncompressed or
+          compressed with LZW, ZIP (Deflate), PackBits or JPEG. A 16-bit TIFF opens as 8 bits per
+          channel, because Picstea documents are 8-bit RGB. A TIFF with several images opens the
+          first one.
+        </p>
+        <p>
+          Some TIFFs are refused with a message that says why: CMYK TIFFs (save them as RGB first),
+          floating-point TIFFs, TIFFs with separate colour planes, and BigTIFF files. Camera RAW
+          files such as DNG, CR2, NEF and ARW are built on the TIFF format, and Picstea recognises
+          them and says they can&apos;t be opened yet, so export the photo as JPEG or TIFF from your
+          camera software first.
+        </p>
+        <h2>How do I turn one page of a PDF into an image?</h2>
+        <ol>
+          <li>
+            Choose <strong>File → Open Image…</strong> and pick the PDF, or drop it on the editor.
+          </li>
+          <li>
+            For a PDF with more than one page, the <strong>Open PDF</strong> dialog appears. Type
+            the page number in <strong>Page (of 4)</strong>; the number in brackets is the
+            file&apos;s page count.
+          </li>
+          <li>
+            Pick a <strong>Resolution</strong>: 72, 96, 150, 200 or 300 ppi. 150 is the default.
+            Under the fields the dialog shows how large page 1 will be in pixels at that resolution,
+            for example &quot;Page 1 opens at 1240 × 1754 px&quot; for an A4 page at 150 ppi.
+          </li>
+          <li>
+            Click <strong>OK</strong>. The page opens as a new document with one pixel layer.
+          </li>
+        </ol>
+        <p>
+          A one-page PDF skips the dialog and opens at 150 ppi. For the Instagram post, 150 ppi is
+          plenty, and you can crop the page to 4:5 with the Crop tool&apos;s <strong>Ratio</strong>{" "}
+          menu, then save it with <strong>File → Export As…</strong> (Cmd/Ctrl+Shift+E) as JPEG.
+          Choose 300 ppi to zoom into small text or print the page.
+        </p>
+        <p>
+          Text and vector drawings in the PDF become pixels at the resolution you chose, which is
+          why that choice matters. If a page would be larger than 12,000 pixels on a side or 36
+          megapixels at the chosen resolution, Picstea tells you and asks for a lower one. A PDF
+          that is protected with a password has to have the password removed before Picstea can open
+          it.
+        </p>
+        <h2>Where does the PDF reader come from?</h2>
+        <p>
+          Picstea uses PDF.js, the open-source PDF reader from Mozilla, served from Picstea&apos;s
+          own site. It is downloaded only the first time you open a PDF, runs on your device, and is
+          kept for offline use after that. It is set up so that it never fetches anything a PDF file
+          points to on the internet. The{" "}
+          <Link href="/docs/privacy-and-storage">privacy and storage page</Link> explains what the
+          browser keeps.
+        </p>
+        <h2>Can I open a PSB file?</h2>
+        <p>
+          Yes. PSB is Photoshop&apos;s Large Document Format, the variant of PSD made for very big
+          files, and Picstea reads it with the same reader it uses for PSD. Layers, groups, masks,
+          editable text, adjustment layers, layer styles and smart objects come through the same
+          way. The{" "}
+          <Link href="/blog/open-psd-files-with-editable-text-and-adjustments">
+            post on opening PSDs with editable text and adjustments
+          </Link>{" "}
+          goes through what is kept.
+        </p>
+        <p>
+          Picstea documents can be at most 12,000 pixels on a side and 36 megapixels in total, and
+          many PSB files are larger than that, because size is the reason people save as PSB. A PSB
+          above the limit is refused with a message that names the limit. A PSB that fits opens
+          normally. When you export it again, choose <strong>PSD</strong> in{" "}
+          <strong>File → Export As…</strong>; Picstea writes PSD and does not write PSB.
+        </p>
+        <h2>Can I place a TIFF or PDF into another design?</h2>
+        <p>
+          Yes. <strong>File → Place Image as Layer…</strong> adds a TIFF or a PDF to the open
+          document as a pixel layer, and <strong>File → Place Embedded…</strong> adds it as a smart
+          object. Pasting a copied file while a document is open places it as a layer too (dropping
+          a file always opens it as a new document). Placing and pasting use page 1 of a PDF at 150
+          ppi, so to place another page, open that page as its own document first and copy it
+          across.
+        </p>
+        <p>
+          So you can open the poster PSB, place the product photo from the TIFF as a smart object,
+          and scale it without losing quality, because smart objects are redrawn from their source.
+          The <Link href="/blog/smart-objects-explained">smart objects post</Link> covers how that
+          works.
+        </p>
+        <h2>How do I convert TIFF or PDF files to JPEG or PNG in bulk?</h2>
+        <p>
+          <strong>File → Convert…</strong> turns files into PNG, JPEG or WebP without opening them
+          as documents. Pick up to 200 files, choose a format under <strong>Convert to</strong> (and
+          a <strong>Quality</strong> for JPEG and WebP), and click <strong>Convert</strong>. One
+          file is saved directly; several are saved together as a ZIP. TIFFs are converted from
+          their flattened image and PDFs from page 1 at 150 ppi. Nothing is uploaded or kept in the
+          browser. The <Link href="/docs/file-formats">file formats documentation</Link> lists every
+          format Picstea opens and exports.
+        </p>
+        <h2>How do GIMP and Photopea handle these formats?</h2>
+        <p>
+          GIMP has an <strong>Import from PDF</strong> dialog that can bring in several pages at
+          once, either as separate images or as layers of one image, with width, height and
+          resolution fields that stay linked. If you need every page of a PDF at once, that is
+          quicker than opening pages one at a time in Picstea. GIMP is a desktop install; the{" "}
+          <Link href="/gimp-alternative">GIMP alternative page</Link> compares the two in more
+          detail.
+        </p>
+        <p>
+          Photopea is another browser editor. Its home page lists TIFF and PDF among the formats it
+          opens, and its documentation says it does not upload your files. The{" "}
+          <Link href="/photopea-alternative">Photopea alternative page</Link> compares it with
+          Picstea feature by feature.
+        </p>
+        <h2>Questions people ask</h2>
+        <h3>Why does my TIFF open without its layers?</h3>
+        <p>
+          Only TIFFs that Photoshop saved with layers carry layer data. Other TIFFs hold one
+          flattened image. If a Photoshop TIFF&apos;s layer data is damaged, Picstea opens the
+          flattened image instead of failing.
+        </p>
+        <h3>Can I edit the text in a PDF?</h3>
+        <p>
+          No. A PDF page opens as a picture, so its text becomes pixels. You can paint over it,
+          clone over it or add new text layers on top, but the original words can&apos;t be retyped.
+        </p>
+        <h3>Can Picstea save a TIFF or a PSB?</h3>
+        <p>
+          No. Export As saves PNG, JPEG, WebP, SVG, PDF and PSD. A TIFF or PSB you open can be saved
+          as a PSD with its layers, or as a flat image.
+        </p>
+        <h3>Do these files leave my computer?</h3>
+        <p>
+          No. The TIFF decoder, the PSD reader and PDF.js all run in your browser, and Picstea has
+          no server that receives images.
+        </p>
+        <p>
+          <EditorLink>Open Picstea</EditorLink> and drop in a TIFF, a PDF or a PSB to see what it
+          keeps.
+        </p>
+      </>
+    ),
+  },
 ];
 
 const showDrafts = process.env.NODE_ENV !== "production";
