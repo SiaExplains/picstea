@@ -55,6 +55,7 @@ export const POST_SLUGS: Readonly<Record<string, "draft" | "published">> = {
   "blur-gallery-tilt-shift-iris-path-spin-blur": "published",
   "pixelate-or-black-out-private-info-in-screenshots": "published",
   "straighten-document-photo-picstea-vs-photoshop-gimp": "published",
+  "open-tiff-pdf-and-psb-files-in-your-browser": "published",
 };
 
 /** Author pages (`/authors/<slug>`); a unit test keeps this in sync with `authors.ts`. */
