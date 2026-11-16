@@ -3,13 +3,21 @@
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
-## [0.50.2] — 2026-11-16
+## [0.50.3] — 2026-11-16
 
 ### Added
 
 - Blog post **Open TIFF, PDF and PSB files in your browser**: opening layered TIFFs from
   Photoshop, turning one page of a PDF into an image at a chosen resolution, the size limit for
   PSB files, placing and batch-converting these formats, and how GIMP and Photopea handle them.
+
+## [0.50.2] — 2026-11-14
+
+### Added
+
+- Blog post **Put a logo on a mug photo with Warp**: making a mug mockup by placing a logo as a
+  smart object, bending it with Edit → Transform → Warp and Perspective, blending it in with
+  Multiply, Blend If and a mask, and swapping the design through Edit Contents.
 
 ## [0.50.1] — 2026-11-13
 
