@@ -3,6 +3,14 @@
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.50.5] — 2026-11-17
+
+### Added
+
+- Blog post **Filter Gallery and Oil Paint explained**: the eight Filter Gallery effects and their
+  sliders, Oil Paint, Find Edges for line drawings, Color Halftone, and smart filters to keep the
+  effect editable, with a short comparison to Photoshop.
+
 ## [0.50.4] — 2026-11-16
 
 ### Added

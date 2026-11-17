@@ -3001,6 +3001,230 @@ export const POSTS: readonly BlogPost[] = [
       </>
     ),
   },
+  {
+    slug: "filter-gallery-and-oil-paint-explained",
+    title: "Filter Gallery and Oil Paint explained",
+    description:
+      "What Picstea's Filter Gallery, Oil Paint, Find Edges and Color Halftone filters do, what each setting changes, and how to keep the effect editable.",
+    published: "2026-11-17",
+    draft: false,
+    body: () => (
+      <>
+        <p>
+          To make a photo look painted or drawn in Picstea, open the <strong>Filter</strong> menu.{" "}
+          <strong>Filter Gallery…</strong> at the top has eight artistic effects (Cutout, Dry Brush,
+          Poster Edges, Watercolor, Ink Outlines, Glowing Edges, Film Grain and Sponge), and{" "}
+          <strong>Filter → Stylize → Oil Paint…</strong> turns the picture into brush strokes with a
+          little relief lighting. Two more filters help with drawn and printed looks:{" "}
+          <strong>Find Edges</strong> for line work and <strong>Color Halftone</strong> for a
+          comic-print dot pattern. Every filter runs in your browser, so the photo stays on your
+          device and nothing is uploaded.
+        </p>
+        <p>
+          The example below is a holiday photo of a small harbour: boats, coloured house fronts and
+          a lot of sky. The goal is a painted version to print as a postcard, plus a pencil-style
+          line drawing of the same scene.
+        </p>
+        <h2>Which layers can you filter?</h2>
+        <p>
+          Filters work on pixel layers and smart objects. On a text layer, a shape or an adjustment
+          layer the filter items are greyed out, so select the photo layer in the Layers panel
+          first. If something is selected, only the selection changes, and a feathered edge blends
+          the filtered and unfiltered parts.
+        </p>
+        <p>
+          On a pixel layer a filter changes the pixels for good (one undo step). If you want to
+          change the effect later, read the section on smart filters before you start.
+        </p>
+        <h2>What do the Filter Gallery settings do?</h2>
+        <p>
+          Choose <strong>Filter → Filter Gallery…</strong>. The dialog has an{" "}
+          <strong>Effect</strong> menu and three sliders that every effect shares:
+        </p>
+        <ul>
+          <li>
+            <strong>Brush size</strong>, 1 to 20 px (default 4): how large the strokes, blur or
+            texture are.
+          </li>
+          <li>
+            <strong>Detail</strong>, 0 to 10 (default 5): how much fine structure survives. In
+            Cutout and Poster Edges it also sets how many flat colour steps you get.
+          </li>
+          <li>
+            <strong>Intensity</strong>, 0 to 100% (default 50%): how strong the outlines, grain or
+            texture are.
+          </li>
+        </ul>
+        <p>
+          The sliders don&apos;t all matter for every effect. Cutout and Dry Brush ignore Intensity
+          and change with Brush size and Detail only. What each effect does:
+        </p>
+        <ul>
+          <li>
+            <strong>Cutout</strong> smooths the photo and cuts it into a few flat colours, like
+            shapes cut from coloured paper.
+          </li>
+          <li>
+            <strong>Dry Brush</strong> runs the oil paint routine and then reduces the colours, so
+            areas become short, flat dabs.
+          </li>
+          <li>
+            <strong>Poster Edges</strong> reduces the colours and draws dark lines along the edges,
+            a poster or comic look.
+          </li>
+          <li>
+            <strong>Watercolor</strong> softens the image into patches and darkens the edges between
+            them.
+          </li>
+          <li>
+            <strong>Ink Outlines</strong> keeps the photo&apos;s colours and traces its edges in
+            dark ink.
+          </li>
+          <li>
+            <strong>Glowing Edges</strong> turns edges into bright lines and adds a glow when Brush
+            size is above 1.
+          </li>
+          <li>
+            <strong>Film Grain</strong> adds grain. Detail lifts the brightest parts of the image.
+          </li>
+          <li>
+            <strong>Sponge</strong> blurs a little and lays a mottled sponge texture over the
+            picture.
+          </li>
+        </ul>
+        <p>
+          With <strong>Preview</strong> ticked, the canvas shows the result as you move a slider.
+          Press <strong>OK</strong> to apply it or <strong>Cancel</strong> to put the layer back.
+          For the harbour, Watercolor with Brush size 6 and Detail 4 turns the sky and water into
+          soft washes, and the house fronts keep a dark outline.
+        </p>
+        <h2>How do Oil Paint&apos;s settings work?</h2>
+        <p>
+          <strong>Filter → Stylize → Oil Paint…</strong> looks at the pixels around each point,
+          finds the most common brightness and paints the average colour of those pixels. Areas
+          flatten into strokes. Its settings are:
+        </p>
+        <ul>
+          <li>
+            <strong>Stylization</strong>, 1 to 20 px (default 4): the radius it looks at. Bigger
+            values give broader strokes and less detail.
+          </li>
+          <li>
+            <strong>Cleanliness</strong>, 4 to 64 (default 20): how many brightness levels the
+            filter sorts pixels into before it picks the most common one.
+          </li>
+          <li>
+            <strong>Lighting</strong> (on by default): adds relief to the strokes, as if light fell
+            across thick paint.
+          </li>
+          <li>
+            <strong>Light angle</strong>, −180° to 180° (default −60°), and <strong>Shine</strong>,
+            0 to 10 (default 1.3): where the light comes from and how strong the relief is.
+          </li>
+        </ul>
+        <p>
+          On a large photo, a Stylization of 4 can be hard to see at 100% zoom. For a postcard-size
+          print of the harbour, 8 to 10 px gives visible strokes. Turn Shine down or untick Lighting
+          if the relief looks like embossed plastic.
+        </p>
+        <h2>How do you turn a photo into a line drawing?</h2>
+        <p>
+          <strong>Filter → Stylize → Find Edges</strong> has no settings and runs as soon as you
+          pick it. It draws the edges of the image as dark lines on white, in the colours of the
+          edges. Two ways to use it:
+        </p>
+        <ol>
+          <li>
+            For outlines over the photo: duplicate the photo layer (Cmd/Ctrl+J), run Find Edges on
+            the copy, then set the copy&apos;s <strong>Blend</strong> to <strong>Multiply</strong>{" "}
+            in the Properties panel. White disappears and only the lines darken the photo
+            underneath.
+          </li>
+          <li>
+            For a pencil-style sketch: hide the original photo layer, then add{" "}
+            <strong>Layer → New Adjustment Layer → Black &amp; White</strong> above the edges layer.
+            The coloured lines turn grey, like graphite on paper.
+          </li>
+        </ol>
+        <p>
+          A busy photo gives busy lines. If the water&apos;s ripples turn into scribbles, run{" "}
+          <strong>Filter → Blur → Gaussian Blur…</strong> with a small radius on the copy first,
+          then Find Edges. Fine texture drops out and the boat outlines stay.
+        </p>
+        <h2>What does Color Halftone do?</h2>
+        <p>
+          <strong>Filter → Pixelate → Color Halftone…</strong> splits the image into cyan, magenta,
+          yellow and black dots on rotated grids, the way printed comics and newspapers look up
+          close. <strong>Max. radius</strong> (2 to 127 px, default 8) sets the largest dot. The
+          four angle fields (defaults: cyan 108°, magenta 162°, yellow 90°, black 45°) turn each dot
+          grid. For a pop-art version of the harbour, try a radius of 12 on a copy and lower that
+          layer&apos;s opacity so some of the photo shows through.
+        </p>
+        <h2>How do you keep a filter editable?</h2>
+        <p>
+          Choose <strong>Layer → Smart Object → Convert to Smart Object</strong> before you filter.
+          Every filter you then pick from the Filter menu becomes a smart filter. It shows up in the
+          Properties panel under <strong>Smart filters</strong>, where you can hide it with its
+          checkbox, click its name to change the settings, move it up or down, or delete it. Filters
+          apply bottom to top in the order listed, so a Watercolor followed by Film Grain looks
+          different from the reverse.
+        </p>
+        <p>
+          This is also how you combine Filter Gallery effects. Each run of the gallery applies one
+          effect, so add it twice as two smart filters, for example Watercolor and then Ink
+          Outlines, and reorder them until you like the result.
+        </p>
+        <p>
+          <strong>Filter → Last Filter</strong> (Cmd/Ctrl+Alt+F) repeats the last filter with the
+          same settings. It works on pixel layers. The{" "}
+          <Link href="/docs/smart-objects-and-smart-filters">Smart objects and smart filters</Link>{" "}
+          docs explain the rest of the smart object workflow.
+        </p>
+        <h2>How does this compare with Photoshop?</h2>
+        <p>
+          Photoshop&apos;s Filter Gallery has six categories (Artistic, Brush Strokes, Distort,
+          Sketch, Stylize and Texture) with many more effects and an applied filters list in the
+          dialog for stacking them. Picstea&apos;s gallery has eight effects with the same three
+          sliders, one effect per run; you stack them with smart filters as described above.
+          Photoshop&apos;s Oil Paint, at <strong>Filter → Stylize → Oil Paint</strong> as in
+          Picstea, has two brush settings that Picstea doesn&apos;t, Scale and Bristle Detail, and
+          most of its sliders run from 0 to 10. Picstea runs in a browser tab with no install or
+          account. The <Link href="/photoshop-alternative">Photoshop alternative</Link> page lists
+          what else is and isn&apos;t there.
+        </p>
+        <h2>Saving the painted version</h2>
+        <p>
+          Choose <strong>File → Export As…</strong> and pick JPEG for printing or sharing. To come
+          back to the smart filters later, also save the file with{" "}
+          <strong>File → Save Project As…</strong>. The <Link href="/docs/filters">Filters</Link>{" "}
+          docs list every filter in the menu, and the{" "}
+          <Link href="/photo-filters">photo filters</Link> page sums up the quick looks.
+        </p>
+        <h2>Questions people ask</h2>
+        <h3>Can I stack several Filter Gallery effects at once?</h3>
+        <p>
+          Not inside one dialog. Convert the layer to a smart object, then run the Filter Gallery
+          once per effect. Each run becomes its own smart filter, and you can reorder or hide them.
+        </p>
+        <h3>Why is the Filter menu greyed out?</h3>
+        <p>
+          The active layer is text, a shape, an adjustment layer or locked. Select a pixel layer or
+          a smart object, or rasterize the layer with <strong>Layer → Rasterize Layer</strong>.
+        </p>
+        <h3>Does Oil Paint look the same as in Photoshop?</h3>
+        <p>
+          No. Picstea&apos;s version has Stylization, Cleanliness, Lighting, Light angle and Shine.
+          It doesn&apos;t have Scale or Bristle Detail, so you won&apos;t get bristle grooves in the
+          strokes.
+        </p>
+
+        <p>
+          <EditorLink>Open Picstea</EditorLink> and try the Filter Gallery on one of your own
+          photos.
+        </p>
+      </>
+    ),
+  },
 ];
 
 const showDrafts = process.env.NODE_ENV !== "production";
