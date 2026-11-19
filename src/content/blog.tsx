@@ -3438,6 +3438,194 @@ export const POSTS: readonly BlogPost[] = [
       </>
     ),
   },
+  {
+    slug: "export-a-logo-as-svg-picstea-vs-canva",
+    title: "Export a logo as SVG: Picstea vs Canva",
+    description:
+      "Build a simple logo from shapes and text and export it as an SVG in Picstea for free, what stays vector, and how this compares with SVG downloads in Canva.",
+    published: "2026-11-19",
+    draft: false,
+    body: () => (
+      <>
+        <p>
+          To get a logo out of Picstea as an SVG, build it from shape layers and text layers, then
+          choose <strong>File → Export As…</strong>, pick <strong>SVG</strong> and press{" "}
+          <strong>Export</strong>. Shapes and text are written as real SVG elements, so the file
+          stays sharp at any size and opens as editable vectors in tools like Inkscape or
+          Illustrator. Picstea doesn&apos;t charge for it, while Canva keeps SVG downloads for its
+          paid plans. The file is built in your browser, and the logo is never uploaded.
+        </p>
+        <p>
+          The example below is a badge logo for a small coffee cart called &quot;Night Owl
+          Coffee&quot;: a dark circle, a star, the name in two lines of text. It needs to go on a
+          website header (SVG), a sticker sheet and a social profile picture (PNG).
+        </p>
+        <h2>How do I set up a canvas for a logo?</h2>
+        <p>
+          Open <EditorLink>the Picstea editor</EditorLink> and choose <strong>File → New…</strong>{" "}
+          (Cmd/Ctrl+Alt+N). The dialog has a preset list grouped by category; the{" "}
+          <strong>Icons</strong> category goes from Icon 16 up to Icon 4096 in square pixel sizes.
+          Pick <strong>Icon 1024</strong>. An SVG scales anyway, but this size becomes the
+          file&apos;s <code>viewBox</code> and the size of any PNG you export later.
+        </p>
+        <p>
+          Set <strong>Background</strong> to <strong>Transparent</strong>. With{" "}
+          <strong>White</strong>, <strong>Black</strong> or a custom <strong>Colour…</strong>,
+          Picstea adds a locked fill layer called Background, which exports as a full-size{" "}
+          <code>&lt;rect&gt;</code>. A logo usually has to sit on whatever colour the website uses,
+          so it&apos;s easier without one.
+        </p>
+        <h2>Which shapes stay vector in the SVG?</h2>
+        <p>
+          Press U for the shape tool. The options bar has five kinds: <strong>Rectangle</strong>,{" "}
+          <strong>Ellipse</strong>, <strong>Polygon</strong>, <strong>Line</strong> and{" "}
+          <strong>Custom Shape</strong>. Every one of them is a shape layer, and every shape layer
+          is exported as an SVG element:
+        </p>
+        <ul>
+          <li>
+            Rectangles become <code>&lt;rect&gt;</code>, with rounded corners kept from the{" "}
+            <strong>Radius</strong> option.
+          </li>
+          <li>
+            Ellipses become <code>&lt;ellipse&gt;</code> and lines become <code>&lt;line&gt;</code>.
+          </li>
+          <li>
+            Polygons, stars, custom shapes and anything drawn with the Pen tool in Shape mode become
+            a <code>&lt;path&gt;</code>.
+          </li>
+        </ul>
+        <p>
+          For the badge, choose <strong>Ellipse</strong>, set <strong>Fill</strong> to a dark navy
+          and turn off <strong>Stroke</strong>, then Shift-drag a circle that fills most of the
+          canvas. For the star, switch to <strong>Polygon</strong>, set <strong>Sides</strong> to 5
+          and <strong>Star</strong> to about 50% (the indent goes from 0 to 95%), and draw it in a
+          warm yellow above where the text will go. If you want something ready-made, the{" "}
+          <strong>Custom Shape</strong> list has 17 built-ins, including a star, heart, banner,
+          speech bubble, pin and lightning bolt. The{" "}
+          <Link href="/blog/how-to-use-the-pen-tool">Pen tool post</Link> covers drawing your own
+          outline when none of those fit.
+        </p>
+        <p>
+          To centre a piece, select that one layer and choose{" "}
+          <strong>Layer → Align → Align Horizontal Centers</strong>; a single layer aligns to the
+          canvas. With several layers selected, the same command lines them up with each other.
+          Position, rotation and scale are written as a <code>transform</code> on each element, so
+          nothing is resampled.
+        </p>
+        <h2>How does text come out in an SVG?</h2>
+        <p>
+          Press T, click on the canvas and type &quot;NIGHT OWL&quot;, then add a second text layer
+          for &quot;COFFEE&quot;. Picstea writes each line of text as a <code>&lt;text&gt;</code>{" "}
+          element and each styled run as a <code>&lt;tspan&gt;</code>, with the font family, size,
+          weight, italic, letter spacing and colour. Paragraph text boxes are clipped to their box
+          if the text overflows. The words stay selectable and editable in the SVG.
+        </p>
+        <p>
+          Fonts need some thought, because the SVG names the font without including the font file.
+          On a computer that has the font, or a web page that loads it, the logo looks right;
+          anywhere else the text falls back to another typeface. This matters most if you used a
+          font you uploaded or one from your own computer (see{" "}
+          <Link href="/blog/paragraph-text-and-custom-fonts">paragraph text and custom fonts</Link>
+          ). Picstea can&apos;t convert text to outlines yet. If the exact letter shapes must
+          survive everywhere, choose <strong>Layer → Rasterize Layer</strong> on the text before
+          exporting; the text then goes into the SVG as an embedded PNG of that layer, which looks
+          right everywhere but no longer scales without losing sharpness.
+        </p>
+        <h2>What turns into an image inside the SVG?</h2>
+        <p>
+          SVG export is per layer. A shape, text or fill layer is written as a vector element only
+          when it has none of the things plain SVG can&apos;t reproduce the same way. These make a
+          layer go in as an embedded PNG of just that layer:
+        </p>
+        <ul>
+          <li>an enabled layer mask or vector mask,</li>
+          <li>any active layer style (drop shadow, stroke, glow, overlay and so on),</li>
+          <li>a Fill opacity below 100%,</li>
+          <li>being a pixel layer or a smart object in the first place.</li>
+        </ul>
+        <p>
+          Groups become <code>&lt;g&gt;</code> elements when they have no mask or style, and layer
+          opacity, hidden layers and blend modes carry over as SVG attributes. Two things flatten
+          the whole file into a single image: a visible adjustment layer, or a visible clipping
+          mask, since both depend on the layers underneath. Picstea tells you when that happens with
+          the note &quot;Adjustment layers can&apos;t be expressed in SVG, so the image was
+          flattened.&quot;
+        </p>
+        <p>
+          So if the badge&apos;s star gets a soft drop shadow, the star goes into the SVG as an
+          image. Leave effects off the SVG version and the whole logo stays vector.
+        </p>
+        <h2>How do I export the SVG and a PNG?</h2>
+        <ol>
+          <li>
+            Choose <strong>File → Export As…</strong> (Cmd/Ctrl+Shift+E).
+          </li>
+          <li>
+            Under <strong>Format</strong>, pick <strong>SVG</strong>. The dialog shows the file name
+            and size, and the note &quot;Shapes and text stay vectors; other layers are embedded as
+            images.&quot;
+          </li>
+          <li>
+            Press <strong>Export</strong>. Browsers with the File System Access API show a save
+            dialog; others download the file.
+          </li>
+          <li>
+            Open <strong>File → Export As…</strong> again and pick <strong>PNG</strong> for the
+            sticker sheet and the profile picture. PNG keeps the transparent background.
+          </li>
+        </ol>
+        <p>
+          Each element in the SVG carries its layer name in a <code>data-name</code> attribute, and
+          the document name goes into the <code>&lt;title&gt;</code>, which helps when you open the
+          file in a code editor. Keep a <strong>File → Save Project As…</strong> copy too; the{" "}
+          <code>.picstea</code> file keeps every layer editable for the next version of the logo.
+          The <Link href="/docs/file-formats">file formats docs</Link> list what every export format
+          keeps.
+        </p>
+        <h2>How does this compare with Canva?</h2>
+        <p>
+          Canva&apos;s help centre lists SVG as a download type that supports transparency and keeps
+          quality at any size, and you reach it through <strong>Share → Download</strong> and the
+          file type list. It also says that transparent PNG and SVG downloads are available on Canva
+          Pro, Canva for Teams, Canva for Education and Canva for Nonprofits. On the free plan you
+          can still download JPG and PNG, without the transparent background.
+        </p>
+        <p>
+          If you want to start from a template or work on a design with a team, Canva is the better
+          fit. In Picstea you build the logo from shapes and text yourself, the SVG and transparent
+          PNG exports are free without an account, and you can tell from the layers which parts will
+          stay vector. The <Link href="/canva-alternative">Picstea vs Canva page</Link> compares the
+          two more broadly.
+        </p>
+        <h2>Questions people ask</h2>
+        <h3>Can Picstea turn a PNG logo into a vector SVG?</h3>
+        <p>
+          Not automatically. Exporting an opened PNG as SVG gives you an SVG with the PNG embedded
+          inside it, no sharper than the original. For a flat one-colour logo there is a manual
+          route: select it with the Magic Wand, choose{" "}
+          <strong>Select → Make Work Path from Selection…</strong>, then press{" "}
+          <strong>Shape</strong> in the Pen tool&apos;s options bar to turn the path into a shape
+          layer. Otherwise, redraw the logo with shapes, the Pen tool and text.
+        </p>
+        <h3>Can I open an SVG in Picstea and edit the shapes?</h3>
+        <p>
+          Not as shapes. SVG files open as pixels, drawn safely through the browser without running
+          any scripts in the file. Edit the original Picstea project and export again instead.
+        </p>
+        <h3>Will the SVG look the same on every website?</h3>
+        <p>
+          Shapes will. Text depends on the font being available where the SVG is shown. Rasterize
+          the text layers first if the letters must match everywhere.
+        </p>
+        <h3>Is the SVG export free?</h3>
+        <p>Yes. Every export format in Picstea is free and needs no account.</p>
+        <p>
+          <EditorLink>Open Picstea</EditorLink> and draw your logo with the shape tool.
+        </p>
+      </>
+    ),
+  },
 ];
 
 const showDrafts = process.env.NODE_ENV !== "production";
