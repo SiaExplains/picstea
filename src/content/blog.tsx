@@ -3225,6 +3225,219 @@ export const POSTS: readonly BlogPost[] = [
       </>
     ),
   },
+  {
+    slug: "make-a-sticker-with-a-white-border",
+    title: "Make a sticker with a white border",
+    description:
+      "Cut a subject out of a photo, give it a thick white sticker border, add a banner label and export a transparent PNG in Picstea, with menu paths for each step.",
+    published: "2026-11-18",
+    draft: false,
+    body: () => (
+      <>
+        <p>
+          To turn a photo into a sticker in Picstea, erase the background so only the subject is
+          left, give the cut-out layer a <strong>Stroke</strong> layer style set to{" "}
+          <strong>Outside</strong> in white, then choose <strong>Image → Trim…</strong> and export a
+          PNG. The white edge follows the outline of the subject with rounded corners, like a
+          die-cut printed sticker. The photo stays on your device the whole time; nothing is
+          uploaded.
+        </p>
+        <p>
+          The example here is a phone photo of a dog sitting on a lawn. The goal is a sticker for a
+          chat app and a print file for a sheet of vinyl stickers: the dog with a thick white
+          border, a small banner across the bottom that says &quot;GOOD BOY&quot;, and a thin grey
+          cut line for the printer.
+        </p>
+        <h2>How do I cut the subject out of the photo?</h2>
+        <p>
+          Open <EditorLink>the Picstea editor</EditorLink> and drop the photo onto it, or choose{" "}
+          <strong>File → Open Image…</strong>. Grass is a lot of similar greens, which suits the{" "}
+          <strong>Magic Eraser</strong>.
+        </p>
+        <ol>
+          <li>
+            Press E for the eraser group, then Shift+E until the <strong>Magic Eraser</strong> is
+            active. You can also right-click or hold the eraser icon and pick it from the flyout.
+          </li>
+          <li>
+            In the options bar, set <strong>Tolerance</strong> (0 to 255). Start around 40 and raise
+            it if clicks leave patches of grass. Leave <strong>Contiguous</strong> ticked so a click
+            only removes connected pixels and doesn&apos;t eat into a green collar.
+          </li>
+          <li>Click the grass. Each click is one undo step, so Cmd/Ctrl+Z takes back a bad one.</li>
+          <li>
+            For the edge of the fur, switch to the <strong>Background Eraser</strong> (also in the
+            eraser group). It erases colours like the one under the first dab of each stroke, so
+            start the stroke on the grass and paint along the edge. Its <strong>Tolerance</strong>{" "}
+            works the same way.
+          </li>
+        </ol>
+        <p>
+          Both tools work on pixel layers. If the background is a busy room, not a lawn, the{" "}
+          <Link href="/make-background-transparent">make a background transparent</Link> guide walks
+          through the selection tools instead. Picstea has no automatic AI background remover, so
+          the cut-out is done by hand.
+        </p>
+        <h2>Why add canvas before the border?</h2>
+        <p>
+          The border grows outward from the subject. If the dog&apos;s ears touch the top of the
+          photo, the border there would fall off the canvas. Choose{" "}
+          <strong>Image → Canvas Size…</strong>, tick{" "}
+          <strong>Relative (add to the current size)</strong>, and type the same amount into{" "}
+          <strong>Width (px)</strong> and <strong>Height (px)</strong>, for example 200 each, with
+          the centre anchor. The layer isn&apos;t scaled; the new area around it is transparent.
+        </p>
+        <h2>How do I add the white sticker border?</h2>
+        <ol>
+          <li>
+            Double-click the dog layer in the Layers panel, or choose{" "}
+            <strong>Layer → Layer Style → Blending Options…</strong>.
+          </li>
+          <li>
+            Turn on <strong>Stroke</strong> in the list on the left.
+          </li>
+          <li>
+            Set <strong>Position</strong> to <strong>Outside</strong>, <strong>Fill Type</strong> to{" "}
+            <strong>Color</strong>, and pick white. The default colour is black and the default size
+            is 3 px.
+          </li>
+          <li>
+            Raise <strong>Size</strong>. It goes up to 250 px. On a 3,000 px wide photo, 40 to 60 px
+            reads as a proper sticker edge.
+          </li>
+        </ol>
+        <p>
+          Picstea builds the outside stroke by drawing the layer&apos;s silhouette many times at
+          points on circles around each pixel, so sharp tips like ear points get a rounded white
+          edge. The style stays live, so if you erase more stray grass later the border follows. If
+          you want a second outline, such as a thin black line outside the white one, press the{" "}
+          <strong>+</strong> next to Stroke to add another copy (up to 10).
+        </p>
+        <p>
+          A soft shadow under the sticker helps it stand out on a white chat background. Turn on{" "}
+          <strong>Drop Shadow</strong> in the same dialog and lower its <strong>Distance</strong>{" "}
+          and <strong>Size</strong> to a few pixels.
+        </p>
+        <h2>How do I reuse the border on the next sticker?</h2>
+        <p>
+          Before you press <strong>OK</strong>, click <strong>New Style…</strong> at the bottom of
+          the dialog, name it (for example &quot;Sticker 50 px&quot;) and click{" "}
+          <strong>Save style</strong>. The next time you make a sticker, open the Layer Style dialog
+          on the new cut-out, go to <strong>Styles</strong> and click the saved card. You can keep
+          up to 200 saved styles. They are stored in this browser only, so they won&apos;t appear on
+          another computer or after you clear site data.
+        </p>
+        <h2>How do I add a banner label?</h2>
+        <ol>
+          <li>
+            Press U for the shape tools and pick <strong>Custom Shape</strong> in the options bar
+            (or Shift+U until it is active).
+          </li>
+          <li>
+            In the <strong>Shape</strong> menu, choose <strong>Banner</strong>. The list has 17
+            built-in shapes, including Speech bubble, Heart, Star, Tag and Location pin.
+          </li>
+          <li>
+            Set the <strong>Fill</strong> colour, untick <strong>Stroke</strong> if you don&apos;t
+            want an outline, and drag across the bottom of the dog. Hold Alt to draw from the
+            centre.
+          </li>
+          <li>
+            Press T for the Text tool, click on the banner and type &quot;GOOD BOY&quot;. Pick a
+            bold font in the options bar and centre it on the banner with the Move tool.
+          </li>
+        </ol>
+        <p>
+          The banner is an editable path shape layer, so the Direct Selection tool can reshape its
+          anchors later. To make the white border run around the banner as well, select the dog,
+          banner and text layers, choose <strong>Layer → Group</strong>, and put the Stroke style on
+          the group instead of the dog layer.
+        </p>
+        <h2>How do I make a cut line for printing?</h2>
+        <p>
+          Many sticker printers ask for a thin line where the blade should cut. This step uses{" "}
+          <strong>Edit → Stroke…</strong>, which paints a band of colour along the edge of a
+          selection on a pixel layer.
+        </p>
+        <ol>
+          <li>
+            Choose <strong>Image → Duplicate</strong> to work on a copy of the document. If you
+            added a drop shadow, turn it off in the copy so the line doesn&apos;t follow the shadow.
+          </li>
+          <li>
+            Choose <strong>Layer → Flatten Image</strong>. The white border is now part of one pixel
+            layer.
+          </li>
+          <li>
+            Choose <strong>Select → Select Pixels</strong>, or Cmd/Ctrl-click the layer&apos;s
+            thumbnail. This selects everything that isn&apos;t transparent, border included. On a
+            layer that still has its style, Select Pixels ignores the effects, which is why the
+            flatten comes first.
+          </li>
+          <li>
+            Choose <strong>Layer → New → New Layer</strong> (Cmd/Ctrl+Shift+N).
+          </li>
+          <li>
+            Choose <strong>Edit → Stroke…</strong>, set <strong>Width (px)</strong> to 2,{" "}
+            <strong>Location</strong> to <strong>Inside</strong>, and pick a grey. Click{" "}
+            <strong>OK</strong>, then deselect with Cmd/Ctrl+D.
+          </li>
+        </ol>
+        <p>
+          Edit → Stroke takes widths from 1 to 250 px. It grows and shrinks the selection with a
+          square radius, so at a wide setting the outline keeps square corners at sharp tips. That
+          is why the thick white border uses the Stroke layer style and Edit → Stroke only draws
+          this thin line. Export the print file from this copy and the chat version from the
+          original.
+        </p>
+        <h2>How do I export the sticker?</h2>
+        <p>
+          Choose <strong>Image → Trim…</strong> with <strong>Transparent pixels</strong> selected.
+          Trim reads the finished image, border and shadow included, so it crops to the edge of the
+          sticker without cutting into the stroke. Then choose <strong>File → Export As…</strong>{" "}
+          (Cmd/Ctrl+Shift+E) and pick <strong>PNG</strong>, which keeps the transparency. JPEG would
+          fill the transparent area with white. Save the layered version with{" "}
+          <strong>File → Save Project As…</strong> so you can change the banner text later.
+        </p>
+        <h2>How does this compare with Canva?</h2>
+        <p>
+          Canva&apos;s photo borders page describes the same look with <strong>Edit Image</strong> →{" "}
+          <strong>Shadows</strong> → <strong>Glow</strong>, with Blur set to 0 and Transparency to
+          100 for a solid edge. You upload the photo to Canva first. Canva lists its Background
+          Remover and downloading designs with a transparent background as Canva Pro features. In
+          Picstea the cut-out is manual, with no one-click remover, and the transparent PNG export
+          is free. The <Link href="/canva-alternative">Canva alternative</Link> page compares the
+          two in more detail, and the{" "}
+          <Link href="/docs/layers-groups-and-masks">Layers, groups and masks</Link> docs cover
+          layer styles.
+        </p>
+        <h2>Questions people ask</h2>
+        <h3>Why does my border get cut off at one side?</h3>
+        <p>
+          The subject touches the edge of the canvas. Add room with Image → Canvas Size… and the
+          Relative option before you add the stroke.
+        </p>
+        <h3>Can I make the border a gradient?</h3>
+        <p>
+          Yes. In the Stroke settings, set Fill Type to Gradient and edit the stops. Style, angle
+          and scale options are there too.
+        </p>
+        <h3>Will the sticker border survive in a PSD?</h3>
+        <p>
+          Picstea writes layer styles to PSD as editable Photoshop data. Pattern styles and smart
+          filters are the exceptions and get rasterised, with a notice.
+        </p>
+        <h3>Is the photo uploaded anywhere?</h3>
+        <p>
+          No. The erasers, layer styles and exports run in your browser, and Picstea has no server
+          that receives images.
+        </p>
+        <p>
+          <EditorLink>Open Picstea</EditorLink> and drop in a photo to make your first sticker.
+        </p>
+      </>
+    ),
+  },
 ];
 
 const showDrafts = process.env.NODE_ENV !== "production";

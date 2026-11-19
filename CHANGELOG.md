@@ -3,6 +3,14 @@
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.50.6] — 2026-11-18
+
+### Added
+
+- Blog post **Make a sticker with a white border**: cutting a subject out with the Magic Eraser and
+  Background Eraser, a white Stroke layer style saved with New Style…, a Banner custom shape label,
+  a print cut line with Edit → Stroke…, Trim and PNG export, with a short comparison to Canva.
+
 ## [0.50.5] — 2026-11-17
 
 ### Added
