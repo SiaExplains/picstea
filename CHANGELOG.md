@@ -3,6 +3,14 @@
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.50.7] — 2026-11-19
+
+### Added
+
+- Blog post **Export a logo as SVG: Picstea vs Canva**: building a logo from shape and text layers,
+  what Picstea's SVG export keeps as vectors and what it embeds as images, fonts in SVG files, and
+  how SVG downloads compare with Canva.
+
 ## [0.50.6] — 2026-11-18
 
 ### Added
