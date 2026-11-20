@@ -61,6 +61,7 @@ export const POST_SLUGS: Readonly<Record<string, "draft" | "published">> = {
   "filter-gallery-and-oil-paint-explained": "published",
   "make-a-sticker-with-a-white-border": "published",
   "export-a-logo-as-svg-picstea-vs-canva": "published",
+  "turn-a-photo-into-a-stencil-with-threshold": "published",
 };
 
 /** Author pages (`/authors/<slug>`); a unit test keeps this in sync with `authors.ts`. */

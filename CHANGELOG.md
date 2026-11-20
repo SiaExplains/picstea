@@ -3,6 +3,15 @@
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.50.8] — 2026-11-20
+
+### Added
+
+- Blog post **Turn a photo into a stencil with Threshold**: a Threshold adjustment layer, removing
+  specks with Median, selecting the black with Color Range, tracing it with Make Work Path from
+  Selection into a shape layer, SVG export from a duplicate, and a three-tone version with
+  Posterize, with a short comparison to Photoshop and Inkscape.
+
 ## [0.50.7] — 2026-11-19
 
 ### Added

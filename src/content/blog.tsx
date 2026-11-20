@@ -3626,6 +3626,207 @@ export const POSTS: readonly BlogPost[] = [
       </>
     ),
   },
+  {
+    slug: "turn-a-photo-into-a-stencil-with-threshold",
+    title: "Turn a photo into a stencil with Threshold",
+    description:
+      "Make a black-and-white stencil from a photo with Threshold and Posterize adjustment layers, select it with Color Range and trace it into an SVG in Picstea.",
+    published: "2026-11-20",
+    draft: false,
+    body: () => (
+      <>
+        <p>
+          To turn a photo into a stencil in Picstea, add a <strong>Threshold</strong> adjustment
+          layer from <strong>Layer → New Adjustment Layer → Threshold…</strong> and move its{" "}
+          <strong>Level</strong> slider until the subject reads as clean black shapes on white.
+          Export that as a PNG if you only need to print it. If you need a vector file for a cutting
+          machine, select the black with <strong>Select → Color Range…</strong>, trace the selection
+          with <strong>Select → Make Work Path from Selection…</strong>, turn the path into a shape
+          layer and export an SVG. Everything runs in your browser, and the photo is never uploaded.
+        </p>
+        <p>
+          The example here is a side-on photo of a dog that should end up spray-painted on a tote
+          bag. The stencil gets cut from a sheet of vinyl, so the cutter needs an SVG with one solid
+          shape. Later in the post the same photo becomes a three-tone poster with Posterize.
+        </p>
+        <h2>How does Threshold turn a photo into black and white?</h2>
+        <p>
+          Open the photo in <EditorLink>the Picstea editor</EditorLink>. Threshold works out the
+          brightness (luminance) of every pixel and makes it pure white if it&apos;s at or above the{" "}
+          <strong>Level</strong> value, and pure black if it&apos;s below. There are no greys left
+          afterwards, which is what a one-layer stencil needs. Level runs from 0 to 255 and starts
+          at 128.
+        </p>
+        <p>
+          Choose <strong>Layer → New Adjustment Layer → Threshold…</strong>. The same list sits
+          under <strong>Image → Adjustments</strong>, and both add an adjustment layer above the
+          active layer, so the photo&apos;s pixels stay as they are. Select the Threshold layer and
+          drag <strong>Level</strong> in the Properties panel while you watch the canvas:
+        </p>
+        <ul>
+          <li>
+            Lower values make more of the image white, so thin details in bright areas vanish.
+          </li>
+          <li>
+            Higher values turn more of it black, which fills in shadows and can join the subject to
+            the background.
+          </li>
+        </ul>
+        <p>
+          You don&apos;t need a Black &amp; White layer underneath, since Threshold measures
+          brightness itself. Toggle the Threshold layer&apos;s eye icon to compare with the photo.
+        </p>
+        <h2>How do I get rid of specks and noise first?</h2>
+        <p>
+          Grain, fur and small highlights turn into hundreds of tiny dots at the threshold, and a
+          cutter will try to cut every one of them. Smooth the photo before the threshold step:
+          select the photo layer (not the adjustment layer) and run{" "}
+          <strong>Filter → Noise → Median</strong>. Its <strong>Radius</strong> goes from 1 to 100
+          px; a radius of a few pixels removes most specks.{" "}
+          <strong>Filter → Blur → Gaussian Blur</strong> works too and gives softer, rounder shapes.
+        </p>
+        <p>
+          Filters change pixels directly on a pixel layer. To keep the original, choose{" "}
+          <strong>Layer → Smart Object → Convert to Smart Object</strong> first; the filter then
+          becomes a smart filter you can edit or hide later. The{" "}
+          <Link href="/docs/filters">filters docs</Link> cover both cases.
+        </p>
+        <h2>How do I select only the black parts?</h2>
+        <p>
+          Choose <strong>Select → Color Range…</strong>. The dialog has a <strong>Colour</strong>{" "}
+          field that starts at your foreground colour, which is black unless you changed it (press D
+          to reset the colours). It also has a <strong>Fuzziness</strong> slider from 0 to 255
+          (default 40) and a <strong>Sample all layers</strong> checkbox that is on by default.
+          Leave it on. Color Range then reads the image as you see it, with the Threshold layer
+          applied, so black means the stencil.
+        </p>
+        <p>
+          The canvas previews the selection while you move the slider, and the dialog reports the
+          size of the selected area or &quot;Nothing matches&quot;. Since the picture now has only
+          two colours, the default Fuzziness picks up the black cleanly. Press <strong>OK</strong>.
+        </p>
+        <p>
+          If you want the white parts instead, for example to cut the inverse stencil, choose{" "}
+          <strong>Select → Inverse</strong> (Cmd/Ctrl+Shift+I). The{" "}
+          <Link href="/docs/selections">selections docs</Link> list the other ways to change a
+          selection.
+        </p>
+        <h2>How do I turn the selection into a vector shape?</h2>
+        <ol>
+          <li>
+            Choose <strong>Select → Make Work Path from Selection…</strong>. Enter a{" "}
+            <strong>Tolerance (px)</strong> between 0.5 and 10; it starts at 1. Lower numbers follow
+            the pixel edges more closely, higher numbers give smoother outlines with fewer anchor
+            points. Press <strong>Make Work Path</strong>.
+          </li>
+          <li>
+            Press U to pick the shape tool and set its <strong>Fill</strong> colour in the options
+            bar. The new shape takes the shape tool&apos;s fill and stroke settings; black is the
+            obvious choice for a stencil.
+          </li>
+          <li>
+            Press P for the Pen tool. Its options bar has a work path group with{" "}
+            <strong>Selection</strong>, <strong>Mask</strong>, <strong>Shape</strong> and{" "}
+            <strong>Delete Path</strong>. Press <strong>Shape</strong>. Picstea adds a shape layer
+            built from the traced path.
+          </li>
+        </ol>
+        <p>
+          The trace closes every outline and keeps holes, so the white of the dog&apos;s eye comes
+          out as a hole in the black shape. A path can have at most 64 separate outlines (holes
+          included) and 4,096 anchors. Past that, Picstea says &quot;The selection is too detailed
+          for a path. Try a larger tolerance.&quot; A larger tolerance cuts anchors; for too many
+          outlines, smooth the photo more so the specks disappear.
+        </p>
+        <p>
+          Fix individual points with the Direct Selection tool if you need to. The{" "}
+          <Link href="/docs/paths-and-the-pen-tool">paths and Pen tool docs</Link> explain anchors,
+          handles and the one work path each document keeps.
+        </p>
+        <h2>How do I export the stencil as an SVG?</h2>
+        <p>
+          Picstea&apos;s SVG export writes shape layers as <code>&lt;path&gt;</code> elements, but a
+          visible adjustment layer makes it flatten the whole file into one image. Hidden layers are
+          still written into the file, just set to not display, so a hidden photo would make the SVG
+          large. Make a copy for the cutter instead:
+        </p>
+        <ol>
+          <li>
+            Choose <strong>Image → Duplicate</strong>. A copy opens in a new tab, with
+            &quot;copy&quot; added to its name.
+          </li>
+          <li>
+            In the copy, delete the Threshold layer and the photo, leaving only the shape layer.
+          </li>
+          <li>
+            Choose <strong>File → Export As…</strong> (Cmd/Ctrl+Shift+E), pick <strong>SVG</strong>{" "}
+            and press <strong>Export</strong>.
+          </li>
+        </ol>
+        <p>
+          The original document keeps the photo and both layers, so you can change the Level and
+          trace again. For a printed stencil you can skip the tracing and export the thresholded
+          image as a PNG. The <Link href="/docs/file-formats">file formats docs</Link> list what
+          each format keeps.
+        </p>
+        <h2>Can I make a stencil with more than two tones?</h2>
+        <p>
+          Yes, with Posterize. Spray stencils and screen prints often use two or three layers, a
+          dark one and a mid-grey one, cut separately. In the original document, hide the Threshold
+          layer, then add <strong>Layer → New Adjustment Layer → Black &amp; White…</strong> and
+          above it <strong>Layer → New Adjustment Layer → Posterize…</strong>. Posterize reduces
+          each colour channel to a set number of evenly spaced tones; its <strong>Levels</strong>{" "}
+          slider goes from 2 to 255 and starts at 4. The Black &amp; White layer underneath matters
+          here, because Posterize on a colour photo gives you posterized colours, not greys.
+        </p>
+        <p>
+          Set Levels to 3 and the photo is reduced to black, a mid grey (#808080) and white. Then
+          repeat the selection steps once per tone: open <strong>Select → Color Range…</strong>, set{" "}
+          <strong>Colour</strong> to <code>#000000</code> for the dark layer or <code>#808080</code>{" "}
+          for the grey, lower <strong>Fuzziness</strong> to around 20 so the neighbouring tone
+          isn&apos;t picked up, make a work path and press <strong>Shape</strong>. Each tone becomes
+          its own shape layer, and you can give them different fills to check how the print will
+          look.
+        </p>
+        <h2>How does this compare with Photoshop and Inkscape?</h2>
+        <p>
+          Photoshop has a Threshold adjustment, Color Range and a Make Work Path command whose
+          tolerance also runs from 0.5 to 10 pixels. Inkscape, a free vector editor, traces an
+          imported image directly with <strong>Path → Trace Bitmap</strong> (Shift+Alt+B); its
+          Brightness cutoff mode does the threshold and the trace in one step. In Picstea you set
+          the threshold on the photo first and trace afterwards. The{" "}
+          <Link href="/photoshop-alternative">Picstea vs Photoshop page</Link> compares the two
+          editors more broadly.
+        </p>
+        <h2>Questions people ask</h2>
+        <h3>Does Threshold change my original photo?</h3>
+        <p>
+          No. Both menu paths add an adjustment layer. Hide or delete it and the photo is back as it
+          was.
+        </p>
+        <h3>Why did my SVG come out as one big image?</h3>
+        <p>
+          A visible adjustment layer or clipping mask makes Picstea flatten the SVG. Picstea shows
+          the note &quot;Adjustment layers can&apos;t be expressed in SVG, so the image was
+          flattened.&quot; Delete those layers in a duplicate and export again.
+        </p>
+        <h3>Can Picstea trace a photo automatically?</h3>
+        <p>
+          Not in one click. The route is Threshold or Posterize, Color Range, Make Work Path from
+          Selection and the Pen tool&apos;s <strong>Shape</strong> button, as above. It works best
+          on simple, high-contrast shapes.
+        </p>
+        <h3>What tolerance should I use for a vinyl cutter?</h3>
+        <p>
+          Start at 2 or 3. The default of 1 follows pixel edges closely and gives many anchors.
+          Check the outline at 100% zoom and trace again if the curves look jagged.
+        </p>
+        <p>
+          <EditorLink>Open Picstea</EditorLink> and add a Threshold layer to your photo.
+        </p>
+      </>
+    ),
+  },
 ];
 
 const showDrafts = process.env.NODE_ENV !== "production";
