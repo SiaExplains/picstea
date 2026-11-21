@@ -3,6 +3,15 @@
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.50.9] — 2026-11-21
+
+### Added
+
+- Blog post **Distort filters: Polar Coordinates, Twirl and more**: making a tiny planet from a
+  panorama with Image Size, Image Rotation, Copy Merged and Polar Coordinates, what Twirl, Pinch,
+  Spherize, Ripple, Wave, ZigZag, Dents, Shear, Displace and Kaleidoscope do, keeping them editable
+  as smart filters, and a short comparison with Photoshop and GIMP.
+
 ## [0.50.8] — 2026-11-20
 
 ### Added

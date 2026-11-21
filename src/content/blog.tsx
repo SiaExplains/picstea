@@ -3827,6 +3827,211 @@ export const POSTS: readonly BlogPost[] = [
       </>
     ),
   },
+  {
+    slug: "distort-filters-polar-coordinates-twirl-and-more",
+    title: "Distort filters: Polar Coordinates, Twirl and more",
+    description:
+      "Turn a panorama into a tiny planet with Polar Coordinates, and learn what Twirl, Spherize, Pinch, Wave, ZigZag and Picstea's other Distort filters do.",
+    published: "2026-11-21",
+    draft: false,
+    body: () => (
+      <>
+        <p>
+          The Distort filters in Picstea move pixels around without changing their colours. You find
+          them under <strong>Filter → Distort</strong>: Displace, Kaleidoscope, Pinch, Polar
+          Coordinates, Ripple, Shear, Spherize, Twirl, Wave, ZigZag and Dents. The most useful one
+          for photos is <strong>Polar Coordinates</strong>, which bends a wide panorama into a round
+          &quot;tiny planet&quot;. Twirl, Pinch and Spherize swirl, squeeze or bulge the middle of a
+          layer, and Ripple, Wave and ZigZag add water-like waves. Each opens a dialog with a live
+          preview, and the photo stays in your browser the whole time. Nothing is uploaded.
+        </p>
+        <p>
+          The example here is a beach panorama, about three times wider than it is tall, with sand
+          along the bottom and sky above. It ends up as a small round planet with the sand in the
+          middle. The rest of the post covers the other filters in the submenu.
+        </p>
+        <h2>How do I make a tiny planet from a panorama?</h2>
+        <p>
+          A tiny planet is the panorama wrapped around a circle: the bottom edge of the photo
+          becomes the centre and the top edge becomes the outside. Polar Coordinates does that
+          wrapping, but it works on the layer&apos;s own pixel grid, so the layer has to be square
+          first. Here are the steps in <EditorLink>the Picstea editor</EditorLink>:
+        </p>
+        <ol>
+          <li>
+            Open the panorama and choose <strong>Image → Image Size…</strong>. Untick{" "}
+            <strong>Constrain proportions</strong> and set <strong>Width (px)</strong> and{" "}
+            <strong>Height (px)</strong> to the same number, for example 2000 × 2000. The beach
+            looks squashed now, which is what you want.
+          </li>
+          <li>
+            Choose <strong>Image → Image Rotation → 180°</strong>, so the sand is at the top of the
+            canvas.
+          </li>
+          <li>
+            Image Size and Image Rotation only change how the layer is drawn, so bake the result
+            into a new layer: <strong>Select → All</strong> (Cmd/Ctrl+A), then{" "}
+            <strong>Edit → Copy Merged</strong> and <strong>Edit → Paste</strong> (Cmd/Ctrl+V). The
+            pasted layer has square pixels.
+          </li>
+          <li>
+            With the pasted layer active, choose{" "}
+            <strong>Filter → Distort → Polar Coordinates…</strong>, leave <strong>Mode</strong> on{" "}
+            <strong>Rectangular to polar</strong> and press <strong>OK</strong>.
+          </li>
+        </ol>
+        <p>
+          The top row of the layer (the sand, after the rotation) collapses into the centre, and
+          each row below it becomes a slightly larger ring, out to a circle that touches the edges
+          of the square. The left and right ends of the panorama meet at the 12 o&apos;clock
+          position. If the two ends of your photo don&apos;t match, you&apos;ll see a seam there.
+          Paint over it on a new layer with the <strong>Clone Stamp</strong> (S) and{" "}
+          <strong>Sample: All layers</strong>, or with the <strong>Healing Brush</strong> (J) on the
+          pasted layer. The <Link href="/docs/retouching">retouching docs</Link> cover both tools.
+        </p>
+        <p>
+          The corners outside the circle get pixels wrapped around from the opposite edge of the
+          photo. Paint them over with the sky colour, or select the circle with the Elliptical
+          Marquee and turn it into a layer mask. For a planet with the sky in the middle and the
+          ground on the outside (sometimes called a &quot;tunnel&quot;), skip the 180° rotation.
+        </p>
+        <h2>Can Polar Coordinates go the other way?</h2>
+        <p>
+          Yes. Set <strong>Mode</strong> to <strong>Polar to rectangular</strong> and the filter
+          unrolls a circle into a strip: the centre becomes the top row and the angle runs from left
+          to right, starting at 12 o&apos;clock. It&apos;s a quick way to straighten out text set
+          around a round badge so you can read or retype it.
+        </p>
+        <h2>What do Twirl, Pinch and Spherize do?</h2>
+        <p>
+          These three act on a circle or oval in the middle of the layer and leave pixels outside it
+          where they were.
+        </p>
+        <ul>
+          <li>
+            <strong>Twirl</strong> rotates the middle by <strong>Angle</strong> (−999° to 999°,
+            default 50°). The rotation is strongest at the centre and fades to nothing at the edge
+            of the largest circle that fits in the layer.
+          </li>
+          <li>
+            <strong>Pinch</strong> has one <strong>Amount</strong> slider from −100% to 100%
+            (default 50%). Positive values squeeze the middle inward; negative values push it out.
+          </li>
+          <li>
+            <strong>Spherize</strong> wraps the layer around a sphere with a positive{" "}
+            <strong>Amount</strong> (default 100%) and around the inside of one with a negative
+            amount. <strong>Mode</strong> can be <strong>Normal</strong>,{" "}
+            <strong>Horizontal only</strong> or <strong>Vertical only</strong>, which bends it like
+            a cylinder instead of a ball.
+          </li>
+        </ul>
+        <p>
+          All three centre on the layer, not on a selection. A selection only limits which pixels
+          change. To bulge one part of a photo, such as a face for a fish-eye joke, select it with
+          the Elliptical Marquee and choose <strong>Layer → New → Layer via Copy</strong>. The new
+          layer is the size of the selection, so Spherize is centred on it.
+        </p>
+        <h2>Which filters make waves and ripples?</h2>
+        <ul>
+          <li>
+            <strong>Ripple</strong> moves pixels sideways in small regular waves.{" "}
+            <strong>Amount</strong> sets the strength (−999% to 999%) and <strong>Size</strong> the
+            wavelength (2 to 200 px). It suits a reflection in water.
+          </li>
+          <li>
+            <strong>Wave</strong> adds up several waves of random length.{" "}
+            <strong>Generators</strong> (1 to 20) sets how many, <strong>Min wavelength</strong> and{" "}
+            <strong>Max wavelength</strong> the range, <strong>Amplitude</strong> how far pixels
+            move, and <strong>Type</strong> picks Sine, Triangle or Square. The random pattern
+            changes each time you open the dialog.
+          </li>
+          <li>
+            <strong>ZigZag</strong> sends rings out from the centre. <strong>Ridges</strong> sets
+            how many, and <strong>Style</strong> is <strong>Around center</strong>,{" "}
+            <strong>Out from center</strong> or <strong>Pond ripples</strong> (the default).
+          </li>
+          <li>
+            <strong>Dents</strong> pushes pixels around random bumps of a set <strong>Size</strong>{" "}
+            and <strong>Strength</strong>, like hammered glass.
+          </li>
+        </ul>
+        <h2>What about Shear, Displace and Kaleidoscope?</h2>
+        <p>
+          <strong>Shear</strong> bends the whole layer sideways along a smooth curve: the middle row
+          moves furthest and the top and bottom rows stay put. <strong>Amount</strong> runs from
+          −100% to 100% of half the layer&apos;s width.
+        </p>
+        <p>
+          <strong>Displace</strong> moves each pixel by the value of a map, up to the{" "}
+          <strong>Horizontal scale</strong> and <strong>Vertical scale</strong> you set. Picstea
+          never asks you for a map file. The <strong>Displacement map</strong> is the layer&apos;s
+          own brightness, generated clouds or generated waves, and <strong>Map size</strong>{" "}
+          controls how coarse it is.
+        </p>
+        <p>
+          <strong>Kaleidoscope</strong> mirrors a wedge of the image around a centre point.{" "}
+          <strong>Segments</strong> (2 to 32) sets how many wedges, <strong>Angle</strong> turns
+          them, and <strong>Center X</strong> and <strong>Center Y</strong> move the centre. A photo
+          of flowers or leaves turns into a mandala-like pattern.
+        </p>
+        <p>
+          Displace, Shear and Wave also have an <strong>Undefined areas</strong> option for pixels
+          that would come from outside the layer: <strong>Wrap around</strong>,{" "}
+          <strong>Repeat edge pixels</strong> or <strong>Transparent</strong>. Wrap around is the
+          one to use on a tile that has to repeat without seams.
+        </p>
+        <h2>Can I change a distortion later?</h2>
+        <p>
+          On a pixel layer, a filter changes the pixels and is one undo step. To keep it editable,
+          choose <strong>Layer → Smart Object → Convert to Smart Object</strong> first. Any filter
+          you then pick from the Filter menu is added as a smart filter, which you can edit, hide,
+          reorder or delete later in the Properties panel. A smart filter also keeps its random
+          pattern, so Wave and Dents look the same every time the layer is drawn. The{" "}
+          <Link href="/docs/smart-objects-and-smart-filters">smart objects docs</Link> explain how
+          that works.
+        </p>
+        <p>
+          Liquify, at the top of the Filter menu, works with a brush on pixel layers only and
+          can&apos;t be a smart filter. The <Link href="/liquify">Liquify guide</Link> covers it.
+        </p>
+        <h2>How does this compare with Photoshop and GIMP?</h2>
+        <p>
+          Picstea&apos;s Filter menu follows Photoshop&apos;s, so most Photoshop tutorials for these
+          filters carry over. Adobe&apos;s Photoshop Elements help lists the same core set
+          (Displace, Pinch, Polar Coordinates, Ripple, Shear, Spherize, Twirl, Wave and ZigZag), and
+          there Displace uses a separate image as the displacement map, while Picstea builds the map
+          from the layer, clouds or waves. GIMP keeps its versions under{" "}
+          <strong>Filters → Distorts</strong>, with Twirl and Pinch combined as{" "}
+          <strong>Whirl and Pinch</strong>, and its <strong>Polar Coordinates</strong> uses a{" "}
+          <strong>To polar</strong> checkbox instead of a Mode menu. GIMP also has Kaleidoscope,
+          Ripple, Waves and Spherize. The <Link href="/gimp-alternative">Picstea vs GIMP</Link> and{" "}
+          <Link href="/photoshop-alternative">Picstea vs Photoshop</Link> pages compare the editors
+          more broadly.
+        </p>
+        <h2>Questions people ask</h2>
+        <h3>Why is my tiny planet an oval?</h3>
+        <p>
+          The layer wasn&apos;t square when you ran the filter. Image Size only changes how the
+          layer is drawn, so make the canvas square, Copy Merged, Paste, and run Polar Coordinates
+          on the pasted layer.
+        </p>
+        <h3>Can I distort text or a shape?</h3>
+        <p>
+          Not directly. Filters run on pixel layers and smart objects. Convert the text or shape to
+          a smart object first and the filter becomes a smart filter, or rasterize it with{" "}
+          <strong>Layer → Rasterize Layer</strong>.
+        </p>
+        <h3>How do I repeat a distortion on another layer?</h3>
+        <p>
+          Select the other layer and choose <strong>Filter → Last Filter</strong>{" "}
+          (Cmd/Ctrl+Option/Alt+F). It runs the previous filter with the same settings.
+        </p>
+        <p>
+          <EditorLink>Open Picstea</EditorLink> and try Polar Coordinates on a panorama.
+        </p>
+      </>
+    ),
+  },
 ];
 
 const showDrafts = process.env.NODE_ENV !== "production";
