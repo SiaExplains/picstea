@@ -4032,6 +4032,194 @@ export const POSTS: readonly BlogPost[] = [
       </>
     ),
   },
+  {
+    slug: "color-a-line-drawing-with-the-paint-bucket",
+    title: "Colour a line drawing with the Paint Bucket",
+    description:
+      "Colour a scanned sketch in your browser with flat Paint Bucket fills, a Swatches palette and a Multiply layer, then fix the gaps and light edges by line.",
+    published: "2026-11-22",
+    draft: false,
+    body: () => (
+      <>
+        <p>
+          To colour a line drawing in Picstea, open the scan, add a new layer with{" "}
+          <strong>Layer → New → New Layer</strong> and set its <strong>Blend</strong> to{" "}
+          <strong>Multiply</strong> in the Properties panel. Then pick the{" "}
+          <strong>Paint Bucket</strong> (Shift+G), tick <strong>Sample all layers</strong> in the
+          options bar and click inside each shape. The fill stops at the lines but lands on the new
+          layer, so the sketch stays untouched. Pick colours from the <strong>Swatches</strong>{" "}
+          panel and export a PNG when you&apos;re done. The drawing stays on your device the whole
+          time; nothing is uploaded.
+        </p>
+        <p>
+          The example in this post is a pencil-and-ink sketch of a fox, scanned on a home printer.
+          It should end up as a flat-coloured sticker with orange fur, a white chest and a green
+          background, using the same four colours every time the fox is redrawn.
+        </p>
+        <h2>How do I prepare the scan?</h2>
+        <p>
+          Open the scan in <EditorLink>the Picstea editor</EditorLink> with{" "}
+          <strong>File → Open Image…</strong> or by dropping it on the window. It opens as one
+          unlocked pixel layer named after the file. Scanned paper is rarely pure white and pencil
+          lines are rarely pure black. A grey paper texture can stop a fill halfway across a shape.
+          A Levels adjustment layer that pulls the white point in and the black point up cleans most
+          scans; the <Link href="/blog/levels-and-curves-explained">Levels and Curves post</Link>{" "}
+          explains the sliders. If you want hard black lines with no grey at all, a Threshold layer
+          does that, as shown in{" "}
+          <Link href="/blog/turn-a-photo-into-a-stencil-with-threshold">the stencil post</Link>.
+        </p>
+        <p>
+          Next, look for gaps. The Paint Bucket floods every touching pixel of a similar colour, so
+          a one-pixel break in an outline lets the colour run out of the fox and into the
+          background. Zoom in, select the drawing layer, choose the <strong>Pencil</strong> (N) and
+          close the breaks with black. Its hard edges suit line repairs.
+        </p>
+        <h2>Why put the colour on its own Multiply layer?</h2>
+        <p>
+          Select the drawing layer and press Cmd/Ctrl+Shift+N. The new empty layer goes above the
+          active one. Rename it &quot;Colour&quot; by double-clicking its name, then set{" "}
+          <strong>Blend</strong> to <strong>Multiply</strong> in the Properties panel.
+        </p>
+        <p>
+          Multiply darkens what is underneath and never lightens it, so black lines stay black where
+          colour covers them and the pencil shading in the scan shows through the flat colours. You
+          can also repaint, erase or delete the colour layer without touching the drawing, or hide
+          it with its eye icon to compare. The{" "}
+          <Link href="/docs/layers-groups-and-masks">layers docs</Link> list the other blend modes.
+        </p>
+        <h2>How do I set up a colour palette in Swatches?</h2>
+        <p>
+          Choose <strong>Window → Swatches</strong>. The panel shares a tab strip with History and
+          Actions and starts with a default palette of 30 colours. Click a swatch to make it the
+          foreground colour, or Alt-click it to make it the background colour.
+        </p>
+        <p>
+          To add the fox&apos;s own colours, click the foreground colour square at the bottom of the
+          toolbar. The colour picker has a hue slider, a colour field and exact <strong>Hex</strong>
+          , RGB and HSB values. Type the orange&apos;s hex code, click OK and press{" "}
+          <strong>Add Foreground</strong> in the Swatches panel. Do the same for the white, green
+          and a dark brown for the nose. To remove a swatch, focus it and press Delete;{" "}
+          <strong>Reset</strong> brings back the default palette.
+        </p>
+        <p>
+          Swatches are saved in this browser and are not part of the document, so the palette is
+          there the next time you colour a fox, in any file. The list holds up to 300 swatches.
+        </p>
+        <h2>How do I fill each area with the Paint Bucket?</h2>
+        <p>
+          The Paint Bucket shares a toolbar slot with the Gradient tool. Press G for the Gradient
+          and Shift+G to switch to the bucket, or right-click the slot to pick it from the flyout.
+          With the Colour layer active, the options bar shows three settings:
+        </p>
+        <ul>
+          <li>
+            <strong>Tolerance</strong> (0 to 255, default 32): how far a pixel&apos;s colour can be
+            from the one you clicked, measured as the largest difference in any of red, green or
+            blue. Higher values fill further into grey edges.
+          </li>
+          <li>
+            <strong>Contiguous</strong> (on by default): fill only pixels connected to the click.
+            Turn it off to fill every matching pixel in the image.
+          </li>
+          <li>
+            <strong>Sample all layers</strong> (off by default): read the visible image instead of
+            the active layer. Turn this on here. The Colour layer is empty, so without it the bucket
+            sees one big transparent area and fills the whole layer.
+          </li>
+        </ul>
+        <p>
+          Click the orange swatch, then click inside the fox&apos;s body, tail and ears. Switch to
+          white for the chest and green for the background. The bucket respects selections, so if a
+          shape won&apos;t close cleanly you can draw a lasso around it first and the fill stays
+          inside. It only works on unlocked, visible pixel layers; on a text, shape or fill layer it
+          asks you to add a pixel layer first.
+        </p>
+        <h2>Why is there a light edge between the colour and the lines?</h2>
+        <p>
+          Scanned and digital lines both have soft edges: a few pixels of grey between the black and
+          the paper. At the default Tolerance of 32 the fill stops before those grey pixels, so a
+          thin pale rim shows inside every outline. Picstea&apos;s Paint Bucket has no anti-alias
+          option, so its fills have hard edges.
+        </p>
+        <p>There are two ways to close the rim:</p>
+        <ol>
+          <li>
+            Undo the fill, raise <strong>Tolerance</strong> and click again. The fill reaches
+            further into the grey. Too high a value and it leaks through faint lines.
+          </li>
+          <li>
+            Select the area instead. Press W for the <strong>Magic Wand</strong>, which has the same
+            Tolerance, Contiguous and Sample all layers options, and click inside the shape. Choose{" "}
+            <strong>Select → Modify → Expand…</strong> and grow the selection by 1 or 2 pixels so it
+            tucks under the line. With the Colour layer active, choose{" "}
+            <strong>Edit → Fill with Foreground</strong> (Shift+F5), then deselect with Cmd/Ctrl+D.
+          </li>
+        </ol>
+        <p>
+          With the second method the colour slides under the black line, and Multiply keeps the line
+          black on top of it. The <Link href="/docs/selections">selections docs</Link> cover Expand,
+          Contract and Feather, and <Link href="/docs/painting-and-fills">painting and fills</Link>{" "}
+          covers the bucket and Edit → Fill.
+        </p>
+        <h2>How is this different in Photoshop and GIMP?</h2>
+        <p>
+          Photoshop&apos;s Paint Bucket has the same Tolerance, Contiguous and All Layers options,
+          plus an <strong>Anti-alias</strong> checkbox that smooths the edge of the fill. Picstea
+          doesn&apos;t have that checkbox, so the Expand method above is how you get fills that meet
+          the line.
+        </p>
+        <p>
+          GIMP&apos;s Bucket Fill has a <strong>Fill by line art detection</strong> mode built for
+          exactly this job. It finds areas bounded by line art and can close small gaps in the lines
+          on its own, with a setting for the largest gap it will close. Picstea has no automatic gap
+          closing, so you close breaks yourself with the Pencil before filling. For a lot of comic
+          pages that GIMP mode saves real time. For the odd sketch, Picstea runs in a browser tab
+          with no install and keeps layers, masks and PSD files in the same place. The{" "}
+          <Link href="/gimp-alternative">GIMP comparison</Link> and the{" "}
+          <Link href="/photoshop-alternative">Photoshop comparison</Link> go into the wider
+          differences.
+        </p>
+        <h2>How do I add shading and export the result?</h2>
+        <p>
+          For simple shading, add another layer above Colour and choose{" "}
+          <strong>Layer → Create Clipping Mask</strong> (Cmd/Ctrl+Option/Alt+G). A clipped layer
+          only shows where the layer below has pixels, so brush strokes can&apos;t spill outside the
+          fox. Set it to Multiply and paint with a darker orange.
+        </p>
+        <p>
+          To keep the layers for later, choose <strong>File → Save Project As…</strong> to save a{" "}
+          <code>.picstea</code> file. For the finished sticker, choose{" "}
+          <strong>File → Export As…</strong> and pick PNG.
+        </p>
+        <h2>Questions people ask</h2>
+        <h3>Can I fill several areas of the same colour at once?</h3>
+        <p>
+          Yes. Turn off <strong>Contiguous</strong> and click one of them. Every pixel within the
+          Tolerance of the clicked colour is filled, across the whole image. It is a quick way to
+          change all the orange to red after the first pass.
+        </p>
+        <h3>Why did the bucket fill the whole layer?</h3>
+        <p>
+          <strong>Sample all layers</strong> is probably off, so the bucket read the empty Colour
+          layer instead of the drawing. Undo, tick the option and click again. A gap in the outline
+          has the same effect on the shape it leaks out of.
+        </p>
+        <h3>Are my swatches saved in the project file?</h3>
+        <p>
+          No. Swatches are stored in this browser and shared by every document you open in it. A
+          different browser or device starts with the default palette.
+        </p>
+        <h3>Can I colour line art drawn on a transparent layer?</h3>
+        <p>
+          Yes. Keep <strong>Sample all layers</strong> on so the bucket reads the lines, and put the
+          colour layer below the line layer instead of setting it to Multiply.
+        </p>
+        <p>
+          <EditorLink>Open Picstea</EditorLink> and colour your next sketch.
+        </p>
+      </>
+    ),
+  },
 ];
 
 const showDrafts = process.env.NODE_ENV !== "production";
