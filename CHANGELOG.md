@@ -3,6 +3,15 @@
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.50.11] — 2026-11-23
+
+### Added
+
+- Blog post **Remove halftone dots with the Fourier filters**: removing halftone dots and moiré
+  from a scanned print with Filter → Fourier → Fourier Transform, painting the pattern's spots
+  with 50% grey and running Inverse Fourier Transform, plus cleanup with the Noise filters and how
+  this compares with Photoshop and GIMP.
+
 ## [0.50.10] — 2026-11-22
 
 ### Added

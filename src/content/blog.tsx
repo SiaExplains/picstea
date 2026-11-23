@@ -4220,6 +4220,192 @@ export const POSTS: readonly BlogPost[] = [
       </>
     ),
   },
+  {
+    slug: "remove-halftone-dots-with-fourier-transform",
+    title: "Remove halftone dots with the Fourier filters",
+    description:
+      "Scanned a magazine photo and got dots or moiré? Use Picstea's Fourier Transform to find the pattern, paint it out with grey and turn the image back.",
+    published: "2026-11-23",
+    draft: false,
+    body: () => (
+      <>
+        <p>
+          To remove halftone dots or a moiré pattern from a scan in Picstea, duplicate the layer and
+          choose <strong>Filter → Fourier → Fourier Transform</strong>. The layer turns into a map
+          of the image&apos;s frequencies, and a regular print pattern shows up there as a few
+          bright and dark spots away from the centre. Paint those spots with 50% grey (#808080),
+          then choose <strong>Filter → Fourier → Inverse Fourier Transform</strong> to get the
+          picture back without the pattern. Both filters run in your browser, so the scan stays on
+          your device and nothing is uploaded.
+        </p>
+        <p>
+          The example in this post is a photo cut from an old magazine and scanned at a high
+          resolution. Up close it is made of tiny dots in a grid, and at some zoom levels the grid
+          turns into wavy bands. Blurring would hide the dots and soften the faces along with them.
+          Editing the frequencies takes out the grid and leaves most of the detail.
+        </p>
+        <h2>Why does a scan of a printed photo have a pattern?</h2>
+        <p>
+          Magazines and newspapers print photos as a grid of ink dots of different sizes, called a
+          halftone screen. Your scanner samples the page on its own grid of pixels, and where the
+          two grids nearly line up you get moiré, the rippling bands you see when you zoom out.
+          Screens on monitors photographed with a phone, fabric, and window mesh cause the same
+          thing.
+        </p>
+        <p>
+          These patterns repeat at a fixed spacing and angle, and a photo of a face or a landscape
+          doesn&apos;t, so a Fourier transform can tell them apart.
+        </p>
+        <h2>What does Fourier Transform show?</h2>
+        <p>
+          <strong>Fourier Transform</strong> replaces each colour channel (red, green and blue) of
+          the layer with its frequency spectrum, centred on the canvas. The centre pixel holds the
+          average brightness. Pixels close to the centre hold the broad shapes and slow changes in
+          the image, and pixels further out hold finer and finer detail, up to the edges of the
+          canvas. The direction from the centre matches the direction of the detail in the photo.
+        </p>
+        <p>
+          In this view mid-grey means &quot;nothing at this frequency&quot;. Brighter pixels are
+          positive values and darker pixels are negative ones. A normal photo gives a cloud that is
+          strongest in the middle and fades towards the edges. A halftone screen adds the pattern as
+          sharp, isolated spots well away from the centre, usually arranged symmetrically around it
+          and often in a small grid of their own.
+        </p>
+        <p>
+          Picstea uses the Hartley transform for this, a real-valued relative of the Fourier
+          transform with the same frequencies in the same places. It fits into an ordinary pixel
+          layer and undoes itself, which is why you can paint on the result. The values are stored
+          with a logarithmic curve in 8 bits each, so the round trip back to the image is close but
+          not exact.
+        </p>
+        <h2>How do I remove the pattern step by step?</h2>
+        <ol>
+          <li>
+            Open the scan in <EditorLink>the Picstea editor</EditorLink> and choose{" "}
+            <strong>Layer → Duplicate Layer</strong> (Cmd/Ctrl+J). You&apos;ll work on the copy and
+            keep the original to compare against.
+          </li>
+          <li>
+            Press Cmd/Ctrl+D (<strong>Select → Deselect</strong>) if there is a selection. A filter
+            only changes pixels inside the selection, and a transform of half the layer gives a
+            spectrum you can&apos;t use.
+          </li>
+          <li>
+            Choose <strong>Filter → Fourier → Fourier Transform</strong>. There is no dialog; it
+            runs at full size in a background worker and is one undo step. The layer becomes opaque.
+          </li>
+          <li>
+            Click the foreground colour, type <code>808080</code> in the <strong>Hex</strong> field
+            and pick the <strong>Brush</strong> (B). A soft brush with a low{" "}
+            <strong>Hardness</strong> blends in better than a hard one.
+          </li>
+          <li>
+            Paint over each isolated spot, a little larger than the spot itself. For round spots you
+            can also draw an Elliptical Marquee around one and use{" "}
+            <strong>Edit → Fill with Foreground</strong> (Shift+F5), then deselect again before the
+            next step.
+          </li>
+          <li>
+            Choose <strong>Filter → Fourier → Inverse Fourier Transform</strong>. The photo comes
+            back, and the pattern should be weaker or gone. Hide and show the layer in the Layers
+            panel to compare it with the original underneath.
+          </li>
+        </ol>
+        <p>
+          If the result isn&apos;t clean, undo the inverse (Cmd/Ctrl+Z) to return to the spectrum,
+          paint a little more, and run the inverse again. The History panel lets you jump between
+          these steps.
+        </p>
+        <h2>What should I avoid painting?</h2>
+        <p>
+          Leave the centre alone. The middle of the spectrum is the photo itself: painting there
+          changes the overall brightness and wipes out large shapes. Stay off the faint cloud around
+          the centre too, and only cover spots that stand out clearly from it.
+        </p>
+        <p>
+          Don&apos;t paint with black. Black is a large negative value in this view, so it adds a
+          pattern of its own. Grey at #808080 is as close to zero as an 8-bit pixel gets. For the
+          same reason, don&apos;t run other filters or adjustments on the spectrum layer. Finish the
+          round trip before exporting, too: the spectrum is only useful as exact pixel values, and a
+          JPEG would change them.
+        </p>
+        <h2>What if some dots are left?</h2>
+        <p>
+          The Fourier method takes out the regular part of the pattern. Small leftover specks are
+          easier to handle with the noise filters on the result:
+        </p>
+        <ul>
+          <li>
+            <strong>Filter → Noise → Despeckle</strong> runs a small median everywhere except along
+            strong edges, which stay sharp. It has no settings.
+          </li>
+          <li>
+            <strong>Filter → Noise → Median…</strong> replaces each pixel with the median of its
+            neighbours. Keep the <strong>Radius</strong> at 1 or 2 px for a scan.
+          </li>
+          <li>
+            <strong>Filter → Noise → Dust &amp; Scratches…</strong> only changes pixels that differ
+            from their neighbours by more than the <strong>Threshold</strong>, which suits stray
+            specks of dust from the scanner glass.
+          </li>
+        </ul>
+        <p>
+          The <Link href="/docs/filters">filters docs</Link> list everything in the Filter menu, and
+          the <Link href="/sharpen-image">sharpening guide</Link> helps if the cleaned photo looks
+          soft. For scratches or folds, the healing tools in the{" "}
+          <Link href="/docs/retouching">retouching docs</Link> are a better fit.
+        </p>
+        <h2>Can I batch this or keep it editable?</h2>
+        <p>
+          Not really. Fourier Transform and its inverse can be recorded in an action like any other
+          filter, but brush strokes can&apos;t be recorded yet, and the painting is the part that
+          changes from scan to scan. Every print screen puts its spots in a different place, so each
+          image needs its own look at the spectrum anyway.
+        </p>
+        <p>
+          Smart filters don&apos;t help here either. On a smart object, Picstea adds each filter as
+          a smart filter, and you can&apos;t paint between two smart filters. Use a pixel layer for
+          the whole process.
+        </p>
+        <h2>How does this compare with Photoshop and GIMP?</h2>
+        <p>
+          Photoshop doesn&apos;t ship a Fourier filter. People have asked Adobe for one on its
+          community feature-request board for years, and the usual workaround is a third-party
+          plug-in or action set. In GIMP, the common route is the free G&apos;MIC plug-in, which has
+          a Fourier Transform filter in its Spectral Filters group. In Picstea, both directions are
+          built into the Filter menu and work in the browser with nothing to install. The{" "}
+          <Link href="/photoshop-alternative">Picstea vs Photoshop</Link> and{" "}
+          <Link href="/gimp-alternative">Picstea vs GIMP</Link> pages compare the editors more
+          broadly.
+        </p>
+        <h2>Questions people ask</h2>
+        <h3>Why did my photo come back with odd colours or banding?</h3>
+        <p>
+          Something other than mid-grey was painted on the spectrum, or the centre was touched. Undo
+          the inverse, undo the strokes near the centre, and repaint the spots with #808080. Very
+          slight tone differences are normal, because the spectrum is stored in 8 bits.
+        </p>
+        <h3>Does this work on photos with transparency?</h3>
+        <p>
+          The transform treats transparent pixels as black and makes the layer opaque, so it is
+          meant for flat images such as scans. Run it on a layer with no transparent areas.
+        </p>
+        <h3>Does the image need a particular size?</h3>
+        <p>
+          No. Any width and height up to the document limit works. Large scans take longer because
+          every row and column is transformed, and a busy message shows while it runs.
+        </p>
+        <h3>Will this remove JPEG blocks or film grain?</h3>
+        <p>
+          Not well. Those aren&apos;t a single repeating pattern, so they don&apos;t make clear
+          spots in the spectrum. Try <strong>Filter → Noise → Reduce Noise…</strong> for those.
+        </p>
+        <p>
+          <EditorLink>Open Picstea</EditorLink> and try Fourier Transform on your next scan.
+        </p>
+      </>
+    ),
+  },
 ];
 
 const showDrafts = process.env.NODE_ENV !== "production";
