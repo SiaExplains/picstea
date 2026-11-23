@@ -3,6 +3,15 @@
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.50.10] — 2026-11-22
+
+### Added
+
+- Blog post **Colour a line drawing with the Paint Bucket**: colouring a scanned sketch on a
+  Multiply layer with the Paint Bucket and Sample all layers, building a palette in the Swatches
+  panel, closing light edges with the Magic Wand, Select → Modify → Expand and Edit → Fill, and how
+  this compares with Photoshop's and GIMP's bucket fills.
+
 ## [0.50.9] — 2026-11-21
 
 ### Added
