@@ -4406,6 +4406,185 @@ export const POSTS: readonly BlogPost[] = [
       </>
     ),
   },
+  {
+    slug: "make-a-seamless-texture-picstea-vs-photoshop-gimp",
+    title: "Seamless textures: Picstea vs Photoshop and GIMP",
+    description:
+      "Turn a photo into a texture that tiles without visible seams, using Offset, the Clone Stamp and Repeat in Picstea, and see how Photoshop and GIMP do it.",
+    published: "2026-11-24",
+    draft: false,
+    body: () => (
+      <>
+        <p>
+          To make a photo tile without seams in Picstea, crop it to a square, choose{" "}
+          <strong>Filter → Other → Offset…</strong> and move it by half its width and half its
+          height with <strong>Undefined areas</strong> set to <strong>Wrap around</strong>. The
+          edges that used to meet badly are now a cross in the middle of the image, where you can
+          paint them out with the Clone Stamp or the Healing Brush. Photoshop and GIMP use the same
+          trick, and each adds a helper of its own.
+        </p>
+        <p>
+          The example here is a phone photo of a gravel path that should become a 1024 × 1024 ground
+          texture for a small game. The same steps work for wood, fabric, concrete, grass or a
+          website background. Everything runs in your browser, so the photo stays on your device and
+          nothing is uploaded.
+        </p>
+        <h2>Why does a photo show seams when it repeats?</h2>
+        <p>
+          When an image is tiled, its right edge sits next to its left edge and its bottom edge sits
+          next to its top edge. In a photo those edges never match: the stones are different and the
+          light is usually a little brighter on one side. The eye picks up the line at once, and
+          then the grid of repeats.
+        </p>
+        <p>
+          Offset with wrap-around moves the picture sideways and down and brings whatever leaves on
+          one side back in on the other, so nothing is lost. The old outer edges end up next to each
+          other in the middle, and the new outer edges are pixels that were neighbours in the
+          original photo, so they already match.
+        </p>
+        <h2>How do I prepare the photo?</h2>
+        <ol>
+          <li>
+            Open the photo in <EditorLink>the Picstea editor</EditorLink> and pick the{" "}
+            <strong>Crop</strong> tool (C). In the options bar set <strong>Ratio</strong> to{" "}
+            <strong>1:1</strong> and tick <strong>Delete cropped pixels</strong>.
+          </li>
+          <li>
+            Drag the box over an evenly lit area with no single object that stands out, such as one
+            large stone or a leaf, and press Enter.
+          </li>
+          <li>
+            Read the new size in the status bar and halve it. A 2000 × 2000 px crop gives 1000 and
+            1000.
+          </li>
+        </ol>
+        <p>
+          Tick <strong>Delete cropped pixels</strong> because Crop normally keeps the pixels outside
+          the canvas, and Offset wraps around the edges of the layer. If the layer is still larger
+          than the canvas, the seam lands in the wrong place. For the same reason, leave{" "}
+          <strong>Image → Image Size…</strong> for the end: it draws pixel layers at the new size
+          and keeps their original pixels, and Offset counts in the layer&apos;s own pixels. If the
+          document has several layers, choose <strong>Layer → Flatten Image</strong> before you
+          crop.
+        </p>
+        <h2>How do I move the seams to the middle?</h2>
+        <p>
+          Choose <strong>Filter → Other → Offset…</strong>. Type half the width into{" "}
+          <strong>Horizontal</strong> and half the height into <strong>Vertical</strong>; both
+          fields take values from −30000 to 30000 px. <strong>Undefined areas</strong> has three
+          choices: <strong>Set to transparent</strong>, <strong>Repeat edge pixels</strong> and{" "}
+          <strong>Wrap around</strong>. Wrap around is the default and the one you need. With{" "}
+          <strong>Preview</strong> ticked you see the result on the canvas before you press{" "}
+          <strong>OK</strong>, and the filter is one undo step.
+        </p>
+        <p>
+          The photo now has a vertical and a horizontal line through its centre where the gravel
+          doesn&apos;t line up.
+        </p>
+        <h2>How do I paint the seams out?</h2>
+        <p>
+          Pick the <strong>Clone Stamp</strong> (S), Alt-click (Option-click on a Mac) on a clean
+          patch of gravel and paint along the seam. Take a new source every few strokes so you
+          don&apos;t stamp the same stone in a row. Where the two sides differ in brightness, the{" "}
+          <strong>Healing Brush</strong> (J) works better, because it keeps the texture you copy and
+          takes the colour and brightness of the place you paint on. The{" "}
+          <strong>Spot Healing Brush</strong> in the same toolbar group needs no source and is quick
+          for a single pebble that got cut in half. The{" "}
+          <Link href="/docs/retouching">retouching docs</Link> cover the options of all three.
+        </p>
+        <p>
+          Stay away from the outer edges of the canvas while you do this. They match now, and a
+          stroke that touches one edge breaks the match with the opposite one.
+        </p>
+        <p>
+          When the cross is gone, choose <strong>Filter → Last Filter</strong> (Cmd/Ctrl+Alt+F). It
+          runs Offset again with the same values. On an image with an even width and height that
+          puts everything back where it started, and a seam you missed is easier to see in its new
+          position.
+        </p>
+        <h2>How do I check that it tiles?</h2>
+        <p>
+          Choose <strong>Image → Duplicate</strong> so the test doesn&apos;t touch your texture,
+          then <strong>Filter → Other → Repeat…</strong> on the copy. Repeat shrinks the layer and
+          tiles it inside the same space, with <strong>Columns</strong> and <strong>Rows</strong>{" "}
+          from 1 to 50 (both start at 2). At 3 × 3 you see every join at once. Look for lines, and
+          for one feature that shows up nine times in a grid. Go back to the original tab, fix what
+          you found and test again.
+        </p>
+        <p>
+          Repeat also has a <strong>Mirror</strong> box that flips every second tile, so
+          neighbouring tiles always meet on the same edge and join without any retouching. It is
+          faster, and it suits marble or clouds. On gravel or brick the mirror symmetry is easy to
+          spot, so I&apos;d spend the extra minutes on Offset there.
+        </p>
+        <h2>How do I save the texture?</h2>
+        <p>
+          Choose <strong>Image → Image Size…</strong> and set the size your project needs, 1024 ×
+          1024 px in this example. Then <strong>File → Export As…</strong> and pick PNG for a
+          lossless file, or JPEG or WebP with the <strong>Quality</strong> slider for a smaller one.
+          The <Link href="/docs/file-formats">file formats docs</Link> list what each format keeps.
+        </p>
+        <h2>How do Photoshop and GIMP do the same job?</h2>
+        <ul>
+          <li>
+            <strong>Photoshop</strong> lists Offset among its Other filters, so the manual method is
+            the same. It also has <strong>View &gt; Pattern Preview</strong>, which repeats the
+            canvas content outside the canvas while you work (Adobe notes it works best with smart
+            objects), and <strong>Edit &gt; Define Pattern</strong> to save the result as a pattern.
+          </li>
+          <li>
+            <strong>GIMP</strong> has <strong>Layer → Transform → Offset…</strong> (Shift+Ctrl+O)
+            with a <strong>By width/2, height/2</strong> button and a <strong>Wrap around</strong>{" "}
+            edge behaviour. It also has <strong>Filters → Map → Tile Seamless…</strong>, which makes
+            the edges seamless for you. GIMP&apos;s manual says it has no options and that the
+            result may need correction.
+          </li>
+          <li>
+            <strong>Picstea</strong> has Offset with wrap-around, the retouching tools and Repeat
+            for the check, and runs in a browser tab with nothing to install. You type the half
+            values yourself, there is no live tiled preview while you paint, and you can&apos;t save
+            your tile as a pattern: the Pattern Overlay layer style uses ten built-in patterns.
+          </li>
+        </ul>
+        <p>
+          If you already work in Photoshop, Pattern Preview is the most comfortable of the three for
+          drawing a pattern from scratch. For turning one photo into a tile, the manual steps are
+          the same in all of them. The{" "}
+          <Link href="/photoshop-alternative">Picstea vs Photoshop</Link> and{" "}
+          <Link href="/gimp-alternative">Picstea vs GIMP</Link> pages compare the editors more
+          broadly.
+        </p>
+        <h2>Questions people ask</h2>
+        <h3>Does the texture have to be square?</h3>
+        <p>
+          No. Offset works on any size; use half the width and half the height. If the texture is
+          for a game engine or a 3D tool, check which sizes it expects before you crop.
+        </p>
+        <h3>Can I record this as an action?</h3>
+        <p>
+          Partly. Offset and Repeat are filters, and filters are recorded in actions with their
+          settings. Brush and retouching strokes are not recorded, so the seam painting stays manual
+          for every photo.
+        </p>
+        <h3>Can I make a texture without a photo?</h3>
+        <p>
+          Yes. Fill a pixel layer with any colour, then choose{" "}
+          <strong>Filter → Render → Clouds…</strong> and set <strong>Scale</strong> between 4 and
+          2000 px. Clouds renders in black and white and isn&apos;t made to tile, so run the same
+          Offset and retouching steps on it, or use Repeat with Mirror. The{" "}
+          <Link href="/docs/filters">filters docs</Link> list the other Render filters.
+        </p>
+        <h3>How large can the texture be?</h3>
+        <p>
+          A Picstea document can be up to 12,000 px on a side and 36 megapixels in total, which
+          covers a 4096 × 4096 px texture.
+        </p>
+        <p>
+          <EditorLink>Open Picstea</EditorLink> and try Offset on a photo of a wall or a floor.
+        </p>
+      </>
+    ),
+  },
 ];
 
 const showDrafts = process.env.NODE_ENV !== "production";
