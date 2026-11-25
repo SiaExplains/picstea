@@ -4585,6 +4585,193 @@ export const POSTS: readonly BlogPost[] = [
       </>
     ),
   },
+  {
+    slug: "add-falling-snow-to-a-photo",
+    title: "How to add falling snow to a photo",
+    description:
+      "Add falling snow to a winter photo with Picstea's Particles filter, Motion Blur and Screen layers. Free, in your browser, with nothing uploaded.",
+    published: "2026-11-25",
+    draft: false,
+    body: () => (
+      <>
+        <p>
+          To add falling snow to a photo in Picstea, make a new layer filled with black, set its
+          blend mode to <strong>Screen</strong>, and run{" "}
+          <strong>Filter → Other → Particles…</strong> with <strong>Kind</strong> set to{" "}
+          <strong>Snow</strong>. Screen hides the black, so only the white flakes show over the
+          photo. A short <strong>Filter → Blur → Motion Blur…</strong> makes them fall. Repeat this
+          on two more layers with larger and fewer flakes to get depth.
+        </p>
+        <p>
+          The example is a 3000 × 2000 px photo of a friend on an evening street, with bare trees
+          and dark buildings behind. It should look as if it was taken in light snowfall, for a
+          holiday card. The photo stays on your device the whole time and nothing is uploaded.
+        </p>
+        <h2>How do I set up a snow layer?</h2>
+        <ol>
+          <li>
+            Open the photo in <EditorLink>the Picstea editor</EditorLink> and choose{" "}
+            <strong>Layer → New → New Layer</strong> (Cmd/Ctrl+Shift+N).
+          </li>
+          <li>
+            Make sure the foreground colour is black. The small button under the toolbar&apos;s
+            colour squares resets it (D).
+          </li>
+          <li>
+            Choose <strong>Select → All</strong>, then <strong>Edit → Fill with Foreground</strong>{" "}
+            (Shift+F5), then <strong>Select → Deselect</strong>.
+          </li>
+          <li>
+            In the Properties panel, set <strong>Blend</strong> to <strong>Screen</strong>. The
+            black disappears and you see the photo again.
+          </li>
+        </ol>
+        <p>
+          The black fill is needed because Picstea won&apos;t run a filter on an empty layer; you
+          would get the message &quot;This layer is empty.&quot; You could run Particles straight on
+          the photo, but the snow would then be part of its pixels and you couldn&apos;t move it,
+          mask it or turn it down.
+        </p>
+        <h2>What do the Particles settings do?</h2>
+        <ul>
+          <li>
+            <strong>Particles per megapixel</strong> goes from 1 to 5000 and starts at 400. It
+            counts flakes per million pixels, so 400 on this 6-megapixel photo gives 2,400 flakes.
+          </li>
+          <li>
+            <strong>Size</strong> goes from 0.5 to 200 px and starts at 6. It is the radius of the
+            biggest flake. Snow flakes vary at random from about a third of that up to the full
+            value, and each one fades out towards its edge.
+          </li>
+          <li>
+            <strong>Kind</strong> is <strong>Snow</strong>, <strong>Sparks</strong> (warm orange
+            with a hot core) or <strong>Bokeh</strong> (faint coloured discs, one to three times the
+            size).
+          </li>
+        </ul>
+        <p>
+          Each time you open the dialog the flakes land in new random places. If you don&apos;t like
+          where one ended up, undo and run the filter again.
+        </p>
+        <p>
+          On a big photo the preview looks emptier than the result. On layers above 2 megapixels
+          Picstea previews a reduced copy, and since flakes are counted per megapixel, the preview
+          has fewer of them. On the example it shows about a third of the final number. Press{" "}
+          <strong>OK</strong>, look at <strong>View → 100%</strong>, and undo if it is too much.
+        </p>
+        <h2>How do I make the snow look deep?</h2>
+        <p>
+          Snow close to the camera looks big, sparse and blurred, and snow far away looks small and
+          dense. Make three layers for this, each set up as above. These values worked on a 3000 ×
+          2000 px canvas:
+        </p>
+        <ul>
+          <li>
+            Far: 800 particles per megapixel, size 5 px, then Motion Blur with a distance of 6 px.
+          </li>
+          <li>
+            Middle: 150 particles per megapixel, size 12 px, then Motion Blur with a distance of 18
+            px.
+          </li>
+          <li>
+            Near: 8 particles per megapixel, size 45 px, then Motion Blur with a distance of 60 px.
+          </li>
+        </ul>
+        <p>
+          For a larger or smaller photo, change the sizes and distances in proportion to its width.
+          The count needs changing too if you keep the same look: at twice the width, use a quarter
+          of the particles per megapixel.
+        </p>
+        <p>
+          Motion Blur has an <strong>Angle</strong> from −180 to 180° and a{" "}
+          <strong>Distance</strong> from 1 to 200 px. At 0° the streaks are horizontal and at 90°
+          they are vertical. I used 70° on all three layers, which looks like snow blown from the
+          upper right to the lower left. Keep the angle nearly the same on all of them, as if one
+          wind were blowing. A longer distance suggests a storm, and it also dims the flakes since
+          the same light is spread over more pixels.
+        </p>
+        <h2>How do I keep snow off a face?</h2>
+        <p>
+          Flakes in the far layer should pass behind the person. Select that layer, choose{" "}
+          <strong>Layer → Raster Mask → Add Layer Mask</strong>, click the mask thumbnail in the
+          Layers panel and paint over the person with a soft black <strong>Brush</strong> (B). White
+          brings the flakes back. On the middle and near layers, only mask a flake that lands
+          somewhere distracting, such as on an eye. The{" "}
+          <Link href="/docs/layers-groups-and-masks">layers and masks docs</Link> explain mask
+          painting in more detail.
+        </p>
+        <p>
+          If the whole effect is too strong, lower <strong>Opacity</strong> on one layer at a time,
+          starting with the near one.
+        </p>
+        <h2>How do I make the photo match the weather?</h2>
+        <p>
+          A photo taken on a clear evening looks warmer than one taken in snow. Select the photo
+          layer and choose <strong>Layer → New Adjustment Layer → Temperature/Tint…</strong>. The
+          new layer sits above the photo and below the snow, so the flakes stay white. Move{" "}
+          <strong>Temperature</strong> to about −15; negative values add blue and take away red.
+          Distant snow also lowers contrast a little, which you can copy with a{" "}
+          <strong>Brightness/Contrast…</strong> adjustment layer in the same place.
+        </p>
+        <p>
+          White flakes show well against trees, dark walls and evening sky, and almost vanish
+          against a white sky or snow that is already on the ground.
+        </p>
+        <h2>How do I save it?</h2>
+        <p>
+          Choose <strong>File → Save Project As…</strong> to keep the layers in a{" "}
+          <code>.picstea</code> file, so you can change the snow later. For the card itself choose{" "}
+          <strong>File → Export As…</strong> and pick JPEG. Thousands of small flakes are hard to
+          compress, so expect a larger file than the original at the same quality. The{" "}
+          <Link href="/image-compressor">image compressor guide</Link> covers the trade-off.
+        </p>
+        <h2>How does Photoshop do it?</h2>
+        <p>
+          Adobe&apos;s own guide uses the same black layer in Screen mode, but builds the flakes
+          from noise: <strong>Filter &gt; Noise &gt; Add Noise</strong> with Gaussian and
+          Monochromatic, a Gaussian Blur, then Levels to remove most of the specks, and Motion Blur
+          at the end. You can follow those steps in Picstea too, since it has all of these filters
+          and Levels as an adjustment layer. Clip it to the noise layer with{" "}
+          <strong>Layer → Create Clipping Mask</strong> so it doesn&apos;t darken the photo.
+          Particles skips the blur and Levels steps and lets you set the number and size of flakes
+          directly. The noise method gives more irregular clumps. The{" "}
+          <Link href="/photoshop-alternative">Picstea vs Photoshop</Link> page compares the editors
+          more broadly.
+        </p>
+        <h2>Questions people ask</h2>
+        <h3>Can I change the flakes after pressing OK?</h3>
+        <p>
+          Not on a pixel layer; undo and run the filter again. If you convert the black layer with{" "}
+          <strong>Layer → Smart Object → Convert to Smart Object</strong> first, Particles becomes a
+          smart filter you can reopen. Smart filters are drawn at the scale you are viewing, though,
+          so the number of flakes changes as you zoom. I&apos;d use pixel layers for snow.
+        </p>
+        <h3>Can I add snow to many photos at once?</h3>
+        <p>
+          Yes. Filters, new layers, fills and blend mode changes can all be recorded in an action,
+          and each photo gets its own random flakes. Painting on a mask isn&apos;t recorded. See{" "}
+          <Link href="/blog/record-actions-and-batch-process-images">
+            recording actions and batch processing
+          </Link>
+          .
+        </p>
+        <h3>Does Picstea make animated snow?</h3>
+        <p>
+          No. It edits still images and has no timeline or animated GIF export, so the result is a
+          photo.
+        </p>
+        <h3>Can I make rain the same way?</h3>
+        <p>
+          Roughly. Use small flakes, around 2 or 3 px, and a Motion Blur distance of 40 px or more,
+          then lift the faint streaks with a clipped Levels adjustment layer. There is no separate
+          rain setting in Particles.
+        </p>
+        <p>
+          <EditorLink>Open Picstea</EditorLink> and try it on a photo with a dark background.
+        </p>
+      </>
+    ),
+  },
 ];
 
 const showDrafts = process.env.NODE_ENV !== "production";

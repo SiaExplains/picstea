@@ -3,6 +3,14 @@
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.50.13] — 2026-11-25
+
+### Added
+
+- Blog post **How to add falling snow to a photo**: building snow from three Screen layers with
+  Filter → Other → Particles and Motion Blur, masking the subject, cooling the photo with
+  Temperature/Tint, and how Adobe's noise method compares.
+
 ## [0.50.12] — 2026-11-24
 
 ### Added
