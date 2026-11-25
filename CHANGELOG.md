@@ -3,6 +3,14 @@
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.50.12] — 2026-11-24
+
+### Added
+
+- Blog post **Seamless textures: Picstea vs Photoshop and GIMP**: making a photo tile without seams
+  with Filter → Other → Offset (Wrap around), the Clone Stamp and Healing Brush, checking it with
+  Filter → Other → Repeat, and how Photoshop and GIMP do the same job.
+
 ## [0.50.11] — 2026-11-23
 
 ### Added
