@@ -66,6 +66,7 @@ export const POST_SLUGS: Readonly<Record<string, "draft" | "published">> = {
   "color-a-line-drawing-with-the-paint-bucket": "published",
   "remove-halftone-dots-with-fourier-transform": "published",
   "make-a-seamless-texture-picstea-vs-photoshop-gimp": "published",
+  "add-falling-snow-to-a-photo": "published",
 };
 
 /** Author pages (`/authors/<slug>`); a unit test keeps this in sync with `authors.ts`. */
