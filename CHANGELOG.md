@@ -3,6 +3,15 @@
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.50.14] — 2026-11-26
+
+### Added
+
+- Blog post **Transparent signature PNG: Picstea vs GIMP**: turning a signature photographed on
+  white paper into a transparent PNG with Filter → Other → Color to Alpha, reading the paper colour
+  with the Color Sampler, darkening the ink, trimming and exporting, and how GIMP's Color to Alpha
+  differs.
+
 ## [0.50.13] — 2026-11-25
 
 ### Added

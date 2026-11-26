@@ -4772,6 +4772,199 @@ export const POSTS: readonly BlogPost[] = [
       </>
     ),
   },
+  {
+    slug: "transparent-signature-png-picstea-vs-gimp",
+    title: "Transparent signature PNG: Picstea vs GIMP",
+    description:
+      "Turn a signature photographed on white paper into a transparent PNG with Color to Alpha in Picstea, and see how GIMP's version of the filter differs.",
+    published: "2026-11-26",
+    draft: false,
+    body: () => (
+      <>
+        <p>
+          To make a transparent PNG of your signature in Picstea, open the photo of it, read the
+          paper&apos;s colour with the <strong>Color Sampler</strong>, then choose{" "}
+          <strong>Filter → Other → Color to Alpha…</strong> and type that colour into{" "}
+          <strong>Red</strong>, <strong>Green</strong> and <strong>Blue</strong>. The paper goes
+          transparent and the ink stays, soft edges included. Crop the empty space with{" "}
+          <strong>Image → Trim…</strong> and export a PNG. GIMP&apos;s filter of the same name works
+          the same way and has a couple of extra controls.
+        </p>
+        <p>
+          The example is a phone photo of a signature in blue ballpoint on printer paper, taken next
+          to a window. It needs to go on a PDF invoice and into an email footer, on any background.
+          A signature is the kind of file you may not want to give to a website, and here it
+          doesn&apos;t leave your device: Picstea works in the browser and nothing is uploaded.
+        </p>
+        <h2>Why not just erase the white?</h2>
+        <p>
+          The <strong>Magic Eraser</strong> (in the Eraser group of the toolbar) clears every pixel
+          within its <strong>Tolerance</strong> of the colour you click, and leaves everything else
+          as it was. The pixels along each pen stroke are a mix of ink and paper, light blue-grey
+          rather than blue. They either stay, which leaves a pale fringe that shows on a dark
+          background, or they disappear and the strokes get thinner and jagged. With{" "}
+          <strong>Contiguous</strong> on, which is the default, the paper inside closed loops such
+          as an &quot;o&quot; or an &quot;e&quot; also stays white.
+        </p>
+        <p>
+          Color to Alpha looks at every pixel in the layer. Each one becomes as transparent as it is
+          close to the colour you chose, and its remaining colour is worked out as if that colour
+          had been taken out of the mix. A light blue-grey edge pixel turns into blue ink at partial
+          opacity. On a dark background the edge still blends smoothly, with no white outline.
+        </p>
+        <h2>How do I find the colour of the paper?</h2>
+        <p>
+          Paper in a photo is almost never pure white. By a window it tends to come out as a warm
+          light grey, while Color to Alpha starts at 255, 255, 255, so read the real value first.
+        </p>
+        <ol>
+          <li>
+            Open the photo in <EditorLink>the Picstea editor</EditorLink>. If there is a lot of desk
+            around the paper, crop it away first with the <strong>Crop</strong> tool (C).
+          </li>
+          <li>
+            Hold or right-click the <strong>Eyedropper</strong> in the toolbar and choose{" "}
+            <strong>Color Sampler</strong>, or press Shift+I until it comes up.
+          </li>
+          <li>
+            Click on a clean patch of paper close to the signature. The options bar lists the point
+            as <code>R … G … B …</code> together with its hex code. You can place up to four points,
+            and a second one elsewhere on the paper shows how even the light is.
+          </li>
+        </ol>
+        <p>The threshold in the next step deals with small differences across the sheet.</p>
+        <h2>How do I use Color to Alpha in Picstea?</h2>
+        <p>
+          Select the photo&apos;s layer in the Layers panel and choose{" "}
+          <strong>Filter → Other → Color to Alpha…</strong>. The menu item is only active on a pixel
+          layer or a smart object that isn&apos;t locked. The dialog has four settings, each with a
+          slider and a number box:
+        </p>
+        <ul>
+          <li>
+            <strong>Red</strong>, <strong>Green</strong> and <strong>Blue</strong>, from 0 to 255,
+            all starting at 255. Type the values from the Color Sampler here.
+          </li>
+          <li>
+            <strong>Transparency threshold</strong>, from 0 to 254 levels, starting at 0. Pixels
+            whose difference from the colour is at or below this number become fully transparent,
+            and the rest are scaled to fill the full range above it.
+          </li>
+        </ul>
+        <p>
+          With <strong>Preview</strong> ticked you see the result on the canvas as you change the
+          values. Zoom to 100% on a part of the paper away from the signature. At a threshold of 0
+          you&apos;ll probably see a faint haze of paper texture and shadow. Raise the threshold in
+          small steps until it is gone, and then check that the thinnest pen strokes are still
+          there, because a high threshold also eats the lightest parts of the ink. Press{" "}
+          <strong>OK</strong>; it&apos;s one undo step.
+        </p>
+        <p>
+          If you want to come back to the settings later, choose{" "}
+          <strong>Layer → Smart Object → Convert to Smart Object</strong> before you run the filter.
+          Color to Alpha then becomes a smart filter, which you can open again, hide or delete. The{" "}
+          <Link href="/docs/smart-objects-and-smart-filters">
+            smart objects and smart filters docs
+          </Link>{" "}
+          explain how that works. If there is a stray mark elsewhere on the page, select the
+          signature with a lasso first: on a pixel layer the filter only changes the selected area,
+          and you can clear the rest with <strong>Edit → Clear</strong> after inverting the
+          selection.
+        </p>
+        <h2>How do I make the ink darker or change its colour?</h2>
+        <p>
+          Ballpoint ink usually isn&apos;t fully opaque after Color to Alpha, because even the
+          darkest ink in the photo isn&apos;t that far from the paper on every channel. It looks
+          fine on white and a little weak on dark grey. Two things help:
+        </p>
+        <ul>
+          <li>
+            Choose <strong>Duplicate Layer</strong> (Cmd/Ctrl+J) and then{" "}
+            <strong>Layer → Merge Down</strong> (Cmd/Ctrl+E). Two copies of a half-transparent
+            stroke on top of each other are more opaque than one. Do this after the threshold has
+            removed the paper haze, or the haze gets stronger too.
+          </li>
+          <li>
+            For black or dark blue ink of an exact colour, double-click the layer (or choose{" "}
+            <strong>Layer → Layer Style → Blending Options…</strong>) and turn on{" "}
+            <strong>Color Overlay</strong>. It recolours the strokes and keeps their soft edges.
+          </li>
+        </ul>
+        <h2>How do I crop and save it?</h2>
+        <p>
+          Choose <strong>Image → Trim…</strong>, leave <strong>Based on</strong> at{" "}
+          <strong>Transparent pixels</strong> and press OK. The canvas shrinks to the signature.
+          Then choose <strong>File → Export As…</strong> and pick <strong>PNG</strong>, or{" "}
+          <strong>WebP</strong> for a smaller file. Both keep the transparency; JPEG has none and
+          would fill it in. The <Link href="/docs/file-formats">file formats docs</Link> list what
+          each format keeps.
+        </p>
+        <h2>How does GIMP&apos;s Color to Alpha compare?</h2>
+        <p>
+          GIMP is a desktop program for Windows, macOS and Linux; the current stable release is
+          3.2.8. Its filter is under <strong>Colors → Color to Alpha…</strong>, and its manual tells
+          you to add an alpha channel first if the layer has none, with{" "}
+          <strong>Layer → Transparency → Add Alpha Channel</strong>. Compared with Picstea&apos;s:
+        </p>
+        <ul>
+          <li>
+            The colour field has an eyedropper next to it, so you pick the paper straight from the
+            image, and a <strong>Sample average</strong> option that averages a square of pixels. In
+            Picstea you read the colour with the Color Sampler and type it in.
+          </li>
+          <li>
+            GIMP has a <strong>Transparency threshold</strong> like Picstea&apos;s, and also an{" "}
+            <strong>Opacity threshold</strong>: colours beyond it stay fully opaque. Lowering it
+            makes faint ballpoint ink solid in one step, which is what the duplicate-and-merge trick
+            does by hand in Picstea.
+          </li>
+          <li>
+            Picstea runs in a browser tab with nothing to install, and it can keep the filter
+            editable as a smart filter. Neither tool sends the image anywhere.
+          </li>
+        </ul>
+        <p>
+          If GIMP is already installed, its version of the filter needs fewer steps for faint ink.
+          For a quick signature on a computer where you can&apos;t install software, Picstea does
+          the same job. The <Link href="/gimp-alternative">Picstea vs GIMP</Link> page compares the
+          two editors more broadly, and the{" "}
+          <Link href="/make-background-transparent">transparent background guide</Link> covers
+          photos where the background isn&apos;t a flat colour.
+        </p>
+        <h2>Questions people ask</h2>
+        <h3>Does this work for a logo on a white background?</h3>
+        <p>
+          Yes, as long as the logo itself has no white in it: Color to Alpha makes every white pixel
+          transparent, including white letters inside the logo. Select the logo&apos;s outer area
+          first, or use the Magic Eraser for logos with hard edges and white details.
+        </p>
+        <h3>Can I remove a coloured background the same way?</h3>
+        <p>
+          Yes. Set Red, Green and Blue to the background colour, for example a green screen or
+          yellow notepaper. Ink that is close to that colour becomes transparent too.
+        </p>
+        <h3>Why does the signature look pale on a dark background?</h3>
+        <p>
+          The ink is partly transparent after the filter. Duplicate the layer and merge it down, or
+          add a Color Overlay in the colour you want, as described above.
+        </p>
+        <h3>Can I do this for a stack of scanned signatures?</h3>
+        <p>
+          Partly. Color to Alpha is recorded in an action with its settings, so you can run it over
+          many files with <strong>File → Automate → Batch…</strong> and get a ZIP of PNGs. The paper
+          colour has to be about the same in every scan. Trim isn&apos;t a step that actions record,
+          so the batch keeps the full canvas. See{" "}
+          <Link href="/blog/record-actions-and-batch-process-images">
+            recording actions and batch processing
+          </Link>
+          .
+        </p>
+        <p>
+          <EditorLink>Open Picstea</EditorLink> and try it on a photo of your own signature.
+        </p>
+      </>
+    ),
+  },
 ];
 
 const showDrafts = process.env.NODE_ENV !== "production";
