@@ -4965,6 +4965,177 @@ export const POSTS: readonly BlogPost[] = [
       </>
     ),
   },
+  {
+    slug: "prepare-a-photo-for-print",
+    title: "How to prepare a photo for print",
+    description:
+      "Size a photo for print in Picstea: pixels and ppi, A4 and photo presets, a 3 mm bleed with Canvas Size, sharpening, and a PDF the print shop can use.",
+    published: "2026-11-28",
+    draft: false,
+    body: () => (
+      <>
+        <p>
+          To prepare a photo for print in Picstea, work out how many pixels the print needs (inches
+          × 300), make a document that size with <strong>File → New…</strong> and a Print or Photo
+          preset, place the photo and scale it to fill the page, add bleed with{" "}
+          <strong>Image → Canvas Size…</strong> if the shop asks for it, sharpen, and save it with{" "}
+          <strong>File → Export As… → PDF</strong>. The PDF page comes out at the physical size you
+          set, so the shop receives an A4 page with its size already in the file. Check one thing
+          with the shop first: Picstea works in RGB only and can&apos;t convert to CMYK.
+        </p>
+        <p>
+          The example here is a 6000 × 4000 px photo of a mountain lake that I want printed as a
+          landscape A4 poster at a local print shop. The shop wants a PDF with 3 mm of bleed on
+          every side. The photo stays on your device the whole time and nothing is uploaded.
+        </p>
+        <h2>How many pixels does a print need?</h2>
+        <p>
+          Print size is pixels divided by resolution. At 300 pixels per inch (ppi), the usual target
+          for prints you hold in your hand, an A4 page (210 × 297 mm) needs 2480 × 3508 px and an 8
+          × 10 in photo needs 2400 × 3000 px. My 6000 × 4000 px photo would print at 20 × 13.3 in at
+          300 ppi, so it has more than enough pixels for A4.
+        </p>
+        <p>
+          You can check any open image with <strong>Image → Image Size…</strong>. The dialog shows
+          the size in pixels and a <strong>Resolution (pixels/inch)</strong> field. If you only type
+          a new resolution and leave <strong>Width (px)</strong> and <strong>Height (px)</strong>{" "}
+          alone, the pixels stay the same and only the print size changes. The dialog works in
+          pixels only, so the inch figure is the sum above: width in px ÷ ppi.
+        </p>
+        <h2>Which preset do I use for A4 or a photo print?</h2>
+        <p>
+          Choose <strong>File → New…</strong> (Cmd/Ctrl+Alt+N). The <strong>Print</strong> category
+          has A2 to A6, B4, B5, Letter, Legal, Tabloid, a postcard and EU and US business cards. The{" "}
+          <strong>Photo</strong> category has the common photo sizes from wallet size up to 24 × 36
+          in. They all start at 300 ppi, except 20 × 30 and 24 × 36, which use 150 ppi. That&apos;s
+          because of the editor&apos;s size limit: a document can be at most 12,000 px on a side and
+          36 megapixels in total, and a 24 × 36 in print at 300 ppi would be 7200 × 10800 px, about
+          78 megapixels.
+        </p>
+        <p>
+          For my poster I pick <strong>A4</strong>, then press{" "}
+          <strong>Swap width and height</strong> to make it landscape. You can also type your own
+          size: set <strong>Units</strong> to millimetres, inches, centimetres or pixels and fill in{" "}
+          <strong>Resolution (ppi)</strong>.
+        </p>
+        <h2>How do I add bleed?</h2>
+        <p>
+          Bleed is extra image past the trim line, so a slightly off cut doesn&apos;t leave a white
+          sliver at the edge. My shop asks for 3 mm a side. At 300 ppi, 3 mm is about 35 px, so the
+          page needs 71 px more in each direction (35 on each side, rounded up).
+        </p>
+        <ol>
+          <li>
+            Choose <strong>Image → Canvas Size…</strong> and tick{" "}
+            <strong>Relative (add to the current size)</strong>.
+          </li>
+          <li>
+            Type 71 in <strong>Width (px)</strong> and 71 in <strong>Height (px)</strong>.
+          </li>
+          <li>
+            Leave the <strong>Anchor</strong> in the centre so the extra canvas is split evenly
+            around the page, and press <strong>OK</strong>.
+          </li>
+        </ol>
+        <p>
+          The landscape A4 becomes 3579 × 2551 px, which is 303 × 216 mm. If you already know you
+          need bleed, you can skip this step and type 303 × 216 mm into the New dialog straight
+          away. Either way, the photo has to cover the bleed as well as the A4 area.
+        </p>
+        <h2>How do I fit the photo to the page?</h2>
+        <p>
+          Choose <strong>File → Place → Place Embedded…</strong> and pick the photo. Place Embedded
+          adds it as a smart object, which is drawn again from the original file at whatever size
+          you set, so it stays sharp if you scale it down and then back up while you try framings.{" "}
+          <strong>Place Image as Layer…</strong> works too, but it gives you a plain pixel layer.
+        </p>
+        <p>
+          A placed image arrives centred at its full size, so my 6000 px photo hangs far over the
+          edges. Press Cmd/Ctrl+T for <strong>Edit → Free Transform</strong>, drag a corner handle
+          until the photo just covers the whole canvas, bleed included, move it to frame the lake
+          and press Enter. The photo is 3:2 and A4 is closer to 1.41:1, so a little of the top and
+          bottom ends up off the page. The{" "}
+          <Link href="/docs/transform-warp-and-crop">transform and crop guide</Link> covers the
+          handles and the number fields.
+        </p>
+        <h2>Should I sharpen a photo before printing?</h2>
+        <p>
+          Usually yes, and as the last step, after scaling: making a photo smaller softens it. With
+          the photo layer selected, choose <strong>Filter → Sharpen → Unsharp Mask…</strong>. It has{" "}
+          <strong>Amount</strong> (1 to 500%, starting at 100%), <strong>Radius</strong> (0.1 to 100
+          px, starting at 1.5) and <strong>Threshold</strong> (0 to 255 levels, starting at 0). For
+          a 300 ppi print I start near the defaults and look at 100% zoom. Ink on paper tends to
+          look a little softer than the same image on a screen, so I let it look slightly crisp
+          there. Raise <strong>Threshold</strong> if smooth areas like sky or skin start to look
+          grainy.
+        </p>
+        <p>
+          Because the photo is a smart object, Unsharp Mask is added as a smart filter, and you can
+          open it again from the Properties panel to change the amount after a test print. On a
+          plain pixel layer the filter changes the pixels for good, so undo is your only way back.
+          The <Link href="/docs/smart-objects-and-smart-filters">smart objects guide</Link> explains
+          how smart filters are listed and edited.
+        </p>
+        <p>
+          The other approach is <strong>Filter → Other → High Pass…</strong> on a copy: duplicate
+          the layer with Cmd/Ctrl+J, run High Pass with a small radius, then set{" "}
+          <strong>Blend</strong> in the Properties panel to <strong>Overlay</strong> or{" "}
+          <strong>Soft Light</strong> and adjust the layer&apos;s opacity. The{" "}
+          <Link href="/sharpen-image">sharpen image guide</Link> compares the sharpening filters.
+        </p>
+        <h2>Which file do I send to the print shop?</h2>
+        <p>
+          Choose <strong>File → Export As…</strong> (Cmd/Ctrl+Shift+E) and pick <strong>PDF</strong>
+          . Picstea writes one lossless page whose size comes from the document&apos;s resolution,
+          so my 3579 × 2551 px document at 300 ppi becomes a 303 × 216 mm page. Picstea doesn&apos;t
+          write the ppi into PNG, JPEG or WebP exports, so a shop opening one of those sees only the
+          pixel count and has to be told the size.
+        </p>
+        <p>
+          If the shop wants a JPEG, pick <strong>JPEG</strong> and leave <strong>Quality</strong>{" "}
+          high; it starts at 90%. Transparent areas turn white in a JPEG, which only matters if the
+          photo doesn&apos;t cover the whole canvas. Keep a <code>.picstea</code> project or a PSD
+          as well, so you can change the crop or the sharpening after the first print.
+        </p>
+        <h2>What about CMYK, crop marks and colour proofing?</h2>
+        <p>
+          Picstea has none of these. Documents are 8-bit RGB, there is no CMYK mode or soft proof,
+          and the PDF has no crop marks or bleed box: the bleed is simply part of the page. Ask the
+          shop whether they take RGB files and how they want bleed delivered.
+        </p>
+        <p>
+          Photoshop can convert a document with <strong>Image → Mode → CMYK Color</strong>, and its
+          Image Size dialog has a Resample checkbox for choosing between changing the pixels and
+          changing only the print size. Canva&apos;s <strong>PDF Print</strong> download has a{" "}
+          <strong>Crop marks and bleed</strong> option, and its CMYK colour profile is available on
+          paid plans. If your shop insists on CMYK, you can prepare the image in Picstea and do the
+          conversion in one of those. There is more on how the two compare on the{" "}
+          <Link href="/photoshop-alternative">Photoshop alternative</Link> and{" "}
+          <Link href="/canva-alternative">Canva alternative</Link> pages.
+        </p>
+        <h2>Questions people ask</h2>
+        <h3>Can Picstea add pixels to a small photo?</h3>
+        <p>
+          No. Image Size scales layers and has no upscaling filter that adds detail, so a photo that
+          is too small for the print stays soft. Print it smaller or find a larger original.
+        </p>
+        <h3>Can I make a PDF with several pages?</h3>
+        <p>
+          Not from one document. PDF export writes a single page, so each page needs its own
+          document and its own PDF.
+        </p>
+        <h3>Does the 300 ppi setting survive in a PSD?</h3>
+        <p>
+          Yes. PSD export writes the document&apos;s resolution, and a <code>.picstea</code> project
+          keeps it too. PNG, JPEG and WebP exports don&apos;t. The{" "}
+          <Link href="/docs/file-formats">file formats guide</Link> lists what each export keeps.
+        </p>
+        <p>
+          <EditorLink>Open Picstea</EditorLink> and set up your next print.
+        </p>
+      </>
+    ),
+  },
 ];
 
 const showDrafts = process.env.NODE_ENV !== "production";

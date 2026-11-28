@@ -1,6 +1,6 @@
 {
   "name": "picstea",
-  "version": "0.50.14",
+  "version": "0.50.15",
   "private": true,
   "description": "Picstea — a local-first, browser-native image editor.",
   "scripts": {
