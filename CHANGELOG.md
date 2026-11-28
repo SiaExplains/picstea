@@ -3,6 +3,15 @@
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.50.15] — 2026-11-28
+
+### Added
+
+- Blog post **How to prepare a photo for print**: working out pixels and ppi with Image Size,
+  starting from the Print and Photo size presets, adding a 3 mm bleed with Canvas Size, fitting a
+  placed smart object, sharpening with Unsharp Mask or High Pass, and exporting a PDF whose page
+  size follows the document resolution, with notes on CMYK in Photoshop and Canva.
+
 ## [0.50.14] — 2026-11-26
 
 ### Added
